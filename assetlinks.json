@@ -3,6 +3,6 @@
       "target": {
         "namespace": "android_app",
         "package_name": "br.app.entregaflash.twa",
-        "sha256_cert_fingerprints": ["7B:BE:FD:B0:67:4B:08:80:AE:CD:A6:AE:61:3B:91:2F:BC:49:44:A5:FD:73:C4:DB:BA:B3:E4:B2:8D:39:41:47"]
+        "sha256_cert_fingerprints": ["0D:E7:3B:C9:F8:FD:1B:04:34:72:0A:24:10:01:75:B8:C0:0B:62:6F:5D:95:42:FB:17:67:AF:99:7C:E7:DB:1E"]
       }
     }]
