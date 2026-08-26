@@ -935,6 +935,7 @@ let estado = {
     cadastro:{ nome:'', telefone:'', senha:'', erro:'' }
   },
   motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null },
+  trocaPlanoMotorista:{ aberto:false, gerando:false, erro:'', motoristaId:null, cpf:'', qrCode:null, copiaCola:null, status:'pendente' },
   chamadosAmigo:[], // chamados de SOS "motorista amigo" em aberto (carregados quando motorista está disponível)
   chamadoAmigoModal:{ aberto:false, pedidoId:null, percentual:10, enviando:false },
   canalChamadosAmigo:null,
@@ -975,6 +976,7 @@ let estado = {
   comoFunciona:{ aberto:false, aba:'cliente' }
 };
 let pixPollTimer = null;
+let planoPixPollTimer = null;
 
 let mapasAtivos = {};
 let mapaAdminGeral = null; // mapa único do painel admin com todos os motoristas em corrida
@@ -3008,6 +3010,97 @@ function copiarPixCarteira(){
   navigator.clipboard.writeText(w.pix.copiaCola).then(()=>mostrarToast('Código PIX copiado!', 'sucesso'));
 }
 
+
+// ---------- troca de plano pelo próprio motorista ----------
+function resetTrocaPlanoMotorista(){
+  if(planoPixPollTimer){ clearInterval(planoPixPollTimer); planoPixPollTimer=null; }
+  estado.trocaPlanoMotorista = { aberto:false, gerando:false, erro:'', motoristaId:null, cpf:'', qrCode:null, copiaCola:null, status:'pendente' };
+}
+function abrirTrocaPlanoMotorista(){
+  const t = estado.trocaPlanoMotorista;
+  t.aberto = true; t.gerando=false; t.erro=''; t.qrCode=null; t.copiaCola=null; t.status='pendente';
+  render();
+}
+function fecharTrocaPlanoMotorista(){ resetTrocaPlanoMotorista(); render(); }
+async function carregarDadosMotoristaParaPlano(){
+  const t = estado.trocaPlanoMotorista, m = estado.motorista;
+  const { data, error } = await sb.from('entrega_motoristas').select('id,cpf,plano,taxa_status').eq('telefone', m.telefone).maybeSingle();
+  if(error || !data) throw new Error('Não foi possível localizar o cadastro do motorista.');
+  t.motoristaId = data.id; t.cpf = data.cpf||'';
+  return data;
+}
+async function gerarPixUpgradeMotorista(){
+  const t = estado.trocaPlanoMotorista, m = estado.motorista;
+  if(m.plano==='pro'){ mostrarToast('Você já está no plano Pro.', 'info'); return; }
+  t.gerando=true; t.erro=''; t.qrCode=null; t.copiaCola=null; t.status='pendente'; render();
+  try{
+    const dadosMotorista = await carregarDadosMotoristaParaPlano();
+    // deixa a taxa pendente, mas NÃO libera o Pro antes de o pagamento ser confirmado
+    const { error: erroPend } = await sb.from('entrega_motoristas').update({ taxa_valor:PLANOS.pro.preco, taxa_status:'pendente' }).eq('id', dadosMotorista.id);
+    if(erroPend) throw erroPend;
+    const resp = await fetch(`${FUNCOES_URL}/criar-cobranca-pix`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ motoristaId:dadosMotorista.id, valor:PLANOS.pro.preco, nome:m.nome, cpf:dadosMotorista.cpf||'' })
+    });
+    const dados = await resp.json();
+    if(!resp.ok || dados.erro) throw new Error(dados.erro || 'Falha ao gerar cobrança PIX.');
+    t.qrCode=dados.qrCodeBase64; t.copiaCola=dados.copiaCola; t.gerando=false; render();
+    iniciarPollingUpgradeMotorista();
+  }catch(e){
+    console.error(e); t.gerando=false; t.erro='Não consegui gerar o PIX agora. Tente novamente em instantes.'; render();
+  }
+}
+function iniciarPollingUpgradeMotorista(){
+  if(planoPixPollTimer) clearInterval(planoPixPollTimer);
+  planoPixPollTimer=setInterval(async()=>{
+    const t=estado.trocaPlanoMotorista;
+    if(!t.motoristaId || t.status==='pago'){ clearInterval(planoPixPollTimer); planoPixPollTimer=null; return; }
+    const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id',t.motoristaId).maybeSingle();
+    if(data && data.taxa_status==='pago'){
+      const { error } = await sb.from('entrega_motoristas').update({ plano:'pro' }).eq('id',t.motoristaId);
+      if(error){ console.error(error); t.erro='Pagamento confirmado, mas houve erro ao ativar o plano. Fale com o suporte.'; render(); return; }
+      t.status='pago'; estado.motorista.plano='pro'; clearInterval(planoPixPollTimer); planoPixPollTimer=null;
+      mostrarToast('⭐ Pagamento confirmado! Plano Pro ativado.', 'sucesso'); render();
+    }
+  },4000);
+}
+function copiarPixUpgradeMotorista(){
+  const codigo=estado.trocaPlanoMotorista.copiaCola; if(!codigo) return;
+  navigator.clipboard.writeText(codigo).then(()=>mostrarToast('Código PIX copiado!', 'sucesso'));
+}
+async function mudarMotoristaParaFree(){
+  const m=estado.motorista;
+  if(m.plano==='free'){ mostrarToast('Você já está no plano Free.'); return; }
+  if(!(await confirmarAcao('Voltar para o plano Free? Os benefícios do Pro serão removidos.'))) return;
+  try{
+    const dados=await carregarDadosMotoristaParaPlano();
+    const { error }=await sb.from('entrega_motoristas').update({ plano:'free' }).eq('id',dados.id);
+    if(error) throw error;
+    estado.motorista.plano='free'; resetTrocaPlanoMotorista(); mostrarToast('Plano alterado para Free.', 'sucesso'); render();
+  }catch(e){ console.error(e); mostrarToast('Não consegui alterar o plano agora.', 'erro'); }
+}
+function trocaPlanoMotoristaHTML(m){
+  const t=estado.trocaPlanoMotorista;
+  if(!t.aberto) return `
+    <div style="margin-top:14px;padding:14px 16px;background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div><div style="font-size:12.5px;color:var(--poeira);text-transform:uppercase;letter-spacing:.4px">Seu plano</div><b style="font-size:18px">${m.plano==='pro'?'⭐ Pro':'🆓 Free'}</b></div>
+      <button class="btn btn-primario btn-pequeno" style="margin-top:0" onclick="abrirTrocaPlanoMotorista()">🔄 Trocar plano</button>
+    </div>`;
+  return `
+    <div style="margin-top:14px;padding:16px;background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b style="font-family:'Rajdhani';font-size:18px">🔄 Trocar plano</b><button class="btn btn-secundario btn-pequeno" style="margin-top:0" onclick="fecharTrocaPlanoMotorista()">Fechar</button></div>
+      <div style="margin-top:12px;padding:12px;border:1px solid var(--linha);border-radius:10px"><b>🆓 Free</b><div class="subtitulo">${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% de cada entrega · limite de ${PLANOS.free.limiteMensal} entregas/mês</div>${m.plano==='pro'?`<button class="btn btn-secundario btn-pequeno" onclick="mudarMotoristaParaFree()">Mudar para Free</button>`:`<div class="pix-status pago" style="margin-top:8px">Plano atual</div>`}</div>
+      <div style="margin-top:10px;padding:12px;border:1px solid var(--mango);border-radius:10px"><b>⭐ Pro — R$ ${PLANOS.pro.preco.toFixed(2)} pagamento único</b><div class="subtitulo">${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}% de cada entrega · prioridade · mais entregas simultâneas · saque mais rápido</div>
+        ${m.plano==='pro'?`<div class="pix-status pago" style="margin-top:8px">✅ Plano atual</div>`:`
+          ${!t.qrCode && !t.gerando ? `<button class="btn btn-primario" onclick="gerarPixUpgradeMotorista()">💠 Gerar Pix e ativar Pro</button>`:''}
+          ${t.gerando?`<div class="subtitulo" style="margin-top:10px"><span class="girando-emoji">⏳</span> Gerando cobrança Pix...</div>`:''}
+          ${t.erro?`<div class="erro-campo" style="margin-top:10px">${t.erro}</div><button class="btn btn-secundario btn-pequeno" onclick="gerarPixUpgradeMotorista()">Tentar novamente</button>`:''}
+          ${t.qrCode?`<div class="pix-box" style="margin-top:12px"><img class="pix-qr" src="data:image/png;base64,${t.qrCode}"><div class="pix-copia"><input type="text" readonly value="${t.copiaCola||''}"><button class="btn btn-secundario btn-pequeno" onclick="copiarPixUpgradeMotorista()">Copiar</button></div></div><div class="pix-status ${t.status==='pago'?'pago':'aguardando'}">${t.status==='pago'?'✅ Pagamento confirmado — Pro ativado!':'⏳ Aguardando confirmação automática do pagamento...'}</div>`:''}
+        `}
+      </div>
+    </div>`;
+}
+
 function entregasDoMesAtual(telefone){
   const agora = new Date(); const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1).getTime();
   return estado.pedidos.filter(p=>p.motoristaTelefone===telefone && p.status!=='buscando' && p.criadoEm>=inicioMes).length;
@@ -4826,6 +4919,7 @@ function telaMotorista(){
       </div>
       <button class="btn btn-primario btn-pequeno" style="margin-top:0;white-space:nowrap${m.status!=='aprovado'?';opacity:0.6':''}" ${m.status!=='aprovado'?'disabled title="Disponível após aprovação do cadastro"':''} onclick="solicitarSaque()">💰 Saque</button>
     </div>
+    ${trocaPlanoMotoristaHTML(m)}
     ${m.plano==='pro' ? raioAtendimentoHTML(m) : ''}
     ${m.plano==='free' ? ganhoPerdidoSemanaHTML(m) : ''}
     ${direitosPlanoHTML(planoAtual, m.plano)}
