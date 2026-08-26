@@ -81,7 +81,18 @@ fbq('track', 'PageView');
     75%{color:var(--mango,#ffc107);text-shadow:0 0 10px rgba(255,193,7,0.9),0 0 18px rgba(255,193,7,0.6);}
     90%{color:inherit;text-shadow:none;}
   }
-  .bv-titulo-grande{position:relative;text-align:left;font-family:'Rajdhani';font-weight:700;font-size:31px;line-height:1.2;text-transform:none;color:#fff;margin:6px 0 10px;letter-spacing:0.2px;}
+  .bv-titulo-grande{position:relative;text-align:left;font-family:'Rajdhani';font-weight:700;font-size:29px;line-height:1.15;text-transform:uppercase;color:#fff;margin:6px 0 10px;letter-spacing:0.3px;}
+  .bv-selo-rural{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,209,0,0.3);border-radius:12px;padding:10px 12px;margin:2px 0 18px;font-size:13.5px;color:rgba(255,255,255,0.9);line-height:1.4;}
+  .bv-selo-rural .emoji{font-size:18px;flex-shrink:0;}
+  .bv-selo-rural b{color:var(--mango,#ffc93c);}
+  .bv-features-row{display:flex;gap:10px;margin:4px 0 20px;}
+  .bv-feature-card{flex:1;background:rgba(255,255,255,0.06);border:1px solid rgba(255,209,0,0.35);border-radius:14px;padding:14px 8px;text-align:center;}
+  .bv-feature-card .bv-feature-titulo{font-family:'Rajdhani';font-weight:700;font-size:13.5px;text-transform:uppercase;color:#fff;line-height:1.25;margin-bottom:8px;}
+  .bv-feature-card .bv-feature-titulo b{color:var(--mango,#ffc93c);display:block;}
+  .bv-feature-card .bv-feature-valor{font-size:12px;color:rgba(255,255,255,0.85);display:flex;flex-direction:column;align-items:center;gap:3px;line-height:1.3;}
+  .bv-feature-card .bv-feature-valor .emoji{font-size:16px;}
+  .bv-rodape-marca{text-align:center;margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,0.12);}
+  .bv-rodape-marca b{display:block;font-family:'Rajdhani';font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:0.5px;color:#fff;}
   .bv-titulo-grande::before{content:attr(data-text);position:absolute;left:0;top:0;width:100%;background-image:linear-gradient(100deg, transparent 30%, rgba(255,255,255,0.95) 50%, transparent 70%);background-size:250% 100%;background-position:-120% 0;-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent;mix-blend-mode:overlay;pointer-events:none;animation:bv-aceso 1.6s ease-in-out 1 both;}
   .bv-titulo-grande .destaque{color:var(--mango);animation:bv-brilho 0.7s ease-out 1.35s 1 both;}
   @keyframes bv-aceso{0%{background-position:-120% 0;}100%{background-position:120% 0;}}
@@ -3586,9 +3597,24 @@ function telaBoasVindas(){
       <div class="tagline">🤝 A gente não esquece de quem mora na <span class="tagline-acende">zona rural</span> — chegamos até você!</div>
     </div>
     <div class="bv-titulo-grande" data-text="Entregas rápidas em Muzambinho e região">Entregas <span class="destaque">rápidas</span> em Muzambinho e região</div>
-    <div class="bv-subtagline">Peça o que quiser ou ganhe dinheiro entregando</div>
+    <div class="bv-selo-rural"><span class="emoji">🤝</span> A gente não esquece de quem mora na <b>zona rural</b> — chegamos até você!</div>
 
     <div class="bv-escolha-ilustracao"><img src="${BV_ILUSTRACAO_VEICULOS}" alt="Veículos de entrega" class="bv-escolha-ilustracao-img"></div>
+
+    <div class="bv-features-row">
+      <div class="bv-feature-card">
+        <div class="bv-feature-titulo">Para o<b>Cliente</b></div>
+        <div class="bv-feature-valor"><span class="emoji">🛵</span> Entrega desde<br><b style="color:var(--mango)">R$ 3,00</b></div>
+      </div>
+      <div class="bv-feature-card">
+        <div class="bv-feature-titulo">Para o<b>Motorista</b></div>
+        <div class="bv-feature-valor"><span class="emoji">💰</span> Pagamento por<br><b style="color:var(--mango)">PIX ou saldo</b></div>
+      </div>
+      <div class="bv-feature-card">
+        <div class="bv-feature-titulo">Zona Rural<br>e <b>Cidade</b></div>
+        <div class="bv-feature-valor"><span class="emoji">✅</span> Sem<br><b style="color:var(--mango)">burocracia</b></div>
+      </div>
+    </div>
 
     <div class="bv-cta-grande">
       <button class="bv-cta-btn" onclick="iniciarPreparacaoBV('cliente')"><span class="emoji">📦</span> Sou Cliente</button>
@@ -3616,6 +3642,7 @@ function telaBoasVindas(){
 
     <div style="text-align:center;margin-bottom:18px"><a href="/entregaflash.apk" download class="btn-baixar-app">📲 Baixar aplicativo</a></div>
     <div class="bv-rodape">📍 Atendemos cidade, <span style="color:var(--mango)">zona rural</span>, sítios e fazendas</div>
+    <div class="bv-rodape-marca"><b>Rápido, Seguro e no Prazo!</b></div>
   </div>`;
 }
 function escolherBoasVindas(papel){
