@@ -43,6 +43,7 @@ fbq('track', 'PageView');
   html,body{margin:0;padding:0;background:var(--noite);color:var(--osso);font-family:'Karla',system-ui,sans-serif;-webkit-font-smoothing:antialiased;}
   body{min-height:100vh;}
   #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(circle at 15% 0%, rgba(255,201,60,0.06), transparent 40%),var(--noite);padding-bottom:20px;}
+
   header.topo{padding:20px 20px 16px;position:relative;text-align:center;}
   .btn-instalar-topo{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,201,60,0.35);background:rgba(255,201,60,0.12);color:var(--mango,#ffc93c);font-size:19.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
   .btn-instalar-topo:active{transform:scale(0.94);}
@@ -848,7 +849,7 @@ let estado = {
     }
   },
   admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
-    avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
+    avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false, divulgacaoLink:{ aberto:false, lista:[] } },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' }
 };
@@ -4650,6 +4651,7 @@ function render(){
     ${estado.feedback.aberto ? feedbackModalHTML() : ''}
     ${estado.semEndereco.aberto ? semEnderecoModalHTML() : ''}
     ${estado.contatoRapido.aberto ? contatoRapidoModalHTML() : ''}
+    ${estado.admin.divulgacaoLink?.aberto ? divulgacaoLinkModalHTML() : ''}
     ${estado.suporteAberto ? `
     <div class="modal-fundo" onclick="if(event.target===this) fecharSuporte()">
       <div class="modal-chat">
@@ -6057,8 +6059,78 @@ function adminAbaMotoristasHTML(){
     <div class="admin-grade-cartoes">${basicos.map(cardHTML).join('')}</div>` : ''}
     <div style="margin:${basicos.length>0?'18px':'4px'} 0 10px"><b style="font-family:'Rajdhani';font-weight:700;font-size:15px;text-transform:uppercase">📋 Pendentes de aprovação final${pendentes.length?` (${pendentes.length})`:''}</b></div>
     ${pendentes.length===0 ? `<div class="subtitulo">Nenhum cadastro pendente.</div>` : `<div class="admin-grade-cartoes">${pendentes.map(cardHTML).join('')}</div>`}
-    <div style="margin:18px 0 10px"><b style="font-family:'Rajdhani';font-weight:700;font-size:15px;text-transform:uppercase">👥 Gerenciar motoristas (${a.motoristas.length})</b></div>
+    <div style="margin:18px 0 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <b style="font-family:'Rajdhani';font-weight:700;font-size:15px;text-transform:uppercase">👥 Gerenciar motoristas (${a.motoristas.length})</b>
+      <button class="btn btn-primario btn-pequeno" style="margin-top:0" onclick="divulgarNovoLinkParaMotoristas()">📢 Divulgar novo link</button>
+    </div>
     <div class="admin-grade-cartoes">${a.motoristas.map(cardHTML).join('')}</div>`;
+}
+
+// Dispara no WhatsApp, um por um, uma mensagem pré-definida avisando os motoristas
+// cadastrados sobre o novo endereço (link) do site/app.
+function divulgarNovoLinkParaMotoristas(){
+  const linkAntigo = 'https://flashcred-sistema.onrender.com';
+  const linkNovo = 'https://entregaflash.app.br';
+  const motoristas = (estado.admin.motoristas||[]).filter(m=>m.telefone);
+  if(motoristas.length===0){ mostrarToast('Nenhum motorista cadastrado para avisar.', 'erro'); return; }
+
+  const montarMensagem = (nome)=>`🚀 *Entrega Flash - Novo endereço do app!*
+
+Fala${nome?`, ${nome}`:''}! Mudamos de casa 📦
+
+O link antigo (${linkAntigo}) não vai funcionar mais.
+
+A partir de agora, use este novo link:
+👉 ${linkNovo}
+
+Se você já tinha instalado o app antigo, é só:
+1️⃣ Apagar o atalho antigo da tela
+2️⃣ Abrir o link novo no navegador
+3️⃣ Tocar em "Adicionar à tela inicial"
+
+Qualquer dúvida, chama aqui! 🙌`;
+
+  estado.admin.divulgacaoLink = {
+    aberto: true,
+    lista: motoristas.map(m=>({
+      nome: m.nome||'',
+      telefone: m.telefone,
+      url: `https://wa.me/${(m.telefone||'').replace(/\D/g,'')}?text=${encodeURIComponent(montarMensagem(m.nome))}`,
+      enviado: false
+    }))
+  };
+  render();
+}
+function fecharDivulgacaoLink(){ estado.admin.divulgacaoLink = { aberto:false, lista:[] }; render(); }
+function marcarDivulgacaoEnviada(telefone){
+  const item = (estado.admin.divulgacaoLink?.lista||[]).find(x=>x.telefone===telefone);
+  if(item) item.enviado = true;
+  render();
+}
+function divulgacaoLinkModalHTML(){
+  const d = estado.admin.divulgacaoLink;
+  if(!d || !d.aberto) return '';
+  const pendentes = d.lista.filter(x=>!x.enviado).length;
+  return `
+  <div class="modal-fundo" onclick="if(event.target===this) fecharDivulgacaoLink()">
+    <div class="modal-caixa">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b style="font-family:'Rajdhani';font-weight:700;font-size:16px;text-transform:uppercase">📢 Divulgar novo link (${pendentes} pendente${pendentes===1?'':'s'})</b>
+        <button class="btn btn-pequeno" onclick="fecharDivulgacaoLink()">✕</button>
+      </div>
+      <div class="subtitulo" style="margin-bottom:10px">Toca em "Enviar" pra abrir o WhatsApp já com a mensagem pronta para cada motorista.</div>
+      <div style="max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px">
+        ${d.lista.map(item=>`
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px;border-radius:10px;background:${item.enviado?'rgba(0,200,120,0.12)':'rgba(255,255,255,0.04)'}">
+            <div style="min-width:0">
+              <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${item.nome||'(sem nome)'}</div>
+              <div style="font-size:12px;color:var(--poeira)">${item.telefone}</div>
+            </div>
+            <a href="${item.url}" target="_blank" class="btn ${item.enviado?'':'btn-primario'} btn-pequeno" style="margin-top:0;white-space:nowrap" onclick="marcarDivulgacaoEnviada('${item.telefone}')">${item.enviado?'✅ Enviado':'Enviar'}</a>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
 }
 function adminAbaSaquesHTML(){
   const saquesPendentes = (estado.admin.saques||[]).filter(s=>s.status==='pendente');
