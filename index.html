@@ -5654,14 +5654,10 @@ function render(){
       <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar</button>
     </div>` : ''}
     ${!estado.viaAnuncio ? `<div class="link-instalar" onclick="abrirComoInstalar()">📲 Como instalar o app</div>` : ''}
+    ${estado.modo==='cliente' ? `
+    <button class="btn btn-secundario" style="margin:10px 0 12px;width:100%;font-weight:700" onclick="abrirComoFunciona('cliente')">❓ Como funciona o Entrega Flash</button>` : ''}
     <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
     <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()">💬 Sugestões e Reclamações</button>
-    <div class="rodape-discreto">
-      <span onclick="abrirComoFunciona('${estado.modo==='cliente'?'cliente':'motorista'}')">como funciona o app</span>
-      <span>·</span>
-      <span onclick="carregarPedidos()">↻ atualizar</span>
-    </div>
-    <div class="admin-link" onclick="abrirAdmin()">painel administrativo</div>
     ${estado.modo==='entregador' && estado.motorista.ativo ? `
     <div class="sos-flutuante" title="SOS — veículo quebrado / pedir ajuda" onclick="abrirSOSFlutuante()"><span class="emoji">🆘</span>SOS</div>` : ''}
     ${estado.modo==='cliente' && estado.cliente.logado ? `
