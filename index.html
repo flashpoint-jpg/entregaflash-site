@@ -6892,6 +6892,38 @@ function resumoMotoristasPorCidadeHTML(motoristas){
       </div>
     </div>`;
 }
+function resumoCidadesAdminPrincipalHTML(motoristas){
+  const grupos={};
+  (motoristas||[]).forEach(m=>{
+    const cidade=normalizarCidadePainel(m.cidade);
+    if(!grupos[cidade]) grupos[cidade]={total:0,ativos:0,online:0};
+    grupos[cidade].total++;
+    if(m.status==='aprovado') grupos[cidade].ativos++;
+    if(m.disponivel && m.status==='aprovado') grupos[cidade].online++;
+  });
+  const cidades=Object.entries(grupos).sort((a,b)=>b[1].total-a[1].total || a[0].localeCompare(b[0]));
+  if(!cidades.length) return '';
+  return `
+    <div class="admin-cartao" style="margin-bottom:14px;border:2px solid rgba(255,201,60,.7);background:linear-gradient(135deg,rgba(255,201,60,.10),var(--painel))">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <div>
+          <b style="display:block;font-family:'Rajdhani';font-size:18px;font-weight:900;text-transform:uppercase;color:var(--mango)">📍 Motoristas por cidade</b>
+          <span style="font-size:12px;color:var(--poeira)">Visão rápida da sua operação</span>
+        </div>
+        <button onclick="mudarAbaAdmin('motoristas')" style="border:1px solid var(--mango);background:rgba(255,201,60,.12);color:var(--mango);border-radius:18px;padding:7px 11px;font-weight:800;cursor:pointer">Ver detalhes →</button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:9px">
+        ${cidades.map(([cidade,g])=>`
+          <div style="background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px;padding:11px 10px;text-align:center">
+            <div style="font-size:12.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${cidade}">${cidade}</div>
+            <div style="font-family:'Rajdhani';font-size:32px;line-height:1.05;font-weight:900;color:var(--osso);margin:4px 0 2px">${g.total}</div>
+            <div style="font-size:10.5px;color:var(--poeira)">motorista${g.total===1?'':'s'}</div>
+            <div style="font-size:10.5px;color:var(--poeira);margin-top:4px">✅ ${g.ativos} ativos · 🟢 ${g.online} online</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+
 function abrirWhatsAppLembreteDocumentos(telefone,nome){
   const numero=String(telefone||'').replace(/\D/g,'');
   const numeroBR=numero.startsWith('55')?numero:'55'+numero;
@@ -7232,6 +7264,7 @@ function adminAbaResumoHTML(){
       <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra ao vivo: 🟢 motoristas disponíveis, 🟠 motoristas em corrida e 🔵 clientes aguardando.</div>
       ${motoristasSemLocalizacao.length>0 ? `<div class="cf-nota" style="background:rgba(255,147,48,0.12);border:1px solid rgba(255,147,48,0.35);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-top:10px">⚠️ ${motoristasSemLocalizacao.length} motorista${motoristasSemLocalizacao.length>1?'s estão':' está'} online mas sem localização recente:<br>${motoristasSemLocalizacao.map(m=>`• ${m.nome||m.telefone}${m.telefone?` (${m.telefone})`:''}`).join('<br>')}</div>` : ''}
     </div>
+    ${resumoCidadesAdminPrincipalHTML(a.motoristas)}
     <div class="cf-nota" style="background:rgba(127,174,114,0.1);border:1px solid rgba(127,174,114,0.3);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-bottom:14px">
       ✅ A carteira do cliente agora é 100% automática: o cliente gera o Pix, paga, e o saldo cai sozinho (via webhook do Mercado Pago) — sem precisar de nada manual. Se algum caso específico der problema, ainda dá pra creditar na mão pela aba "👤 Clientes".
     </div>
