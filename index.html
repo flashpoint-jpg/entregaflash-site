@@ -6518,15 +6518,59 @@ async function continuarParaDocumentos(){
 async function salvarEtapaCadastro(campos){
   const c = estado.painelMotorista.cadastro;
   const agora = Date.now();
+
+  // IMPORTANTE: depois do pré-cadastro, as etapas seguintes devem ATUALIZAR
+  // o mesmo motorista. Usar upsert com um objeto parcial fazia o Postgres
+  // tentar um INSERT sem senha_hash antes de resolver o conflito, e a coluna
+  // senha_hash é NOT NULL. Por isso aparecia o erro do print.
+  let existente = null;
+  try{
+    if(c.id){
+      const r = await sb.from('entrega_motoristas').select('id,criado_em').eq('id', c.id).maybeSingle();
+      if(r.error && r.error.code!=='PGRST116') throw r.error;
+      existente = r.data || null;
+    }
+    if(!existente && c.telefone){
+      const r = await sb.from('entrega_motoristas').select('id,criado_em').eq('telefone', c.telefone).maybeSingle();
+      if(r.error && r.error.code!=='PGRST116') throw r.error;
+      existente = r.data || null;
+    }
+  }catch(e){
+    console.error('Erro ao localizar cadastro existente:', e);
+  }
+
+  if(existente){
+    c.id = existente.id;
+    c.criadoEm = c.criadoEm || existente.criado_em || agora;
+    const atualizacao = { atualizado_em: agora, ...campos };
+    if(c.nome && atualizacao.nome===undefined) atualizacao.nome = c.nome;
+    if(c.cpf && atualizacao.cpf===undefined) atualizacao.cpf = c.cpf;
+    if(c.telefone && atualizacao.telefone===undefined) atualizacao.telefone = c.telefone;
+    if(c.cidade && atualizacao.cidade===undefined) atualizacao.cidade = c.cidade;
+    // Só toca na senha quando uma nova senha/hash realmente foi informada.
+    if(c.senhaHash && atualizacao.senha_hash===undefined) atualizacao.senha_hash = c.senhaHash;
+
+    const { error } = await sb.from('entrega_motoristas').update(atualizacao).eq('id', c.id);
+    if(error){ console.error(error); mostrarToast('Erro ao atualizar o cadastro: '+(error.message||''), 'erro'); return false; }
+    return true;
+  }
+
+  // Primeiro cadastro: aqui sim criamos a linha completa, incluindo senha_hash.
   if(!c.id){ c.id = 'mot'+agora+Math.floor(Math.random()*1000); }
-  const base = { id:c.id, criado_em: c.criadoEm||agora, atualizado_em: agora };
-  if(c.nome) base.nome = c.nome;
-  if(c.cpf) base.cpf = c.cpf;
-  if(c.telefone) base.telefone = c.telefone;
-  if(c.cidade) base.cidade = c.cidade;
-  if(c.senhaHash) base.senha_hash = c.senhaHash;
-  const linha = Object.assign(base, campos);
-  const { error } = await sb.from('entrega_motoristas').upsert(linha);
+  const linha = { id:c.id, criado_em:c.criadoEm||agora, atualizado_em:agora };
+  if(c.nome) linha.nome = c.nome;
+  if(c.cpf) linha.cpf = c.cpf;
+  if(c.telefone) linha.telefone = c.telefone;
+  if(c.cidade) linha.cidade = c.cidade;
+  if(c.senhaHash) linha.senha_hash = c.senhaHash;
+  Object.assign(linha, campos);
+
+  if(!linha.senha_hash){
+    mostrarToast('Não foi possível criar o cadastro porque a senha não foi carregada. Volte ao início e informe a senha novamente.', 'erro');
+    return false;
+  }
+
+  const { error } = await sb.from('entrega_motoristas').insert(linha);
   if(error){ console.error(error); mostrarToast('Erro ao gravar o cadastro: '+(error.message||''), 'erro'); return false; }
   c.criadoEm = c.criadoEm || agora;
   return true;
