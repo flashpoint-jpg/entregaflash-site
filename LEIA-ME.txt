@@ -1,15 +1,13 @@
-ENTREGAS FLASH ADMIN
+ENTREGA FLASH ADMIN PWA - PAINEL CORRETO
 
-Arquivos:
-- admin.html: seu painel atual preparado como PWA separado
-- manifest-admin.json: identidade/instalação do app
-- sw-admin.js: service worker do app
-- icon-admin-192.png / icon-admin-512.png: ícones
+Este pacote usa o painel administrativo real do Entrega Flash, com motoristas, clientes, pedidos, mapa, alertas, saques e suporte.
+Não usa o painel FlashCred.
 
-Como publicar:
-1. Envie estes arquivos para uma pasta exclusiva, por exemplo /admin/ no seu site.
-2. Abra https://seu-dominio/admin/admin.html no Android/Chrome.
-3. Use “Adicionar à tela inicial” / “Instalar app”.
-4. Não coloque link para essa pasta na página pública.
+Publicação no Vercel:
+- envie todos os arquivos desta pasta juntos;
+- para acessar: /admin.html;
+- se publicar em um projeto separado, a raiz / também abre o painel (index.html).
 
-Segurança: esconder o endereço não substitui autenticação. Mantenha a senha/login do painel e, idealmente, valide o admin no Supabase antes de carregar os dados.
+Login:
+- usa a mesma função do Supabase já existente no Entrega Flash: entrega_verificar_senha_admin;
+- não usa /api/verificar-senha-admin do FlashCred.

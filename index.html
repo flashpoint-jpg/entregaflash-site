@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Entrega</title>
-<link rel="manifest" href="entregaflash-manifest.json">
+<title>Entrega Flash | Painel Administrativo</title>
+<link rel="manifest" href="manifest-admin.json">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -13,8 +13,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Entrega Flash">
-<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-title" content="Entrega Flash Admin">
+<link rel="apple-touch-icon" href="icon-admin-192.png">
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -462,7 +462,6 @@ fbq('track', 'PageView');
   .sos-flutuante{position:fixed;right:16px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:60;width:60px;height:60px;border-radius:50%;background:var(--chama);color:#fff;border:3px solid rgba(255,255,255,0.85);box-shadow:0 4px 16px rgba(0,0,0,0.35);font-family:'Rajdhani';font-weight:700;font-size:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05;cursor:pointer;animation:sos-pulso 2s ease-in-out infinite;}
   .sos-flutuante .emoji{font-size:19px;}
   @keyframes sos-pulso{0%{box-shadow:0 0 0 0 rgba(255,90,60,0.55);}70%{box-shadow:0 0 0 12px rgba(255,90,60,0);}100%{box-shadow:0 0 0 0 rgba(255,90,60,0);}}
-  .sos-cliente-tela{position:fixed;inset:0;z-index:1000001;background:rgba(190,20,20,.97);color:#fff;display:flex;align-items:center;justify-content:center;padding:22px;text-align:center;animation:sosTelaEntrada .18s ease-out}.sos-cliente-caixa{max-width:520px}.sos-cliente-icone{font-size:72px;line-height:1}.sos-cliente-titulo{font-family:'Rajdhani';font-size:34px;font-weight:900;margin:12px 0 8px}.sos-cliente-msg{font-size:17px;line-height:1.45}.sos-cliente-tela .btn{background:#fff;color:#a10d0d;border-color:#fff;margin-top:18px}.sos-cliente-tela .btn-secundario{background:transparent;color:#fff;border-color:#fff}@keyframes sosTelaEntrada{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
   .rodape-discreto{display:flex;justify-content:center;align-items:center;gap:8px;font-size:11.5px;color:var(--linha);margin:16px 0 2px;}
   .rodape-discreto span{cursor:pointer;user-select:none;}
   .rodape-discreto span:hover{color:var(--poeira);}
@@ -653,6 +652,7 @@ fbq('track', 'PageView');
 
 .campo-com-voz{display:flex;align-items:stretch;gap:8px;margin-bottom:10px}.campo-com-voz input{flex:1;min-width:0;margin-bottom:0}.btn-voz{width:48px;min-width:48px;border-radius:11px;border:1px solid var(--linha);background:var(--painel-alt);color:var(--osso);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}.btn-voz.ouvindo{background:var(--mango);color:#1b1b1b;animation:pulsoVoz 1s infinite}.voz-endereco-ajuda{font-size:12.5px;line-height:1.45;color:var(--poeira);background:var(--painel-alt);border:1px solid var(--linha);border-radius:10px;padding:9px 10px;margin:0 0 12px}.linha-parada .campo-com-voz{flex:1;margin:0;min-width:0}.linha-parada .campo-com-voz input{width:100%}@keyframes pulsoVoz{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
 </style>
+<!-- build: Entrega Flash Admin PWA dedicado -->
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -696,97 +696,6 @@ fbq('track', 'PageView');
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ---- Presença em tempo real do site (contador no painel admin) ----
-const EF_PRESENCA_CANAL = 'entregaflash_site_online_v1';
-const EF_SESSAO_ID = (crypto?.randomUUID ? crypto.randomUUID() : ('ef-'+Date.now()+'-'+Math.random().toString(36).slice(2)));
-let efPresencaChannel = null;
-let efPresencaTipo = 'visitante';
-let efOnlineResumo = { total:0, visitantes:0, clientes:0, motoristas:0, admin:0, sessoes:[] };
-
-function tipoPresencaAtual(){
-  try{
-    if(estado?.admin?.logado) return 'admin';
-    if(estado?.motorista?.logado || estado?.painelMotorista?.motoristaLogado) return 'motorista';
-    if(estado?.cliente?.logado) return 'cliente';
-  }catch(e){}
-  return efPresencaTipo || 'visitante';
-}
-
-function recalcularPresencaSite(){
-  if(!efPresencaChannel) return;
-  try{
-    const st = efPresencaChannel.presenceState();
-    const sessoes = [];
-    Object.values(st||{}).forEach(lista=>{
-      (lista||[]).forEach(p=>sessoes.push(p));
-    });
-    const agora = Date.now();
-    const unicas = new Map();
-    sessoes.forEach(p=>{
-      const id = p.sessao || p.presence_ref || Math.random().toString(36);
-      unicas.set(id,p);
-    });
-    const arr = [...unicas.values()];
-    efOnlineResumo = {
-      total: arr.length,
-      visitantes: arr.filter(x=>x.tipo==='visitante').length,
-      clientes: arr.filter(x=>x.tipo==='cliente').length,
-      motoristas: arr.filter(x=>x.tipo==='motorista').length,
-      admin: arr.filter(x=>x.tipo==='admin').length,
-      sessoes: arr.map(x=>({tipo:x.tipo||'visitante', pagina:x.pagina||'', entrou_em:x.entrou_em||agora}))
-    };
-    if(typeof atualizarContadorOnlineAdmin === 'function') atualizarContadorOnlineAdmin();
-  }catch(e){ console.warn('presença:',e); }
-}
-
-async function iniciarPresencaSite(){
-  if(efPresencaChannel) return;
-  try{
-    efPresencaChannel = sb.channel(EF_PRESENCA_CANAL, { config:{ presence:{ key:EF_SESSAO_ID } } });
-    efPresencaChannel
-      .on('presence',{event:'sync'},recalcularPresencaSite)
-      .on('presence',{event:'join'},recalcularPresencaSite)
-      .on('presence',{event:'leave'},recalcularPresencaSite)
-      .subscribe(async status=>{
-        if(status==='SUBSCRIBED'){
-          await efPresencaChannel.track({
-            sessao:EF_SESSAO_ID,
-            tipo:tipoPresencaAtual(),
-            pagina:location.pathname || '/',
-            entrou_em:Date.now(),
-            user_agent:navigator.userAgent.slice(0,120)
-          });
-        }
-      });
-  }catch(e){ console.warn('Não foi possível iniciar presença em tempo real',e); }
-}
-
-async function atualizarPresencaSite(tipo){
-  efPresencaTipo = tipo || tipoPresencaAtual();
-  if(!efPresencaChannel){ iniciarPresencaSite(); return; }
-  try{
-    await efPresencaChannel.track({
-      sessao:EF_SESSAO_ID,
-      tipo:tipoPresencaAtual(),
-      pagina:location.pathname || '/',
-      entrou_em:Date.now(),
-      user_agent:navigator.userAgent.slice(0,120)
-    });
-  }catch(e){}
-}
-
-function atualizarContadorOnlineAdmin(){
-  const el = document.getElementById('ef-online-total');
-  if(el) el.textContent = String(efOnlineResumo.total||0);
-  const det = document.getElementById('ef-online-detalhes');
-  if(det) det.textContent = `${efOnlineResumo.visitantes||0} visitantes • ${efOnlineResumo.clientes||0} clientes • ${efOnlineResumo.motoristas||0} motoristas`;
-}
-
-window.addEventListener('DOMContentLoaded',()=>setTimeout(iniciarPresencaSite,700));
-window.addEventListener('beforeunload',()=>{ try{ efPresencaChannel?.untrack(); }catch(e){} });
-document.addEventListener('visibilitychange',()=>{ if(!document.hidden) atualizarPresencaSite(tipoPresencaAtual()); });
-
 const FUNCOES_URL = SUPABASE_URL + '/functions/v1';
 const VAPID_PUBLIC_KEY = 'BBBzZ91h6R8yKe4HJSsYcC8IXaTVNtlAXNb_dQPENNGI0f9zKebPq2JKl49pjTFnNHA9Ki4mvMxTQTI3wPv6Dds';
 function esconderSplash(){
@@ -819,40 +728,6 @@ let PLANOS = {
   free:{ label:'Free', preco:0, taxaPlataforma:0.42, limiteMensal:10, saqueDias:7, prioridade:false, limiteCancelamentosDia:3, limiteSimultaneo:3 },
   pro:{ label:'Pro', preco:19.99, taxaPlataforma:0.30, limiteMensal:null, saqueDias:0, prioridade:true, limiteCancelamentosDia:10, limiteSimultaneo:15 }
 };
-// ---------- campanha Motorista Fundador ----------
-// Todos os motoristas reais, inclusive os já cadastrados, recebem o selo Fundador.
-// A partir de 27/08/2026, cada motorista tem 10 entregas com 100% do valor (sem comissão da plataforma).
-// Depois das 10 entregas promocionais, a comissão normal do plano volta automaticamente.
-const MOTORISTA_FUNDADOR_INICIO = Date.parse('2026-08-27T00:00:00-03:00');
-const MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA = 10;
-
-function motoristaEhFundador(m=estado.motorista){
-  return !!(m && m.ativo && !m.visitante && m.telefone && m.fundador_ativo!==false);
-}
-function limiteFundadorMotorista(m=estado.motorista){ return Math.max(0, Number(m?.fundador_limite ?? MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA)); }
-function inicioFundadorMotorista(m=estado.motorista){ return Number(m?.fundador_inicio || MOTORISTA_FUNDADOR_INICIO); }
-function entregasConcluidasMotorista(telefone){
-  return estado.pedidos.filter(p=>p.status==='entregue' && p.motoristaTelefone===telefone && Number(p.atualizadoEm || p.criadoEm || 0) >= inicioFundadorMotorista());
-}
-function ordemEntregaMotorista(pedido, m=estado.motorista){
-  if(!pedido || !m || !m.telefone) return entregasConcluidasMotorista(m?.telefone||'').length + 1;
-  const ref = Number(pedido.atualizadoEm || pedido.criadoEm || Date.now());
-  const antes = estado.pedidos.filter(x=>
-    x.id!==pedido.id && x.status==='entregue' && x.motoristaTelefone===m.telefone &&
-    Number(x.atualizadoEm || x.criadoEm || 0) < ref
-  ).length;
-  return antes + 1;
-}
-function pedidoTemBeneficioFundador(pedido, m=estado.motorista){
-  if(!motoristaEhFundador(m)) return false;
-  if(pedido) return ordemEntregaMotorista(pedido,m) <= limiteFundadorMotorista(m);
-  return entregasConcluidasMotorista(m.telefone).length < limiteFundadorMotorista(m);
-}
-function corridasFundadorRestantes(m=estado.motorista){
-  if(!motoristaEhFundador(m)) return 0;
-  return Math.max(0, limiteFundadorMotorista(m) - entregasConcluidasMotorista(m.telefone).length);
-}
-
 let ATRASO_PRIORIDADE_PRO_MS = 45000; // motoristas Free só veem o pedido 45s depois dos Pro
 let RAIO_GEOFENCE_KM = 0.15; // 150m — distância máxima do endereço para poder coletar/finalizar
 let TAXA_PRIORIDADE_VALOR = 12; // R$ acrescidos numa entrega prioritária (nível 1 — os demais níveis são múltiplos deste valor)
@@ -1059,8 +934,6 @@ let estado = {
   semEndereco:{ aberto:false, campo:'origem', mapsLink:'', plusCode:'', erro:'', enviandoFoto:false },
   calculando:false, falhaCalculo:false,
   transicaoPedido:{ ativa:false, alvo:null },
-  pedidoBuscandoId:null,
-  sosClienteAtivo:false,
   carregando:{}, // chave->bool: controla a bolinha de "processando" de cada botão de ação
   modalConfirmar:null, // { mensagem, tituloBotaoOk } — substitui o confirm() nativo do navegador
   toastTipo:'info',
@@ -1074,7 +947,7 @@ let estado = {
     loginTelefone:'', loginErro:'',
     cadastro:{ nome:'', telefone:'', senha:'', erro:'' }
   },
-  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null },
+  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null },
   trocaPlanoMotorista:{ aberto:false, gerando:false, erro:'', motoristaId:null, cpf:'', qrCode:null, copiaCola:null, status:'pendente' },
   chamadosAmigo:[], // chamados de SOS "motorista amigo" em aberto (carregados quando motorista está disponível)
   chamadoAmigoModal:{ aberto:false, pedidoId:null, percentual:10, enviando:false },
@@ -1286,6 +1159,10 @@ function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
 // cadastro em andamento) direto do localStorage, sem precisar esperar nenhuma consulta ao
 // banco — evita o "pisca" da tela de boas-vindas aparecendo por um instante e depois trocando.
 function aplicarEstadoInicialSincrono(){
+  // App administrativo dedicado: abre sempre o painel do Entrega Flash.
+  estado.admin.aberto = true;
+  estado.telaBoasVindas = false;
+  salvarLocal('ef_admin_aberto','true');
   try{
     const modoSalvo = localStorage.getItem('ef_modo');
     if(modoSalvo==='cliente' || modoSalvo==='entregador'){ estado.modo = modoSalvo; estado.telaBoasVindas = false; }
@@ -1312,7 +1189,7 @@ async function restaurarSessao(){
           nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:localStorage.getItem('ef_motorista_disponivel')==='true',
           veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
           fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
-          notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null
+          notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null
         };
         if(estado.motorista.disponivel && estado.motorista.status==='aprovado') iniciarRastreioMotorista();
         atualizarDisponibilidadeDB(estado.motorista.telefone, estado.motorista.disponivel);
@@ -1416,12 +1293,7 @@ function precoDeDistancia(veiculo, km, roca){
   const taxaKm = (roca && v.kmRoca!=null) ? v.kmRoca : v.km;
   return Math.round(Math.max(v.minimo||0, taxaKm*km)*100)/100;
 }
-function ganhoMotorista(preco, pedido=null){
-  const plano = PLANOS[estado.motorista.plano] || PLANOS.free;
-  // Fundador recebe 100% nas 10 primeiras entregas; depois volta à comissão normal do plano.
-  if(pedidoTemBeneficioFundador(pedido, estado.motorista)) return Math.round(Number(preco||0)*100)/100;
-  return Math.round(Number(preco||0)*(1-plano.taxaPlataforma)*100)/100;
-}
+function ganhoMotorista(preco){ const plano = PLANOS[estado.motorista.plano] || PLANOS.free; return Math.round(preco*(1-plano.taxaPlataforma)*100)/100; }
 
 // ---------- preenchimento automático de endereço ----------
 async function usarLocalizacaoAtualComoCampo(campo){
@@ -1709,9 +1581,8 @@ function tocarSomNovoPedido(){
   if(navigator.vibrate) navigator.vibrate([90,60,90,60,90]);
 }
 function dispararAlertaMotorista(pedido){
-  // Não renderiza aqui: carregarPedidos() fará um único render ao final da atualização.
-  // Isso evita dois redesenhos seguidos justamente quando o motorista aceita a corrida.
   estado.alertaMotorista = { nome: pedido.motoristaNome||'Um entregador', pedidoId: pedido.id };
+  render();
   tocarSomAlerta();
   clearTimeout(window._alertaMotoristaTimer);
   window._alertaMotoristaTimer = setTimeout(()=>{ estado.alertaMotorista=null; render(); }, 7000);
@@ -1733,7 +1604,6 @@ function detectarMotoristaEncontrado(novos){
     // mostravam "Entregador encontrado!" mesmo quando ninguém tinha aceitado — por isso o
     // "np.status!=='cancelado'" abaixo, pra só disparar esse alerta quando é uma aceitação de verdade.
     if(anterior==='buscando' && np.status!=='buscando' && np.status!=='cancelado'){
-      if(estado.pedidoBuscandoId===np.id) estado.pedidoBuscandoId=null;
       dispararAlertaMotorista(np);
       notificar('Entregador encontrado!', `${np.motoristaNome||'Um entregador'} vai levar o seu pedido. Você tem ${Math.round(JANELA_CANCELAMENTO_MS/60000)} min pra cancelar sem custo.`, 'pedido-'+np.id);
     } else if(anterior && anterior!=='buscando' && np.status==='buscando' && np.canceladoPor==='motorista'){
@@ -1865,21 +1735,7 @@ function pedidoSemPosicao(p){
   delete c.motoristaCoord; delete c.atualizadoEm;
   return c;
 }
-let _carregarPedidosEmAndamento = false;
-let _carregarPedidosPendente = false;
-let _carregarPedidosTimer = null;
-
-function agendarCarregarPedidos(delay=180){
-  clearTimeout(_carregarPedidosTimer);
-  _carregarPedidosTimer = setTimeout(()=>carregarPedidos(), delay);
-}
-
 async function carregarPedidos(){
-  if(_carregarPedidosEmAndamento){
-    _carregarPedidosPendente = true;
-    return;
-  }
-  _carregarPedidosEmAndamento = true;
   try{
     await verificarBloqueioAtivo();
     const {data,error} = await sb.from('entrega_pedidos').select('*').order('criado_em',{ascending:false});
@@ -1917,12 +1773,6 @@ async function carregarPedidos(){
   }catch(e){
     console.error(e);
     if(!estado.erroMostrado){ estado.erroMostrado=true; mostrarToast('Falha de ligação à internet ou à base de dados.', 'erro'); }
-  }finally{
-    _carregarPedidosEmAndamento = false;
-    if(_carregarPedidosPendente){
-      _carregarPedidosPendente = false;
-      agendarCarregarPedidos(120);
-    }
   }
 }
 // atualiza só os marcadores dos mapas já abertos na tela (sem tocar no resto do DOM) —
@@ -1967,7 +1817,7 @@ let canalPedidosRealtime = null;
 function assinarPedidosRealtime(){
   if(canalPedidosRealtime) return;
   canalPedidosRealtime = sb.channel('pedidos-realtime')
-    .on('postgres_changes', {event:'*', schema:'public', table:'entrega_pedidos'}, ()=>{ agendarCarregarPedidos(180); })
+    .on('postgres_changes', {event:'*', schema:'public', table:'entrega_pedidos'}, ()=>{ carregarPedidos(); })
     .subscribe();
 }
 
@@ -2102,9 +1952,7 @@ function assinarMotoristaLogadoRealtime(telefone){
 async function carregarChamadosAmigo(){
   const { data, error } = await sb.from('entrega_chamados_amigo').select('*').eq('status','aberto').order('criado_em',{ascending:false});
   if(error){ console.error(error); return; }
-  const novaLista=data||[];
-  if(JSON.stringify(novaLista)===JSON.stringify(estado.chamadosAmigo||[])) return;
-  estado.chamadosAmigo = novaLista;
+  estado.chamadosAmigo = data||[];
   render();
 }
 function encerrarMotoristaLogadoRealtime(){
@@ -2426,9 +2274,8 @@ async function carregarSuporteAdmin(){
   });
   render();
 }
-async function abrirSuporteAdmin(telefone, nome){
+async function abrirSuporteAdmin(telefone){
   estado.admin.suporteAbertoTelefone = telefone;
-  estado.admin.suporteNomeAberto = nome || (estado.admin.motoristas||[]).find(m=>m.telefone===telefone)?.nome || '';
   estado.admin.suporteMensagensAdmin = await carregarMensagensSuporte(telefone);
   await sb.from('entrega_suporte').update({lido:true}).eq('motorista_telefone',telefone).eq('remetente_tipo','motorista').eq('lido',false);
   assinarSuporteAdmin(telefone);
@@ -2468,9 +2315,7 @@ async function enviarMensagemSuporteAdmin(){
   if(!texto || !tel) return;
   input.value='';
   const conversa = (estado.admin.suporteConversas||[]).find(c=>c.telefone===tel);
-  const motoristaCadastro = (estado.admin.motoristas||[]).find(m=>m.telefone===tel);
-  const nomeMotorista = (conversa&&conversa.nome) || (motoristaCadastro&&motoristaCadastro.nome) || estado.admin.suporteNomeAberto || '';
-  const { error } = await sb.from('entrega_suporte').insert({ motorista_telefone:tel, motorista_nome:nomeMotorista, remetente_tipo:'admin', texto, lido:false, criado_em:Date.now() });
+  const { error } = await sb.from('entrega_suporte').insert({ motorista_telefone:tel, motorista_nome:conversa?conversa.nome:'', remetente_tipo:'admin', texto, lido:false, criado_em:Date.now() });
   if(error){ console.error(error); mostrarErro('Não consegui enviar. Tenta de novo.'); input.value = texto; return; }
   enviarPushServidor('motorista', tel, '💬 Resposta do suporte', texto);
 }
@@ -2549,8 +2394,6 @@ const INFO_TIPO_ALERTA = {
   avaliacao_recebida: { emoji:'⭐', titulo:'Nova avaliação de motorista' },
   saque_solicitado: { emoji:'💸', titulo:'Novo pedido de saque' },
   saque_falhou: { emoji:'⚠️', titulo:'Saque automático falhou' },
-  sos_cliente: { emoji:'🆘', titulo:'SOS de cliente' },
-  chamado_motorista_amigo: { emoji:'🆘', titulo:'Motorista precisa de ajuda' },
   feedback_recebido: { emoji:'💬', titulo:'Sugestão ou reclamação recebida' },
   fraude_distancia: { emoji:'🚨', titulo:'Possível fraude de distância' },
   distancia_divergente: { emoji:'⚠️', titulo:'Distância divergente confirmada' },
@@ -2828,15 +2671,7 @@ async function exigirLocalizacaoOperacional(tipo){
   return await new Promise(resolve=>{
     navigator.geolocation.getCurrentPosition(
       pos=>{
-        try{
-          const lat = pos.coords.latitude, lon = pos.coords.longitude;
-          estado.ultimaLocalizacao = { lat, lng:lon };
-          // A mesma posição precisa alimentar o rastreio do motorista.
-          // Antes ela ficava só em estado.ultimaLocalizacao e o mapa do admin
-          // dependia de ultimaPosicaoMotorista, por isso o motorista podia ficar
-          // "online" com lat/lng vazios no banco.
-          ultimaPosicaoMotorista = { lat, lon };
-        }catch(e){}
+        try{ estado.ultimaLocalizacao = { lat:pos.coords.latitude, lng:pos.coords.longitude }; }catch(e){}
         resolve(true);
       },
       err=>{
@@ -2862,7 +2697,16 @@ async function criarPedido(){
     return;
   }
   // Segurança no ponto certo do funil: cliente pode navegar, calcular e preencher sem câmera.
-  // Cliente confirma a corrida sem validação facial.
+  // A facial é obrigatória somente quando uma conta autenticada confirma uma corrida real.
+  if(estado.cliente.logado && estado.cliente.telefone){
+    const { data: contaFacial, error: erroFacial } = await sb.from('entrega_clientes').select('*').eq('telefone', estado.cliente.telefone).maybeSingle();
+    if(erroFacial || !contaFacial){ mostrarToast('Não consegui validar sua conta. Entre novamente.', 'erro'); return; }
+    const facialPedido = await exigirFacialDaConta('cliente', contaFacial);
+    if(!facialPedido.ok){
+      mostrarToast(facialPedido.cancelado ? 'Validação facial necessária para confirmar a corrida.' : (facialPedido.erro||'Não foi possível confirmar seu rosto.'), 'erro');
+      return;
+    }
+  }
   if(!(await exigirLocalizacaoOperacional('cliente'))) return;
   const f = estado.form;
   if(!f.nome||!f.telefone||!f.origem||!f.destino){ mostrarToast('Preenche nome, telefone, recolha e destino.'); return; }
@@ -2957,16 +2801,19 @@ async function criarPedido(){
   // cartão do pedido — o que fazia parecer que o fluxo "voltava pro início" — usamos a
   // mesma transição das outras etapas: o cliente confirma e cai direto na tela de
   // "buscando um entregador", sem ver o formulário vazio no meio do caminho.
-  estado.transicaoPedido = { ativa:false, alvo:null };
-  estado.pedidoBuscandoId = pedido.id;
-  estado.abaPedidosCliente = 'ativos';
-  estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', destinoFotoUrl:null, destinoReferencia:'', roca:false, extras:extrasVazios() };
-  // Mostra uma tela persistente de busca. Ela só sai quando o cliente escolher ver os pedidos
-  // ou quando o realtime informar que um motorista aceitou.
-  estado.pedidos = [pedido, ...estado.pedidos.filter(x=>x.id!==pedido.id)];
+  estado.transicaoPedido = { ativa:true, alvo:'buscando' };
   render();
-  mostrarToast(f.tipoRetirada==='agendado' ? 'Pedido agendado com sucesso!' : 'Pedido criado! Buscando um motorista...', 'sucesso');
-  await carregarPedidos();
+  setTimeout(async ()=>{
+    estado.transicaoPedido = { ativa:false, alvo:null };
+    estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', destinoFotoUrl:null, destinoReferencia:'', roca:false, extras:extrasVazios() };
+    mostrarToast(f.tipoRetirada==='agendado' ? 'Pedido agendado com sucesso!' : 'Pedido criado! Buscando um entregador...', 'sucesso');
+    estado.abaPedidosCliente = 'ativos';
+    await carregarPedidos();
+    setTimeout(()=>{
+      const cartaoNovoPedido = document.getElementById('pedido-'+pedido.id);
+      if(cartaoNovoPedido) cartaoNovoPedido.scrollIntoView({behavior:'smooth', block:'start'});
+    }, 60);
+  }, 900);
 }
 
 // ---------- múltiplas paradas de entrega ----------
@@ -3529,7 +3376,7 @@ async function avancarStatus(id){
       registrarAlertaAdmin('pedido_entregue', `Pedido de ${p.clienteNome||'?'} entregue por ${p.motoristaNome||'?'} (${p.motoristaTelefone||''}) · R$ ${Number(p.preco||0).toFixed(2)}.`, id);
       const aindaAtivos = estado.pedidos.some(x=>x.id!==id && x.motoristaTelefone===p.motoristaTelefone && x.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(x.status));
       if(!aindaAtivos) pararRastreioMotorista();
-      const ganhoTotal = ganhoMotorista(p.preco,p);
+      const ganhoTotal = ganhoMotorista(p.preco);
       if(p.motoristaAmigoSolicitante && p.motoristaAmigoPercentual!=null){
         // entrega assumida via "motorista amigo" — divide entre quem pediu ajuda e quem ajudou
         const valorSolicitante = Math.round(ganhoTotal * (p.motoristaAmigoPercentual/100) * 100)/100;
@@ -4190,7 +4037,7 @@ function cartaoPedidoDisponivel(p){
   return `
   <div class="pedido${destaqueAlto?' pedido-prioridade-alta':''}">
     <div class="vitais">
-      <div class="vital vital-ganho"><div class="vital-num">R$ ${ganhoMotorista(p.preco,p).toFixed(0)}</div><div class="vital-rot">Você ganha</div></div>
+      <div class="vital vital-ganho"><div class="vital-num">R$ ${ganhoMotorista(p.preco).toFixed(0)}</div><div class="vital-rot">Você ganha</div></div>
       ${p.distanciaAteMim!=null ? `<div class="vital"><div class="vital-num">${p.distanciaAteMim.toFixed(1)}km</div><div class="vital-rot">Até a recolha</div></div>` : ''}
       <div class="vital"><div class="vital-num">${p.distancia}km</div><div class="vital-rot">Trajeto total</div></div>
     </div>
@@ -4244,7 +4091,7 @@ function cartaoPedidoAtivo(p){
   <div class="pedido">
     <div class="linha-topo">
       <div class="end"><b>Recolha</b>${p.origem}<b style="margin-top:8px">Entrega</b>${p.destino}</div>
-      <div class="preco">R$ ${p.preco.toFixed(2)}<span class="ganho">você recebe R$ ${ganhoMotorista(p.preco,p).toFixed(2)}</span></div>
+      <div class="preco">R$ ${p.preco.toFixed(2)}<span class="ganho">você recebe R$ ${ganhoMotorista(p.preco).toFixed(2)}</span></div>
     </div>
     ${p.acrescimoValor>0 ? `<div class="subtitulo" style="margin-top:4px;color:var(--mango)">🌙 Acréscimo Pro aplicado: <b>R$ ${p.acrescimoValor.toFixed(2)}</b>${(p.acrescimoMotivos&&p.acrescimoMotivos.length)?` (${p.acrescimoMotivos.join(', ')})`:''}</div>` : ''}
     ${p.status==='a_caminho' && temMaisParadas ? `<div class="subtitulo" style="margin-top:6px;background:var(--painel-alt);border-radius:8px;padding:8px 10px">📍 Parada atual (${paradaAtualIdx+1} de ${listaParadas.length}): <b style="color:var(--osso)">${enderecoAtualEntrega}</b></div>` : ''}
@@ -4360,125 +4207,66 @@ function telaClienteBemVindoBV(nome){
   </div>`;
 }
 function telaBoasVindas(){
+  const papel = bvPapelSelecionado;
   return `
   <div class="bv-wrap">
-
     <div class="bv-cabecalho">
-      <div class="bv-logo-badge">
-        <img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash">
-      </div>
+      <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
+      <div class="tagline">🤝 A gente não esquece de quem mora na <span class="tagline-acende">zona rural</span> — chegamos até você!</div>
+    </div>
+    <div class="bv-titulo-grande" data-text="Entregas rápidas em Muzambinho e região">Entregas <span class="destaque">rápidas</span> em Muzambinho e região</div>
+    <div class="bv-subtagline">Peça o que quiser ou ganhe dinheiro entregando</div>
+
+    <div style="text-align:center;margin-bottom:18px"><a href="/entregaflash.apk" download class="btn-baixar-app">📲 Baixar aplicativo</a></div>
+
+    <div class="bv-escolha-card">
+      <div class="bv-escolha-ilustracao"><img src="${BV_ILUSTRACAO_VEICULOS}" alt="Veículos de entrega" class="bv-escolha-ilustracao-img"></div>
     </div>
 
-    <!-- Primeira mensagem: quem veio do anúncio entende o serviço em poucos segundos -->
-    <div class="bv-titulo-grande" data-text="Precisou? A Flash entrega!">
-      Precisou? <span class="destaque">A Flash entrega!</span> ⚡
+    <div class="bv-cartao bv-cliente">
+      <div class="bv-titulo"><img src="${LOGO_ENTREGA_FLASH_CLIENTE}" alt="Cliente" style="height:34px;width:auto;display:block">Sou cliente</div>
+      <div class="subtitulo" style="margin-bottom:10px">Quero pedir entrega</div>
+      <ul>
+        <li>Entrega a partir de R$ 3,00</li>
+        <li>Cidade ou <b style="color:var(--mango)">zona rural</b></li>
+        <li>Paga no PIX ou saldo na carteira</li>
+        <li>Sem burocracia, rápido e seguro</li>
+      </ul>
+      <button class="btn btn-azul" onclick="entrarBoasVindas('cliente')">🔑 Já tenho conta — Entrar</button>
+      <button class="btn btn-primario" style="margin-top:8px" onclick="entrarComoVisitante('cliente')">📦 QUERO PEDIR ENTREGA</button>
+      <div class="bv-cta-sub">Peça o que precisar — receba onde estiver, na cidade ou na zona rural</div>
+      <div style="text-align:center;margin-top:10px"><span style="font-size:13px;color:var(--poeira);text-decoration:underline;cursor:pointer" onclick="entrarComoVisitante('cliente')">👀 Só quero conhecer as telas, sem cadastro</span></div>
     </div>
 
-    <div class="bv-subtagline" style="font-size:15px;line-height:1.55;margin-bottom:12px">
-      Mercado, farmácia, documentos, encomendas e muito mais.
-    </div>
-
-    <div style="display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:0 auto 18px">
-      <span style="padding:7px 10px;border-radius:999px;background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.30);font-size:12px;font-weight:700">📍 Muzambinho e região</span>
-      <span style="padding:7px 10px;border-radius:999px;background:rgba(111,207,106,.10);border:1px solid rgba(111,207,106,.30);font-size:12px;font-weight:700">🌿 Cidade + zona rural</span>
-    </div>
-
-    <div class="bv-escolha-card" style="margin-bottom:14px">
-      <div class="bv-escolha-ilustracao">
-        <img src="${BV_ILUSTRACAO_VEICULOS}" alt="Veículos de entrega" class="bv-escolha-ilustracao-img">
-      </div>
-    </div>
-
-    <!-- CLIENTE: ação principal da campanha -->
-    <div class="bv-cartao bv-cliente" style="border-width:2px">
-      <div class="bv-titulo">
-        <img src="${LOGO_ENTREGA_FLASH_CLIENTE}" alt="Cliente" style="height:34px;width:auto;display:block">
-        Preciso de uma entrega
-      </div>
-
-      <div class="subtitulo" style="margin:4px 0 12px">
-        Peça agora e acompanhe tudo pelo celular.
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:13px">
-        <div style="padding:9px;border-radius:10px;background:rgba(255,255,255,.05);font-size:12.5px">💰 A partir de R$ 3</div>
-        <div style="padding:9px;border-radius:10px;background:rgba(255,255,255,.05);font-size:12.5px">📍 Cidade e zona rural</div>
-        <div style="padding:9px;border-radius:10px;background:rgba(255,255,255,.05);font-size:12.5px">📲 Acompanhe a entrega</div>
-        <div style="padding:9px;border-radius:10px;background:rgba(255,255,255,.05);font-size:12.5px">⚡ Rápido e simples</div>
-      </div>
-
-      <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')">
-        📦 PEDIR UMA ENTREGA
-      </button>
-
-      <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('cliente')">
-        🔐 Já tenho conta — Senha ou facial
-      </button>
-
-      <div class="bv-cta-sub">Você pode conhecer e calcular antes de concluir o cadastro.</div>
-    </div>
-
-    <!-- MOTORISTA: sem jogar planos na primeira impressão -->
     <div class="bv-cartao bv-motorista">
-      <div class="bv-titulo">
-        <img src="${LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Motorista" style="height:34px;width:auto;display:block">
-        Quero fazer entregas
+      <div class="bv-titulo"><img src="${LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Motorista" style="height:34px;width:auto;display:block">Sou motorista</div>
+      <div class="subtitulo" style="margin-bottom:10px">Quero trabalhar entregando</div>
+      <div class="bv-plano">
+        <div class="bv-plano-nome">🆓 Plano Free — Gratuito</div>
+        <ul>
+          <li>Sem custo de adesão</li>
+          <li>Você fica com ${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% do valor!</li>
+          <li>Recebe chamadas depois dos Pro</li>
+          <li style="color:var(--poeira)">❌ Sem acréscimo à noite, feriado ou chuva</li>
+        </ul>
       </div>
-
-      <div class="subtitulo" style="margin:4px 0 10px">
-        Cadastre-se para receber corridas e ganhar dinheiro entregando.
+      <div class="bv-plano bv-plano-pro">
+        <div class="bv-plano-nome">⭐ PLANO PRO — R$ ${PLANOS.pro.preco.toFixed(2)} UMA VEZ • PRA SEMPRE!</div>
+        <ul>
+          <li>Você fica com ${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}% do valor!</li>
+          <li>PRIMEIRO a receber chamadas</li>
+          <li>Escolhe os melhores pedidos</li>
+          <li>Suporte prioritário</li>
+          <li>Vaga garantida</li>
+          <li style="color:var(--mango);font-weight:700">🌙 +${Math.round(ACRESCIMO_NOTURNO_PCT*100)}% à noite, feriado ou chuva forte</li>
+        </ul>
       </div>
-
-      <div style="position:relative;margin:0 0 13px;padding:14px 14px 13px;border-radius:15px;background:linear-gradient(135deg,rgba(255,201,60,.22),rgba(255,153,0,.10));border:1.5px solid rgba(255,201,60,.72);box-shadow:0 8px 24px rgba(255,180,0,.12),0 6px 18px rgba(0,0,0,.16);overflow:hidden">
-        <div style="position:absolute;right:-18px;top:-26px;font-size:82px;opacity:.07;transform:rotate(12deg)">⚡</div>
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px">
-          <div style="font-family:'Rajdhani';font-weight:900;font-size:18px;color:var(--mango);letter-spacing:.3px">⚡ VANTAGEM MOTORISTA FUNDADOR</div>
-          <span style="flex:none;padding:4px 7px;border-radius:999px;background:var(--mango);color:#171d4a;font-size:10.5px;font-weight:900">LANÇAMENTO</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:11px">
-          <div style="flex:none;font-family:'Rajdhani';font-weight:900;font-size:43px;line-height:.9;color:#fff;text-shadow:0 2px 10px rgba(255,201,60,.22)">10</div>
-          <div style="font-size:13.5px;line-height:1.4;color:#fff"><b>PRIMEIRAS ENTREGAS SEM COMISSÃO</b><br><span style="color:#f4f0e8">Você fica com <b style="color:var(--verde)">100% do valor da corrida</b>.</span></div>
-        </div>
-        <div style="margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.12);font-size:12.5px;color:var(--osso)">🏅 Cadastre-se e receba o <b>Selo Motorista Fundador</b>.</div>
-      </div>
-
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:13px">
-        <span style="padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);font-size:12.5px">🏍️ Trabalhe na sua região</span>
-        <span style="padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);font-size:12.5px">💵 Receba por entrega</span>
-        <span style="padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.05);font-size:12.5px">🕐 Faça seu horário</span>
-      </div>
-
-      <button class="btn btn-primario" onclick="iniciarPreparacaoBV('entregador')">
-        🏆 QUERO SER MOTORISTA FUNDADOR
-      </button>
-
-      <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('entregador')">
-        🔐 Já tenho conta — Senha ou facial
-      </button>
-
-      <div style="text-align:center;margin-top:10px">
-        <span style="font-size:12.5px;color:var(--poeira);text-decoration:underline;cursor:pointer"
-              onclick="entrarComoVisitante('entregador')">
-          👀 Quero conhecer primeiro, sem cadastro
-        </span>
-      </div>
-
-      <div class="bv-cta-sub">Os planos e vantagens aparecem depois que você escolher ser entregador.</div>
+      <button class="btn btn-azul" onclick="entrarBoasVindas('entregador')">🔑 Já tenho conta — Entrar</button>
+      <button class="btn btn-primario" style="margin-top:8px" onclick="entrarComoVisitante('entregador')">🏍️ QUERO SER ENTREGADOR</button>
+      <div class="bv-cta-sub">Conheça como funciona primeiro — sem documentos e sem câmera</div>
+      <div style="text-align:center;margin-top:10px"><span style="font-size:13px;color:var(--poeira);text-decoration:underline;cursor:pointer;font-weight:700" onclick="iniciarPreparacaoBV('entregador')">📝 Já quero fazer meu pré-cadastro</span></div>
     </div>
-
-    <div class="bv-rodape" style="margin-bottom:12px">
-      📍 Atendemos Muzambinho, <span style="color:var(--mango)">zona rural</span>, sítios, fazendas e região
-    </div>
-
-    <!-- Instalação fica secundária: primeiro pedido/cadastro, depois instalar -->
-    <div style="text-align:center;margin:10px 0 4px">
-      <a href="/Entrega%20Flash.2027.apk" download class="btn-baixar-app">📲 Instalar Entregas Flash no celular</a>
-    </div>
-
-    <div style="text-align:center;font-size:11.5px;color:var(--poeira);margin-top:8px">
-      Você também pode usar diretamente pelo site, sem instalar.
-    </div>
-
+    <div class="bv-rodape">📍 Atendemos cidade, <span style="color:var(--mango)">zona rural</span>, sítios e fazendas</div>
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -4511,14 +4299,14 @@ function entrarComoVisitante(papel){
     estado.cliente = { nome:'Visitante', telefone:'', logado:true, visitante:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10',
       pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   } else {
-    estado.motorista = { nome:'Visitante', telefone:'', ativo:true, visitante:true, status:'visitante', plano:'free', disponivel:false, veiculo:'moto', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null };
+    estado.motorista = { nome:'Visitante', telefone:'', ativo:true, visitante:true, status:'visitante', plano:'free', disponivel:false, veiculo:'moto', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null };
   }
   mostrarToast('👀 Você está só conhecendo o app. Para pedir ou aceitar corridas de verdade, cadastre-se!', 'info');
   render();
 }
 function sairDoModoVisitante(){
   if(estado.modo==='cliente'){ estado.cliente = { nome:'', telefone:'', logado:false, visitante:false, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } }; irParaCadastroCliente(); }
-  else { estado.motorista = { nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null }; irParaCadastro(); }
+  else { estado.motorista = { nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null }; irParaCadastro(); }
   render();
 }
 function telaAcessoCliente(){
@@ -4541,12 +4329,7 @@ function telaAcessoCliente(){
     <input type="text" id="lc-senha" placeholder="A sua senha" style="-webkit-text-security:disc;text-security:disc;">
     <div style="text-align:right;margin-top:-6px"><span style="font-size:13px;color:var(--poeira);text-decoration:underline;cursor:pointer" onclick="abrirEsqueciSenha('cliente')">Esqueci minha senha</span></div>
     ${pc.loginErro?`<div class="erro-campo">${pc.loginErro}</div>`:''}
-    <button class="btn btn-azul" ${atributoDesabilitado('loginCliente')} onclick="executarComCarregando('loginCliente', loginCliente)">${rotuloCarregando('loginCliente', '🔐 Entrar com senha', 'Entrando...')}</button>
-    <div style="display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--poeira);font-size:12px">
-      <div style="height:1px;background:var(--linha);flex:1"></div><span>ou</span><div style="height:1px;background:var(--linha);flex:1"></div>
-    </div>
-    <button class="btn btn-secundario" ${atributoDesabilitado('loginFacialCliente')} onclick="executarComCarregando('loginFacialCliente', loginFacialCliente)">${rotuloCarregando('loginFacialCliente', '🙂 Entrar com reconhecimento facial', 'Abrindo câmera...')}</button>
-    <div style="font-size:12px;color:var(--poeira);margin-top:7px;text-align:center">Digite apenas o telefone acima para entrar com o rosto cadastrado.</div>
+    <button class="btn btn-azul" ${atributoDesabilitado('loginCliente')} onclick="executarComCarregando('loginCliente', loginCliente)">${rotuloCarregando('loginCliente', '🔐 Entrar', 'Entrando...')}</button>
     <div style="margin-top:16px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
       <div style="font-weight:700;color:var(--osso);font-size:16px">Ainda não tem conta?</div>
       <div style="font-size:14.5px;color:var(--poeira);margin-top:3px">Receba seus pedidos sem dor de cabeça — de onde estiver, pro seu negócio ou pra sua casa!</div>
@@ -4573,16 +4356,16 @@ function telaCadastroCliente(){
   </div>
   <div class="campo-motorista">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">Criar conta</h2>
-    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">Cadastro rápido para confirmar sua corrida. Use seu telefone e uma senha fácil de lembrar.</div>
+    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">Cadastro rápido para confirmar sua corrida. 🔒 A validação facial é feita uma vez no cadastro e usada para proteger pedidos reais.</div>
     <label>O seu nome</label>
     <input type="text" id="cc-nome" value="${c.nome}" oninput="estado.painelCliente.cadastro.nome=this.value" placeholder="Ex: Ana Souza">
     <label>Telefone</label>
     <input type="tel" id="cc-telefone" value="${c.telefone}" oninput="estado.painelCliente.cadastro.telefone=this.value" placeholder="(35) 90000-0000">
     <label>Escolha uma senha fácil de lembrar</label>
     <input type="text" id="cc-senha" value="${c.senha}" oninput="estado.painelCliente.cadastro.senha=this.value" placeholder="Mínimo 4 caracteres" style="-webkit-text-security:disc;text-security:disc;">
-    
+    <div style="font-size:12.5px;color:var(--poeira);margin:-4px 0 10px">🛡️ Depois da senha, a câmera confirma seu rosto com movimentos guiados.</div>
     ${c.erro?`<div class="erro-campo">${c.erro}</div>`:''}
-    <button class="btn btn-primario" ${atributoDesabilitado('cadastrarCliente')} onclick="executarComCarregando('cadastrarCliente', cadastrarCliente)">${rotuloCarregando('cadastrarCliente', 'Cadastrar', 'Cadastrando...')}</button>
+    <button class="btn btn-primario" ${atributoDesabilitado('cadastrarCliente')} onclick="executarComCarregando('cadastrarCliente', cadastrarCliente)">${rotuloCarregando('cadastrarCliente', '📸 Cadastrar + validar rosto', 'Cadastrando...')}</button>
     <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:8px">Cadastro gratuito. Sem mensalidade. Sem pegadinha.</div>
     <div class="link-alt">Já tem conta? <a onclick="irParaLoginCliente()">Entre aqui</a></div>
   </div>`;
@@ -4605,31 +4388,19 @@ function passosPedidoHTML(atual){
 
 function irEtapaPedido(alvo){
   const f = estado.form;
-  if(alvo>f.etapaPedido && f.etapaPedido===1 && (!f.origem || !f.destino)){
-    mostrarToast('Preenche o endereço de recolha e o de entrega.'); return;
+  if(alvo>f.etapaPedido){
+    if(f.etapaPedido===1 && (!f.origem || !f.destino)){ mostrarToast('Preenche o endereço de recolha e o de entrega.'); return; }
   }
-  // A troca de etapa precisa ser imediata. A antiga espera de 4 segundos deixava tempo para
-  // atualizações realtime redesenharem a tela e dava a impressão de que o botão voltou ao formulário.
-  estado.transicaoPedido = { ativa:false, alvo:null };
-  f.etapaPedido = alvo;
-  if(alvo===3 && f.distancia==null && !estado.falhaCalculo){ calcularCorrida(); return; }
-  render();
-  setTimeout(()=>{ document.querySelector('.etapa-conteudo')?.scrollIntoView({behavior:'smooth',block:'start'}); },30);
+  estado.transicaoPedido = { ativa:true, alvo }; render();
+  setTimeout(()=>{
+    estado.transicaoPedido = { ativa:false, alvo:null };
+    f.etapaPedido = alvo;
+    if(alvo===3 && f.distancia==null && !estado.falhaCalculo){ calcularCorrida(); } else { render(); }
+  }, 4000);
 }
 
 function telaCliente(){
   const f = estado.form;
-  const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
-  if(pedidoBuscando && pedidoBuscando.status==='buscando'){
-    return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
-      <div style="font-size:54px"><span class="girando-emoji">🔎</span></div>
-      <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
-      <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
-      <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
-      <div style="margin-top:15px;font-size:14px;color:var(--poeira)">🟢 ${estado.motoristasOnline||0} motorista${estado.motoristasOnline===1?'':'s'} online agora</div>
-      <button class="btn btn-secundario btn-pequeno" style="margin-top:18px" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
-    </div>`;
-  }
   const paradasValidasPreco = (f.paradas||[]).map(x=>x.trim()).filter(Boolean).length;
   const preco = f.distancia!=null ? precoDeDistancia(f.veiculo, f.distancia, f.roca) + (f.prioridadeValor||0) + valorExtras(f.extras) + (paradasValidasPreco * TAXA_PARADA_EXTRA_VALOR) : null;
   const todosMeusPedidos = estado.filtroTelefoneCliente ? estado.pedidos.filter(p=>p.clienteTelefone===estado.filtroTelefoneCliente) : [];
@@ -4883,10 +4654,7 @@ function telaAcessoMotorista(){
     <input type="text" id="lm-senha" placeholder="A sua senha" style="-webkit-text-security:disc;text-security:disc;">
     <div style="text-align:right;margin-top:-6px"><span style="font-size:13px;color:var(--poeira);text-decoration:underline;cursor:pointer" onclick="abrirEsqueciSenha('motorista')">Esqueci minha senha</span></div>
     ${pm.loginErro?`<div class="erro-campo">${pm.loginErro}</div>`:''}
-    <button class="btn btn-azul" ${atributoDesabilitado('loginMotorista')} onclick="executarComCarregando('loginMotorista', loginMotorista)">${rotuloCarregando('loginMotorista', '🔑 Entrar com senha', 'Entrando...')}</button>
-    <div style="display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--poeira);font-size:12px">
-      <div style="height:1px;background:var(--linha);flex:1"></div><span>ou</span><div style="height:1px;background:var(--linha);flex:1"></div>
-    </div>
+    <button class="btn btn-azul" ${atributoDesabilitado('loginMotorista')} onclick="executarComCarregando('loginMotorista', loginMotorista)">${rotuloCarregando('loginMotorista', '🔑 Entrar', 'Entrando...')}</button>
     <div style="margin-top:16px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(255,201,60,0.18),rgba(255,201,60,0.08));border:1px solid var(--mango);display:flex;gap:10px;align-items:flex-start">
       <div style="font-size:30px;line-height:1">🏍️</div>
       <div style="flex:1">
@@ -4934,7 +4702,7 @@ function telaCadastroMotorista(){
     <div class="veiculos">
       ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${c.veiculo===k?'sel':''}" onclick="mudarVeiculoCadastro('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
     </div>
-    <div style="font-size:12px;color:var(--poeira);margin-top:6px">📄 CPF, documentos e uma selfie simples ficam para a ativação da conta. Assim você conhece o app primeiro.</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:6px">📄 CPF, documentos e validação facial com prova de movimento ficam para a ativação da conta. Assim você conhece o app primeiro.</div>
     ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
     <button class="btn btn-primario" ${c.enviando?'disabled':''} onclick="avancarEtapa1()" style="border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">${c.enviando?'<span class="girando"></span>':'☁️ FAZER PRÉ-CADASTRO'}</button>
     <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:8px">✅ Cadastro gratuito • Sem mensalidade<br>Sem pegadinha — comece quando quiser!</div>
@@ -5120,7 +4888,7 @@ function cartaoEntregaMotoristaHistorico(p){
   <div class="pedido">
     <div class="linha-topo">
       <div class="end"><b>Recolha</b>${p.origem}<b style="margin-top:8px">Entrega</b>${p.destino}</div>
-      <div class="preco">${cancelado ? `R$ ${(p.taxaCancelamento||0).toFixed(2)}` : `R$ ${ganhoMotorista(p.preco,p).toFixed(2)}`}</div>
+      <div class="preco">${cancelado ? `R$ ${(p.taxaCancelamento||0).toFixed(2)}` : `R$ ${ganhoMotorista(p.preco).toFixed(2)}`}</div>
     </div>
     <div class="subtitulo" style="margin-top:4px">${dataFmt}</div>
     ${cancelado ? `<span class="selo selo-cancelado">Cancelado</span>` : `<span class="selo selo-entregue">✅ Entregue</span>`}
@@ -5176,12 +4944,8 @@ function telaMotorista(){
   const ativos = estado.pedidos.filter(p=>!['buscando','entregue','cancelado'].includes(p.status) && p.motoristaTelefone===m.telefone);
   const hoje = new Date(); hoje.setHours(0,0,0,0);
   const entreguesHojeArr = estado.pedidos.filter(p=>p.status==='entregue' && p.motoristaTelefone===m.telefone && p.atualizadoEm>=hoje.getTime());
-  const ganhosHoje = entreguesHojeArr.reduce((s,p)=>s+ganhoMotorista(p.preco,p),0);
+  const ganhosHoje = entreguesHojeArr.reduce((s,p)=>s+ganhoMotorista(p.preco),0);
   const entregasMes = entregasDoMesAtual(m.telefone);
-  const fundador = motoristaEhFundador(m);
-  const fundadorRestantes = corridasFundadorRestantes(m);
-  const fundadorLimite = limiteFundadorMotorista(m);
-  const fundadorUsadas = fundador ? Math.min(fundadorLimite, fundadorLimite-fundadorRestantes) : 0;
   const aba = estado.abaPrincipalMotorista || 'pedidos';
 
   const blocoAvisoAnalise = m.status!=='aprovado' ? `<div class="cartao" style="border:1px solid var(--sol,#e8b23d);background:rgba(232,178,61,0.08)">
@@ -5198,23 +4962,8 @@ function telaMotorista(){
     ${!m.disponivel ? `<div class="cf-ajuda" style="text-align:center;margin-top:6px">👆 Toque aqui para começar a receber pedidos</div>` : `<div style="display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--poeira)"><span>Hoje: <b style="color:var(--osso)">R$ ${ganhosHoje.toFixed(2)}</b> · ${entreguesHojeArr.length} entregas</span></div>`}
   </div>`;
 
-  const blocoFundador = fundador ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.14),rgba(111,207,106,.08))">
-    <div style="display:flex;gap:12px;align-items:flex-start">
-      <span style="font-size:30px">🏆</span>
-      <div style="flex:1">
-        <div style="font-family:'Rajdhani';font-weight:800;font-size:20px;color:var(--mango)">MOTORISTA FUNDADOR</div>
-        ${fundadorRestantes>0
-          ? `<div style="font-size:14px;color:var(--osso);line-height:1.45;margin-top:3px">Nas suas primeiras <b>${MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA} entregas</b>, a Entrega Flash não desconta comissão da plataforma. Você recebe <b>100% do valor da corrida</b>.</div>
-             <div style="margin-top:10px;font-size:13px;color:var(--poeira)">Benefício usado: <b style="color:var(--osso)">${fundadorUsadas}/${fundadorLimite}</b> · Restam <b style="color:var(--verde)">${fundadorRestantes}</b> entregas sem taxa.</div>
-             <div style="height:7px;background:var(--painel-alt);border-radius:999px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${Math.round((fundadorUsadas/Math.max(1,fundadorLimite))*100)}%;background:var(--mango);border-radius:999px"></div></div>`
-          : `<div style="font-size:14px;color:var(--osso);line-height:1.45;margin-top:3px">Você já aproveitou as ${fundadorLimite} entregas sem comissão. A partir de agora vale a taxa normal do seu plano. O selo de Fundador continua no seu perfil.</div>`}
-      </div>
-    </div>
-  </div>` : '';
-
   const blocoPedidos = `
   <div class="link-taxas-topo" onclick="abrirComoFunciona('taxas')">📖 Ver todas as taxas e regras</div>
-  ${blocoFundador}
   ${blocoAvisoAnalise}
   ${blocoOnline}
   ${chamadosParaMim.length>0 ? `<div class="cartao" style="border:2px solid var(--chama)">
@@ -5241,12 +4990,11 @@ function telaMotorista(){
   </div>`;
 
   const blocoPerfil = `
-  ${blocoFundador}
   ${perfilMotoristaHTML(m)}
   <div class="cartao">
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
       <div style="display:flex;gap:8px">
-        <button class="btn btn-secundario btn-pequeno botao-chat" onclick="abrirSuporte()">💬 Mensagens${estado.suporteNaoLidas>0?`<span class="notif-bolinha">${estado.suporteNaoLidas}</span>`:''}</button>
+        <button class="btn btn-secundario btn-pequeno botao-chat" onclick="abrirSuporte()">💬 Suporte${estado.suporteNaoLidas>0?`<span class="notif-bolinha">${estado.suporteNaoLidas}</span>`:''}</button>
         <button class="btn btn-secundario btn-pequeno" onclick="sairMotorista()">Sair</button>
       </div>
     </div>
@@ -5662,11 +5410,8 @@ function render(){
       <span onclick="carregarPedidos()">↻ atualizar</span>
     </div>
     <div class="admin-link" onclick="abrirAdmin()">painel administrativo</div>
-    ${estado.modo==='entregador' && estado.motorista.ativo ? `
-    <div class="sos-flutuante" title="SOS — veículo quebrado / pedir ajuda" onclick="abrirSOSFlutuante()"><span class="emoji">🆘</span>SOS</div>` : ''}
-    ${estado.modo==='cliente' && estado.cliente.logado ? `
-    <div class="sos-flutuante" title="SOS — emergência" onclick="acionarSOSCliente()"><span class="emoji">🆘</span>SOS</div>` : ''}
-    ${estado.sosClienteAtivo ? `<div class="sos-cliente-tela"><div class="sos-cliente-caixa"><div class="sos-cliente-icone">🆘</div><div class="sos-cliente-titulo">SOS ACIONADO</div><div class="sos-cliente-msg">Seu alerta de emergência foi enviado para a central e para os motoristas disponíveis. Mantenha o telefone acessível.</div><button class="btn" onclick="fecharSOSCliente()">Entendi / fechar alerta</button></div></div>` : ''}
+    ${estado.modo==='entregador' && estado.motorista.ativo && (PLANOS[estado.motorista.plano]||PLANOS.free).label==='Pro' ? `
+    <div class="sos-flutuante" title="SOS — chamar motorista amigo" onclick="abrirSOSFlutuante()"><span class="emoji">🆘</span>SOS</div>` : ''}
     ${estado.toast ? `<div class="toast toast-${estado.toastTipo||'info'}"><span class="toast-icone">${estado.toastTipo==='sucesso'?'✅':estado.toastTipo==='erro'?'⚠️':'ℹ️'}</span><span>${estado.toast}</span></div>` : ''}
     ${estado.modalConfirmar ? modalConfirmarHTML() : ''}
     ${estado.modalReprovar ? modalReprovarHTML() : ''}
@@ -5675,7 +5420,7 @@ function render(){
     ${estado.popupInstalarAberto ? popupInstalarHTML() : ''}
     ${estado.onboardingAberto ? onboardingHTML() : ''}
     ${estado.admin.aberto ? `
-    <div class="modal-fundo modal-fundo-admin" onclick="if(event.target===this) fecharAdmin()">
+    <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
         <div class="chat-topo"><h3>Painel administrativo</h3><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
@@ -5743,7 +5488,7 @@ function render(){
     ${estado.admin.suporteAbertoTelefone ? `
     <div class="modal-fundo" onclick="if(event.target===this) fecharSuporteAdmin()">
       <div class="modal-chat">
-        <div class="chat-topo"><h3>Suporte · ${estado.admin.suporteAbertoTelefone}</h3><div style="display:flex;align-items:center;gap:10px"><span class="refresh" style="margin:0" onclick="marcarSuporteResolvido('${estado.admin.suporteAbertoTelefone}')">✅ resolvido</span></div></div>
+        <div class="chat-topo"><h3>Suporte · ${estado.admin.suporteAbertoTelefone}</h3><div style="display:flex;align-items:center;gap:10px"><span class="refresh" style="margin:0" onclick="marcarSuporteResolvido('${estado.admin.suporteAbertoTelefone}')">✅ resolvido</span><button class="chat-fechar" onclick="fecharSuporteAdmin()">&times;</button></div></div>
         <div class="chat-mensagens" id="suporte-admin-mensagens"></div>
         <div class="chat-envio">
           <input type="text" id="suporte-admin-input" placeholder="Escreve uma resposta..." onkeydown="if(event.key==='Enter') executarComCarregando('enviarMensagemSuporteAdmin', enviarMensagemSuporteAdmin)">
@@ -5898,16 +5643,7 @@ async function entrarComoMotorista(){
 }
 function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); if(estado.motorista.telefone) atualizarDisponibilidadeDB(estado.motorista.telefone,false); estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
 async function atualizarDisponibilidadeDB(telefone, disponivel){
-  const agora = Date.now();
-  const payload = { disponivel, disponivel_atualizado_em: agora };
-  // Ao entrar online, grava a posição capturada no MESMO update do status.
-  // Assim nunca aparece "online" no resumo sem existir coordenada para o mapa.
-  if(disponivel && ultimaPosicaoMotorista){
-    payload.lat_atual = ultimaPosicaoMotorista.lat;
-    payload.lng_atual = ultimaPosicaoMotorista.lon;
-    payload.lat_atualizado_em = agora;
-  }
-  const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
+  const { error } = await sb.from('entrega_motoristas').update({ disponivel, disponivel_atualizado_em: Date.now() }).eq('telefone', telefone);
   return !error;
 }
 async function alternarDisponibilidade(){
@@ -5921,21 +5657,13 @@ async function alternarDisponibilidade(){
       return;
     }
     if(!(await exigirLocalizacaoOperacional('motorista'))) return;
-    if(!ultimaPosicaoMotorista){
-      mostrarToast('Não consegui obter sua posição para aparecer no mapa. Ative o GPS e tente novamente.', 'erro');
-      return;
-    }
   }
   const ok = await atualizarDisponibilidadeDB(m.telefone, novoValor);
   if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
   m.disponivel = novoValor;
   salvarLocal('ef_motorista_disponivel', m.disponivel ? 'true' : 'false');
   if(m.disponivel){
-    iniciarRastreioMotorista();
-    // redundância intencional: confirma imediatamente a coordenada no banco,
-    // além do watchPosition que continuará atualizando enquanto estiver online.
-    await enviarPosicaoMotorista();
-    mostrarToast('Rota iniciada! Você já aparece no mapa e está recebendo pedidos.', 'sucesso');
+    iniciarRastreioMotorista(); mostrarToast('Rota iniciada! Já está a receber pedidos.', 'sucesso');
     // aproveita o momento em que ele mais precisa de avisos pra pedir notificação, se ainda não tiver decidido
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
   }
@@ -5954,42 +5682,7 @@ async function salvarRaioAtendimento(valor){
   render();
 }
 
-// ---------- SOS do cliente ----------
-async function acionarSOSCliente(){
-  if(!estado.cliente.logado){ mostrarToast('Entre na sua conta para usar o SOS.', 'erro'); return; }
-  const ativos = estado.pedidos.filter(p=>p.clienteTelefone===estado.cliente.telefone && !['entregue','cancelado'].includes(p.status));
-  const p = ativos[0] || null;
-  if(!(await confirmarAcao('Acionar SOS agora? O painel e os motoristas disponíveis receberão um alerta de emergência.'))) return;
-  estado.sosClienteAtivo=true; render();
-  const local = estado.ultimaLocalizacao ? ` Localização aproximada: ${Number(estado.ultimaLocalizacao.lat).toFixed(5)}, ${Number(estado.ultimaLocalizacao.lng).toFixed(5)}.` : '';
-  const msg = `SOS do cliente ${estado.cliente.nome||''} (${estado.cliente.telefone||''}). Precisa de ajuda urgente.${p?` Pedido ${p.id}: ${p.origem} → ${p.destino}.`:''}${local}`;
-  await registrarAlertaAdmin('sos_cliente', msg, p?.id||null);
-  await enviarPushServidor('motorista', null, '🆘 SOS DE CLIENTE', `${estado.cliente.nome||'Um cliente'} precisa de ajuda urgente.${p?' Verifique a corrida em andamento.':''}`);
-  notificar('🆘 SOS acionado', 'Seu alerta foi enviado para a central e motoristas disponíveis.', 'sos-cliente');
-}
-function fecharSOSCliente(){ estado.sosClienteAtivo=false; render(); }
-
-// Aviso de ocorrência da entrega para o cliente.
-// Importante: não expõe SOS, pane, pedido de socorro nem detalhes internos dos motoristas.
-async function avisarClienteOcorrenciaEntrega(pedido, fase='ocorrencia'){
-  if(!pedido || !pedido.clienteTelefone) return;
-  const texto = fase==='assumida'
-    ? 'Sua entrega seguirá com apoio de outro motorista. O atendimento continua normalmente e você pode acompanhar tudo pelo app.'
-    : 'Houve uma ocorrência durante a entrega. Nossa equipe já está acompanhando e sua entrega continua em atendimento.';
-  try{
-    await sb.from('entrega_chat').insert({
-      pedido_id: pedido.id,
-      remetente_tipo:'sistema',
-      remetente_nome:'Entrega Flash',
-      texto,
-      lido:false,
-      criado_em:Date.now()
-    });
-  }catch(e){ console.warn('Falha ao registrar aviso da ocorrência para o cliente', e); }
-  enviarPushServidor('cliente', pedido.clienteTelefone, 'Atualização da sua entrega', texto);
-}
-
-// ---------- motorista amigo (SOS) ----------
+// ---------- motorista amigo (SOS — benefício Pro) ----------
 // botão SOS flutuante (visível em todas as telas do motorista Pro): acha a entrega
 // em andamento e abre direto o chamado; se houver mais de uma, pergunta qual.
 function abrirSOSFlutuante(){
@@ -6023,10 +5716,7 @@ async function enviarChamadoAmigo(){
   });
   cm.enviando=false;
   if(error){ console.error(error); cm.erro='Erro ao enviar o chamado. Tenta de novo.'; render(); return; }
-  registrarAlertaAdmin('chamado_motorista_amigo', `${m.nome||'Um motorista'} (${m.telefone||''}) informou: veículo quebrado / precisa de ajuda para concluir a corrida.`, p.id);
-  enviarPushServidor('motorista', null, '🆘 MOTORISTA PRECISA DE AJUDA', `${m.nome||'Um motorista'} está com o veículo quebrado e precisa de outro motorista para ajudar. Abra o app para ver o chamado.`);
-  // O cliente é informado, mas sem receber o SOS interno dos motoristas.
-  avisarClienteOcorrenciaEntrega(p, 'ocorrencia');
+  registrarAlertaAdmin('chamado_motorista_amigo', `${m.nome||'Um motorista'} (${m.telefone||''}) pediu ajuda de outro motorista numa entrega em curso.`, p.id);
   cm.aberto=false;
   mostrarToast('🆘 Chamado enviado! Assim que outro motorista aceitar, avisamos aqui.', 'sucesso');
   await carregarChamadosAmigo();
@@ -6039,8 +5729,6 @@ async function cancelarChamadoAmigo(id){
 }
 async function ajudarChamadoAmigo(id){
   const m = estado.motorista;
-  const chamado = (estado.chamadosAmigo||[]).find(c=>c.id===id);
-  const pedidoAntes = chamado ? estado.pedidos.find(p=>p.id===chamado.pedido_id) : null;
   if(!(await confirmarAcao('Vais assumir esta entrega e receber a parte combinada. Confirmar que vais ajudar?'))) return;
   const { data, error } = await sb.rpc('entrega_aceitar_chamado_amigo', {
     p_chamado_id: id, p_ajudante_telefone: m.telefone, p_ajudante_nome: m.nome, p_ajudante_veiculo_tipo: m.veiculo,
@@ -6049,10 +5737,6 @@ async function ajudarChamadoAmigo(id){
   });
   if(error){ console.error(error); mostrarToast('Erro ao assumir a entrega.', 'erro'); return; }
   if(!data){ mostrarToast('Esse chamado já foi assumido por outro motorista.'); await carregarChamadosAmigo(); return; }
-  if(chamado && chamado.motorista_solicitante){
-    enviarPushServidor('motorista', chamado.motorista_solicitante, '✅ Ajuda aceita', `${m.nome||'Outro motorista'} aceitou ajudar na entrega.`);
-  }
-  if(pedidoAntes) avisarClienteOcorrenciaEntrega(pedidoAntes, 'assumida');
   mostrarToast('Entrega assumida! Já está na tua lista "Em curso".', 'sucesso');
   estado.ultimoPedidosJSON='';
   iniciarRastreioMotorista();
@@ -6112,7 +5796,7 @@ async function enviarReenvioDocumentos(){
 // =================== CONTA DE CLIENTE ===================
 
 // ================= BIOMETRIA FACIAL + PROVA DE MOVIMENTO =================
-const FACE_MODELS_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+const FACE_MODELS_URL = 'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights';
 let faceModelsReady = false;
 let faceModelsLoading = null;
 
@@ -6228,45 +5912,51 @@ function irParaLoginCliente(){ estado.painelCliente.tela='entrar'; estado.painel
 
 async function cadastrarCliente(){
   const c = estado.painelCliente.cadastro;
-  c.nome = document.getElementById('cc-nome')?.value.trim() || c.nome || '';
-  c.telefone = document.getElementById('cc-telefone')?.value.trim() || c.telefone || '';
-  c.senha = document.getElementById('cc-senha')?.value || c.senha || '';
-
+  c.nome = document.getElementById('cc-nome').value.trim();
+  c.telefone = document.getElementById('cc-telefone').value.trim();
+  c.senha = document.getElementById('cc-senha').value;
   if(!c.nome||!c.telefone||!c.senha){ c.erro='Preenche todos os campos.'; render(); return; }
   if(c.senha.length<4){ c.erro='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
-  c.erro='';
-
-  const { data: existente, error: erroConsulta } = await sb.from('entrega_clientes').select('*').eq('telefone', c.telefone).maybeSingle();
-  if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tente novamente.'; render(); return; }
-  if(existente && existente.senha_hash){ c.erro='Este telefone já tem uma conta. Entre com sua senha.'; render(); return; }
-
+  const { data: existente, error: erroConsulta } = await sb.from('entrega_clientes').select('telefone,senha_hash').eq('telefone', c.telefone).maybeSingle();
+  if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tenta novamente.'; render(); return; }
+  if(existente && existente.senha_hash){ c.erro='Já existe uma conta com este telefone. Entre na sua conta.'; render(); return; }
   const senhaHash = await hashSenha(c.senha);
   const agora = Date.now();
-  let erroSalvar = null;
-  if(existente){
-    const { error } = await sb.from('entrega_clientes').update({nome:c.nome,senha_hash:senhaHash,facial_ativa:false,atualizado_em:agora}).eq('telefone',c.telefone);
-    erroSalvar=error;
-  }else{
-    const { error } = await sb.from('entrega_clientes').insert({telefone:c.telefone,nome:c.nome,senha_hash:senhaHash,facial_ativa:false,criado_em:agora,atualizado_em:agora});
-    erroSalvar=error;
-  }
-  if(erroSalvar){ console.error(erroSalvar); c.erro='Não consegui salvar o cadastro agora. Tente novamente.'; render(); return; }
-
-  const { data: confirmado, error: erroConfirmacao } = await sb.from('entrega_clientes').select('*').eq('telefone',c.telefone).maybeSingle();
-  if(erroConfirmacao || !confirmado){ c.erro='Cadastro salvo, mas não consegui confirmar o acesso. Tente entrar com telefone e senha.'; render(); return; }
-
+  const { error } = await sb.from('entrega_clientes').upsert({
+    telefone:c.telefone, nome:c.nome,
+    senha_hash:senhaHash, criado_em: existente ? undefined : agora, atualizado_em:agora
+  });
+  if(error){ console.error(error); c.erro='Erro ao criar a conta. Tenta novamente.'; render(); return; }
+  const facialNovoCliente = await fluxoFacial({tipo:'cliente',telefone:c.telefone,modo:'cadastro'});
+  if(!facialNovoCliente.ok){ c.erro = facialNovoCliente.cancelado ? 'Para concluir o cadastro, faça a validação facial.' : (facialNovoCliente.erro||'Não foi possível validar seu rosto.'); render(); return; }
   try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
   registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
-  estado.cliente={nome:confirmado.nome||c.nome,telefone:confirmado.telefone,logado:true,carteira:{saldo:0,carregando:false,adicionando:false,valorInput:'10',pix:{qrCode:null,copiaCola:null,status:'pendente',gerando:false,erro:'',id:null}}};
-  estado.filtroTelefoneCliente=confirmado.telefone; estado.form.nome=confirmado.nome||c.nome; estado.form.telefone=confirmado.telefone; estado.ultimoPedidosJSON='';
-  salvarLocal('ef_cliente_telefone',confirmado.telefone); salvarLocal('ef_modo','cliente'); atualizarPresencaSite('cliente');
-  clienteBemVindoAnimando=true; render();
-  await carregarPedidos(); await carregarCarteiraCliente(); assinarCarteiraClienteRealtime(confirmado.telefone);
-  if(estado.notificacoesStatus==='granted') inscreverPushReal(); else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),1200);
-  setTimeout(()=>{clienteBemVindoAnimando=false;render();},4000);
+  estado.cliente = { nome:c.nome, telefone:c.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
+  estado.filtroTelefoneCliente = c.telefone;
+  estado.form.nome = c.nome; estado.form.telefone = c.telefone;
+  estado.ultimoPedidosJSON='';
+  salvarLocal('ef_cliente_telefone', c.telefone); salvarLocal('ef_modo','cliente');
+  clienteBemVindoAnimando = true;
+  render();
+  await carregarPedidos();
+  await carregarCarteiraCliente();
+  if(estado.notificacoesStatus==='granted') inscreverPushReal();
+  else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 1200);
+  setTimeout(()=>{ clienteBemVindoAnimando = false; render(); }, 4000);
 }
 
-async function entrarNoPainelCliente(data){
+async function loginCliente(){
+  const pc = estado.painelCliente;
+  const telefone = document.getElementById('lc-telefone')?.value.trim();
+  const senha = document.getElementById('lc-senha')?.value || '';
+  if(!telefone||!senha){ pc.loginErro='Preenche telefone e senha.'; render(); return; }
+  pc.loginErro='';
+  const senhaHash = await hashSenha(senha);
+  const { data, error } = await sb.from('entrega_clientes').select('*').eq('telefone', telefone).maybeSingle();
+  if(error){ pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; }
+  if(!data){ pc.loginErro='Não encontrámos conta com este telefone. Cadastra-te abaixo.'; render(); return; }
+  if(data.senha_hash !== senhaHash){ pc.loginErro='Senha incorreta.'; render(); return; }
+  if(data.bloqueado){ pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.'; render(); return; }
   estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   estado.filtroTelefoneCliente = data.telefone;
   estado.form.nome = data.nome; estado.form.telefone = data.telefone;
@@ -6275,100 +5965,8 @@ async function entrarNoPainelCliente(data){
   await carregarPedidos();
   await carregarCarteiraCliente();
   assinarCarteiraClienteRealtime(data.telefone);
-  atualizarPresencaSite('cliente');
   if(estado.notificacoesStatus==='granted') inscreverPushReal();
   render();
-}
-
-async function loginFacialCliente(){
-  const pc = estado.painelCliente;
-  const telefone = document.getElementById('lc-telefone')?.value.trim();
-  if(!telefone){ pc.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
-  pc.loginErro='';
-  const { data, error } = await sb.from('entrega_clientes').select('*').eq('telefone', telefone).maybeSingle();
-  if(error){ pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; }
-  if(!data){ pc.loginErro='Não encontrámos conta com este telefone.'; render(); return; }
-  if(data.bloqueado){ pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.'; render(); return; }
-  if(!data.facial_ativa || !Array.isArray(data.face_descriptor) || !data.face_descriptor.length){
-    estado.painelCliente.tela='cadastro';
-    estado.painelCliente.cadastro={
-      nome:data.nome||'',
-      telefone:data.telefone||telefone,
-      senha:'',
-      erro:'Este cadastro ficou pela metade. Digite a senha que deseja usar e conclua agora a validação facial.'
-    };
-    render();
-    return;
-  }
-  const facial = await fluxoFacial({tipo:'cliente',telefone:data.telefone,modo:'login',descriptorSalvo:data.face_descriptor});
-  if(!facial.ok){ pc.loginErro = facial.cancelado ? 'Reconhecimento facial cancelado.' : (facial.erro||'Não foi possível confirmar seu rosto.'); render(); return; }
-  await entrarNoPainelCliente(data);
-}
-
-async function loginCliente(){
-  const pc = estado.painelCliente;
-  const telefone = document.getElementById('lc-telefone')?.value.trim();
-  const senha = document.getElementById('lc-senha')?.value || '';
-
-  if(!telefone||!senha){
-    pc.loginErro='Preenche telefone e senha.';
-    render();
-    return;
-  }
-
-  pc.loginErro='';
-  const senhaHash = await hashSenha(senha);
-
-  const { data, error } = await sb
-    .from('entrega_clientes')
-    .select('*')
-    .eq('telefone', telefone)
-    .maybeSingle();
-
-  if(error){
-    pc.loginErro='Erro ao consultar a conta. Tenta novamente.';
-    render();
-    return;
-  }
-
-  if(!data){
-    pc.loginErro='Não encontrámos conta com este telefone. Faça seu cadastro.';
-    render();
-    return;
-  }
-
-  const cadastroCompleto = !!(
-    data.facial_ativa &&
-    Array.isArray(data.face_descriptor) &&
-    data.face_descriptor.length
-  );
-
-  // Se ficou pela metade, o caminho correto é CONCLUIR, não dizer que já está cadastrado.
-  if(!cadastroCompleto){
-    estado.painelCliente.tela='cadastro';
-    estado.painelCliente.cadastro={
-      nome:data.nome||'',
-      telefone:data.telefone||telefone,
-      senha:senha,
-      erro:'Encontramos um cadastro que ficou pela metade. Seus dados foram recuperados; conclua agora a validação facial.'
-    };
-    render();
-    return;
-  }
-
-  if(data.senha_hash !== senhaHash){
-    pc.loginErro='Senha incorreta.';
-    render();
-    return;
-  }
-
-  if(data.bloqueado){
-    pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.';
-    render();
-    return;
-  }
-
-  await entrarNoPainelCliente(data);
 }
 
 function sairCliente(){
@@ -6394,7 +5992,7 @@ async function entrarNoPainelMotorista(data){
     nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:false,
     veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
     fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
-    notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null
+    notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null
   };
   estado.ultimoPedidosJSON='';
   salvarLocal('ef_motorista_telefone', data.telefone); salvarLocal('ef_modo','entregador');
@@ -6405,32 +6003,6 @@ async function entrarNoPainelMotorista(data){
   assinarMotoristaLogadoRealtime(data.telefone);
   if(estado.notificacoesStatus==='granted') inscreverPushReal();
 }
-
-async function loginFacialMotorista(){
-  const pm = estado.painelMotorista;
-  const telefone = document.getElementById('lm-telefone')?.value.trim();
-  if(!telefone){ pm.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
-  pm.loginErro='';
-  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
-  if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
-  if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone.'; render(); return; }
-  if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
-  if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
-  if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
-  if(data.status==='reprovado'){
-    pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
-    pm.reenvio = { telefone:data.telefone, senhaHash:data.senha_hash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
-    render(); return;
-  }
-  if(!data.facial_ativa || !Array.isArray(data.face_descriptor) || !data.face_descriptor.length){
-    pm.loginErro='Este cadastro ainda não tem reconhecimento facial salvo. Entre com a senha.';
-    render(); return;
-  }
-  const facial = await fluxoFacial({tipo:'motorista',telefone:data.telefone,modo:'login',descriptorSalvo:data.face_descriptor});
-  if(!facial.ok){ pm.loginErro = facial.cancelado ? 'Reconhecimento facial cancelado.' : (facial.erro||'Não foi possível confirmar seu rosto.'); render(); return; }
-  if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); atualizarPresencaSite('motorista'); return; }
-}
-
 async function loginMotorista(){
   const pm = estado.painelMotorista;
   const telefone = document.getElementById('lm-telefone')?.value.trim();
@@ -6450,7 +6022,8 @@ async function loginMotorista(){
     render(); return;
   }
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
-  // Senha e facial são duas formas independentes de entrada.
+  const facialMotorista = await exigirFacialDaConta('motorista',data);
+  if(!facialMotorista.ok){ pm.loginErro = facialMotorista.cancelado ? 'Validação facial cancelada.' : (facialMotorista.erro||'Não foi possível confirmar seu rosto.'); render(); return; }
   // basico, pendente ou aprovado — todos entram no painel; aceitar/saque ficam travados até 'aprovado'
   if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); return; }
 }
@@ -6540,7 +6113,11 @@ async function avancarEtapa1(){
   // que o admin analisa esses dados básicos e libera, reduzindo a fricção logo na entrada
   const ok = await salvarEtapaCadastro({ nome:c.nome, telefone:c.telefone, cidade:c.cidade, senha_hash:c.senhaHash, veiculo_tipo:c.veiculo, status:'basico' });
   c.enviando=false;
-  if(ok){ estado.painelMotorista.tela='basico'; } else { c.id=null; c.erroEtapa='Erro ao gravar. Tenta de novo.'; }
+  if(ok){
+    const facialNovoMotorista = await fluxoFacial({tipo:'motorista',telefone:c.telefone,modo:'cadastro'});
+    if(facialNovoMotorista.ok){ estado.painelMotorista.tela='basico'; }
+    else { c.erroEtapa = facialNovoMotorista.cancelado ? 'Para concluir o cadastro, faça a validação facial.' : (facialNovoMotorista.erro||'Não foi possível validar seu rosto.'); }
+  } else { c.id=null; c.erroEtapa='Erro ao gravar. Tenta de novo.'; }
   render();
 }
 function mudarVeiculoCadastro(k){ estado.painelMotorista.cadastro.veiculo=k; render(); }
@@ -6565,45 +6142,7 @@ async function avancarEtapa2(){
 function voltarEtapa(n){ estado.painelMotorista.cadastro.etapa=n; estado.painelMotorista.cadastro.erroEtapa=''; render(); }
 
 let uploadPendente = null; // 'cnh' | 'crlv' | 'fotoVeiculoFrente' | 'fotoVeiculoTras' | 'fotoMotorista'
-let selfieMotoristaStream=null;
-function fecharTelaSelfieMotorista(){
-  if(selfieMotoristaStream){ selfieMotoristaStream.getTracks().forEach(t=>t.stop()); selfieMotoristaStream=null; }
-  document.getElementById('ef-selfie-motorista')?.remove();
-}
-async function abrirTelaSelfieMotorista(){
-  fecharTelaSelfieMotorista();
-  const modal=document.createElement('div'); modal.id='ef-selfie-motorista';
-  modal.innerHTML=`<div class="esm-wrap">
-    <button class="esm-voltar" type="button" onclick="fecharTelaSelfieMotorista()">‹ <span>Voltar</span></button>
-    <div class="esm-brand"><div class="esm-logo">⚡</div><div><b>ENTREGAS <em>FLASH</em></b><small>RÁPIDO • SEGURO • NO PRAZO</small></div></div>
-    <div class="esm-card">
-      <div class="esm-passos"><div><i>👤</i><span>Dados</span></div><b></b><div><i>📄</i><span>Documentos</span></div><b></b><div class="on"><i>⌾</i><span>Selfie</span></div><b></b><div><i>✓</i><span>Concluir</span></div></div>
-      <div class="esm-body"><h2>📸 Foto do rosto (selfie)</h2><p>Precisamos de uma foto do seu rosto para sua segurança e dos clientes.</p><strong>Apenas uma selfie normal. Sem movimentos.</strong>
-        <div class="esm-camera"><video id="esm-video" autoplay playsinline muted></video><canvas id="esm-canvas"></canvas><div class="esm-oval"></div><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i></div>
-        <p class="esm-pos">Posicione seu rosto dentro da moldura</p>
-        <button id="esm-tirar" class="esm-btn" type="button" onclick="tirarSelfieMotorista()">📷 TIRAR SELFIE</button>
-        <div class="esm-priv">🛡️ <span>Sua foto é usada apenas para verificação da sua conta.<br>Não compartilhamos com terceiros.</span></div>
-      </div>
-    </div></div>`;
-  document.body.appendChild(modal);
-  if(!document.getElementById('esm-css')){ const st=document.createElement('style'); st.id='esm-css'; st.textContent=`
-#ef-selfie-motorista{position:fixed;inset:0;z-index:1000000;background:radial-gradient(circle at 50% 10%,#10285e 0,#061b45 45%,#03132f 100%);color:#fff;overflow:auto;font-family:inherit}.esm-wrap{min-height:100%;max-width:720px;margin:auto;padding:24px 18px 34px}.esm-voltar{position:absolute;left:22px;top:22px;background:none;border:0;color:#fff;font-size:38px;display:flex;align-items:center;gap:7px}.esm-voltar span{font-size:17px;font-weight:800}.esm-brand{display:flex;justify-content:center;align-items:center;gap:10px;margin:4px auto 30px}.esm-logo{font-size:50px;color:#ffc400}.esm-brand b{font-size:24px;font-style:italic}.esm-brand em{color:#ffc400;font-style:italic}.esm-brand small{display:block;font-size:10px;margin-top:3px}.esm-card{border:1px solid #24549b;border-radius:18px;overflow:hidden;background:rgba(4,24,61,.55)}.esm-passos{display:flex;align-items:center;justify-content:center;padding:18px 14px;border-bottom:1px solid #24549b}.esm-passos div{display:grid;place-items:center;gap:4px;min-width:62px;font-size:12px}.esm-passos i{font-style:normal;width:38px;height:38px;border-radius:50%;background:#244b91;display:grid;place-items:center}.esm-passos .on{color:#ffc400}.esm-passos .on i{background:#ffc400;color:#071b40}.esm-passos b{height:3px;flex:1;max-width:70px;background:#31578e}.esm-body{text-align:center;padding:26px 18px}.esm-body h2{font-size:25px;margin:0 0 8px}.esm-body p{margin:0 auto 7px;color:#e1e7f3}.esm-body strong{display:block;color:#ffc400;margin-bottom:18px}.esm-camera{position:relative;width:min(480px,100%);aspect-ratio:1/1;margin:auto;border-radius:16px;overflow:hidden;background:#dfe3e7;border:1px solid #3876c9}.esm-camera video,.esm-camera canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.esm-camera canvas{display:none}.esm-oval{position:absolute;left:16%;top:8%;width:68%;height:82%;border:3px dashed #1688ef;border-radius:50%;pointer-events:none}.esm-camera i{position:absolute;width:52px;height:52px;border-color:#fff;border-style:solid;filter:drop-shadow(0 0 2px #1688ef)}.esm-camera .c1{left:12%;top:8%;border-width:5px 0 0 5px;border-radius:18px 0 0}.esm-camera .c2{right:12%;top:8%;border-width:5px 5px 0 0;border-radius:0 18px 0 0}.esm-camera .c3{left:12%;bottom:8%;border-width:0 0 5px 5px;border-radius:0 0 0 18px}.esm-camera .c4{right:12%;bottom:8%;border-width:0 5px 5px 0;border-radius:0 0 18px}.esm-pos{font-size:16px;margin-top:14px!important}.esm-btn{background:#ffc400;color:#071b40;border:0;border-radius:10px;padding:14px 25px;font-weight:900;font-size:17px;margin:10px auto 18px}.esm-btn:disabled{opacity:.6}.esm-priv{display:flex;text-align:left;gap:12px;align-items:center;max-width:520px;margin:auto;padding:15px 18px;border:1px solid #244f8f;border-radius:13px;color:#e6ebf5;font-size:13px;line-height:1.45;background:rgba(13,42,89,.5)}
-@media(max-width:520px){.esm-wrap{padding:18px 10px 24px}.esm-brand{margin-top:42px}.esm-brand b{font-size:20px}.esm-body{padding:20px 12px}.esm-body h2{font-size:22px}.esm-passos span{font-size:10px}.esm-passos div{min-width:50px}.esm-passos b{max-width:35px}}
-`; document.head.appendChild(st); }
-  try{ selfieMotoristaStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:900},height:{ideal:900}},audio:false}); const v=document.getElementById('esm-video'); v.srcObject=selfieMotoristaStream; await v.play(); }
-  catch(e){ mostrarToast('Não foi possível abrir a câmera. Verifique a permissão.', 'erro'); fecharTelaSelfieMotorista(); }
-}
-async function tirarSelfieMotorista(){
-  const v=document.getElementById('esm-video'), canvas=document.getElementById('esm-canvas'), btn=document.getElementById('esm-tirar'); if(!v||!v.videoWidth) return;
-  btn.disabled=true; btn.textContent='Enviando selfie...'; canvas.width=v.videoWidth; canvas.height=v.videoHeight; canvas.getContext('2d').drawImage(v,0,0,canvas.width,canvas.height);
-  const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.88)); if(!blob){btn.disabled=false;btn.textContent='📷 TIRAR SELFIE';return;}
-  const c=estado.painelMotorista.cadastro; const nomeArquivo=`${c.id}/fotoMotorista-${Date.now()}.jpg`;
-  const {error}=await sb.storage.from('motorista-documentos').upload(nomeArquivo,blob,{upsert:true,contentType:'image/jpeg'});
-  if(error){ console.error(error); mostrarToast('Erro ao enviar a selfie. Tente novamente.','erro'); btn.disabled=false;btn.textContent='📷 TIRAR SELFIE';return; }
-  const {data:pub}=sb.storage.from('motorista-documentos').getPublicUrl(nomeArquivo); c.fotoMotoristaUrl=pub.publicUrl; await salvarEtapaCadastro({foto_motorista_url:c.fotoMotoristaUrl});
-  fecharTelaSelfieMotorista(); mostrarToast('Selfie salva com sucesso!'); render();
-}
-function solicitarUploadDocumento(tipo){ if(tipo==='fotoMotorista'){ abrirTelaSelfieMotorista(); return; } uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
+function solicitarUploadDocumento(tipo){ uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
 async function processarDocumentoSelecionado(input){
   const file = input.files && input.files[0];
   input.value='';
@@ -6775,20 +6314,7 @@ function resumoAdminHTML(){
   </div>`;
 }
 
-function fundadorStatsAdmin(m){
-  const inicio=Number(m.fundador_inicio||MOTORISTA_FUNDADOR_INICIO), limite=Math.max(0,Number(m.fundador_limite??10));
-  const usadas=(estado.admin.todosPedidos||[]).filter(p=>p.status==='entregue' && p.motorista_telefone===m.telefone && Number(p.atualizado_em||p.criado_em||0)>=inicio).length;
-  return {limite,usadas:Math.min(limite,usadas),restantes:Math.max(0,limite-usadas)};
-}
-async function salvarFundadorMotoristaAdmin(id){
-  const ativo=!!document.getElementById('fundador-ativo-'+id)?.checked;
-  const limite=Math.max(0,Math.min(100,Number(document.getElementById('fundador-limite-'+id)?.value||0)));
-  const {error}=await sb.rpc('entrega_admin_fundador_motorista',{p_senha:estado.admin.senhaDigitada,p_id:id,p_ativo:ativo,p_limite:limite});
-  if(error){ console.error(error); mostrarToast(error.message==='senha_invalida'?'Sessão de admin expirada.':'Erro ao salvar benefício Fundador.','erro'); return; }
-  mostrarToast('Benefício Motorista Fundador atualizado.','sucesso'); await carregarMotoristasAdmin();
-}
 function motoristaCardHTML(m, emRota){
-  const fs=fundadorStatsAdmin(m);
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span>🚚 Em rota</span>`
     : m.disponivel
@@ -6802,8 +6328,7 @@ function motoristaCardHTML(m, emRota){
           <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${m.disponivel?'🟢 Online':'⚪ Offline'}${emRota?' · 🚚 Em rota':''}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          
-          <span class="selo ${m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${m.status}</span>${m.fundador_ativo!==false?`<span class="selo" style="background:rgba(255,190,61,.16);color:var(--mango)">🏆 Fundador ${fs.usadas}/${fs.limite}</span>`:''}
+          <span class="selo ${m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${m.status}</span>
         </div>
       </summary>
       <div class="admin-detalhes">
@@ -6814,15 +6339,6 @@ function motoristaCardHTML(m, emRota){
       <div class="am-linha"><span>Chave PIX</span><b>${m.chave_pix||'—'}</b></div>
       <div class="am-linha"><span>Plano</span><b>${PLANOS[m.plano]?.label||m.plano}</b></div>
       <div class="am-linha"><span>💰 Saldo a receber</span><b style="color:var(--mango)">R$ ${Number(m.saldo||0).toFixed(2)}</b></div>
-      <div style="margin-top:10px;padding:10px;border:1px solid var(--mango);border-radius:12px;background:rgba(255,190,61,.06)">
-        <div style="font-weight:800;color:var(--mango);margin-bottom:6px">🏆 Motorista Fundador</div>
-        <div style="font-size:13px;color:var(--poeira);margin-bottom:8px">Usadas: <b>${fs.usadas}/${fs.limite}</b> · Restam: <b style="color:var(--verde)">${fs.restantes}</b> sem comissão</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-          <label style="display:flex;gap:6px;align-items:center;margin:0"><input type="checkbox" id="fundador-ativo-${m.id}" ${m.fundador_ativo!==false?'checked':''} style="width:auto"> Selo/benefício ativo</label>
-          <label style="margin:0;display:flex;gap:5px;align-items:center">Limite <input type="number" id="fundador-limite-${m.id}" min="0" max="100" value="${fs.limite}" style="width:72px;padding:7px"></label>
-          
-        </div>
-      </div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <label style="display:flex;align-items:center;gap:6px;margin:0 0 8px;cursor:pointer">
           <input type="checkbox" id="bonus-motorista-${m.telefone.replace(/\D/g,'')}" style="width:auto">
@@ -6835,7 +6351,7 @@ function motoristaCardHTML(m, emRota){
           <option value="free" ${m.plano==='free'?'selected':''}>🆓 Free</option>
           <option value="pro" ${m.plano==='pro'?'selected':''}>⭐ Pro</option>
         </select>
-        
+        <button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('alterarPlano_'+m.id)} onclick="dispararAlterarPlanoMotoristaAdmin('${m.id}')">${rotuloCarregando('alterarPlano_'+m.id,'Alterar plano','Alterando...')}</button>
       </div>
       <div class="am-linha"><span>Taxa de inscrição</span><b>${m.taxa_valor>0 ? (m.taxa_status==='pago'?'✅ Paga':'⏳ Pendente') : '— (plano Free)'}</b></div>
       ${m.taxa_valor>0 && m.taxa_status!=='pago' ? `<button class="btn btn-verde btn-pequeno" style="margin-top:8px;width:100%" ${atributoDesabilitado('marcarTaxaPro_'+m.id)} onclick="executarComCarregando('marcarTaxaPro_${m.id}', ()=>marcarTaxaProPagaAdmin('${m.id}'))">${rotuloCarregando('marcarTaxaPro_'+m.id,'✅ Marcar taxa única Pro como paga (manual)','Marcando...')}</button>` : ''}
@@ -6865,13 +6381,13 @@ function motoristaCardHTML(m, emRota){
       ${m.status==='basico' ? `
       <div class="subtitulo" style="margin-top:8px">📝 Cadastro básico (nome + veículo) — ainda sem documentos. Confere os dados acima e libera se fizer sentido pra região/veículo.</div>
       <div style="display:flex;gap:8px;margin-top:10px">
-        
+        <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="liberarDocumentosMotoristaAdmin('${m.id}')">🔓 Liberar envio de documentos</button>
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
       </div>
-      ` : ''}
+      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Lembrar de enviar os documentos</button>` : ''}
       ${m.status==='pendente' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
-        
+        <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')">✅ Aprovar</button>
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Reprovar</button>
       </div>` : ''}
       ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>` : ''}
@@ -6880,7 +6396,7 @@ function motoristaCardHTML(m, emRota){
         <label style="margin:0 0 6px">Ajustar saldo manualmente (R$, use negativo pra debitar)</label>
         <div style="display:flex;gap:8px">
           <input type="number" id="ajuste-saldo-${m.telefone.replace(/\D/g,'')}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1">
-          
+          <button class="btn btn-secundario btn-pequeno" onclick="ajustarSaldoMotoristaAdmin('${m.telefone}')">Aplicar</button>
         </div>
       </div>` : ''}
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
@@ -6892,10 +6408,10 @@ function motoristaCardHTML(m, emRota){
           ${m.veiculo_tipo!=='bicicleta' ? `<div><label style="margin:0 0 4px">Placa</label><input type="text" id="edit-placa-${m.id}" value="${(m.veiculo_placa||'').replace(/"/g,'&quot;')}" placeholder="Ex: ABC1D23"></div>` : ''}
           <div style="display:flex;gap:8px">
             <button class="btn btn-verde btn-pequeno" style="flex:1" ${atributoDesabilitado('salvarMotorista_'+m.id)} onclick="executarComCarregando('salvarMotorista_${m.id}', ()=>salvarEdicaoMotoristaAdmin('${m.id}'))">${rotuloCarregando('salvarMotorista_'+m.id,'💾 Salvar','Salvando...')}</button>
-            
+            <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoMotoristaAdmin('${m.id}')">Cancelar</button>
           </div>
         </div>` : `
-        `}
+        <button class="btn btn-secundario btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoMotoristaAdmin('${m.id}')">✏️ Editar nome / telefone${m.veiculo_tipo!=='bicicleta'?' / placa':''}</button>`}
         <div style="margin-top:8px;display:flex;gap:8px">
           <input type="password" id="nova-senha-${m.id}" placeholder="Nova senha (mín. 4 caracteres)" style="flex:1">
           <button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('senhaMotorista_'+m.id)} onclick="executarComCarregando('senhaMotorista_${m.id}', ()=>alterarSenhaMotoristaAdmin('${m.id}', document.getElementById('nova-senha-${m.id}').value))">${rotuloCarregando('senhaMotorista_'+m.id,'🔑 Trocar senha','Trocando...')}</button>
@@ -6966,7 +6482,7 @@ function adminAbaAvisosHTML(){
   </div>
   <label style="margin-top:10px">Mensagem</label>
   <textarea id="aviso-geral-mensagem" rows="4" placeholder="Ex: Olá! O que vocês estão achando do preço da quilometragem? Deixem sua sugestão — queremos ouvir vocês!">${ag.mensagem}</textarea>
-  `;
+  <button class="btn btn-primario" ${ag.enviando?'disabled':''} onclick="enviarAvisoGeralAdmin()">${ag.enviando?'A enviar...':`📢 Mandar alerta para ${ag.papel==='motorista'?'TODOS os motoristas':'TODOS os clientes'}`}</button>`;
 }
 function adminAbaFeedbacksHTML(){
   const a = estado.admin;
@@ -6993,11 +6509,7 @@ async function carregarTodosPedidosAdmin(){
   const { data, error } = await sb.from('entrega_pedidos').select('*').order('criado_em',{ascending:false}).limit(500);
   estado.admin.carregando=false;
   if(error){ console.error(error); mostrarToast('Erro ao carregar pedidos.', 'erro'); return; }
-  const novaLista=data||[];
-  const estrutural = arr=>JSON.stringify((arr||[]).map(p=>{ const x={...p}; delete x.motorista_lat; delete x.motorista_lng; delete x.motorista_atualizado_em; delete x.atualizado_em; return x; }));
-  const soGpsMudou = estado.admin.todosPedidos.length>0 && estrutural(novaLista)===estrutural(estado.admin.todosPedidos);
-  estado.admin.todosPedidos = novaLista;
-  if(soGpsMudou){ if(estado.admin.aberto && estado.admin.aba==='resumo') montarMapaAdminGeral(); return; }
+  estado.admin.todosPedidos = data||[];
   render();
 }
 async function carregarClientesAdmin(){
@@ -7013,11 +6525,7 @@ async function carregarClientesAdmin(){
   if(erroSaldos) console.error(erroSaldos);
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
-  estado.admin.clientes = (data||[]).map(c=>({
-    ...c,
-    saldo: saldoPorTelefone[c.telefone]||0,
-    cadastro_incompleto: !(c.facial_ativa && Array.isArray(c.face_descriptor) && c.face_descriptor.length)
-  }));
+  estado.admin.clientes = (data||[]).map(c=>({ ...c, saldo: saldoPorTelefone[c.telefone]||0 }));
   render();
 }
 function filtrarPedidosAdmin(){
@@ -7039,7 +6547,7 @@ function adminCorpoHTML(){
     return `
     <label>Senha do painel</label>
     <input type="text" id="admin-senha" oninput="digitarSenhaAdmin(this.value)" onkeydown="if(event.key==='Enter') entrarAdmin()" style="-webkit-text-security:disc;text-security:disc;">
-    `;
+    <button class="btn btn-primario" onclick="entrarAdmin()">Entrar</button>`;
   }
   const suporteAbertos = (a.suporteConversas||[]).filter(c=>c.status!=='resolvido');
   const saquesPendentes = (a.saques||[]).filter(s=>s.status==='pendente');
@@ -7070,7 +6578,7 @@ function adminCorpoHTML(){
   else if(a.aba==='feedbacks') corpo = adminAbaFeedbacksHTML();
   else corpo = adminAbaSuporteHTML();
   return `
-    <div class="admin-abas-grade">${abas.map(x=>``).join('')}</div>
+    <div class="admin-abas-grade">${abas.map(x=>`<button class="${a.aba===x.id?'ativo':''}" onclick="mudarAbaAdmin('${x.id}')">${x.label}</button>`).join('')}</div>
     <div class="admin-aba-corpo">${corpo}</div>`;
 }
 
@@ -7094,20 +6602,35 @@ function adminAbaResumoHTML(){
   );
   return `
     <div class="admin-cartao" style="background:linear-gradient(135deg, var(--painel-alt), var(--painel));border:2px solid var(--mango);margin-bottom:14px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:8px"><span class="ponto-pulsante" style="background:var(--chama)"></span><b style="font-family:'Rajdhani';font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:0.3px;color:var(--mango)">AO VIVO — Operação agora</b></div>
-        <div style="text-align:right"><div style="font-size:11px;color:var(--poeira);text-transform:uppercase">Pessoas online</div><div id="ef-online-total" style="font-size:28px;font-weight:900;color:var(--mango);line-height:1">${efOnlineResumo.total||0}</div></div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <span class="ponto-pulsante" style="background:var(--chama)"></span>
+        <b style="font-family:'Rajdhani';font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:0.3px;color:var(--mango)">AO VIVO — Operação agora</b>
       </div>
-      <div id="ef-online-detalhes" style="font-size:12px;color:var(--poeira);margin:-5px 0 12px">${efOnlineResumo.visitantes||0} visitantes • ${efOnlineResumo.clientes||0} clientes • ${efOnlineResumo.motoristas||0} motoristas</div>
       <div class="admin-grade-cartoes colunas-3" style="gap:10px">
-        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px"><div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--verde);line-height:1">${motoristasOnlineAgora}</div><div style="font-size:12.5px;color:var(--poeira);margin-top:4px">🟢 Motoristas online</div></div>
-        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px"><div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--mango);line-height:1">${motoristasEmEntregaAgora}</div><div style="font-size:12.5px;color:var(--poeira);margin-top:4px">🛵 Em corrida agora</div></div>
-        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px"><div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--chama);line-height:1">${clientesAguardando}</div><div style="font-size:12.5px;color:var(--poeira);margin-top:4px">⏳ Clientes aguardando</div></div>
-        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px"><div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:#5aa9e6;line-height:1">${pedidosAceitosAndamento}</div><div style="font-size:12.5px;color:var(--poeira);margin-top:4px">✅ Pedidos em andamento</div></div>
+        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px">
+          <div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--verde);line-height:1">${motoristasOnlineAgora}</div>
+          <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">🟢 Motoristas online</div>
+        </div>
+        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px">
+          <div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--mango);line-height:1">${motoristasEmEntregaAgora}</div>
+          <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">🛵 Em corrida agora</div>
+        </div>
+        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px">
+          <div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--chama);line-height:1">${clientesAguardando}</div>
+          <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">⏳ Clientes aguardando motorista</div>
+        </div>
+        <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px">
+          <div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:#5aa9e6;line-height:1">${pedidosAceitosAndamento}</div>
+          <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">✅ Pedidos aceitos, em andamento</div>
+        </div>
       </div>
       <div class="mapa-admin-geral" id="admin-mapa-geral" style="margin-top:14px"></div>
-      <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra ao vivo: 🟢 motoristas disponíveis, 🟠 motoristas em corrida e 🔵 clientes aguardando.</div>
-      ${motoristasSemLocalizacao.length>0 ? `<div class="cf-nota" style="background:rgba(255,147,48,0.12);border:1px solid rgba(255,147,48,0.35);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-top:10px">⚠️ ${motoristasSemLocalizacao.length} motorista${motoristasSemLocalizacao.length>1?'s estão':' está'} online mas sem localização recente:<br>${motoristasSemLocalizacao.map(m=>`• ${m.nome||m.telefone}${m.telefone?` (${m.telefone})`:''}`).join('<br>')}</div>` : ''}
+      <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra ao vivo: 🟢 motoristas disponíveis, 🟠 motoristas em corrida e 🔵 clientes aguardando. Toque numa bolinha pra ver quem é.</div>
+      ${motoristasSemLocalizacao.length>0 ? `
+      <div class="cf-nota" style="background:rgba(255,147,48,0.12);border:1px solid rgba(255,147,48,0.35);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-top:10px">
+        ⚠️ ${motoristasSemLocalizacao.length} motorista${motoristasSemLocalizacao.length>1?'s estão':' está'} online mas não aparece${motoristasSemLocalizacao.length>1?'m':''} no mapa por falta de localização recente (app fechado, GPS desligado ou permissão de localização negada no telemóvel):<br>
+        ${motoristasSemLocalizacao.map(m=>`• ${m.nome||m.telefone}${m.telefone?` (${m.telefone})`:''}`).join('<br>')}
+      </div>` : ''}
     </div>
     <div class="cf-nota" style="background:rgba(127,174,114,0.1);border:1px solid rgba(127,174,114,0.3);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-bottom:14px">
       ✅ A carteira do cliente agora é 100% automática: o cliente gera o Pix, paga, e o saldo cai sozinho (via webhook do Mercado Pago) — sem precisar de nada manual. Se algum caso específico der problema, ainda dá pra creditar na mão pela aba "👤 Clientes".
@@ -7288,7 +6811,7 @@ function adminAbaConfigHTML(){
   <input type="text" id="cfg-senha-atual" style="-webkit-text-security:disc;text-security:disc;">
   <label>Nova senha</label>
   <input type="text" id="cfg-senha-nova" style="-webkit-text-security:disc;text-security:disc;">
-  `;
+  <button class="btn btn-secundario" style="margin-top:8px" onclick="trocarSenhaAdminPainel()">Trocar senha</button>`;
 }
 async function trocarSenhaAdminPainel(){
   const atual = document.getElementById('cfg-senha-atual')?.value||'';
@@ -7331,7 +6854,7 @@ function adminAbaPedidosHTML(){
   ];
   return `
   <input type="text" placeholder="Buscar por nome, telefone ou ID..." value="${a.buscaPedidos}" oninput="digitarBuscaPedidosAdmin(this.value)" style="margin-bottom:10px">
-  <div class="admin-filtros-grade">${filtros.map(f=>``).join('')}</div>
+  <div class="admin-filtros-grade">${filtros.map(f=>`<button class="${a.filtroPedidos===f.id?'ativo':''}" onclick="definirFiltroPedidosAdmin('${f.id}')">${f.label}</button>`).join('')}</div>
   <div class="subtitulo" style="margin-top:10px;margin-bottom:10px">${lista.length} pedido(s) — mostrando os 500 mais recentes do banco.</div>
   ${lista.length===0 ? `<div class="vazio"><span class="emoji-grande">📦</span>Nenhum pedido encontrado.</div>` : `<div class="admin-grade-cartoes colunas-3">${lista.map(pedidoCardAdminHTML).join('')}</div>`}`;
 }
@@ -7358,7 +6881,7 @@ function pedidoCardAdminHTML(p){
         </div>
         <div style="display:flex;gap:8px;margin-top:4px">
           <button class="btn btn-verde btn-pequeno" style="flex:1" ${atributoDesabilitado('salvarPedidoAdmin_'+p.id)} onclick="executarComCarregando('salvarPedidoAdmin_${p.id}', ()=>salvarEdicaoPedidoAdmin('${p.id}'))">${rotuloCarregando('salvarPedidoAdmin_'+p.id,'💾 Salvar','Salvando...')}</button>
-          
+          <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoPedidoAdmin('${p.id}')">Cancelar</button>
         </div>
       </div>
       <div class="am-linha" style="margin-top:8px"><span>ID</span><b style="font-family:monospace;font-size:11.5px">${p.id}</b></div>
@@ -7379,7 +6902,7 @@ function pedidoCardAdminHTML(p){
       <div class="am-linha"><span>Criado em</span><b>${new Date(Number(p.criado_em)).toLocaleString('pt-BR')}</b></div>
       <div class="am-linha"><span>ID</span><b style="font-family:monospace;font-size:11.5px">${p.id}</b></div>
       <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
-        
+        <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoPedidoAdmin('${p.id}')">✏️ Editar</button>
         <button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" ${atributoDesabilitado('excluirPedidoAdmin_'+p.id)} onclick="executarComCarregando('excluirPedidoAdmin_${p.id}', ()=>excluirPedidoAdmin('${p.id}','${(p.cliente_nome||'').replace(/'/g,"\\'")}'))">${rotuloCarregando('excluirPedidoAdmin_'+p.id,'🗑️ Excluir','Excluindo...')}</button>
       </div>
     </div>`;
@@ -7451,9 +6974,9 @@ function clienteCardAdminHTML(c){
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <b style="font-family:'Rajdhani';font-weight:700;font-size:12.5px;text-transform:uppercase">🔧 Gerenciar cadastro</b>
-          ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div style="display:flex;gap:8px"></div></div>` : ``}
-          <div style="margin-top:8px;display:flex;gap:8px"><input type="password" id="nova-senha-cliente-${idc}" placeholder="Nova senha" style="flex:1"></div>
-          <div style="display:flex;gap:8px;margin-top:8px">${c.bloqueado?``:``}</div>
+          ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div style="display:flex;gap:8px"><button class="btn btn-verde btn-pequeno" style="flex:1" onclick="salvarEdicaoClienteAdmin('${c.telefone}')">💾 Salvar</button><button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">Cancelar</button></div></div>` : `<button class="btn btn-secundario btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">✏️ Editar dados</button>`}
+          <div style="margin-top:8px;display:flex;gap:8px"><input type="password" id="nova-senha-cliente-${idc}" placeholder="Nova senha" style="flex:1"><button class="btn btn-secundario btn-pequeno" onclick="alterarSenhaClienteAdmin('${c.telefone}', document.getElementById('nova-senha-cliente-${idc}').value)">🔑 Trocar senha</button></div>
+          <div style="display:flex;gap:8px;margin-top:8px">${c.bloqueado?`<button class="btn btn-verde btn-pequeno" style="flex:1" onclick="desbloquearClienteAdmin('${c.telefone}')">🔓 Desbloquear</button>`:`<button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="bloquearClienteAdmin('${c.telefone}')">🔒 Bloquear</button>`}<button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" onclick="excluirClienteAdmin('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}')">🗑️ Excluir</button></div>
         </div>
       </div>
     </details>`;
@@ -7759,7 +7282,7 @@ function abrirAdmin(){
     if(estado.admin.alertas.length===0) carregarAlertasAdmin();
   }
 }
-function fecharAdmin(){ estado.admin.aberto=false; removerLocal('ef_admin_aberto'); render(); }
+function fecharAdmin(){ estado.admin.aberto=true; salvarLocal('ef_admin_aberto','true'); render(); }
 function digitarSenhaAdmin(v){ estado.admin.senhaDigitada=v; }
 async function entrarAdmin(){
   const senha = estado.admin.senhaDigitada;
@@ -7797,7 +7320,7 @@ function sairAdmin(){
   // fecha visualmente primeiro para não dar a sensação de "piscar e voltar"
   const fundo = document.querySelector('.modal-fundo-admin');
   if(fundo) fundo.remove();
-  estado.admin.logado=false; estado.admin.aberto=false; estado.admin.senhaDigitada='';
+  estado.admin.logado=false; estado.admin.aberto=true; estado.admin.senhaDigitada='';
   encerrarSuporteAdminGlobal();
   encerrarAdminRealtime();
   if(mapaAdminGeral){
@@ -7805,7 +7328,7 @@ function sairAdmin(){
     mapaAdminGeral=null;
   }
   removerLocal('ef_admin_logado');
-  removerLocal('ef_admin_aberto');
+  salvarLocal('ef_admin_aberto','true');
   removerLocal('ef_admin_aba');
   removerLocal('ef_admin_senha');
   render();
@@ -7822,11 +7345,7 @@ async function carregarMotoristasAdmin(){
   if(erroSaldos) console.error(erroSaldos);
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
-  const novaLista = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  const estrutural = arr=>JSON.stringify((arr||[]).map(m=>{ const x={...m}; delete x.lat_atual; delete x.lng_atual; delete x.lat_atualizado_em; return x; }));
-  const soGpsMudou = estado.admin.motoristas.length>0 && estrutural(novaLista)===estrutural(estado.admin.motoristas);
-  estado.admin.motoristas = novaLista;
-  if(soGpsMudou){ if(estado.admin.aberto && estado.admin.aba==='resumo') montarMapaAdminGeral(); return; }
+  estado.admin.motoristas = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
   render();
 }
 async function carregarPedidosEntreguesAdmin(){
@@ -7938,7 +7457,7 @@ window.ajustarSaldoClienteAdmin=ajustarSaldoClienteAdmin; window.dispararAjusteS
 window.alterarPlanoMotoristaAdmin=alterarPlanoMotoristaAdmin;
 window.alternarDisponibilidade=alternarDisponibilidade; window.solicitarSaque=solicitarSaque; window.marcarSaquePago=marcarSaquePago; window.testarSaqueAutomatico=testarSaqueAutomatico;
 window.salvarRaioAtendimento=salvarRaioAtendimento; window.abrirChamadoAmigo=abrirChamadoAmigo; window.fecharChamadoAmigo=fecharChamadoAmigo; window.enviarChamadoAmigo=enviarChamadoAmigo; window.cancelarChamadoAmigo=cancelarChamadoAmigo; window.ajudarChamadoAmigo=ajudarChamadoAmigo;
-window.abrirSOSFlutuante=abrirSOSFlutuante; window.acionarSOSCliente=acionarSOSCliente; window.fecharSOSCliente=fecharSOSCliente;
+window.abrirSOSFlutuante=abrirSOSFlutuante;
 window.abrirSuporte=abrirSuporte; window.fecharSuporte=fecharSuporte; window.enviarMensagemSuporte=enviarMensagemSuporte; window.abrirSuporteGeral=abrirSuporteGeral;
 window.abrirContatoRapido=abrirContatoRapido; window.fecharContatoRapido=fecharContatoRapido; window.enviarContatoRapido=enviarContatoRapido;
 window.abrirFeedback=abrirFeedback; window.fecharFeedback=fecharFeedback; window.definirCategoriaFeedback=definirCategoriaFeedback; window.enviarFeedback=enviarFeedback;
