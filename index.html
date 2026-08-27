@@ -7225,6 +7225,7 @@ function adminCorpoHTML(){
   else if(a.aba==='feedbacks') corpo = adminAbaFeedbacksHTML();
   else corpo = adminAbaSuporteHTML();
   return `
+    ${resumoCidadesAdminPrincipalHTML(a.motoristas)}
     <div class="admin-abas-grade">${abas.map(x=>``).join('')}</div>
     <div class="admin-aba-corpo">${corpo}</div>`;
 }
@@ -7264,7 +7265,6 @@ function adminAbaResumoHTML(){
       <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra ao vivo: 🟢 motoristas disponíveis, 🟠 motoristas em corrida e 🔵 clientes aguardando.</div>
       ${motoristasSemLocalizacao.length>0 ? `<div class="cf-nota" style="background:rgba(255,147,48,0.12);border:1px solid rgba(255,147,48,0.35);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-top:10px">⚠️ ${motoristasSemLocalizacao.length} motorista${motoristasSemLocalizacao.length>1?'s estão':' está'} online mas sem localização recente:<br>${motoristasSemLocalizacao.map(m=>`• ${m.nome||m.telefone}${m.telefone?` (${m.telefone})`:''}`).join('<br>')}</div>` : ''}
     </div>
-    ${resumoCidadesAdminPrincipalHTML(a.motoristas)}
     <div class="cf-nota" style="background:rgba(127,174,114,0.1);border:1px solid rgba(127,174,114,0.3);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-bottom:14px">
       ✅ A carteira do cliente agora é 100% automática: o cliente gera o Pix, paga, e o saldo cai sozinho (via webhook do Mercado Pago) — sem precisar de nada manual. Se algum caso específico der problema, ainda dá pra creditar na mão pela aba "👤 Clientes".
     </div>
