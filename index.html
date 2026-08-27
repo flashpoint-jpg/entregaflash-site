@@ -4890,8 +4890,9 @@ function telaAcessoMotorista(){
       <button class="btn btn-secundario" style="margin-top:16px" onclick="irParaLogin()">Voltar</button></div>`;
   }
   if(pm.tela==='liberado'){
-    return `<div class="box-status"><span class="bs-emoji">🎉</span><div class="bs-titulo">Cadastro liberado!</div><div class="bs-texto">Envia os teus documentos agora pra começares a receber corridas ainda hoje.</div>
-      <button class="btn btn-primario" style="margin-top:16px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'A carregar...':'📄 Enviar documentos'}</button></div>`;
+    return `<div class="box-status" style="border:1.5px solid var(--mango)"><span class="bs-emoji">📄</span><div class="bs-titulo">Falta só ativar seu cadastro</div><div class="bs-texto">Seu cadastro já foi recebido. Para ficar apto a receber entregas, conclua seus dados e envie os documentos agora. Sem os documentos, sua conta ainda não fica ativa para trabalhar.</div>
+      <div style="margin-top:12px;padding:10px;border-radius:10px;background:rgba(255,201,60,.10);font-size:13px"><b>⚡ Continue agora</b> — você não precisa refazer o cadastro.</div>
+      <button class="btn btn-primario" style="margin-top:16px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'A carregar...':'📄 CONTINUAR E ENVIAR DOCUMENTOS'}</button></div>`;
   }
   if(pm.tela==='pendente'){
     return `<div class="box-status"><span class="bs-emoji">⏳</span><div class="bs-titulo">Cadastro em análise</div><div class="bs-texto">Recebemos os seus dados e o pagamento da taxa. Vamos avisar-te por WhatsApp assim que o cadastro for aprovado.</div></div>`;
@@ -6457,7 +6458,7 @@ async function loginFacialMotorista(){
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
-  if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
+  if(['basico','liberado'].includes(data.status)){ pm.telefoneLiberado=data.telefone; await continuarParaDocumentos(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:data.senha_hash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -6484,7 +6485,7 @@ async function loginMotorista(){
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone. Cadastra-te abaixo.'; render(); return; }
   if(data.senha_hash !== senhaHash){ pm.loginErro='Senha incorreta.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
-  if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
+  if(['basico','liberado'].includes(data.status)){ pm.telefoneLiberado=data.telefone; await continuarParaDocumentos(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:senhaHash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -6599,7 +6600,10 @@ async function avancarEtapa1(){
     // Conversão para a campanha de recrutamento: motorista entrou na base.
     registrarConversaoMotoristaMeta(c.telefone);
     estado.painelMotorista.telefoneLiberado = c.telefone;
-    estado.painelMotorista.tela='liberado';
+    // Não deixa o motorista parar numa tela intermediária: segue direto
+    // para completar os dados e chegar ao envio dos documentos.
+    await continuarParaDocumentos();
+    return;
   } else {
     c.id=null; c.erroEtapa='Erro ao gravar. Tenta de novo.';
   }
