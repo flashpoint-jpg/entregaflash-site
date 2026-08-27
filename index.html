@@ -6558,6 +6558,21 @@ function normalizarPlaca(placa){
   return String(placa||'').toUpperCase().replace(/[\s-]/g,'');
 }
 
+// ---------- Meta Ads: conversão de cadastro de motorista ----------
+// Para a campanha de captação, consideramos conversão quando o pré-cadastro
+// (nome, telefone, cidade e senha) é salvo com sucesso. O localStorage evita
+// disparar CompleteRegistration duas vezes para o mesmo telefone neste aparelho.
+function registrarConversaoMotoristaMeta(telefone){
+  try{
+    const tel = String(telefone||'').replace(/\D/g,'');
+    if(!tel || typeof fbq==='undefined') return;
+    const chave = 'ef_meta_complete_registration_motorista_'+tel;
+    if(localStorage.getItem(chave)==='1') return;
+    fbq('track','CompleteRegistration',{content_name:'motorista',content_category:'pre_cadastro_motorista'});
+    localStorage.setItem(chave,'1');
+  }catch(e){ console.warn('Meta Pixel: não foi possível registrar a conversão do motorista.', e); }
+}
+
 async function avancarEtapa1(){
   const c = estado.painelMotorista.cadastro;
   c.nome = document.getElementById('cm-nome').value.trim();
@@ -6581,6 +6596,8 @@ async function avancarEtapa1(){
   const ok = await salvarEtapaCadastro({ nome:c.nome, telefone:c.telefone, cidade:c.cidade, senha_hash:c.senhaHash, veiculo_tipo:c.veiculo, status:'liberado' });
   c.enviando=false;
   if(ok){
+    // Conversão para a campanha de recrutamento: motorista entrou na base.
+    registrarConversaoMotoristaMeta(c.telefone);
     estado.painelMotorista.telefoneLiberado = c.telefone;
     estado.painelMotorista.tela='liberado';
   } else {
@@ -6755,7 +6772,9 @@ async function finalizarCadastroMotorista(){
   c.enviando=false;
   if(ok){
     estado.painelMotorista.tela='pendente';
-    try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista'}); }catch(e){}
+    // Mantém compatibilidade para cadastros antigos, sem duplicar quem já foi
+    // contabilizado no pré-cadastro.
+    registrarConversaoMotoristaMeta(c.telefone);
     registrarAlertaAdmin('novo_motorista', `Novo motorista cadastrado, aguardando aprovação: ${c.nome||''} (${c.telefone||''}).`);
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 800);
   }
