@@ -6565,12 +6565,16 @@ async function avancarEtapa1(){
   }
   if(existente) c.id = existente.id;
   c.senhaHash = await hashSenha(c.senha);
-  // este é o fim do cadastro "básico" — para por aqui de propósito: o motorista já vê a tela
-  // do app (sem poder ligar a rota) e só é convidado a completar CPF/veículo/documentos depois
-  // que o admin analisa esses dados básicos e libera, reduzindo a fricção logo na entrada
-  const ok = await salvarEtapaCadastro({ nome:c.nome, telefone:c.telefone, cidade:c.cidade, senha_hash:c.senhaHash, veiculo_tipo:c.veiculo, status:'basico' });
+  // Pré-cadastro concluído: não depende mais de liberação manual do admin.
+  // O motorista segue direto para completar CPF/veículo e enviar os documentos.
+  const ok = await salvarEtapaCadastro({ nome:c.nome, telefone:c.telefone, cidade:c.cidade, senha_hash:c.senhaHash, veiculo_tipo:c.veiculo, status:'liberado' });
   c.enviando=false;
-  if(ok){ estado.painelMotorista.tela='basico'; } else { c.id=null; c.erroEtapa='Erro ao gravar. Tenta de novo.'; }
+  if(ok){
+    estado.painelMotorista.telefoneLiberado = c.telefone;
+    estado.painelMotorista.tela='liberado';
+  } else {
+    c.id=null; c.erroEtapa='Erro ao gravar. Tenta de novo.';
+  }
   render();
 }
 function mudarVeiculoCadastro(k){ estado.painelMotorista.cadastro.veiculo=k; render(); }
@@ -6817,6 +6821,74 @@ async function salvarFundadorMotoristaAdmin(id){
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida'?'Sessão de admin expirada.':'Erro ao salvar benefício Fundador.','erro'); return; }
   mostrarToast('Benefício Motorista Fundador atualizado.','sucesso'); await carregarMotoristasAdmin();
 }
+
+function normalizarCidadePainel(cidade){
+  const original=String(cidade||'').trim();
+  if(!original) return 'Não informada';
+  const semUF=original.replace(/\s*[-,]?\s*MG\s*$/i,'').trim();
+  const chave=semUF.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ');
+  const conhecidos={
+    'muzambinho':'Muzambinho',
+    'pocos de caldas':'Poços de Caldas',
+    'guaxupe':'Guaxupé',
+    'alfenas':'Alfenas',
+    'capitolio':'Capitólio',
+    'tres pontas':'Três Pontas',
+    'vargem grande do sul':'Vargem Grande do Sul',
+    'monte belo':'Monte Belo'
+  };
+  if(conhecidos[chave]) return conhecidos[chave];
+  return semUF.toLowerCase().replace(/(^|\s)([a-zà-ÿ])/g,(m,p,l)=>p+l.toUpperCase());
+}
+function rotuloStatusMotorista(status){
+  const mapa={
+    basico:'Aguardando documentos',
+    liberado:'Aguardando documentos',
+    pendente:'Documentos em análise',
+    aprovado:'Ativo',
+    bloqueado:'Bloqueado',
+    reprovado:'Reprovado',
+    incompleto:'Cadastro incompleto'
+  };
+  return mapa[status]||status||'Sem status';
+}
+function resumoMotoristasPorCidadeHTML(motoristas){
+  const grupos={};
+  (motoristas||[]).forEach(m=>{
+    const cidade=normalizarCidadePainel(m.cidade);
+    if(!grupos[cidade]) grupos[cidade]={total:0,ativos:0,docs:0,analise:0,online:0};
+    const g=grupos[cidade];
+    g.total++;
+    if(m.status==='aprovado') g.ativos++;
+    if(['basico','liberado'].includes(m.status)) g.docs++;
+    if(m.status==='pendente') g.analise++;
+    if(m.disponivel && m.status==='aprovado') g.online++;
+  });
+  const cidades=Object.entries(grupos).sort((a,b)=>b[1].total-a[1].total || a[0].localeCompare(b[0]));
+  return `
+    <div class="admin-cartao" style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px">
+        <b style="font-family:'Rajdhani';font-size:16px;text-transform:uppercase">📍 Motoristas por cidade</b>
+        <span class="selo">${cidades.length} cidade${cidades.length===1?'':'s'}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:8px">
+        ${cidades.map(([cidade,g])=>`
+          <div style="background:var(--painel);border:1px solid var(--linha);border-radius:10px;padding:10px">
+            <b style="display:block;margin-bottom:5px">${cidade}</b>
+            <div style="font-size:24px;font-family:'Rajdhani';font-weight:800">${g.total}</div>
+            <div style="font-size:11.5px;color:var(--poeira);line-height:1.55">✅ ${g.ativos} ativos · 🟢 ${g.online} online<br>📄 ${g.docs} aguard. docs · ⏳ ${g.analise} análise</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+}
+function abrirWhatsAppLembreteDocumentos(telefone,nome){
+  const numero=String(telefone||'').replace(/\D/g,'');
+  const numeroBR=numero.startsWith('55')?numero:'55'+numero;
+  const primeiro=String(nome||'').trim().split(/\s+/)[0]||'Motorista';
+  const msg=`Olá, ${primeiro}! 👋 Seu pré-cadastro na Entrega Flash foi recebido. Falta somente enviar seus documentos para ativarmos sua conta e você começar a receber entregas. Entre no app, faça login e toque em "Enviar documentos".`;
+  window.open(`https://wa.me/${numeroBR}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
 function motoristaCardHTML(m, emRota){
   const fs=fundadorStatsAdmin(m);
   const statusOperacional = emRota
@@ -6833,13 +6905,13 @@ function motoristaCardHTML(m, emRota){
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           
-          <span class="selo ${m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${m.status}</span>${m.fundador_ativo!==false?`<span class="selo" style="background:rgba(255,190,61,.16);color:var(--mango)">🏆 Fundador ${fs.usadas}/${fs.limite}</span>`:''}
+          <span class="selo ${m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${rotuloStatusMotorista(m.status)}</span>${m.fundador_ativo!==false?`<span class="selo" style="background:rgba(255,190,61,.16);color:var(--mango)">🏆 Fundador ${fs.usadas}/${fs.limite}</span>`:''}
         </div>
       </summary>
       <div class="admin-detalhes">
       <div class="am-linha"><span>CPF</span><b>${m.cpf}</b></div>
       <div class="am-linha"><span>Telefone</span><b>${m.telefone}</b></div>
-      <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
+      <div class="am-linha"><span>Cidade</span><b>${normalizarCidadePainel(m.cidade)}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b>${m.chave_pix||'—'}</b></div>
       <div class="am-linha"><span>Plano</span><b>${PLANOS[m.plano]?.label||m.plano}</b></div>
@@ -6853,6 +6925,15 @@ function motoristaCardHTML(m, emRota){
           
         </div>
       </div>
+      ${['basico','liberado'].includes(m.status) ? `
+      <div style="margin-top:10px;padding:10px;border:1px solid rgba(255,190,61,.35);border-radius:10px;background:rgba(255,190,61,.07)">
+        <b style="display:block;margin-bottom:6px">📄 Falta concluir a documentação</b>
+        <div style="font-size:12px;color:var(--poeira);margin-bottom:8px">Esse motorista ainda não está ativo para trabalhar.</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn btn-verde btn-pequeno" style="flex:1;min-width:150px" onclick="abrirWhatsAppLembreteDocumentos('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar no WhatsApp</button>
+          <button class="btn btn-secundario btn-pequeno" style="flex:1;min-width:150px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Enviar notificação</button>
+        </div>
+      </div>` : ''}
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <label style="display:flex;align-items:center;gap:6px;margin:0 0 8px;cursor:pointer">
           <input type="checkbox" id="bonus-motorista-${m.telefone.replace(/\D/g,'')}" style="width:auto">
@@ -6893,7 +6974,7 @@ function motoristaCardHTML(m, emRota){
         `}
       </div>` : ''}
       ${m.status==='basico' ? `
-      <div class="subtitulo" style="margin-top:8px">📝 Cadastro básico (nome + veículo) — ainda sem documentos. Confere os dados acima e libera se fizer sentido pra região/veículo.</div>
+      <div class="subtitulo" style="margin-top:8px">📄 Pré-cadastro concluído — aguardando o motorista enviar a documentação. Não precisa de liberação manual.</div>
       <div style="display:flex;gap:8px;margin-top:10px">
         
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
@@ -7073,7 +7154,7 @@ function adminCorpoHTML(){
   }
   const suporteAbertos = (a.suporteConversas||[]).filter(c=>c.status!=='resolvido');
   const saquesPendentes = (a.saques||[]).filter(s=>s.status==='pendente');
-  const pendentesMotoristas = (a.motoristas||[]).filter(m=>m.status==='pendente'||m.status==='basico');
+  const pendentesMotoristas = (a.motoristas||[]).filter(m=>['basico','liberado','pendente'].includes(m.status));
   const alertasNaoLidos = (a.alertas||[]).filter(x=>!x.lido);
   const feedbacksNaoLidos = (a.feedbacks||[]).filter(x=>!x.lido);
   const abas = [
@@ -7590,12 +7671,26 @@ function adminAbaMotoristasHTML(){
   const emRotaPorTelefone = {};
   (a.todosPedidos||[]).forEach(p=>{ if(p.motorista_telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status)) emRotaPorTelefone[p.motorista_telefone]=true; });
   const cardHTML=(m)=>motoristaCardHTML(m,!!emRotaPorTelefone[m.telefone]);
-  const online=a.motoristas.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
+  const online=a.motoristas.filter(m=>m.disponivel && m.status==='aprovado');
   const aguardandoDocs=a.motoristas.filter(m=>['basico','liberado'].includes(m.status));
   const pendentes=a.motoristas.filter(m=>m.status==='pendente');
   const ativos=a.motoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
   const outros=a.motoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
+  const total=a.motoristas.length;
+  const ativosTotal=a.motoristas.filter(m=>m.status==='aprovado').length;
+  const precisamAtencao=aguardandoDocs.length+pendentes.length;
   return `
+    <div class="admin-cartao" style="margin-bottom:14px">
+      <b style="font-family:'Rajdhani';font-size:16px;text-transform:uppercase">🚦 Funil de ativação</b>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;margin-top:10px">
+        <div style="background:var(--painel);padding:10px;border-radius:9px;text-align:center"><div style="font-size:27px;font-weight:800">${total}</div><div style="font-size:11.5px;color:var(--poeira)">Cadastrados</div></div>
+        <div style="background:var(--painel);padding:10px;border-radius:9px;text-align:center"><div style="font-size:27px;font-weight:800;color:var(--mango)">${aguardandoDocs.length}</div><div style="font-size:11.5px;color:var(--poeira)">Aguardando docs</div></div>
+        <div style="background:var(--painel);padding:10px;border-radius:9px;text-align:center"><div style="font-size:27px;font-weight:800">${pendentes.length}</div><div style="font-size:11.5px;color:var(--poeira)">Em análise</div></div>
+        <div style="background:var(--painel);padding:10px;border-radius:9px;text-align:center"><div style="font-size:27px;font-weight:800;color:var(--verde)">${ativosTotal}</div><div style="font-size:11.5px;color:var(--poeira)">Ativos</div></div>
+      </div>
+      ${precisamAtencao?`<div class="cf-nota" style="margin-top:10px;font-style:normal">⚠️ <b>${precisamAtencao}</b> motorista${precisamAtencao===1?' precisa':'s precisam'} de atenção para concluir a ativação.</div>`:''}
+    </div>
+    ${resumoMotoristasPorCidadeHTML(a.motoristas)}
     <div class="admin-lista-secao"><b>🟢 Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
     ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista online agora.</div>`}
     ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>📄 Ainda não enviaram documentos</b><span class="selo selo-aguardando">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
@@ -7993,7 +8088,7 @@ window.escolherPlano=escolherPlano;
 window.processarDocumentoSelecionado=processarDocumentoSelecionado; window.copiarPix=copiarPix;
 window.finalizarCadastroMotorista=finalizarCadastroMotorista; window.alternarTermos=alternarTermos;
 window.abrirAdmin=abrirAdmin; window.fecharAdmin=fecharAdmin; window.digitarSenhaAdmin=digitarSenhaAdmin;
-window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao;
+window.abrirWhatsAppLembreteDocumentos=abrirWhatsAppLembreteDocumentos; window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao;
 window.alternarEdicaoMotoristaAdmin=alternarEdicaoMotoristaAdmin; window.salvarEdicaoMotoristaAdmin=salvarEdicaoMotoristaAdmin;
 window.alternarEdicaoClienteAdmin=alternarEdicaoClienteAdmin; window.salvarEdicaoClienteAdmin=salvarEdicaoClienteAdmin;
 window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearClienteAdmin=bloquearClienteAdmin;
