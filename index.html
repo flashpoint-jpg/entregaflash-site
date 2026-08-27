@@ -684,6 +684,10 @@ fbq('track', 'PageView');
   }
 
 .campo-com-voz{display:flex;align-items:stretch;gap:8px;margin-bottom:10px}.campo-com-voz input{flex:1;min-width:0;margin-bottom:0}.btn-voz{width:48px;min-width:48px;border-radius:11px;border:1px solid var(--linha);background:var(--painel-alt);color:var(--osso);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}.btn-voz.ouvindo{background:var(--mango);color:#1b1b1b;animation:pulsoVoz 1s infinite}.voz-endereco-ajuda{font-size:12.5px;line-height:1.45;color:var(--poeira);background:var(--painel-alt);border:1px solid var(--linha);border-radius:10px;padding:9px 10px;margin:0 0 12px}.linha-parada .campo-com-voz{flex:1;margin:0;min-width:0}.linha-parada .campo-com-voz input{width:100%}@keyframes pulsoVoz{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+.notificacao-motorista-destaque{margin:0 0 12px;padding:12px;border:1px solid rgba(255,190,61,.45);background:rgba(255,190,61,.10);border-radius:12px}
+.notificacao-motorista-destaque b{display:block;margin-bottom:4px}
+
 </style>
 </head>
 <body>
@@ -1267,7 +1271,7 @@ async function pedirPermissaoNotificacao(){
   estado.notificacoesStatus = resultado;
   render();
   if(resultado==='granted'){
-    notificar('Notificações ativadas!', 'Vai receber avisos em tempo real por aqui.');
+    notificar('Notificações ativadas!', 'Agora você pode receber corridas e avisos mesmo com o app fechado.');
     inscreverPushReal(estado.admin.logado && estado.admin.aberto ? 'admin' : undefined);
   }
 }
@@ -2006,7 +2010,7 @@ function assinarPedidosRealtime(){
 // ---------- motoristas online ----------
 async function carregarMotoristasOnline(){
   try{
-    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).in('status', STATUS_ACESSO_PAINEL);
+    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).eq('status', 'aprovado');
     if(error){ console.error(error); return; }
     if(count!==estado.motoristasOnline){ estado.motoristasOnline = count||0; if(!estaDigitandoEndereco()) render(); }
   }catch(e){ console.error(e); }
@@ -5189,7 +5193,14 @@ function perfilMotoristaHTML(m){
 function telaMotorista(){
   const m = estado.motorista;
   if(!m.ativo){
-    if(estado.sessaoCarregando) return `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>`;
+    if(estado.sessaoCarregando) return `
+    ${(estado.motorista.ativo && estado.notificacoesStatus!=='granted') ? `
+    <div class="notificacao-motorista-destaque">
+      <b>🔔 Ative as notificações</b>
+      <div style="font-size:12.5px;color:var(--poeira);margin-bottom:8px">Sem isso, você pode perder corridas e avisos quando o aplicativo estiver fechado.</div>
+      <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar notificações agora</button>
+    </div>` : ''}
+<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>`;
     return telaAcessoMotorista();
   }
   const planoAtual = PLANOS[m.plano] || PLANOS.free;
@@ -5683,8 +5694,8 @@ function render(){
     <div class="faixa-instalar">
       <span class="icone">🔔</span>
       <div style="flex:1">
-        <div class="txt">Ativa as notificações</div>
-        <div class="sub">Recebe avisos em tempo real de novos pedidos e do estado das suas entregas.</div>
+        <div class="txt">🔔 Ative as notificações para receber corridas</div>
+        <div class="sub">Mesmo com o app fechado, você pode receber novos pedidos, avisos importantes e mensagens do Entrega Flash.</div>
       </div>
       <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar</button>
     </div>` : ''}
@@ -6901,11 +6912,12 @@ function motoristaCardHTML(m, emRota){
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">🛵</div>`}
-          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${m.disponivel?'🟢 Online':'⚪ Offline'}${emRota?' · 🚚 Em rota':''}</span></div>
+          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${m.status==='aprovado' ? (m.disponivel?'🟢 Online':'⚪ Offline') : (m.disponivel?'🟡 App aberto · ainda não ativo':'⚪ Ainda não ativo')}${emRota?' · 🚚 Em rota':''}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           
-          <span class="selo ${m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${rotuloStatusMotorista(m.status)}</span>${m.fundador_ativo!==false?`<span class="selo" style="background:rgba(255,190,61,.16);color:var(--mango)">🏆 Fundador ${fs.usadas}/${fs.limite}</span>`:''}
+          <span class="selo ${m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${rotuloStatusMotorista(m.status)}</span>
+          ${statusPushMotoristaHTML(m)}${m.fundador_ativo!==false?`<span class="selo" style="background:rgba(255,190,61,.16);color:var(--mango)">🏆 Fundador ${fs.usadas}/${fs.limite}</span>`:''}
         </div>
       </summary>
       <div class="admin-detalhes">
@@ -7191,7 +7203,7 @@ function adminAbaResumoHTML(){
   const emAndamentoStatuses = ['indo_coletar','coletado','a_caminho'];
   const todosPedidos = a.todosPedidos||[];
   const pedidosEmAndamento = todosPedidos.filter(p=>emAndamentoStatuses.includes(p.status));
-  const motoristasOnlineAgora = estado.motoristasOnline||0;
+  const motoristasOnlineAgora = (a.motoristas||[]).filter(m=>m.disponivel && m.status==='aprovado').length;
   const motoristasEmEntregaAgora = new Set(pedidosEmAndamento.map(p=>p.motorista_telefone).filter(Boolean)).size;
   const clientesAguardando = todosPedidos.filter(p=>p.status==='buscando').length;
   const pedidosAceitosAndamento = pedidosEmAndamento.length;
@@ -7690,6 +7702,13 @@ function adminAbaMotoristasHTML(){
       </div>
       ${precisamAtencao?`<div class="cf-nota" style="margin-top:10px;font-style:normal">⚠️ <b>${precisamAtencao}</b> motorista${precisamAtencao===1?' precisa':'s precisam'} de atenção para concluir a ativação.</div>`:''}
     </div>
+    <div class="admin-cartao" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <b style="font-family:'Rajdhani';font-size:16px;text-transform:uppercase">🔔 Notificações dos motoristas</b>
+        <span class="selo selo-entregue">${motoristasComPushAtivo().length}/${a.motoristas.length} com push</span>
+      </div>
+      <div class="subtitulo" style="margin-top:6px">Quem ativou pode receber avisos mesmo com o app fechado. Quem não ativou só vê o alerta quando abrir o app.</div>
+    </div>
     ${resumoMotoristasPorCidadeHTML(a.motoristas)}
     <div class="admin-lista-secao"><b>🟢 Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
     ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista online agora.</div>`}
@@ -7723,6 +7742,7 @@ function adminAbaSuporteHTML(){
 async function atualizarPainelAdmin(){
   await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin()]);
   await carregarSuporteAdmin();
+  await carregarPushMotoristasAdmin();
 }
 async function ajustarSaldoMotoristaAdmin(telefone){
   const input = document.getElementById('ajuste-saldo-'+telefone.replace(/\D/g,''));
@@ -7977,6 +7997,29 @@ function sairAdmin(){
   removerLocal('ef_admin_senha');
   render();
 }
+
+async function carregarPushMotoristasAdmin(){
+  try{
+    const { data, error } = await sb.from('push_subscriptions').select('papel,referencia,endpoint,criado_em').eq('papel','motorista');
+    if(error){ console.warn('Falha ao carregar push dos motoristas', error); estado.admin.pushMotoristas=[]; return; }
+    estado.admin.pushMotoristas = data || [];
+  }catch(e){
+    console.warn('Falha ao carregar push dos motoristas', e);
+    estado.admin.pushMotoristas=[];
+  }
+}
+function motoristasComPushAtivo(){
+  const refs = new Set((estado.admin.pushMotoristas||[]).map(x=>String(x.referencia||'').replace(/\D/g,'')));
+  return (estado.admin.motoristas||[]).filter(m=>refs.has(String(m.telefone||'').replace(/\D/g,'')));
+}
+function statusPushMotoristaHTML(m){
+  const refs = new Set((estado.admin.pushMotoristas||[]).map(x=>String(x.referencia||'').replace(/\D/g,'')));
+  const ativo = refs.has(String(m.telefone||'').replace(/\D/g,''));
+  return ativo
+    ? '<span class="selo selo-entregue">🔔 Notificações ativas</span>'
+    : '<span class="selo selo-aguardando">🔕 Sem push</span>';
+}
+
 async function carregarMotoristasAdmin(){
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
