@@ -337,6 +337,28 @@ fbq('track', 'PageView');
   .admin-resumo-card .admin-detalhes{padding:0 12px 12px;border-top:1px solid var(--linha);}
   .admin-lista-secao{margin:14px 0 8px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
   .admin-lista-secao b{font-family:'Rajdhani';font-weight:800;font-size:15px;text-transform:uppercase;}
+  .admin-clientes-filtros{display:flex;gap:7px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+  .admin-clientes-filtros::-webkit-scrollbar{display:none;}
+  .admin-filtro-btn{flex:0 0 auto;border:1px solid var(--linha);background:var(--painel);color:var(--poeira);border-radius:999px;padding:8px 11px;font-family:'Rajdhani';font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;cursor:pointer;}
+  .admin-filtro-btn.ativo{border-color:var(--mango);color:var(--mango);background:rgba(255,193,59,.08);}
+  .cliente-card-compacto>summary{padding:10px 11px;align-items:flex-start;}
+  .cliente-card-topo{display:flex;align-items:center;gap:9px;min-width:0;flex:1;}
+  .cliente-card-info{min-width:0;flex:1;}
+  .cliente-card-nome{display:block;font-size:15px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cliente-card-sub{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:4px;color:var(--poeira);font-size:11.5px;}
+  .cliente-card-metricas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:10px 0 0;}
+  .cliente-mini-metrica{background:var(--painel-alt);border:1px solid var(--linha);border-radius:9px;padding:7px 5px;text-align:center;min-width:0;}
+  .cliente-mini-metrica b{display:block;color:var(--osso);font-size:13px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cliente-mini-metrica span{display:block;color:var(--poeira);font-size:9.5px;text-transform:uppercase;margin-top:3px;}
+  .cliente-acoes-rapidas{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px;}
+  .cliente-bloco-retratil{margin-top:9px;border:1px solid var(--linha);border-radius:10px;background:rgba(255,255,255,.015);overflow:hidden;}
+  .cliente-bloco-retratil>summary{list-style:none;cursor:pointer;padding:10px 11px;font-family:'Rajdhani';font-weight:800;font-size:12.5px;text-transform:uppercase;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+  .cliente-bloco-retratil>summary::-webkit-details-marker{display:none;}
+  .cliente-bloco-retratil>summary:after{content:'⌄';color:var(--poeira);font-size:16px;}
+  .cliente-bloco-retratil[open]>summary:after{transform:rotate(180deg);}
+  .cliente-bloco-conteudo{padding:0 10px 10px;border-top:1px solid var(--linha);}
+  .cliente-destaque-pedido{font-size:10px;color:var(--mango);font-weight:800;text-transform:uppercase;letter-spacing:.25px;}
+  @media(max-width:390px){.cliente-card-metricas{grid-template-columns:repeat(2,1fr)}.cliente-acoes-rapidas{grid-template-columns:1fr}.admin-filtro-btn{padding:7px 9px;font-size:11px}}
   .icone-motorista-anim{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:20.5px;position:relative;transition:transform .25s linear;}
   .icone-motorista-anim::before{content:'';position:absolute;inset:-6px;border-radius:50%;background:rgba(255,201,60,0.35);animation:radarCarro 1.4s infinite ease-out;}
   .icone-motorista-anim span{position:relative;z-index:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
@@ -7432,37 +7454,58 @@ function clienteCardAdminHTML(c){
   const gastoTotal = entreguesCliente.reduce((s,p)=>s+(Number(p.preco)||0),0);
   const idc = String(c.telefone).replace(/\D/g,'');
   const validado = !!c.facial_ativa;
+  const nomeSeguro = (c.nome||'').replace(/'/g,"\\'");
+  const cadastro = c.criado_em?new Date(Number(c.criado_em)).toLocaleDateString('pt-BR'):'—';
+  const statusTexto = c.bloqueado?'Bloqueado':validado?'Ativo':'Pendente';
+  const statusClasse = c.bloqueado?'selo-cancelado':validado?'selo-entregue':'selo-andamento';
   return `
-    <details class="admin-resumo-card" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
+    <details class="admin-resumo-card cliente-card-compacto" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
-        <div class="avatar-linha" style="min-width:0">
-          <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">👤</div>
-          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome}</b><span style="font-size:12px;color:var(--poeira)">${validado?'✅ Cliente ativo':'⏳ Validação pendente'}</span></div>
+        <div style="min-width:0;flex:1">
+          <div class="cliente-card-topo">
+            <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:19px;flex:0 0 auto">👤</div>
+            <div class="cliente-card-info">
+              <b class="cliente-card-nome">${c.nome}</b>
+              <div class="cliente-card-sub"><span>📱 ${c.telefone}</span><span>📅 ${cadastro}</span>${pedidosCliente.length>0&&!validado?`<span class="cliente-destaque-pedido">⚡ Já fez ${pedidosCliente.length} pedido${pedidosCliente.length===1?'':'s'}</span>`:''}</div>
+            </div>
+            <span class="selo ${statusClasse}" style="flex:0 0 auto">${statusTexto}</span>
+          </div>
+          <div class="cliente-card-metricas">
+            <div class="cliente-mini-metrica"><b>${pedidosCliente.length}</b><span>Pedidos</span></div>
+            <div class="cliente-mini-metrica"><b>${entreguesCliente.length}</b><span>Entregues</span></div>
+            <div class="cliente-mini-metrica"><b>R$ ${gastoTotal.toFixed(2)}</b><span>Gasto</span></div>
+            <div class="cliente-mini-metrica"><b style="color:var(--mango)">R$ ${Number(c.saldo||0).toFixed(2)}</b><span>Carteira</span></div>
+          </div>
         </div>
-        ${c.bloqueado ? `<span class="selo selo-cancelado">bloqueado</span>` : validado?`<span class="selo selo-entregue">ativo</span>`:`<span class="selo selo-andamento">pendente</span>`}
       </summary>
       <div class="admin-detalhes">
-        <div class="am-linha"><span>Telefone</span><b>${c.telefone}</b></div>
         <div class="am-linha"><span>Validação facial</span><b>${validado?'✅ Concluída':'⏳ Não concluída'}</b></div>
-        <div class="am-linha"><span>Cadastrado em</span><b>${c.criado_em?new Date(Number(c.criado_em)).toLocaleDateString('pt-BR'):'—'}</b></div>
-        <div class="am-linha"><span>Pedidos feitos</span><b>${pedidosCliente.length}</b></div>
-        <div class="am-linha"><span>Entregues</span><b>${entreguesCliente.length}</b></div>
-        <div class="am-linha"><span>Total gasto</span><b style="color:var(--verde)">R$ ${gastoTotal.toFixed(2)}</b></div>
-        <div class="am-linha"><span>💰 Carteira</span><b style="color:var(--mango)">R$ ${Number(c.saldo||0).toFixed(2)}</b></div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
-          <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsApp('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}','${idc}')">💬 WhatsApp</button>
-          ${!validado?`<button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarDocumentoWhatsApp('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}')">📄 Lembrar de concluir validação</button>`:''}
+        <div class="am-linha"><span>Cadastrado em</span><b>${cadastro}</b></div>
+        <div class="cliente-acoes-rapidas">
+          <button class="btn btn-verde btn-pequeno" onclick="enviarBoasVindasWhatsApp('${c.telefone}','${nomeSeguro}','${idc}')">💬 WhatsApp</button>
+          ${!validado?`<button class="btn btn-secundario btn-pequeno" onclick="lembrarDocumentoWhatsApp('${c.telefone}','${nomeSeguro}')">📄 Lembrar validação</button>`:`<button class="btn btn-secundario btn-pequeno" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">✏️ Editar dados</button>`}
         </div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
-          <label style="margin:0 0 6px">Ajustar saldo (R$; negativo debita)</label>
-          <div style="display:flex;gap:8px"><input type="number" id="ajuste-saldo-cliente-${idc}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1"><button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('ajustarSaldo_'+c.telefone)} onclick="dispararAjusteSaldoCliente('${c.telefone}','${idc}')">${rotuloCarregando('ajustarSaldo_'+c.telefone,'Aplicar','Aplicando...')}</button></div>
-        </div>
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
-          <b style="font-family:'Rajdhani';font-weight:700;font-size:12.5px;text-transform:uppercase">🔧 Gerenciar cadastro</b>
-          ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div style="display:flex;gap:8px"></div></div>` : ``}
-          <div style="margin-top:8px;display:flex;gap:8px"><input type="password" id="nova-senha-cliente-${idc}" placeholder="Nova senha" style="flex:1"></div>
-          <div style="display:flex;gap:8px;margin-top:8px">${c.bloqueado?``:``}</div>
-        </div>
+
+        <details class="cliente-bloco-retratil">
+          <summary>💰 Carteira e saldo</summary>
+          <div class="cliente-bloco-conteudo">
+            <div class="am-linha" style="margin:9px 0"><span>Saldo atual</span><b style="color:var(--mango)">R$ ${Number(c.saldo||0).toFixed(2)}</b></div>
+            <label style="margin:0 0 6px">Ajustar saldo (negativo debita)</label>
+            <div style="display:flex;gap:8px"><input type="number" id="ajuste-saldo-cliente-${idc}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1;min-width:0"><button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('ajustarSaldo_'+c.telefone)} onclick="dispararAjusteSaldoCliente('${c.telefone}','${idc}')">${rotuloCarregando('ajustarSaldo_'+c.telefone,'Aplicar','Aplicando...')}</button></div>
+          </div>
+        </details>
+
+        <details class="cliente-bloco-retratil" ${estado.admin.clienteEditando===c.telefone?'open':''}>
+          <summary>⚙️ Gerenciar cliente</summary>
+          <div class="cliente-bloco-conteudo">
+            ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:9px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div style="display:flex;gap:8px"><button class="btn btn-verde btn-pequeno" style="flex:1" onclick="salvarEdicaoClienteAdmin('${c.telefone}')">💾 Salvar</button><button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">Cancelar</button></div></div>` : `<button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:9px" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">✏️ Editar nome e telefone</button>`}
+            <div style="margin-top:9px;display:flex;gap:8px"><input type="password" id="nova-senha-cliente-${idc}" placeholder="Nova senha" style="flex:1;min-width:0"><button class="btn btn-secundario btn-pequeno" onclick="alterarSenhaClienteAdmin('${c.telefone}',document.getElementById('nova-senha-cliente-${idc}').value)">🔑 Trocar</button></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px">
+              ${c.bloqueado?`<button class="btn btn-verde btn-pequeno" onclick="desbloquearClienteAdmin('${c.telefone}')">🔓 Desbloquear</button>`:`<button class="btn btn-secundario btn-pequeno" onclick="bloquearClienteAdmin('${c.telefone}')">🔒 Bloquear</button>`}
+              <button class="btn btn-pequeno" style="background:var(--chama);color:#fff;border-color:var(--chama)" onclick="excluirClienteAdmin('${c.telefone}','${nomeSeguro}')">🗑️ Excluir</button>
+            </div>
+          </div>
+        </details>
       </div>
     </details>`;
 }
@@ -7470,15 +7513,29 @@ function adminAbaClientesHTML(){
   const a = estado.admin;
   if(a.carregando) return skeletonLista(4);
   if(a.clientes.length===0) return `<div class="vazio"><span class="emoji-grande">👤</span>Nenhum cliente cadastrado ainda.</div>`;
-  const pendentes = a.clientes.filter(c=>!c.facial_ativa && !c.bloqueado);
-  const ativos = a.clientes.filter(c=>!!c.facial_ativa && !c.bloqueado);
-  const bloqueados = a.clientes.filter(c=>!!c.bloqueado);
+  if(!a.filtroClientes) a.filtroClientes='todos';
+  const hoje = new Date();
+  const ehHoje = c=>{ if(!c.criado_em) return false; const d=new Date(Number(c.criado_em)); return d.toDateString()===hoje.toDateString(); };
+  const qtdPedidos = c=>(a.todosPedidos||[]).filter(p=>p.cliente_telefone===c.telefone).length;
+  const filtros = [
+    ['todos','Todos'],['pendente','Facial pendente'],['hoje','Novos hoje'],['pedidos','Com pedidos']
+  ];
+  let base = a.clientes.slice();
+  if(a.filtroClientes==='pendente') base=base.filter(c=>!c.facial_ativa&&!c.bloqueado);
+  if(a.filtroClientes==='hoje') base=base.filter(ehHoje);
+  if(a.filtroClientes==='pedidos') base=base.filter(c=>qtdPedidos(c)>0);
+  const pendentes = base.filter(c=>!c.facial_ativa && !c.bloqueado).sort((x,y)=>qtdPedidos(y)-qtdPedidos(x));
+  const ativos = base.filter(c=>!!c.facial_ativa && !c.bloqueado);
+  const bloqueados = base.filter(c=>!!c.bloqueado);
+  const totalFiltrado=pendentes.length+ativos.length+bloqueados.length;
   return `
+    <div class="admin-clientes-filtros">${filtros.map(([id,label])=>`<button class="admin-filtro-btn ${a.filtroClientes===id?'ativo':''}" onclick="estado.admin.filtroClientes='${id}';render()">${label}</button>`).join('')}</div>
+    ${totalFiltrado===0?`<div class="vazio" style="padding:28px 10px"><span class="emoji-grande">🔎</span>Nenhum cliente neste filtro.</div>`:`
     <div class="admin-lista-secao"><b>⏳ Clientes pendentes</b><span class="selo selo-andamento">${pendentes.length}</span></div>
     ${pendentes.length?pendentes.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente aguardando validação.</div>`}
-    <div class="admin-lista-secao" style="margin-top:20px"><b>✅ Clientes ativos</b><span class="selo selo-entregue">${ativos.length}</span></div>
-    ${ativos.length?ativos.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente ativo ainda.</div>`}
-    ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(clienteCardAdminHTML).join('')}`:''}`;
+    <div class="admin-lista-secao" style="margin-top:18px"><b>✅ Clientes ativos</b><span class="selo selo-entregue">${ativos.length}</span></div>
+    ${ativos.length?ativos.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente ativo neste filtro.</div>`}
+    ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:18px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(clienteCardAdminHTML).join('')}`:''}`}`;
 }
 function alternarEdicaoClienteAdmin(telefone){
   estado.admin.clienteEditando = estado.admin.clienteEditando===telefone ? null : telefone;
