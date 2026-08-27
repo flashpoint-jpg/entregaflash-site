@@ -3825,138 +3825,134 @@ function animarMarcadorSimples(mk, de, para){
   }
   mk.raf = requestAnimationFrame(passo);
 }
-// ---------- mapa geral do admin: mostra AO VIVO motoristas em corrida, motoristas disponíveis e clientes aguardando ----------
-// idade máxima de uma posição pra ainda ser considerada "ao vivo" (motorista pode ter fechado o app sem sair)
+// ---------- mapa geral do admin: somente MOTORISTAS cadastrados ----------
+// Regra nova: motorista online aparece pela localização GPS recente; se o GPS não estiver
+// disponível, ele continua aparecendo pelo centro da cidade cadastrada. Motoristas offline
+// também aparecem pela cidade, para o admin enxergar onde há base de motoristas.
 const POSICAO_MOTORISTA_MAX_IDADE_MS = 6*60*1000; // 6 minutos
-function montarMapaAdminGeral(){
-  setTimeout(()=>{
-    const slot = document.getElementById('admin-mapa-geral');
-    if(!slot) return; // painel admin não está na aba Resumo agora — não há onde montar
-    // pega, por motorista, o pedido ativo mais recente com posição conhecida
-    const porTelefone = {};
-    (estado.admin.todosPedidos||[]).forEach(p=>{
-      if(!['indo_coletar','coletado','a_caminho'].includes(p.status)) return;
-      if(p.motorista_lat==null || p.motorista_lng==null || !p.motorista_telefone) return;
-      const atual = porTelefone[p.motorista_telefone];
-      if(!atual || Number(p.motorista_atualizado_em||0) > Number(atual.motorista_atualizado_em||0)){
-        porTelefone[p.motorista_telefone] = p;
-      }
-    });
-    const emCorrida = Object.values(porTelefone);
-    const telefonesEmCorrida = new Set(emCorrida.map(p=>p.motorista_telefone));
-    const agora = Date.now();
-    // motoristas online com acesso ao painel, com posição conhecida e recente, e que não estejam já contados como "em corrida"
-    const disponiveis = (estado.admin.motoristas||[]).filter(m=>
-      m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status) && m.lat_atual!=null && m.lng_atual!=null &&
-      !telefonesEmCorrida.has(m.telefone) && (agora - Number(m.lat_atualizado_em||0)) < POSICAO_MOTORISTA_MAX_IDADE_MS
-    );
-    // clientes aguardando: pedidos ainda buscando motorista, com endereço de origem já geolocalizado
-    const aguardando = (estado.admin.todosPedidos||[]).filter(p=>p.status==='buscando' && p.origem_lat!=null && p.origem_lng!=null);
-    const todasPosicoes = [
-      ...emCorrida.map(p=>[p.motorista_lat,p.motorista_lng]),
-      ...disponiveis.map(m=>[m.lat_atual,m.lng_atual]),
-      ...aguardando.map(p=>[p.origem_lat,p.origem_lng])
-    ];
-    if(!mapaAdminGeral){
-      const div = document.createElement('div');
-      div.style.width='100%'; div.style.height='100%';
-      slot.appendChild(div);
-      const map = L.map(div,{zoomControl:true, attributionControl:false});
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-      map.setView([-14.235,-51.9253], 4); // centro do Brasil, até termos algo pra enquadrar
-      const legenda = L.control({position:'bottomright'});
-      legenda.onAdd = function(){
-        const div = L.DomUtil.create('div','legenda-mapa-admin');
-        div.innerHTML = `
-          <div class="item"><span class="ponto" style="background:#2ecc71"></span>Motorista disponível</div>
-          <div class="item"><span class="ponto" style="background:#ff9330"></span>Motorista em corrida</div>
-          <div class="item"><span class="ponto" style="background:#3fa7ff"></span>Cliente aguardando</div>`;
-        return div;
-      };
-      legenda.addTo(map);
-      mapaAdminGeral = { el:div, map, marcadores:{}, marcadoresDisponiveis:{}, marcadoresClientes:{} };
-      setTimeout(()=>{ try{ mapaAdminGeral.map.invalidateSize(); }catch(e){} }, 200);
-    } else if(mapaAdminGeral.el.parentElement !== slot){
-      // o container do template foi recriado no último render — reencaixa o mapa vivo nele
-      slot.appendChild(mapaAdminGeral.el);
-      setTimeout(()=>{ try{ mapaAdminGeral.map.invalidateSize(); }catch(e){} }, 0);
+const mapaAdminCidadeCache = {};
+
+function chaveMotoristaMapa(m, idx=0){
+  return String(m.id || m.telefone || (m.nome||'motorista')+'-'+idx);
+}
+function deslocamentoDeterministicoMapa(chave){
+  let h=0; const t=String(chave||'');
+  for(let i=0;i<t.length;i++) h=((h<<5)-h+t.charCodeAt(i))|0;
+  const ang=((Math.abs(h)%360)*Math.PI)/180;
+  const raio=0.004 + ((Math.abs(h>>3)%5)*0.0012); // ~400m a 900m
+  return [Math.cos(ang)*raio, Math.sin(ang)*raio];
+}
+async function centroCidadeMotoristaMapa(cidade){
+  const nome=normalizarCidadePainel(cidade);
+  if(!nome || nome==='Não informada') return null;
+  const chave=normalizarTexto(nome);
+  if(mapaAdminCidadeCache[chave]) return mapaAdminCidadeCache[chave];
+  try{
+    // usa os mesmos provedores de geocodificação já usados pelo Entrega Flash
+    const achados=await buscarEnderecos(nome+', MG', 1);
+    if(achados && achados[0]){
+      const pos=[Number(achados[0].lat),Number(achados[0].lon)];
+      mapaAdminCidadeCache[chave]=pos;
+      return pos;
     }
-    // ---- motoristas em corrida (bolinha laranja, ícone do veículo) ----
-    const telefonesAtivos = new Set();
-    emCorrida.forEach(p=>{
-      telefonesAtivos.add(p.motorista_telefone);
-      const pos = [p.motorista_lat, p.motorista_lng];
-      const emoji = (VEICULOS[p.motorista_veiculo_tipo]&&VEICULOS[p.motorista_veiculo_tipo].emoji) || '🛵';
-      const popup = `<b>${p.motorista_nome||'Motorista'}</b>${p.motorista_telefone?`<br>📞 ${p.motorista_telefone}`:''}<br>${STATUS_MAPA_ADMIN[p.status]||p.status}<br>Cliente: ${p.cliente_nome||'—'}`;
-      let mk = mapaAdminGeral.marcadores[p.motorista_telefone];
-      if(!mk){
-        const marker = L.marker(pos,{icon:iconeBolinhaMapa(emoji,'bolinha-corrida')}).addTo(mapaAdminGeral.map).bindPopup(popup);
-        mapaAdminGeral.marcadores[p.motorista_telefone] = { marker, posAtual:pos, raf:null };
-      } else {
-        mk.marker.setPopupContent(popup);
-        if(mk.posAtual[0]!==pos[0] || mk.posAtual[1]!==pos[1]){
-          animarMarcadorSimples(mk, mk.posAtual, pos);
-        }
+  }catch(e){ console.warn('Não foi possível localizar a cidade no mapa:', nome, e); }
+  return null;
+}
+
+async function montarMapaAdminGeral(){
+  await new Promise(r=>setTimeout(r,30));
+  const slot=document.getElementById('admin-mapa-geral');
+  if(!slot) return;
+
+  if(!mapaAdminGeral){
+    const div=document.createElement('div');
+    div.style.width='100%'; div.style.height='100%';
+    slot.appendChild(div);
+    const map=L.map(div,{zoomControl:true, attributionControl:false});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+    map.setView([CENTRO_REGIAO.lat,CENTRO_REGIAO.lon],9);
+    const legenda=L.control({position:'bottomright'});
+    legenda.onAdd=function(){
+      const d=L.DomUtil.create('div','legenda-mapa-admin');
+      d.innerHTML=`
+        <div class="item"><span class="ponto" style="background:#2ecc71"></span>Motorista online</div>
+        <div class="item"><span class="ponto" style="background:#ff9330"></span>Motorista em corrida</div>
+        <div class="item"><span class="ponto" style="background:#9aa4b2"></span>Cadastrado offline</div>`;
+      return d;
+    };
+    legenda.addTo(map);
+    mapaAdminGeral={el:div,map,marcadoresMotoristas:{}};
+    setTimeout(()=>{try{mapaAdminGeral.map.invalidateSize();}catch(e){}},200);
+  }else if(mapaAdminGeral.el.parentElement!==slot){
+    slot.appendChild(mapaAdminGeral.el);
+    setTimeout(()=>{try{mapaAdminGeral.map.invalidateSize();}catch(e){}},0);
+  }
+
+  // limpa os marcadores anteriores e recria a visão atual. É simples e evita marcador fantasma.
+  Object.values(mapaAdminGeral.marcadoresMotoristas||{}).forEach(x=>{
+    try{ mapaAdminGeral.map.removeLayer(x.marker||x); }catch(e){}
+  });
+  mapaAdminGeral.marcadoresMotoristas={};
+
+  const agora=Date.now();
+  const pedidosAtivos=(estado.admin.todosPedidos||[]).filter(p=>['indo_coletar','coletado','a_caminho'].includes(p.status));
+  const corridaPorTel={};
+  pedidosAtivos.forEach(p=>{
+    if(!p.motorista_telefone) return;
+    const a=corridaPorTel[p.motorista_telefone];
+    if(!a || Number(p.motorista_atualizado_em||p.atualizado_em||0)>Number(a.motorista_atualizado_em||a.atualizado_em||0)) corridaPorTel[p.motorista_telefone]=p;
+  });
+
+  const motoristas=(estado.admin.motoristas||[]).filter(m=>
+    m && m.telefone && !['bloqueado','reprovado'].includes(m.status)
+  );
+  const posicoes=[];
+  const semCidade=[];
+
+  await Promise.all(motoristas.map(async (m,idx)=>{
+    const chave=chaveMotoristaMapa(m,idx);
+    const corrida=corridaPorTel[m.telefone];
+    const gpsRecente=m.lat_atual!=null && m.lng_atual!=null && (agora-Number(m.lat_atualizado_em||0))<POSICAO_MOTORISTA_MAX_IDADE_MS;
+    const online=!!m.disponivel;
+    let pos=null, origem='';
+
+    if(corrida && corrida.motorista_lat!=null && corrida.motorista_lng!=null){
+      pos=[Number(corrida.motorista_lat),Number(corrida.motorista_lng)]; origem='GPS da corrida';
+    }else if(online && gpsRecente){
+      pos=[Number(m.lat_atual),Number(m.lng_atual)]; origem='GPS ao vivo';
+    }else{
+      const centro=await centroCidadeMotoristaMapa(m.cidade);
+      if(centro){
+        const d=deslocamentoDeterministicoMapa(chave);
+        pos=[centro[0]+d[0],centro[1]+d[1]]; origem='posição aproximada pela cidade';
       }
-    });
-    // remove do mapa quem não está mais em corrida (entregou, cancelou ou ficou indisponível)
-    Object.keys(mapaAdminGeral.marcadores).forEach(tel=>{
-      if(!telefonesAtivos.has(tel)){
-        try{ mapaAdminGeral.map.removeLayer(mapaAdminGeral.marcadores[tel].marker); }catch(e){}
-        delete mapaAdminGeral.marcadores[tel];
-      }
-    });
-    // ---- motoristas disponíveis, sem corrida no momento (bolinha verde) ----
-    const telefonesDisponiveisAtivos = new Set();
-    disponiveis.forEach(m=>{
-      telefonesDisponiveisAtivos.add(m.telefone);
-      const pos = [m.lat_atual, m.lng_atual];
-      const emoji = (VEICULOS[m.veiculo_tipo]&&VEICULOS[m.veiculo_tipo].emoji) || '🛵';
-      const desde = m.disponivel_atualizado_em ? `<br>Disponível ${tempoDecorrido(Number(m.disponivel_atualizado_em))}` : '';
-      const popup = `<b>${m.nome||'Motorista'}</b>${m.telefone?`<br>📞 ${m.telefone}`:''}<br>🟢 Disponível${desde}`;
-      let mk = mapaAdminGeral.marcadoresDisponiveis[m.telefone];
-      if(!mk){
-        const marker = L.marker(pos,{icon:iconeBolinhaMapa(emoji,'bolinha-disponivel')}).addTo(mapaAdminGeral.map).bindPopup(popup);
-        mapaAdminGeral.marcadoresDisponiveis[m.telefone] = { marker, posAtual:pos, raf:null };
-      } else {
-        mk.marker.setPopupContent(popup);
-        if(mk.posAtual[0]!==pos[0] || mk.posAtual[1]!==pos[1]){
-          animarMarcadorSimples(mk, mk.posAtual, pos);
-        }
-      }
-    });
-    Object.keys(mapaAdminGeral.marcadoresDisponiveis).forEach(tel=>{
-      if(!telefonesDisponiveisAtivos.has(tel)){
-        try{ mapaAdminGeral.map.removeLayer(mapaAdminGeral.marcadoresDisponiveis[tel].marker); }catch(e){}
-        delete mapaAdminGeral.marcadoresDisponiveis[tel];
-      }
-    });
-    // ---- clientes aguardando motorista (bolinha azul) ----
-    const idsAguardandoAtivos = new Set();
-    aguardando.forEach(p=>{
-      idsAguardandoAtivos.add(p.id);
-      const pos = [p.origem_lat, p.origem_lng];
-      const popup = `<b>${p.cliente_nome||'Cliente'}</b>${p.cliente_telefone?`<br>📞 ${p.cliente_telefone}`:''}<br>⏳ Aguardando ${tempoDecorrido(Number(p.criado_em))}${p.origem?`<br>${p.origem}`:''}`;
-      let mk = mapaAdminGeral.marcadoresClientes[p.id];
-      if(!mk){
-        const marker = L.marker(pos,{icon:iconeBolinhaMapa('👤','bolinha-cliente')}).addTo(mapaAdminGeral.map).bindPopup(popup);
-        mapaAdminGeral.marcadoresClientes[p.id] = { marker, posAtual:pos };
-      } else {
-        mk.marker.setLatLng(pos);
-        mk.marker.setPopupContent(popup);
-        mk.posAtual = pos;
-      }
-    });
-    Object.keys(mapaAdminGeral.marcadoresClientes).forEach(id=>{
-      if(!idsAguardandoAtivos.has(id)){
-        try{ mapaAdminGeral.map.removeLayer(mapaAdminGeral.marcadoresClientes[id].marker); }catch(e){}
-        delete mapaAdminGeral.marcadoresClientes[id];
-      }
-    });
-    if(todasPosicoes.length>0){
-      try{ mapaAdminGeral.map.fitBounds(todasPosicoes, {padding:[36,36], maxZoom:14}); }catch(e){}
     }
-  }, 30);
+    if(!pos){ semCidade.push(m); return; }
+
+    let classe='bolinha-disponivel', cor='🟢', estadoTxt='Online';
+    if(corrida){ classe='bolinha-corrida'; cor='🟠'; estadoTxt='Em corrida'; }
+    else if(!online){ classe='bolinha-cliente'; cor='⚪'; estadoTxt='Offline'; }
+    const emoji=(VEICULOS[m.veiculo_tipo]&&VEICULOS[m.veiculo_tipo].emoji)||'🛵';
+    const cidade=normalizarCidadePainel(m.cidade);
+    const popup=`<b>${m.nome||'Motorista'}</b>${m.telefone?`<br>📞 ${m.telefone}`:''}<br>${cor} ${estadoTxt}<br>📍 ${cidade}<br><small>${origem}</small><br><small>${rotuloStatusMotorista(m.status)}</small>`;
+    const marker=L.marker(pos,{icon:iconeBolinhaMapa(emoji,classe)}).addTo(mapaAdminGeral.map).bindPopup(popup);
+    mapaAdminGeral.marcadoresMotoristas[chave]={marker,pos};
+    posicoes.push(pos);
+  }));
+
+  if(posicoes.length){
+    try{ mapaAdminGeral.map.fitBounds(posicoes,{padding:[36,36],maxZoom:13}); }catch(e){}
+  }else{
+    try{ mapaAdminGeral.map.setView([CENTRO_REGIAO.lat,CENTRO_REGIAO.lon],9); }catch(e){}
+  }
+
+  // informação útil quando algum cadastro não tem cidade utilizável
+  const avisoId='admin-mapa-aviso-sem-cidade';
+  let aviso=document.getElementById(avisoId);
+  if(semCidade.length){
+    if(!aviso){ aviso=document.createElement('div'); aviso.id=avisoId; aviso.className='cf-nota'; aviso.style.cssText='background:rgba(255,147,48,.12);border:1px solid rgba(255,147,48,.35);border-radius:4px;padding:9px 11px;font-style:normal;color:var(--osso);margin-top:8px'; slot.parentElement.appendChild(aviso); }
+    aviso.innerHTML=`⚠️ ${semCidade.length} cadastro${semCidade.length>1?'s':''} sem cidade/localização suficiente para posicionar no mapa.`;
+  }else if(aviso){ aviso.remove(); }
 }
 // remove mapas de pedidos que já não estão mais visíveis na tela (evita vazamento de memória)
 function limparMapasInativos(idsAtivos){
@@ -7307,14 +7303,6 @@ function adminAbaResumoHTML(){
   const motoristasEmEntregaAgora = new Set(pedidosEmAndamento.map(p=>p.motorista_telefone).filter(Boolean)).size;
   const clientesAguardando = todosPedidos.filter(p=>p.status==='buscando').length;
   const pedidosAceitosAndamento = pedidosEmAndamento.length;
-  // motoristas que contam como "online" mas não aparecem no mapa (sem localização recente) —
-  // avisa o admin do porquê, em vez de simplesmente sumir do mapa sem explicação
-  const agoraTs = Date.now();
-  const telefonesEmEntregaAgora = new Set(pedidosEmAndamento.map(p=>p.motorista_telefone).filter(Boolean));
-  const motoristasSemLocalizacao = (a.motoristas||[]).filter(m=>
-    m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status) && !telefonesEmEntregaAgora.has(m.telefone) &&
-    (m.lat_atual==null || m.lng_atual==null || (agoraTs - Number(m.lat_atualizado_em||0)) >= POSICAO_MOTORISTA_MAX_IDADE_MS)
-  );
   return `
     <div class="admin-cartao" style="background:linear-gradient(135deg, var(--painel-alt), var(--painel));border:2px solid var(--mango);margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
@@ -7329,8 +7317,7 @@ function adminAbaResumoHTML(){
         <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px"><div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:#5aa9e6;line-height:1">${pedidosAceitosAndamento}</div><div style="font-size:12.5px;color:var(--poeira);margin-top:4px">✅ Pedidos em andamento</div></div>
       </div>
       <div class="mapa-admin-geral" id="admin-mapa-geral" style="margin-top:14px"></div>
-      <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra ao vivo: 🟢 motoristas disponíveis, 🟠 motoristas em corrida e 🔵 clientes aguardando.</div>
-      ${motoristasSemLocalizacao.length>0 ? `<div class="cf-nota" style="background:rgba(255,147,48,0.12);border:1px solid rgba(255,147,48,0.35);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-top:10px">⚠️ ${motoristasSemLocalizacao.length} motorista${motoristasSemLocalizacao.length>1?'s estão':' está'} online mas sem localização recente:<br>${motoristasSemLocalizacao.map(m=>`• ${m.nome||m.telefone}${m.telefone?` (${m.telefone})`:''}`).join('<br>')}</div>` : ''}
+      <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra somente motoristas cadastrados: 🟢 online, 🟠 em corrida e ⚪ offline. Sem GPS recente, o motorista aparece pela cidade cadastrada.</div>
     </div>
     <div class="cf-nota" style="background:rgba(127,174,114,0.1);border:1px solid rgba(127,174,114,0.3);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-bottom:14px">
       ✅ A carteira do cliente agora é 100% automática: o cliente gera o Pix, paga, e o saldo cai sozinho (via webhook do Mercado Pago) — sem precisar de nada manual. Se algum caso específico der problema, ainda dá pra creditar na mão pela aba "👤 Clientes".
