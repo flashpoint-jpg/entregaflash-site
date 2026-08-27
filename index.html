@@ -82,6 +82,11 @@ fbq('track', 'PageView');
   .marca{display:flex;flex-direction:column;align-items:center;gap:0;}
   .marca .bv-logo-badge{margin:0 auto;}
   .marca .logo-img{width:140px;height:auto;display:block;}
+  /* Cliente logado: cabeçalho mais compacto para destacar o pedido */
+  header.topo.cliente-logado{padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;}
+  header.topo.cliente-logado .marca .logo-img{width:105px;}
+  .faixa-incentivo-pedido{margin:10px 0 14px;padding:11px 13px;border-radius:12px;background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.34);color:var(--osso);font-size:14px;font-weight:800;line-height:1.35;text-align:center;}
+  .micro-incentivo-pedido{margin:10px 2px 0;text-align:center;color:var(--poeira);font-size:13.5px;line-height:1.35;}
   .tagline{font-size:13px;color:var(--poeira);margin:8px 0 0;letter-spacing:1px;text-transform:uppercase;font-weight:600;text-align:center;}
 
   .toggle-modo{display:flex;margin:18px 20px 4px;background:var(--painel);border-radius:16px;padding:4px;border:1px solid var(--linha);box-shadow:inset 0 1px 3px rgba(0,0,0,0.2), var(--sombra-card);}
@@ -4679,11 +4684,12 @@ function telaCliente(){
     </div>
     <div style="font-size:14px;color:var(--osso);display:flex;align-items:center;gap:6px;margin-top:2px">
       <span style="width:8px;height:8px;border-radius:50%;background:${estado.motoristasOnline>0?'#7fae72':'#a9a89c'};display:inline-block"></span>
-      ${estado.motoristasOnline>0 ? `${estado.motoristasOnline} motorista${estado.motoristasOnline>1?'s':''} online agora` : 'Nenhum motorista online no momento'}
+      ${estado.motoristasOnline>0 ? `${estado.motoristasOnline} motorista${estado.motoristasOnline>1?'s':''} online agora` : 'Faça seu pedido — avisaremos os motoristas da região'}
     </div>
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
     ${f.etapaPedido===1 ? `
+    <div class="faixa-incentivo-pedido">⚡ Peça em poucos passos • Rápido e seguro</div>
     <div class="voz-endereco-ajuda">🎙️ <b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.</div><label style="margin-top:0">Endereço de recolha</label>
     ${campoEnderecoComVoz('c-origem', f.origem, 'Rua, número, bairro ou ponto de referência', 'origem')}
     <div class="sugestoes" id="sugestoes-origem"></div>
@@ -4720,7 +4726,8 @@ function telaCliente(){
     </div>`).join('')}
     ${(f.paradas||[]).length < MAX_PARADAS_EXTRA ? `<button type="button" class="btn-add-parada" onclick="adicionarParada()">+ Adicionar mais um endereço de entrega (até 10 no total)</button>` : ''}
     ${(f.paradas||[]).length > 0 ? `<div class="cf-nota" style="margin-top:6px">Cada endereço de entrega extra soma +R$ ${TAXA_PARADA_EXTRA_VALOR.toFixed(2)} ao valor da corrida.</div>` : ''}
-    <button class="btn btn-primario" style="margin-top:16px" onclick="irEtapaPedido(2)">Continuar →</button>
+    <div class="micro-incentivo-pedido">Pronto! No próximo passo você escolhe o veículo e segue para conferir o valor.</div>
+    <button class="btn btn-primario" style="margin-top:12px" onclick="irEtapaPedido(2)">Continuar →</button>
     ` : ''}
     ${f.etapaPedido===2 ? `
     <label style="margin-top:0">Retirada</label>
@@ -4793,7 +4800,8 @@ function telaCliente(){
     </div>
     <div class="cancelamento-motorista-box">⚠️ Se um motorista aceitar a sua entrega e você cancelar depois de ${Math.round(JANELA_CANCELAMENTO_MS/60000)} minutos, será cobrada uma taxa de ${Math.round(TAXA_CANCELAMENTO_TARDIO*100)}% do valor da corrida (R$ ${(preco*TAXA_CANCELAMENTO_TARDIO).toFixed(2)}). Cancelar antes disso, ou antes de alguém aceitar, não tem custo.</div>
     <div class="cancelamento-motorista-box">⚠️ Se o entregador tiver que esperar mais de ${TAXA_ESPERA_TOLERANCIA_MIN} min na coleta ou na entrega, é cobrado R$ ${TAXA_ESPERA_VALOR_MIN.toFixed(2)}/min excedente. E se sua corrida for feita à noite, em feriado ou com chuva forte por um motorista Pro, pode haver um acréscimo de até ${Math.round(ACRESCIMO_NOTURNO_PCT*100)}% no valor.</div>` : ''}
-    <div style="display:flex;gap:8px;margin-top:16px">
+    <div class="faixa-incentivo-pedido" style="margin-top:14px">✅ Confira os dados e o valor. O pedido só é enviado quando você tocar em Confirmar pedido.</div>
+    <div style="display:flex;gap:8px;margin-top:12px">
       <button class="btn btn-secundario" style="margin-top:0" onclick="irEtapaPedido(2)">← Voltar</button>
       ${preco!=null ? `
       <button class="btn btn-primario" style="margin-top:0" ${atributoDesabilitado('criarPedido')} onclick="executarComCarregando('criarPedido', criarPedido)">${carregando('criarPedido') ? '<span class="girando"></span>'+(f.tipoRetirada==='agendado'?'Agendando...':'Confirmando...') : (f.tipoRetirada==='agendado'?'✅ Agendar pedido':'✅ Confirmar pedido')}</button>
@@ -5665,9 +5673,6 @@ function render(){
     <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()">💬 Sugestões e Reclamações</button>
     ${estado.modo==='entregador' && estado.motorista.ativo ? `
     <div class="sos-flutuante" title="SOS — veículo quebrado / pedir ajuda" onclick="abrirSOSFlutuante()"><span class="emoji">🆘</span>SOS</div>` : ''}
-    ${estado.modo==='cliente' && estado.cliente.logado ? `
-    <div class="sos-flutuante" title="SOS — emergência" onclick="acionarSOSCliente()"><span class="emoji">🆘</span>SOS</div>` : ''}
-    ${estado.sosClienteAtivo ? `<div class="sos-cliente-tela"><div class="sos-cliente-caixa"><div class="sos-cliente-icone">🆘</div><div class="sos-cliente-titulo">SOS ACIONADO</div><div class="sos-cliente-msg">Seu alerta de emergência foi enviado para a central e para os motoristas disponíveis. Mantenha o telefone acessível.</div><button class="btn" onclick="fecharSOSCliente()">Entendi / fechar alerta</button></div></div>` : ''}
     ${estado.toast ? `<div class="toast toast-${estado.toastTipo||'info'}"><span class="toast-icone">${estado.toastTipo==='sucesso'?'✅':estado.toastTipo==='erro'?'⚠️':'ℹ️'}</span><span>${estado.toast}</span></div>` : ''}
     ${estado.modalConfirmar ? modalConfirmarHTML() : ''}
     ${estado.modalReprovar ? modalReprovarHTML() : ''}
@@ -5762,6 +5767,8 @@ function render(){
     document.getElementById('app-header').innerHTML = headerHTML;
     _ultimoHeaderHTML = headerHTML;
   }
+  const _cabecalhoAtual = document.getElementById('app-header');
+  if(_cabecalhoAtual) _cabecalhoAtual.className = 'topo' + (estado.modo==='cliente' && estado.cliente.logado ? ' cliente-logado' : '');
   document.getElementById('app-resto').innerHTML = restoHTML;
   const bind=(id,path)=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',(e)=>setDeep(path,e.target.value)); };
   bind('c-nome','form.nome'); bind('c-telefone','form.telefone'); bind('c-origem','form.origem');
