@@ -350,6 +350,7 @@ fbq('track', 'PageView');
   .etiquetas span:last-child{text-align:right;}
 
   .mapa{width:100%;height:180px;border-radius:14px;margin-top:12px;background:var(--painel-alt);overflow:hidden;}
+  .mapa-rastreamento-cliente{height:340px;border:1px solid rgba(255,201,60,.28);box-shadow:0 10px 28px rgba(0,0,0,.24);position:relative;}
   .mapa-admin-geral{width:100%;height:360px;border-radius:18px;overflow:hidden;background:var(--painel-alt);}
   .admin-resumo-card{border:1px solid var(--linha);border-radius:12px;background:var(--painel);overflow:hidden;margin-bottom:8px;}
   .admin-resumo-card[open]{border-color:rgba(255,147,48,.45);}
@@ -763,6 +764,38 @@ fbq('track', 'PageView');
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ============================================================
+   ACESSO SEGURO — entrega_clientes / entrega_motoristas agora só
+   são acessíveis via funções RPC (SECURITY DEFINER) no banco, não
+   mais direto pela tabela. Estes helpers imitam o formato de
+   resposta do supabase-js ({data, error}) pra minimizar a troca
+   nos pontos de uso existentes.
+============================================================ */
+async function meuPerfilCliente(telefone){
+  const { data, error } = await sb.rpc('entrega_cliente_meu_perfil', { p_telefone: telefone });
+  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
+}
+async function meuPerfilMotorista(telefone){
+  const { data, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
+  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
+}
+async function autenticarCliente(telefone, senhaHash){
+  const { data, error } = await sb.rpc('entrega_cliente_autenticar', { p_telefone: telefone, p_senha_hash: senhaHash });
+  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
+}
+async function autenticarMotorista(telefone, senhaHash){
+  const { data, error } = await sb.rpc('entrega_motorista_autenticar', { p_telefone: telefone, p_senha_hash: senhaHash });
+  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
+}
+async function upsertProprioCliente(telefone, senhaHash, dados){
+  const { data, error } = await sb.rpc('entrega_cliente_upsert_proprio', { p_telefone: telefone, p_senha_hash: senhaHash||'', p_dados: dados });
+  return { data, error };
+}
+async function upsertProprioMotorista(telefone, senhaHash, dados){
+  const { data, error } = await sb.rpc('entrega_motorista_upsert_proprio', { p_telefone: telefone, p_senha_hash: senhaHash||'', p_dados: dados });
+  return { data, error };
+}
 
 // ---- Presença em tempo real do site (contador no painel admin) ----
 const EF_PRESENCA_CANAL = 'entregaflash_site_online_v1';
@@ -1385,7 +1418,7 @@ async function restaurarSessao(){
   try{
     const clienteTel = localStorage.getItem('ef_cliente_telefone');
     if(clienteTel){
-      const { data } = await sb.from('entrega_clientes').select('*').eq('telefone', clienteTel).maybeSingle();
+      const { data } = await meuPerfilCliente(clienteTel);
       if(data && !data.bloqueado){
         estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
         estado.filtroTelefoneCliente = data.telefone;
@@ -1395,7 +1428,7 @@ async function restaurarSessao(){
 
     const motoristaTel = localStorage.getItem('ef_motorista_telefone');
     if(motoristaTel){
-      const { data } = await sb.from('entrega_motoristas').select('*').eq('telefone', motoristaTel).maybeSingle();
+      const { data } = await meuPerfilMotorista(motoristaTel);
       if(data && STATUS_ACESSO_PAINEL.includes(data.status)){
         estado.motorista = {
           nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:localStorage.getItem('ef_motorista_disponivel')==='true',
@@ -2035,7 +2068,7 @@ function atualizarMapasAoVivo(pedidos){
 async function verificarBloqueioAtivo(){
   try{
     if(estado.cliente.logado && estado.cliente.telefone){
-      const { data } = await sb.from('entrega_clientes').select('bloqueado').eq('telefone', estado.cliente.telefone).maybeSingle();
+      const { data } = await sb.rpc('entrega_cliente_consultar_status', { p_telefone: estado.cliente.telefone }).then(r => ({ data: Array.isArray(r.data)?(r.data[0]||null):r.data, error: r.error }));
       if(data && data.bloqueado){
         sairCliente();
         estado.painelCliente.loginErro='Esta conta foi bloqueada. Fala com o suporte para mais informações.';
@@ -2045,7 +2078,7 @@ async function verificarBloqueioAtivo(){
       }
     }
     if(estado.motorista.ativo && estado.motorista.telefone){
-      const { data } = await sb.from('entrega_motoristas').select('status').eq('telefone', estado.motorista.telefone).maybeSingle();
+      const { data } = await sb.rpc('entrega_motorista_consultar_status', { p_telefone: estado.motorista.telefone }).then(r => ({ data: Array.isArray(r.data)?(r.data[0]||null):r.data, error: r.error }));
       if(data && data.status==='bloqueado'){
         sairMotorista();
         estado.painelMotorista.loginErro='O seu cadastro foi bloqueado. Fala com o suporte para mais informações.';
@@ -2072,17 +2105,21 @@ function assinarPedidosRealtime(){
 // ---------- motoristas online ----------
 async function carregarMotoristasOnline(){
   try{
-    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).eq('status', 'aprovado');
+    const { data: count, error } = await sb.rpc('entrega_contar_motoristas_disponiveis', { p_status_validos: ['aprovado'] });
     if(error){ console.error(error); return; }
     if(count!==estado.motoristasOnline){ estado.motoristasOnline = count||0; if(!estaDigitandoEndereco()) render(); }
   }catch(e){ console.error(e); }
 }
 let canalMotoristasOnlineRealtime = null;
+let intervaloMotoristasOnlinePoll = null;
 function assinarMotoristasOnlineRealtime(){
   if(canalMotoristasOnlineRealtime) return;
   canalMotoristasOnlineRealtime = sb.channel('motoristas-online-realtime')
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_motoristas'}, ()=>{ carregarMotoristasOnline(); })
     .subscribe();
+  // Plano B: sem policy aberta de leitura, o Realtime não avisa mais quando a
+  // disponibilidade de algum motorista muda — reconta periodicamente.
+  if(!intervaloMotoristasOnlinePoll) intervaloMotoristasOnlinePoll = setInterval(carregarMotoristasOnline, 15000);
 }
 
 // ---------- avisos gerais do admin (alerta pra todos os motoristas/clientes) ----------
@@ -2162,31 +2199,35 @@ function encerrarCarteiraClienteRealtime(){
 
 // ---------- estado do motorista logado (tempo real) ----------
 let canalMotoristaLogadoRealtime = null;
+let intervaloMotoristaLogadoPoll = null;
+function processarAtualizacaoMotoristaLogado(novo){
+  if(!novo) return;
+  if(novo.status==='bloqueado'){ debounce('motorista-logado', verificarBloqueioAtivo); return; }
+  // status mudou (ex: pendente/básico -> aprovado, ou reprovado) — atualiza a tela na hora,
+  // sem precisar recarregar a página
+  if(novo.status && novo.status!==estado.motorista.status){
+    const statusAnterior = estado.motorista.status;
+    estado.motorista.status = novo.status;
+    estado.motorista.plano = novo.plano || estado.motorista.plano;
+    estado.motorista.veiculo = novo.veiculo_tipo || estado.motorista.veiculo;
+    estado.motorista.marca = novo.veiculo_marca || estado.motorista.marca;
+    estado.motorista.placa = novo.veiculo_placa || estado.motorista.placa;
+    estado.motorista.cor = novo.veiculo_cor || estado.motorista.cor;
+    estado.motorista.fotoMotoristaUrl = novo.foto_motorista_url || estado.motorista.fotoMotoristaUrl;
+    estado.motorista.raioAtendimentoKm = novo.raio_atendimento_km!=null ? novo.raio_atendimento_km : estado.motorista.raioAtendimentoKm;
+    if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
+      mostrarToast('🎉 Seu cadastro foi aprovado! Já pode começar a receber pedidos.', 'sucesso');
+      notificar('🎉 Cadastro aprovado!', 'Já pode começar a receber pedidos no Entrega Flash.');
+    }
+    render();
+  }
+}
 function assinarMotoristaLogadoRealtime(telefone){
   encerrarMotoristaLogadoRealtime();
   if(!telefone) return;
   canalMotoristaLogadoRealtime = sb.channel('motorista-logado-realtime:'+telefone)
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_motoristas', filter:'telefone=eq.'+telefone}, (payload)=>{
-      const novo = payload.new || {};
-      if(novo.status==='bloqueado'){ debounce('motorista-logado', verificarBloqueioAtivo); return; }
-      // status mudou (ex: pendente/básico -> aprovado, ou reprovado) — atualiza a tela na hora,
-      // sem precisar recarregar a página
-      if(novo.status && novo.status!==estado.motorista.status){
-        const statusAnterior = estado.motorista.status;
-        estado.motorista.status = novo.status;
-        estado.motorista.plano = novo.plano || estado.motorista.plano;
-        estado.motorista.veiculo = novo.veiculo_tipo || estado.motorista.veiculo;
-        estado.motorista.marca = novo.veiculo_marca || estado.motorista.marca;
-        estado.motorista.placa = novo.veiculo_placa || estado.motorista.placa;
-        estado.motorista.cor = novo.veiculo_cor || estado.motorista.cor;
-        estado.motorista.fotoMotoristaUrl = novo.foto_motorista_url || estado.motorista.fotoMotoristaUrl;
-        estado.motorista.raioAtendimentoKm = novo.raio_atendimento_km!=null ? novo.raio_atendimento_km : estado.motorista.raioAtendimentoKm;
-        if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
-          mostrarToast('🎉 Seu cadastro foi aprovado! Já pode começar a receber pedidos.', 'sucesso');
-          notificar('🎉 Cadastro aprovado!', 'Já pode começar a receber pedidos no Entrega Flash.');
-        }
-        render();
-      }
+      processarAtualizacaoMotoristaLogado(payload.new || {});
     })
     .on('postgres_changes', {event:'*', schema:'public', table:'entrega_saldos', filter:'telefone=eq.'+telefone}, ()=>{
       debounce('motorista-logado-saldo', carregarSaldoMotorista);
@@ -2196,6 +2237,15 @@ function assinarMotoristaLogadoRealtime(telefone){
     })
     .subscribe();
   carregarChamadosAmigo();
+  // Plano B: como entrega_motoristas agora só é lido via função RPC (protegida),
+  // o Realtime não recebe mais eventos de UPDATE dessa tabela pra quem não tem
+  // policy de leitura aberta. Este polling garante que aprovação/bloqueio do
+  // motorista continuem sendo detectados mesmo assim.
+  if(intervaloMotoristaLogadoPoll) clearInterval(intervaloMotoristaLogadoPoll);
+  intervaloMotoristaLogadoPoll = setInterval(async ()=>{
+    const { data } = await meuPerfilMotorista(telefone);
+    if(data) processarAtualizacaoMotoristaLogado(data);
+  }, 20000);
 }
 async function carregarChamadosAmigo(){
   const { data, error } = await sb.from('entrega_chamados_amigo').select('*').eq('status','aberto').order('criado_em',{ascending:false});
@@ -2207,6 +2257,7 @@ async function carregarChamadosAmigo(){
 }
 function encerrarMotoristaLogadoRealtime(){
   if(canalMotoristaLogadoRealtime){ sb.removeChannel(canalMotoristaLogadoRealtime); canalMotoristaLogadoRealtime=null; }
+  if(intervaloMotoristaLogadoPoll){ clearInterval(intervaloMotoristaLogadoPoll); intervaloMotoristaLogadoPoll=null; }
 }
 
 // ---------- chat ----------
@@ -3167,14 +3218,8 @@ async function avaliarMotorista(pedidoId, nota){
   if(!p || p.status!=='entregue' || p.avaliacaoNota || !p.motoristaTelefone) return;
   const { error: erroPedido } = await sb.from('entrega_pedidos').update({ avaliacao_nota: nota }).eq('id', pedidoId);
   if(erroPedido){ console.error(erroPedido); mostrarToast('Erro ao salvar a avaliação.', 'erro'); return; }
-  const { data: mot, error: erroMot } = await sb.from('entrega_motoristas').select('nota_media,total_avaliacoes').eq('telefone', p.motoristaTelefone).maybeSingle();
-  if(!erroMot && mot){
-    const totalAtual = Number(mot.total_avaliacoes)||0;
-    const mediaAtual = Number(mot.nota_media)||5;
-    const novoTotal = totalAtual+1;
-    const novaMedia = Math.round(((mediaAtual*totalAtual)+nota)/novoTotal*100)/100;
-    await sb.from('entrega_motoristas').update({ nota_media:novaMedia, total_avaliacoes:novoTotal }).eq('telefone', p.motoristaTelefone);
-  }
+  // a média é recalculada no próprio banco (evita confiar num valor calculado no navegador)
+  await sb.rpc('entrega_registrar_avaliacao_motorista', { p_telefone: p.motoristaTelefone, p_nota: nota });
   registrarAlertaAdmin('avaliacao_recebida', `${p.clienteNome||'Cliente'} avaliou ${p.motoristaNome||'motorista'} (${p.motoristaTelefone||''}) com ${nota} estrela(s).`, pedidoId);
   mostrarToast('Obrigado pela avaliação!', 'sucesso');
   estado.ultimoPedidosJSON='';
@@ -3359,7 +3404,7 @@ function abrirTrocaPlanoMotorista(){
 function fecharTrocaPlanoMotorista(){ resetTrocaPlanoMotorista(); render(); }
 async function carregarDadosMotoristaParaPlano(){
   const t = estado.trocaPlanoMotorista, m = estado.motorista;
-  const { data, error } = await sb.from('entrega_motoristas').select('id,cpf,plano,taxa_status').eq('telefone', m.telefone).maybeSingle();
+  const { data, error } = await meuPerfilMotorista(m.telefone);
   if(error || !data) throw new Error('Não foi possível localizar o cadastro do motorista.');
   t.motoristaId = data.id; t.cpf = data.cpf||'';
   return data;
@@ -3371,7 +3416,8 @@ async function gerarPixUpgradeMotorista(){
   try{
     const dadosMotorista = await carregarDadosMotoristaParaPlano();
     // deixa a taxa pendente, mas NÃO libera o Pro antes de o pagamento ser confirmado
-    const { error: erroPend } = await sb.from('entrega_motoristas').update({ taxa_valor:PLANOS.pro.preco, taxa_status:'pendente' }).eq('id', dadosMotorista.id);
+    // (o valor de R$19,99 é fixado dentro da própria função no banco, não vem do navegador)
+    const { error: erroPend } = await sb.rpc('entrega_motorista_solicitar_upgrade_pro', { p_telefone: m.telefone });
     if(erroPend) throw erroPend;
     const resp = await fetch(`${FUNCOES_URL}/criar-cobranca-pix`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -3390,9 +3436,11 @@ function iniciarPollingUpgradeMotorista(){
   planoPixPollTimer=setInterval(async()=>{
     const t=estado.trocaPlanoMotorista;
     if(!t.motoristaId || t.status==='pago'){ clearInterval(planoPixPollTimer); planoPixPollTimer=null; return; }
-    const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id',t.motoristaId).maybeSingle();
-    if(data && data.taxa_status==='pago'){
-      const { error } = await sb.from('entrega_motoristas').update({ plano:'pro' }).eq('id',t.motoristaId);
+    // a confirmação em si é revalidada dentro da função no banco (taxa_status precisa
+    // estar 'pago' de verdade pra ativar o plano — o navegador não decide isso sozinho)
+    const { data, error } = await sb.rpc('entrega_motorista_confirmar_pro_se_pago', { p_telefone: estado.motorista.telefone });
+    const linha = Array.isArray(data) ? data[0] : data;
+    if(linha && linha.taxa_status==='pago'){
       if(error){ console.error(error); t.erro='Pagamento confirmado, mas houve erro ao ativar o plano. Fale com o suporte.'; render(); return; }
       t.status='pago'; estado.motorista.plano='pro'; clearInterval(planoPixPollTimer); planoPixPollTimer=null;
       mostrarToast('⭐ Pagamento confirmado! Plano Pro ativado.', 'sucesso'); render();
@@ -3408,8 +3456,7 @@ async function mudarMotoristaParaFree(){
   if(m.plano==='free'){ mostrarToast('Você já está no plano Free.'); return; }
   if(!(await confirmarAcao('Voltar para o plano Free? Os benefícios do Pro serão removidos.'))) return;
   try{
-    const dados=await carregarDadosMotoristaParaPlano();
-    const { error }=await sb.from('entrega_motoristas').update({ plano:'free' }).eq('id',dados.id);
+    const { error }=await sb.rpc('entrega_motorista_voltar_free', { p_telefone: m.telefone });
     if(error) throw error;
     estado.motorista.plano='free'; resetTrocaPlanoMotorista(); mostrarToast('Plano alterado para Free.', 'sucesso'); render();
   }catch(e){ console.error(e); mostrarToast('Não consegui alterar o plano agora.', 'erro'); }
@@ -3793,9 +3840,9 @@ async function enviarPosicaoMotorista(){
   // grava a posição atual do motorista sempre que ele estiver logado — isso alimenta o mapa
   // geral do admin, que mostra motoristas disponíveis mesmo sem corrida em andamento
   if(estado.motorista.telefone){
-    sb.from('entrega_motoristas').update({
-      lat_atual: ultimaPosicaoMotorista.lat, lng_atual: ultimaPosicaoMotorista.lon, lat_atualizado_em: Date.now()
-    }).eq('telefone', estado.motorista.telefone);
+    sb.rpc('entrega_motorista_atualizar_localizacao', {
+      p_telefone: estado.motorista.telefone, p_lat: ultimaPosicaoMotorista.lat, p_lng: ultimaPosicaoMotorista.lon
+    });
   }
   const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0) return;
@@ -4275,7 +4322,7 @@ function cartaoPedidoCliente(p){
         ${p.motoristaVeiculoTipo ? `${VEICULOS[p.motoristaVeiculoTipo]?.emoji||''} ${p.motoristaMarca||''} ${p.motoristaCor||''} · Placa ${p.motoristaPlaca||''}` : ''}
       </div>
     </div>` : ''}
-    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa" id="${mapaId}"></div>${etaHTML(p)}` : ''}
+    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa mapa-rastreamento-cliente" id="${mapaId}"></div>${etaHTML(p)}` : ''}
     ${fotosHTML(p)}
     ${avaliacaoHTML(p)}
     ${emAndamento ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${botaoChatHTML(p.id, estado.chatNaoLidas[p.id]||0)}${botaoLigarHTML(p.motoristaTelefone)}<button type="button" class="btn btn-secundario btn-pequeno" onclick="compartilharPedido('${p.id}')">📤 Compartilhar</button></div>` : ''}
@@ -6087,16 +6134,12 @@ async function entrarComoMotorista(){
 }
 function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); if(estado.motorista.telefone) atualizarDisponibilidadeDB(estado.motorista.telefone,false); estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
 async function atualizarDisponibilidadeDB(telefone, disponivel){
-  const agora = Date.now();
-  const payload = { disponivel, disponivel_atualizado_em: agora };
-  // Ao entrar online, grava a posição capturada no MESMO update do status.
-  // Assim nunca aparece "online" no resumo sem existir coordenada para o mapa.
-  if(disponivel && ultimaPosicaoMotorista){
-    payload.lat_atual = ultimaPosicaoMotorista.lat;
-    payload.lng_atual = ultimaPosicaoMotorista.lon;
-    payload.lat_atualizado_em = agora;
-  }
-  const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
+  const temPosicao = disponivel && ultimaPosicaoMotorista;
+  const { error } = await sb.rpc('entrega_motorista_definir_disponivel_com_posicao', {
+    p_telefone: telefone, p_disponivel: disponivel,
+    p_lat: temPosicao ? ultimaPosicaoMotorista.lat : null,
+    p_lng: temPosicao ? ultimaPosicaoMotorista.lon : null
+  });
   return !error;
 }
 async function alternarDisponibilidade(){
@@ -6136,7 +6179,7 @@ async function alternarDisponibilidade(){
 async function salvarRaioAtendimento(valor){
   const m = estado.motorista;
   const km = valor ? Number(valor) : null;
-  const { error } = await sb.from('entrega_motoristas').update({ raio_atendimento_km: km }).eq('telefone', m.telefone);
+  const { error } = await sb.rpc('entrega_motorista_definir_raio_atendimento', { p_telefone: m.telefone, p_km: km });
   if(error){ console.error(error); mostrarToast('Erro ao gravar o raio de atendimento.', 'erro'); return; }
   m.raioAtendimentoKm = km;
   mostrarToast(km ? `Raio de atendimento ajustado pra ${km} km.` : 'Raio de atendimento removido — voltas a ver todos os pedidos.', 'sucesso');
@@ -6394,7 +6437,7 @@ async function fluxoFacial({tipo,telefone,modo='cadastro',descriptorSalvo=null})
       if(distancia>.58) throw new Error('O rosto não corresponde ao cadastro desta conta.');
     } else {
       const tabela=tipo==='motorista'?'entrega_motoristas':'entrega_clientes';
-      const {error}=await sb.from(tabela).update({face_descriptor:desc,facial_ativa:true,facial_cadastrada_em:Date.now()}).eq('telefone',telefone);
+      const { error } = await sb.rpc('entrega_definir_biometria_facial', { p_tipo: tipo, p_telefone: telefone, p_descriptor: desc });
       if(error) throw new Error('Não consegui salvar a biometria facial. '+(error.message||''));
     }
     status.textContent='Identidade confirmada com sucesso.'; await new Promise(r=>setTimeout(r,450));
@@ -6425,22 +6468,14 @@ async function cadastrarCliente(){
   if(c.senha.length<4){ c.erro='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   c.erro='';
 
-  const { data: existente, error: erroConsulta } = await sb.from('entrega_clientes').select('*').eq('telefone', c.telefone).maybeSingle();
+  const { data: existente, error: erroConsulta } = await meuPerfilCliente(c.telefone);
   if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tente novamente.'; render(); return; }
 
   const cadastroCompleto = !!(existente && existente.facial_ativa && Array.isArray(existente.face_descriptor) && existente.face_descriptor.length);
   if(cadastroCompleto){ c.erro='Este telefone já tem uma conta completa. Entre com sua senha.'; render(); return; }
 
   const senhaHash = await hashSenha(c.senha);
-  const agora = Date.now();
-  let erroSalvar = null;
-  if(existente){
-    const { error } = await sb.from('entrega_clientes').update({nome:c.nome,senha_hash:senhaHash,facial_ativa:false,atualizado_em:agora}).eq('telefone',c.telefone);
-    erroSalvar=error;
-  }else{
-    const { error } = await sb.from('entrega_clientes').insert({telefone:c.telefone,nome:c.nome,senha_hash:senhaHash,facial_ativa:false,criado_em:agora,atualizado_em:agora});
-    erroSalvar=error;
-  }
+  const { error: erroSalvar } = await sb.rpc('entrega_cliente_cadastrar_ou_retomar', { p_telefone: c.telefone, p_nome: c.nome, p_senha_hash: senhaHash });
   if(erroSalvar){ console.error(erroSalvar); c.erro='Não consegui salvar o cadastro agora. Tente novamente.'; render(); return; }
 
   // A conta só é concluída depois que a validação facial for salva com sucesso.
@@ -6451,7 +6486,7 @@ async function cadastrarCliente(){
     render(); return;
   }
 
-  const { data: confirmado, error: erroConfirmacao } = await sb.from('entrega_clientes').select('*').eq('telefone',c.telefone).maybeSingle();
+  const { data: confirmado, error: erroConfirmacao } = await meuPerfilCliente(c.telefone);
   if(erroConfirmacao || !confirmado || !confirmado.facial_ativa){ c.erro='A validação foi feita, mas não consegui confirmar o acesso. Tente entrar novamente.'; render(); return; }
 
   try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
@@ -6484,7 +6519,7 @@ async function loginFacialCliente(){
   const telefone = document.getElementById('lc-telefone')?.value.trim();
   if(!telefone){ pc.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
   pc.loginErro='';
-  const { data, error } = await sb.from('entrega_clientes').select('*').eq('telefone', telefone).maybeSingle();
+  const { data, error } = await meuPerfilCliente(telefone);
   if(error){ pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; }
   if(!data){ pc.loginErro='Não encontrámos conta com este telefone.'; render(); return; }
   if(data.bloqueado){ pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.'; render(); return; }
@@ -6519,11 +6554,7 @@ async function loginCliente(){
   pc.loginErro='';
   const senhaHash = await hashSenha(senha);
 
-  const { data, error } = await sb
-    .from('entrega_clientes')
-    .select('*')
-    .eq('telefone', telefone)
-    .maybeSingle();
+  const { data, error } = await meuPerfilCliente(telefone);
 
   if(error){
     pc.loginErro='Erro ao consultar a conta. Tenta novamente.';
@@ -6612,7 +6643,7 @@ async function loginFacialMotorista(){
   const telefone = document.getElementById('lm-telefone')?.value.trim();
   if(!telefone){ pm.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
   pm.loginErro='';
-  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
+  const { data, error } = await meuPerfilMotorista(telefone);
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
@@ -6639,7 +6670,7 @@ async function loginMotorista(){
   if(!telefone||!senha){ pm.loginErro='Preenche telefone e senha.'; render(); return; }
   pm.loginErro='';
   const senhaHash = await hashSenha(senha);
-  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
+  const { data, error } = await meuPerfilMotorista(telefone);
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone. Cadastra-te abaixo.'; render(); return; }
   if(data.senha_hash !== senhaHash){ pm.loginErro='Senha incorreta.'; render(); return; }
@@ -6660,7 +6691,7 @@ async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
   const telefone = pm.telefoneLiberado || pm.loginTelefone;
-  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
+  const { data, error } = await meuPerfilMotorista(telefone);
   pm.carregandoLiberado = false;
   if(error || !data){ mostrarToast('Erro ao carregar o cadastro. Tenta entrar de novo.', 'erro'); render(); return; }
   const c = pm.cadastro;
@@ -6677,60 +6708,24 @@ async function continuarParaDocumentos(){
 async function salvarEtapaCadastro(campos){
   const c = estado.painelMotorista.cadastro;
   const agora = Date.now();
-
-  // IMPORTANTE: depois do pré-cadastro, as etapas seguintes devem ATUALIZAR
-  // o mesmo motorista. Usar upsert com um objeto parcial fazia o Postgres
-  // tentar um INSERT sem senha_hash antes de resolver o conflito, e a coluna
-  // senha_hash é NOT NULL. Por isso aparecia o erro do print.
-  let existente = null;
-  try{
-    if(c.id){
-      const r = await sb.from('entrega_motoristas').select('id,criado_em').eq('id', c.id).maybeSingle();
-      if(r.error && r.error.code!=='PGRST116') throw r.error;
-      existente = r.data || null;
-    }
-    if(!existente && c.telefone){
-      const r = await sb.from('entrega_motoristas').select('id,criado_em').eq('telefone', c.telefone).maybeSingle();
-      if(r.error && r.error.code!=='PGRST116') throw r.error;
-      existente = r.data || null;
-    }
-  }catch(e){
-    console.error('Erro ao localizar cadastro existente:', e);
-  }
-
-  if(existente){
-    c.id = existente.id;
-    c.criadoEm = c.criadoEm || existente.criado_em || agora;
-    const atualizacao = { atualizado_em: agora, ...campos };
-    if(c.nome && atualizacao.nome===undefined) atualizacao.nome = c.nome;
-    if(c.cpf && atualizacao.cpf===undefined) atualizacao.cpf = c.cpf;
-    if(c.telefone && atualizacao.telefone===undefined) atualizacao.telefone = c.telefone;
-    if(c.cidade && atualizacao.cidade===undefined) atualizacao.cidade = c.cidade;
-    // Só toca na senha quando uma nova senha/hash realmente foi informada.
-    if(c.senhaHash && atualizacao.senha_hash===undefined) atualizacao.senha_hash = c.senhaHash;
-
-    const { error } = await sb.from('entrega_motoristas').update(atualizacao).eq('id', c.id);
-    if(error){ console.error(error); mostrarToast('Erro ao atualizar o cadastro: '+(error.message||''), 'erro'); return false; }
-    return true;
-  }
-
-  // Primeiro cadastro: aqui sim criamos a linha completa, incluindo senha_hash.
   if(!c.id){ c.id = 'mot'+agora+Math.floor(Math.random()*1000); }
-  const linha = { id:c.id, criado_em:c.criadoEm||agora, atualizado_em:agora };
-  if(c.nome) linha.nome = c.nome;
-  if(c.cpf) linha.cpf = c.cpf;
-  if(c.telefone) linha.telefone = c.telefone;
-  if(c.cidade) linha.cidade = c.cidade;
-  if(c.senhaHash) linha.senha_hash = c.senhaHash;
-  Object.assign(linha, campos);
 
-  if(!linha.senha_hash){
+  if(!c.senhaHash){
     mostrarToast('Não foi possível criar o cadastro porque a senha não foi carregada. Volte ao início e informe a senha novamente.', 'erro');
     return false;
   }
 
-  const { error } = await sb.from('entrega_motoristas').insert(linha);
+  const dados = { id:c.id, ...campos };
+  if(c.nome && dados.nome===undefined) dados.nome = c.nome;
+  if(c.cpf && dados.cpf===undefined) dados.cpf = c.cpf;
+  if(c.cidade && dados.cidade===undefined) dados.cidade = c.cidade;
+
+  // entrega_motorista_upsert_proprio já resolve sozinho se é criação ou
+  // atualização (procura pelo telefone), e sempre grava a senha_hash certa.
+  const { error } = await upsertProprioMotorista(c.telefone, c.senhaHash, dados);
   if(error){ console.error(error); mostrarToast('Erro ao gravar o cadastro: '+(error.message||''), 'erro'); return false; }
+  c.criadoEm = c.criadoEm || agora;
+  return true;
   c.criadoEm = c.criadoEm || agora;
   return true;
 }
@@ -6788,7 +6783,7 @@ async function avancarEtapa1(){
   if(!c.nome||!c.telefone||!c.cidade||!c.senha){ c.erroEtapa='Preenche todos os campos.'; render(); return; }
   if(c.senha.length<4){ c.erroEtapa='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   c.erroEtapa=''; c.enviando=true; render();
-  const { data: existente } = await sb.from('entrega_motoristas').select('id,status').eq('telefone', c.telefone).maybeSingle();
+  const { data: existente } = await meuPerfilMotorista(c.telefone);
   if(existente && existente.status!=='incompleto'){
     c.enviando=false; c.erroEtapa='Já existe cadastro com este telefone. Use "Já sou cadastrado" para entrar.';
     render(); return;
@@ -6943,8 +6938,9 @@ function iniciarPollingPix(){
   pixPollTimer = setInterval(async ()=>{
     const c = estado.painelMotorista.cadastro;
     if(!c.id || c.pix.status==='pago'){ clearInterval(pixPollTimer); pixPollTimer=null; return; }
-    const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id', c.id).maybeSingle();
-    if(data && data.taxa_status==='pago'){
+    const { data: taxaData } = await sb.rpc('entrega_motorista_taxa_status_por_id', { p_id: c.id });
+    const taxaLinha = Array.isArray(taxaData) ? taxaData[0] : taxaData;
+    if(taxaLinha && taxaLinha.taxa_status==='pago'){
       c.pix.status='pago'; clearInterval(pixPollTimer); pixPollTimer=null;
       dispararAnimacaoPlano('pro');
     }
@@ -7387,7 +7383,7 @@ async function carregarClientesAdmin(){
   // ela pra um placeholder no meio do caminho, senão o scroll da pessoa "pula" pro topo.
   const jaTinhaClientes = estado.admin.clientes.length>0;
   if(!jaTinhaClientes){ estado.admin.carregando=true; render(); }
-  const { data, error } = await sb.from('entrega_clientes').select('*').order('criado_em',{ascending:false});
+  const { data, error } = await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada });
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar clientes.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_clientes_saldos').select('telefone,saldo');
   estado.admin.carregando=false;
@@ -8135,6 +8131,7 @@ function saqueCardHTML(s){
 
 // =================== PAINEL ADMINISTRATIVO ===================
 let canalAdminRealtime = null;
+let intervaloAdminMotoristasClientesPoll = null;
 function assinarAdminRealtime(){
   if(canalAdminRealtime) return;
   canalAdminRealtime = sb.channel('admin-realtime')
@@ -8173,9 +8170,18 @@ function assinarAdminRealtime(){
       debounce('admin-motoristas', carregarMotoristasAdmin);
     })
     .subscribe();
+  // Plano B: entrega_motoristas/entrega_clientes agora só são lidas via RPC
+  // protegida — o Realtime não recebe mais eventos dessas duas tabelas pra
+  // quem não tem policy de leitura aberta. Este polling garante que o painel
+  // continue vendo cadastros novos/alterados mesmo assim.
+  if(intervaloAdminMotoristasClientesPoll) clearInterval(intervaloAdminMotoristasClientesPoll);
+  intervaloAdminMotoristasClientesPoll = setInterval(() => {
+    if(estado.admin.logado) { carregarMotoristasAdmin(); carregarClientesAdmin(); }
+  }, 20000);
 }
 function encerrarAdminRealtime(){
   if(canalAdminRealtime){ sb.removeChannel(canalAdminRealtime); canalAdminRealtime=null; }
+  if(intervaloAdminMotoristasClientesPoll){ clearInterval(intervaloAdminMotoristasClientesPoll); intervaloAdminMotoristasClientesPoll=null; }
 }
 function abrirAdmin(){
   estado.admin.aberto=true; salvarLocal('ef_admin_aberto','true'); render();
@@ -8275,7 +8281,8 @@ async function carregarMotoristasAdmin(){
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
   if(!jaTinhaMotoristas){ estado.admin.carregando=true; render(); }
-  const { data, error } = await sb.from('entrega_motoristas').select('*').neq('status','incompleto').order('criado_em',{ascending:false});
+  const { data: dadosBrutos, error } = await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada });
+  const data = (dadosBrutos||[]).filter(m => m.status !== 'incompleto');
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar cadastros.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_saldos').select('telefone,saldo');
   estado.admin.carregando=false;
