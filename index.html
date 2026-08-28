@@ -6616,41 +6616,54 @@ function irParaLoginCliente(){ estado.painelCliente.tela='entrar'; estado.painel
 async function cadastrarCliente(){
   const c = estado.painelCliente.cadastro;
   c.nome = document.getElementById('cc-nome')?.value.trim() || c.nome || '';
-  c.telefone = document.getElementById('cc-telefone')?.value.trim() || c.telefone || '';
+  c.telefone = (document.getElementById('cc-telefone')?.value || c.telefone || '').replace(/\D/g,'');
   c.senha = document.getElementById('cc-senha')?.value || c.senha || '';
 
   if(!c.nome||!c.telefone||!c.senha){ c.erro='Preenche todos os campos.'; render(); return; }
   if(c.senha.length<4){ c.erro='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   c.erro='';
 
-  const { data: existente, error: erroConsulta } = await sb.from('entrega_clientes').select('*').eq('telefone', c.telefone).maybeSingle();
-  if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tente novamente.'; render(); return; }
-  if(existente && existente.senha_hash){ c.erro='Este telefone já tem uma conta. Entre com sua senha.'; render(); return; }
+  try{
+    const senhaHash = await hashSenha(c.senha);
+    const { data, error } = await sb.rpc('entrega_cliente_cadastrar_ou_retomar', {
+      p_telefone: c.telefone,
+      p_nome: c.nome,
+      p_senha_hash: senhaHash
+    });
 
-  const senhaHash = await hashSenha(c.senha);
-  const agora = Date.now();
-  let erroSalvar = null;
-  if(existente){
-    const { error } = await sb.from('entrega_clientes').update({nome:c.nome,senha_hash:senhaHash,facial_ativa:false,atualizado_em:agora}).eq('telefone',c.telefone);
-    erroSalvar=error;
-  }else{
-    const { error } = await sb.from('entrega_clientes').insert({telefone:c.telefone,nome:c.nome,senha_hash:senhaHash,facial_ativa:false,criado_em:agora,atualizado_em:agora});
-    erroSalvar=error;
+    if(error){
+      console.error('Cadastro cliente RPC:', error);
+      const msg = String(error.message||'');
+      if(msg.includes('telefone_ja_cadastrado') || msg.includes('conta completa') || msg.includes('já tem uma conta')){
+        c.erro='Este telefone já tem uma conta. Entre com sua senha.';
+      }else{
+        c.erro='Não consegui concluir o cadastro agora. Tente novamente.';
+      }
+      render();
+      return;
+    }
+
+    const confirmado = Array.isArray(data) ? data[0] : data;
+    if(!confirmado || !confirmado.telefone){
+      c.erro='Cadastro não confirmado pelo servidor. Tente novamente.';
+      render();
+      return;
+    }
+
+    try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
+    registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
+    estado.cliente={nome:confirmado.nome||c.nome,telefone:confirmado.telefone,logado:true,carteira:{saldo:0,carregando:false,adicionando:false,valorInput:'10',pix:{qrCode:null,copiaCola:null,status:'pendente',gerando:false,erro:'',id:null}}};
+    estado.filtroTelefoneCliente=confirmado.telefone; estado.form.nome=confirmado.nome||c.nome; estado.form.telefone=confirmado.telefone; estado.ultimoPedidosJSON='';
+    salvarLocal('ef_cliente_telefone',confirmado.telefone); salvarLocal('ef_modo','cliente'); atualizarPresencaSite('cliente');
+    clienteBemVindoAnimando=true; render();
+    await carregarPedidos(); await carregarCarteiraCliente(); assinarCarteiraClienteRealtime(confirmado.telefone);
+    if(estado.notificacoesStatus==='granted') inscreverPushReal(); else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),1200);
+    setTimeout(()=>{clienteBemVindoAnimando=false;render();},4000);
+  }catch(e){
+    console.error('Cadastro cliente:',e);
+    c.erro='Falha de conexão ao cadastrar. Tente novamente.';
+    render();
   }
-  if(erroSalvar){ console.error(erroSalvar); c.erro='Não consegui salvar o cadastro agora. Tente novamente.'; render(); return; }
-
-  const { data: confirmado, error: erroConfirmacao } = await sb.from('entrega_clientes').select('*').eq('telefone',c.telefone).maybeSingle();
-  if(erroConfirmacao || !confirmado){ c.erro='Cadastro salvo, mas não consegui confirmar o acesso. Tente entrar com telefone e senha.'; render(); return; }
-
-  try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
-  registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
-  estado.cliente={nome:confirmado.nome||c.nome,telefone:confirmado.telefone,logado:true,carteira:{saldo:0,carregando:false,adicionando:false,valorInput:'10',pix:{qrCode:null,copiaCola:null,status:'pendente',gerando:false,erro:'',id:null}}};
-  estado.filtroTelefoneCliente=confirmado.telefone; estado.form.nome=confirmado.nome||c.nome; estado.form.telefone=confirmado.telefone; estado.ultimoPedidosJSON='';
-  salvarLocal('ef_cliente_telefone',confirmado.telefone); salvarLocal('ef_modo','cliente'); atualizarPresencaSite('cliente');
-  clienteBemVindoAnimando=true; render();
-  await carregarPedidos(); await carregarCarteiraCliente(); assinarCarteiraClienteRealtime(confirmado.telefone);
-  if(estado.notificacoesStatus==='granted') inscreverPushReal(); else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),1200);
-  setTimeout(()=>{clienteBemVindoAnimando=false;render();},4000);
 }
 
 async function entrarNoPainelCliente(data){
@@ -6669,11 +6682,12 @@ async function entrarNoPainelCliente(data){
 
 async function loginFacialCliente(){
   const pc = estado.painelCliente;
-  const telefone = document.getElementById('lc-telefone')?.value.trim();
+  const telefone = (document.getElementById('lc-telefone')?.value || '').replace(/\D/g,'');
   if(!telefone){ pc.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
   pc.loginErro='';
-  const { data, error } = await sb.from('entrega_clientes').select('*').eq('telefone', telefone).maybeSingle();
-  if(error){ pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; }
+  const { data: perfilRaw, error } = await sb.rpc('entrega_cliente_meu_perfil', {p_telefone: telefone});
+  const data = Array.isArray(perfilRaw) ? perfilRaw[0] : perfilRaw;
+  if(error){ console.error('Perfil cliente RPC:',error); pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; }
   if(!data){ pc.loginErro='Não encontrámos conta com este telefone.'; render(); return; }
   if(data.bloqueado){ pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.'; render(); return; }
   if(!data.facial_ativa || !Array.isArray(data.face_descriptor) || !data.face_descriptor.length){
@@ -6694,7 +6708,7 @@ async function loginFacialCliente(){
 
 async function loginCliente(){
   const pc = estado.painelCliente;
-  const telefone = document.getElementById('lc-telefone')?.value.trim();
+  const telefone = (document.getElementById('lc-telefone')?.value || '').replace(/\D/g,'');
   const senha = document.getElementById('lc-senha')?.value || '';
 
   if(!telefone||!senha){
@@ -6706,48 +6720,27 @@ async function loginCliente(){
   pc.loginErro='';
   const senhaHash = await hashSenha(senha);
 
-  const { data, error } = await sb
-    .from('entrega_clientes')
-    .select('*')
-    .eq('telefone', telefone)
-    .maybeSingle();
+  const { data: loginRaw, error } = await sb.rpc('entrega_cliente_autenticar', {
+    p_telefone: telefone,
+    p_senha_hash: senhaHash
+  });
+  const data = Array.isArray(loginRaw) ? loginRaw[0] : loginRaw;
 
   if(error){
+    console.error('Login cliente RPC:',error);
     pc.loginErro='Erro ao consultar a conta. Tenta novamente.';
     render();
     return;
   }
 
   if(!data){
-    pc.loginErro='Não encontrámos conta com este telefone. Faça seu cadastro.';
+    pc.loginErro='Telefone ou senha incorretos. Se ainda não tem conta, faça seu cadastro.';
     render();
     return;
   }
 
-  const cadastroCompleto = !!(
-    data.facial_ativa &&
-    Array.isArray(data.face_descriptor) &&
-    data.face_descriptor.length
-  );
-
-  // Se ficou pela metade, o caminho correto é CONCLUIR, não dizer que já está cadastrado.
-  if(!cadastroCompleto){
-    estado.painelCliente.tela='cadastro';
-    estado.painelCliente.cadastro={
-      nome:data.nome||'',
-      telefone:data.telefone||telefone,
-      senha:senha,
-      erro:'Encontramos um cadastro que ficou pela metade. Seus dados foram recuperados; conclua agora a validação facial.'
-    };
-    render();
-    return;
-  }
-
-  if(data.senha_hash !== senhaHash){
-    pc.loginErro='Senha incorreta.';
-    render();
-    return;
-  }
+  // Login por senha não depende de biometria facial.
+  // A biometria continua disponível como opção separada para quem já a ativou.
 
   if(data.bloqueado){
     pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.';
@@ -6798,7 +6791,8 @@ async function loginFacialMotorista(){
   const telefone = document.getElementById('lm-telefone')?.value.trim();
   if(!telefone){ pm.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
   pm.loginErro='';
-  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
+  const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
+  const data = Array.isArray(dadosPerfil) ? (dadosPerfil[0] || null) : dadosPerfil;
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
@@ -6825,10 +6819,10 @@ async function loginMotorista(){
   if(!telefone||!senha){ pm.loginErro='Preenche telefone e senha.'; render(); return; }
   pm.loginErro='';
   const senhaHash = await hashSenha(senha);
-  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
+  const { data: dadosLogin, error } = await sb.rpc('entrega_motorista_autenticar', { p_telefone: telefone, p_senha_hash: senhaHash });
+  const data = Array.isArray(dadosLogin) ? (dadosLogin[0] || null) : dadosLogin;
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
-  if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone. Cadastra-te abaixo.'; render(); return; }
-  if(data.senha_hash !== senhaHash){ pm.loginErro='Senha incorreta.'; render(); return; }
+  if(!data){ pm.loginErro='Telefone ou senha incorretos.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
   if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
@@ -6846,7 +6840,8 @@ async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
   const telefone = pm.telefoneLiberado || pm.loginTelefone;
-  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
+  const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
+  const data = Array.isArray(dadosPerfil) ? (dadosPerfil[0] || null) : dadosPerfil;
   pm.carregandoLiberado = false;
   if(error || !data){ mostrarToast('Erro ao carregar o cadastro. Tenta entrar de novo.', 'erro'); render(); return; }
   const c = pm.cadastro;
