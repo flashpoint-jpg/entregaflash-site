@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega Flash | Painel Administrativo</title>
-<link rel="manifest" href="manifest-admin.json">
+<link rel="manifest" href="manifest-admin.json?v=20260828-admin-1">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -1100,7 +1100,14 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  try{ await navigator.serviceWorker.register('entregaflash-sw.js'); }catch(e){ console.warn('Service worker indisponível', e); }
+  try{
+    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-admin-1', { updateViaCache:'none' });
+    try{ await reg.update(); }catch(e){}
+    // Reconfere a versão ao voltar para o painel, sem recarregar a tela à força.
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible') reg.update().catch(()=>{});
+    });
+  }catch(e){ console.warn('Service worker indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
