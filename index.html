@@ -350,7 +350,6 @@ fbq('track', 'PageView');
   .etiquetas span:last-child{text-align:right;}
 
   .mapa{width:100%;height:180px;border-radius:14px;margin-top:12px;background:var(--painel-alt);overflow:hidden;}
-  .mapa-rastreamento-cliente{height:340px;border:1px solid rgba(255,201,60,.28);box-shadow:0 10px 28px rgba(0,0,0,.24);position:relative;}
   .mapa-admin-geral{width:100%;height:360px;border-radius:18px;overflow:hidden;background:var(--painel-alt);}
   .admin-resumo-card{border:1px solid var(--linha);border-radius:12px;background:var(--painel);overflow:hidden;margin-bottom:8px;}
   .admin-resumo-card[open]{border-color:rgba(255,147,48,.45);}
@@ -1877,11 +1876,26 @@ function detectarMotoristaEncontrado(novos){
     estado.statusAnterior[np.id] = np.status;
   });
 }
+// Distribuição progressiva de corridas por proximidade da coleta.
+// 0–29s: até 8 km | 30–59s: até 15 km | 60–89s: até 30 km | 90s+: toda a região.
+function pedidoLiberadoPorProximidade(p, agoraTs=Date.now()){
+  if(!p || p.status!=='buscando') return false;
+  const idadeMs = Math.max(0, agoraTs - Number(p.criadoEm||agoraTs));
+  if(idadeMs >= 90000) return true;
+  if(!ultimaPosicaoMotorista || !p.origemCoord) return false;
+  const d = distanciaKm(ultimaPosicaoMotorista.lat, ultimaPosicaoMotorista.lon, p.origemCoord.lat, p.origemCoord.lon);
+  if(!Number.isFinite(d)) return false;
+  const raio = idadeMs < 30000 ? 8 : (idadeMs < 60000 ? 15 : 30);
+  return d <= raio;
+}
+
 function detectarNovosPedidosMotorista(novos){
   if(estado.modo!=='entregador' || !estado.motorista.ativo || !estado.motorista.disponivel) return;
   novos.forEach(np=>{
     if(np.status!=='buscando') return;
     if(estado.statusAnteriorMotorista[np.id]) return;
+    // Só toca quando a corrida entra no raio atual deste motorista.
+    if(!pedidoLiberadoPorProximidade(np)) return;
     estado.statusAnteriorMotorista[np.id] = true;
     tocarSomNovoPedido();
     notificar('🆕 Novo pedido disponível!', `${np.origem} → ${np.destino} · R$ ${Number(np.preco).toFixed(2)}`, 'novo-'+np.id);
@@ -4322,7 +4336,7 @@ function cartaoPedidoCliente(p){
         ${p.motoristaVeiculoTipo ? `${VEICULOS[p.motoristaVeiculoTipo]?.emoji||''} ${p.motoristaMarca||''} ${p.motoristaCor||''} · Placa ${p.motoristaPlaca||''}` : ''}
       </div>
     </div>` : ''}
-    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa mapa-rastreamento-cliente" id="${mapaId}"></div>${etaHTML(p)}` : ''}
+    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa" id="${mapaId}"></div>${etaHTML(p)}` : ''}
     ${fotosHTML(p)}
     ${avaliacaoHTML(p)}
     ${emAndamento ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${botaoChatHTML(p.id, estado.chatNaoLidas[p.id]||0)}${botaoLigarHTML(p.motoristaTelefone)}<button type="button" class="btn btn-secundario btn-pequeno" onclick="compartilharPedido('${p.id}')">📤 Compartilhar</button></div>` : ''}
@@ -5401,6 +5415,8 @@ function telaMotorista(){
   const agoraTs = Date.now();
   const disponiveis = m.disponivel ? estado.pedidos
     .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
+    // Libera primeiro aos mais próximos e amplia automaticamente se ninguém aceitar.
+    .filter(p=>pedidoLiberadoPorProximidade(p, agoraTs))
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
     // raio de atendimento é um benefício do plano Pro — só filtra por distância quem tem plano Pro e configurou um raio
     .filter(p=> !(m.plano==='pro' && m.raioAtendimentoKm && p.distanciaAteMim!=null) || p.distanciaAteMim<=m.raioAtendimentoKm)
