@@ -292,18 +292,17 @@ fbq('track', 'PageView');
   .secao-icone .bolha{width:30px;height:30px;border-radius:50%;background:rgba(255,201,60,0.15);border:1px solid var(--mango);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
   .secao-icone .txt{font-family:'Rajdhani';font-weight:700;font-size:15.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--osso);}
   .secao-icone .txt b{color:var(--mango);}
-  /* Fluxo mobile: cada ação abre enquadrada na tela, sem esconder o começo da etapa. */
-  .veiculos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px;}
-  .veiculos button{min-height:62px;padding:7px 3px;border-radius:12px;border:1.5px solid var(--linha);background:var(--painel-alt);color:var(--osso);font-family:'Karla';font-weight:800;font-size:11px;line-height:1.08;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.10);position:relative;overflow:hidden;}
-  .veiculos button::after{content:'';display:none;}
-  .veiculos button.sel{border-color:var(--mango);color:var(--mango);background:rgba(255,201,60,0.12);box-shadow:0 0 0 2px rgba(255,201,60,.10);}
-  .veiculos button .emoji{display:block;font-size:21px;line-height:1;margin-bottom:5px;}
+  .veiculos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px;}
+  .veiculos button{min-height:92px;padding:13px 8px;border-radius:16px;border:2px solid var(--linha);background:var(--painel-alt);color:var(--osso);font-family:'Karla';font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12);position:relative;}
+  .veiculos button::after{content:'Selecionar';display:block;font-size:10.5px;font-weight:700;color:var(--poeira);margin-top:4px;text-transform:uppercase;letter-spacing:.4px;}
+  .veiculos button.sel::after{content:'✓ Selecionado';color:var(--mango);}
   .extras-acordeao-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;padding:4px 0;}
-  .etapa-conteudo{min-height:calc(100dvh - 118px);scroll-margin-top:0;}
-  .etapa-titulo-fixo{position:relative;top:auto;z-index:1;background:none;padding:0;margin-bottom:8px;}
-  #pedido-buscando-tela{min-height:calc(100dvh - 118px);display:flex;flex-direction:column;justify-content:center;}
-  @media (max-width:390px){.veiculos{gap:4px}.veiculos button{font-size:10px;padding:6px 2px}.veiculos button .emoji{font-size:19px}}
-  @media (min-width:700px){.veiculos{gap:8px}.veiculos button{font-size:13px;min-height:68px}.veiculos button .emoji{font-size:23px}}
+  .veiculos button.sel{border-color:var(--mango);color:var(--mango);background:rgba(255,201,60,0.12);box-shadow:0 0 0 3px rgba(255,201,60,.12),0 5px 15px rgba(0,0,0,.14);}
+  .veiculos button .emoji{display:block;font-size:30px;line-height:1;margin-bottom:8px;}
+  .etapa-conteudo{min-height:calc(100vh - 155px);scroll-margin-top:12px;}
+  .etapa-titulo-fixo{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--painel) 78%,rgba(0,0,0,0));padding:4px 0 12px;margin-bottom:8px;}
+  #pedido-buscando-tela{min-height:72vh;display:flex;flex-direction:column;justify-content:center;}
+  @media (min-width:520px){.veiculos{grid-template-columns:repeat(4,minmax(0,1fr));}}
   .sugestoes:not(:empty){border:1px solid var(--linha);border-radius:14px;overflow:hidden;margin-top:6px;}
   .sugestao-item{padding:10px 12px;font-size:14.5px;background:var(--painel-alt);cursor:pointer;border-bottom:1px solid var(--linha);}
   .sugestao-item:last-child{border-bottom:none;}
@@ -726,16 +725,71 @@ fbq('track', 'PageView');
 .notificacao-motorista-destaque{margin:0 0 12px;padding:12px;border:1px solid rgba(255,190,61,.45);background:rgba(255,190,61,.10);border-radius:12px}
 .notificacao-motorista-destaque b{display:block;margin-bottom:4px}
 
-
-/* ===== FILA COMPACTA DE PEDIDOS DO MOTORISTA ===== */
-.motorista-fila-topo{position:sticky;top:8px;z-index:35;background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:10px;margin-bottom:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
-.motorista-fila-titulo{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--poeira);margin-bottom:7px}.motorista-fila-titulo b{color:var(--osso);font-size:14px}
-.motorista-fila-scroll{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.motorista-fila-scroll::-webkit-scrollbar{display:none}
-.motorista-fila-item{flex:0 0 150px;border:1px solid var(--linha);background:var(--painel-alt);border-radius:11px;padding:8px;text-align:left;color:var(--osso);cursor:pointer}.motorista-fila-item.ativo{border:2px solid var(--mango);padding:7px}
-.motorista-fila-item .mf-valor{font-family:'Rajdhani';font-weight:800;font-size:18px;color:var(--mango)}.motorista-fila-item .mf-rota{font-size:11px;line-height:1.25;color:var(--poeira);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.motorista-fila-item .mf-dist{font-size:10.5px;color:var(--poeira);margin-top:4px}
-.motorista-pedido-foco>.pedido{margin:0}.motorista-pedido-foco{scroll-margin-top:82px}
-@media(max-width:520px){.motorista-fila-item{flex-basis:132px}.motorista-fila-topo{margin-left:-2px;margin-right:-2px}.motorista-pedido-foco .vitais{gap:5px}.motorista-pedido-foco .vital{padding:8px 5px}.motorista-pedido-foco .vital-num{font-size:18px}}
 </style>
+
+<style id="estilo-motorista-encontrado-full">
+.motorista-encontrado-full{
+  position:fixed; inset:0; z-index:999999; background:#f7f7f7; color:#222;
+  display:flex; flex-direction:column; overflow:auto; overscroll-behavior:contain;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.mef-topo{
+  height:72px; min-height:72px; background:#fff; display:grid;
+  grid-template-columns:56px 1fr 56px; align-items:center; border-bottom:1px solid #eee;
+  position:sticky; top:0; z-index:5;
+}
+.mef-titulo{font-size:18px;font-weight:800;text-align:center;line-height:1.2}
+.mef-voltar,.mef-fechar{
+  border:0;background:transparent;color:#444;font-size:38px;line-height:1;cursor:pointer;height:56px
+}
+.mef-fechar{font-size:32px}
+.mef-aviso{
+  background:#fff; margin:0; padding:14px 16px; display:flex; gap:11px; align-items:flex-start;
+  font-size:15px; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.08); z-index:3
+}
+.mef-aviso strong{color:#e75d16}
+.mef-info{color:#ef6c22;font-size:23px;line-height:1}
+.mef-mapa-wrap{position:relative;min-height:54vh;background:#ececec;overflow:hidden}
+.mef-mapa{position:absolute;inset:0;width:100%;height:100%;min-height:54vh}
+.mef-eta{
+  position:absolute;left:18px;top:94px;z-index:500;background:#fff;border-radius:10px;
+  padding:9px 12px;box-shadow:0 3px 12px rgba(0,0,0,.18);display:flex;align-items:center;gap:9px
+}
+.mef-eta b{font-size:28px;color:#111}
+.mef-eta span{font-size:13px;color:#777;max-width:92px;line-height:1.1}
+.mef-live{
+  position:absolute;left:14px;bottom:12px;z-index:500;background:rgba(255,255,255,.94);
+  border-radius:999px;padding:7px 10px;font-size:10px;font-weight:800;letter-spacing:.6px;color:#333
+}
+.mef-live span{display:inline-block;width:8px;height:8px;border-radius:50%;background:#35c75a;margin-right:5px;
+  box-shadow:0 0 0 0 rgba(53,199,90,.5);animation:mefPulse 1.5s infinite}
+@keyframes mefPulse{70%{box-shadow:0 0 0 8px rgba(53,199,90,0)}100%{box-shadow:0 0 0 0 rgba(53,199,90,0)}}
+.mef-card{
+  background:#fff;margin:-1px 16px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.14);
+  position:relative;z-index:4;overflow:hidden
+}
+.mef-card-cab{padding:20px 20px 12px;display:flex;justify-content:space-between;gap:16px;align-items:center}
+.mef-nome{font-size:21px;font-weight:800;line-height:1.18;margin-bottom:7px}
+.mef-placa{display:inline-block;background:#f6f6f6;border-radius:7px;padding:6px 10px;font-size:17px;font-weight:900;letter-spacing:1px}
+.mef-veiculo{margin-top:9px;font-size:14px;color:#555;text-transform:capitalize}
+.mef-foto-area{text-align:center;min-width:82px}
+.mef-foto{width:76px;height:76px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.mef-foto-vazia{display:grid;place-items:center;background:#eee;font-size:30px}
+.mef-nota{background:#fff;border-radius:8px;padding:4px 7px;margin:-10px auto 0;position:relative;width:max-content;box-shadow:0 2px 6px rgba(0,0,0,.15);font-weight:800}
+.mef-confirmacao{padding:0 20px 16px;text-align:center;color:#888;font-size:13px}
+.mef-acoes{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #eee}
+.mef-acoes button{border:0;background:#fff;padding:17px 8px;font-size:16px;color:#333;cursor:pointer}
+.mef-acoes button+button{border-left:1px solid #eee}
+body:has(.motorista-encontrado-full){overflow:hidden}
+@media(max-width:420px){
+  .mef-topo{height:64px;min-height:64px}
+  .mef-titulo{font-size:16px}
+  .mef-mapa-wrap,.mef-mapa{min-height:50vh}
+  .mef-card{margin-left:10px;margin-right:10px}
+  .mef-nome{font-size:18px}
+}
+</style>
+
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -968,8 +1022,8 @@ function corridasFundadorRestantes(m=estado.motorista){
   return Math.max(0, limiteFundadorMotorista(m) - entregasConcluidasMotorista(m.telefone).length);
 }
 
-let ATRASO_PRIORIDADE_PRO_MS = 45000; // motoristas Free só veem o pedido 45s depois dos Pro
-let RAIO_GEOFENCE_KM = 0.15; // 150m — distância máxima do endereço para poder coletar/finalizar
+let ATRASO_PRIORIDADE_PRO_MS = 15000; // motoristas Free veem o pedido 15s depois dos Pro
+let RAIO_GEOFENCE_KM = 0.30; // 300m — tolerância base; a precisão real do GPS também é considerada
 let TAXA_PRIORIDADE_VALOR = 12; // R$ acrescidos numa entrega prioritária (nível 1 — os demais níveis são múltiplos deste valor)
 function niveisPrioridade(){
   // níveis de prioridade que o cliente pode escolher (quanto mais alto, mais destaque pro motorista)
@@ -1846,14 +1900,103 @@ function tocarSomNovoPedido(){
   if(navigator.vibrate) navigator.vibrate([90,60,90,60,90]);
 }
 function dispararAlertaMotorista(pedido){
-  // Não renderiza aqui: carregarPedidos() fará um único render ao final da atualização.
-  // Isso evita dois redesenhos seguidos justamente quando o motorista aceita a corrida.
+  // Abre uma tela inteira no cliente assim que o motorista aceita.
+  // Não fecha sozinho: o cliente fecha pelo X quando quiser.
   estado.alertaMotorista = { nome: pedido.motoristaNome||'Um entregador', pedidoId: pedido.id };
   tocarSomAlerta();
-  clearTimeout(window._alertaMotoristaTimer);
-  window._alertaMotoristaTimer = setTimeout(()=>{ estado.alertaMotorista=null; render(); }, 7000);
 }
-function fecharAlertaMotorista(){ clearTimeout(window._alertaMotoristaTimer); estado.alertaMotorista=null; render(); }
+function fecharAlertaMotorista(){
+  estado.alertaMotorista=null;
+  render();
+}
+
+function popupMotoristaEncontradoHTML(){
+  if(!estado.alertaMotorista) return '';
+  const p = estado.pedidos.find(x=>x.id===estado.alertaMotorista.pedidoId);
+  if(!p) return '';
+  const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
+  let km = null, min = null;
+  if(p.motoristaCoord && alvo){
+    km = distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon);
+    const velocidade = (VEICULOS[p.motoristaVeiculoTipo||p.veiculo]&&VEICULOS[p.motoristaVeiculoTipo||p.veiculo].veloc) || 28;
+    min = Math.max(1,Math.round((km/velocidade)*60));
+  }
+  const statusTxt = p.status==='indo_coletar'
+    ? `O motorista está a caminho da recolha`
+    : (p.status==='coletado'||p.status==='a_caminho' ? `Seu pedido está a caminho` : `Motorista encontrado`);
+  const distanciaTxt = km==null ? 'Atualizando localização...' : `${km.toFixed(km<1?2:1)} km de distância`;
+  const tempoTxt = min==null ? '—' : `${min} min`;
+  return `
+  <div class="motorista-encontrado-full" role="dialog" aria-modal="true" aria-label="Motorista encontrado">
+    <div class="mef-topo">
+      <button class="mef-voltar" onclick="fecharAlertaMotorista()" aria-label="Fechar">‹</button>
+      <div class="mef-titulo">Aguardando o motorista parceiro</div>
+      <button class="mef-fechar" onclick="fecharAlertaMotorista()" aria-label="Fechar">×</button>
+    </div>
+
+    <div class="mef-aviso">
+      <span class="mef-info">ⓘ</span>
+      <span><b>${statusTxt}</b><br><strong>${p.origem||''}</strong></span>
+    </div>
+
+    <div class="mef-mapa-wrap">
+      <div class="mef-mapa" id="mapa-encontrado-${p.id}"></div>
+      <div class="mef-eta">
+        <b id="popup-eta-min-${p.id}">${tempoTxt}</b>
+        <span id="popup-eta-km-${p.id}">${distanciaTxt}</span>
+      </div>
+      <div class="mef-live"><span></span> LOCALIZAÇÃO EM TEMPO REAL</div>
+    </div>
+
+    <div class="mef-card">
+      <div class="mef-card-cab">
+        <div>
+          <div class="mef-nome">${p.motoristaNome||'Motorista parceiro'}</div>
+          ${p.motoristaPlaca ? `<div class="mef-placa">${p.motoristaPlaca}</div>` : ''}
+          <div class="mef-veiculo">${VEICULOS[p.motoristaVeiculoTipo||p.veiculo]?.emoji||'🛵'} ${p.motoristaMarca||VEICULOS[p.motoristaVeiculoTipo||p.veiculo]?.label||''} ${p.motoristaCor||''}</div>
+        </div>
+        <div class="mef-foto-area">
+          ${p.motoristaFotoUrl ? `<img src="${p.motoristaFotoUrl}" class="mef-foto" alt="Foto do motorista">` : `<div class="mef-foto mef-foto-vazia">🛵</div>`}
+          <div class="mef-nota">⭐ ${Number(p.motoristaNotaMedia!=null?p.motoristaNotaMedia:5).toFixed(2)}</div>
+        </div>
+      </div>
+      <div class="mef-confirmacao">Confira os dados do motorista antes da recolha do pedido.</div>
+      <div class="mef-acoes">
+        <button onclick="abrirChat('${p.id}')">💬 <b>Chat</b></button>
+        <button onclick="ligarPara('${p.motoristaTelefone||''}')">📞 <b>Ligar</b></button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ---------- mantém a tela do motorista acesa durante corrida ativa ----------
+let efWakeLock = null;
+async function solicitarTelaAcesa(){
+  try{
+    if(estado.modo!=='entregador' || !estado.motorista.ativo) return;
+    const temCorridaAtiva = estado.pedidos.some(p=>
+      p.motoristaTelefone===estado.motorista.telefone &&
+      ['indo_coletar','coletado','a_caminho'].includes(p.status)
+    );
+    if(!temCorridaAtiva) return liberarTelaAcesa();
+    if(!('wakeLock' in navigator) || document.visibilityState!=='visible') return;
+    if(efWakeLock && !efWakeLock.released) return;
+    efWakeLock = await navigator.wakeLock.request('screen');
+    efWakeLock.addEventListener('release', ()=>{ efWakeLock=null; });
+  }catch(e){
+    console.warn('Wake Lock indisponível:', e);
+  }
+}
+async function liberarTelaAcesa(){
+  try{
+    if(efWakeLock && !efWakeLock.released) await efWakeLock.release();
+  }catch(e){}
+  efWakeLock = null;
+}
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible') solicitarTelaAcesa();
+});
+
 function detectarMotoristaEncontrado(novos){
   if(estado.modo!=='cliente' || !estado.filtroTelefoneCliente) return;
   const MENSAGENS_STATUS = {
@@ -2088,10 +2231,40 @@ async function carregarPedidos(){
 }
 // atualiza só os marcadores dos mapas já abertos na tela (sem tocar no resto do DOM) —
 // usado quando a única coisa que mudou foi a posição do motorista em trânsito.
+function atualizarEtaAoVivo(p){
+  if(!p || !p.motoristaCoord) return;
+  const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
+  if(!alvo) return;
+  const km = distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon);
+  const velocidade = (VEICULOS[p.veiculo]&&VEICULOS[p.veiculo].veloc) || 28;
+  const min = Math.max(1, Math.round((km/velocidade)*60));
+  const txt = p.status==='indo_coletar' ? 'até a coleta' : 'até o destino';
+  const elMin = document.getElementById('eta-min-'+p.id);
+  const elSub = document.getElementById('eta-sub-'+p.id);
+  if(elMin) elMin.textContent = '~'+min+' min';
+  if(elSub) elSub.textContent = km.toFixed(km<1?2:1)+' km '+txt+' · atualizado agora';
+  registrarEta(p.id,min);
+}
 function atualizarMapasAoVivo(pedidos){
   pedidos.forEach(p=>{
     if(!p.origemCoord || !p.destinoCoord || p.status==='buscando' || p.status==='entregue' || p.status==='cancelado') return;
-    if(estado.modo==='cliente' && p.clienteTelefone===estado.filtroTelefoneCliente){ montarMapa('mapa-c-'+p.id, p); }
+    atualizarEtaAoVivo(p);
+    if(estado.modo==='cliente' && p.clienteTelefone===estado.filtroTelefoneCliente){
+      montarMapa('mapa-c-'+p.id, p);
+      if(estado.alertaMotorista && estado.alertaMotorista.pedidoId===p.id){
+        montarMapa('mapa-encontrado-'+p.id, p);
+        const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
+        if(p.motoristaCoord && alvo){
+          const km = distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon);
+          const velocidade = (VEICULOS[p.motoristaVeiculoTipo||p.veiculo]&&VEICULOS[p.motoristaVeiculoTipo||p.veiculo].veloc)||28;
+          const min = Math.max(1,Math.round((km/velocidade)*60));
+          const e1=document.getElementById('popup-eta-min-'+p.id);
+          const e2=document.getElementById('popup-eta-km-'+p.id);
+          if(e1) e1.textContent=min+' min';
+          if(e2) e2.textContent=km.toFixed(km<1?2:1)+' km de distância';
+        }
+      }
+    }
     if(estado.modo==='entregador' && estado.motorista.ativo && p.motoristaTelefone===estado.motorista.telefone){ montarMapa('mapa-m-'+p.id, p); }
   });
 }
@@ -3596,8 +3769,9 @@ async function aceitarPedido(id){
   registrarAlertaAdmin('pedido_aceito', `${mo.nome||'Um motorista'} (${mo.telefone||''}) aceitou o pedido de ${p.clienteNome||'?'}.${acrescimoValor>0?` Acréscimo de R$ ${acrescimoValor.toFixed(2)} aplicado (${motivosAcrescimo.map(m=>m.label).join(', ')}).`:''}`, id);
   enviarPushServidor('cliente', p.clienteTelefone, 'Entregador encontrado!', `${mo.nome||'Um entregador'} vai levar o seu pedido.`);
   if(acrescimoValor>0) enviarPushServidor('cliente', p.clienteTelefone, 'Acréscimo aplicado', `Sua corrida caiu em ${motivosAcrescimo.map(m=>m.label).join(', ')}: foi cobrado um acréscimo de R$ ${acrescimoValor.toFixed(2)}.`);
-  mostrarToast(acrescimoValor>0 ? `Pedido aceito! Acréscimo Pro de R$ ${acrescimoValor.toFixed(2)} aplicado (${motivosAcrescimo.map(m=>m.label).join(', ')}).` : 'Pedido aceito! Toque em "Iniciar corrida" quando estiver pronto para seguir até a coleta.', 'sucesso');
+  mostrarToast(acrescimoValor>0 ? `Pedido aceito! Acréscimo Pro de R$ ${acrescimoValor.toFixed(2)} aplicado (${motivosAcrescimo.map(m=>m.label).join(', ')}).` : 'Pedido aceito! A tela ficará acesa durante a corrida. Toque em "Iniciar corrida" quando estiver pronto.', 'sucesso');
   await carregarPedidos();
+  solicitarTelaAcesa();
 }
 async function iniciarCorrida(id){
   const p = estado.pedidos.find(x=>x.id===id);
@@ -3753,18 +3927,23 @@ function obterPosicaoAtual(){
   return new Promise((resolve)=>{
     if(!navigator.geolocation){ resolve(null); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos)=>resolve({ lat:pos.coords.latitude, lon:pos.coords.longitude }),
-      ()=>resolve(ultimaPosicaoMotorista || null),
-      { enableHighAccuracy:true, timeout:8000, maximumAge:5000 }
+      (pos)=>resolve({
+        lat:pos.coords.latitude,
+        lon:pos.coords.longitude,
+        accuracy:Number(pos.coords.accuracy)||0
+      }),
+      ()=>resolve(ultimaPosicaoMotorista ? {...ultimaPosicaoMotorista, accuracy:80} : null),
+      { enableHighAccuracy:true, timeout:10000, maximumAge:3000 }
     );
   });
 }
 async function verificarNoEndereco(coordAlvo){
-  if(!coordAlvo) return { dentro:true, distanciaKm:0 }; // sem coordenada cadastrada, não bloqueia
+  if(!coordAlvo) return { dentro:true, distanciaKm:0 };
   const posicao = await obterPosicaoAtual();
   if(!posicao) return { dentro:false, distanciaKm:null, semGps:true };
   const distanciaKmAtual = distanciaKm(posicao.lat, posicao.lon, coordAlvo.lat, coordAlvo.lon);
-  return { dentro: distanciaKmAtual<=RAIO_GEOFENCE_KM, distanciaKm: distanciaKmAtual };
+  const toleranciaKm = Math.max(RAIO_GEOFENCE_KM, Math.min(0.55, ((posicao.accuracy||0)+70)/1000));
+  return { dentro: distanciaKmAtual<=toleranciaKm, distanciaKm: distanciaKmAtual, toleranciaKm };
 }
 async function solicitarFoto(pedidoId, tipo){
   const p = estado.pedidos.find(x=>x.id===pedidoId);
@@ -3862,9 +4041,9 @@ function iniciarRastreioMotorista(){
         mostrarToast(msg, 'erro');
       }
     },
-    { enableHighAccuracy:true, maximumAge:10000 }
+    { enableHighAccuracy:true, maximumAge:3000, timeout:12000 }
   );
-  if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 8000);
+  if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 5000);
 }
 function pararRastreioMotorista(){ if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; } avisoLocalizacaoMostrado=false; }
 async function enviarPosicaoMotorista(){
@@ -3903,8 +4082,8 @@ function montarMapa(containerId, pedido){
       const div = document.createElement('div');
       div.style.width='100%'; div.style.height='100%';
       slot.appendChild(div);
-      const map = L.map(div,{zoomControl:false, attributionControl:false});
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+      const map = L.map(div,{zoomControl:false, attributionControl:false, fadeAnimation:false, zoomAnimation:false, markerZoomAnimation:false, preferCanvas:true});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{updateWhenIdle:false,keepBuffer:4}).addTo(map);
       L.marker(pO,{icon:L.divIcon({className:'',html:'<div style="width:12px;height:12px;border-radius:50%;background:#ff5a3c;border:2px solid #fff"></div>'})}).addTo(map);
       L.marker(pD,{icon:L.divIcon({className:'',html:'<div style="width:12px;height:12px;border-radius:50%;background:#7fae72;border:2px solid #fff"></div>'})}).addTo(map);
       L.polyline([pO,pD],{color:'#a9a89c',weight:2,opacity:0.35,dashArray:'5,7'}).addTo(map);
@@ -4120,7 +4299,7 @@ function etaHTML(pedido){
   const min = Math.max(1, Math.round((km/VEICULOS[pedido.veiculo].veloc)*60));
   const txt = pedido.status==='indo_coletar' ? 'até a coleta' : 'até o seu endereço';
   registrarEta(pedido.id, min);
-  return `<div class="eta-banner"><div class="eta-min" id="eta-min-${pedido.id}">~${min} min</div><div class="eta-sub" id="eta-sub-${pedido.id}">${km.toFixed(1)} km ${txt} · atualizado em tempo real</div></div>`;
+  return `<div class="eta-banner"><div class="eta-min" id="eta-min-${pedido.id}">~${min} min</div><div class="eta-sub" id="eta-sub-${pedido.id}">${km.toFixed(km<1?2:1)} km ${txt} · atualizado em tempo real</div></div>`;
 }
 // ---------- contagem regressiva do ETA em tempo real ----------
 // a cada atualização real de posição (registrarEta) fixamos o valor "oficial"; entre uma
@@ -4363,23 +4542,6 @@ function cartaoPedidoCliente(p){
     ${acoesPedidoHTML(p)}
   </div>`;
 }
-let pedidoMotoristaFocoId = null;
-function selecionarPedidoMotorista(id){
-  pedidoMotoristaFocoId=id;
-  render();
-  requestAnimationFrame(()=>document.getElementById('motorista-pedido-foco')?.scrollIntoView({behavior:'smooth',block:'start'}));
-}
-function filaPedidosMotoristaHTML(lista){
-  if(!lista || lista.length===0) return '';
-  const foco = lista.find(p=>p.id===pedidoMotoristaFocoId) || lista[0];
-  pedidoMotoristaFocoId=foco.id;
-  const fila = lista.map((p,i)=>`<button type="button" class="motorista-fila-item ${p.id===foco.id?'ativo':''}" onclick="selecionarPedidoMotorista('${p.id}')">
-    <div class="mf-valor">R$ ${ganhoMotorista(p.preco,p).toFixed(2)}</div>
-    <div class="mf-rota">${p.origem} → ${p.destino}</div>
-    <div class="mf-dist">${p.distanciaAteMim!=null?p.distanciaAteMim.toFixed(1)+' km até coleta':'Novo pedido'}${p.id===foco.id?' · aberto':''}</div>
-  </button>`).join('');
-  return `<div class="motorista-fila-topo"><div class="motorista-fila-titulo"><b>🔔 ${lista.length} ${lista.length===1?'pedido disponível':'pedidos disponíveis'}</b><span>Toque para ver</span></div><div class="motorista-fila-scroll">${fila}</div></div><div id="motorista-pedido-foco" class="motorista-pedido-foco">${cartaoPedidoDisponivel(foco)}</div>`;
-}
 function cartaoPedidoDisponivel(p){
   const rkm = p.distancia>0 ? (p.preco/p.distancia) : null;
   const maiorNivel = niveisPrioridade()[niveisPrioridade().length-1].valor;
@@ -4426,7 +4588,7 @@ function cartaoPedidoAtivo(p){
   if(aguardandoInicio){
     botaoAcao = `<button class="btn btn-primario btn-pequeno" ${atributoDesabilitado('iniciarCorrida_'+p.id)} onclick="executarComCarregando('iniciarCorrida_${p.id}', ()=>iniciarCorrida('${p.id}'))">${rotuloCarregando('iniciarCorrida_'+p.id, '▶️ Iniciar corrida', 'Iniciando...')}</button>`;
   } else if(p.status==='indo_coletar'){
-    botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="solicitarFoto('${p.id}','antes')">📷 Cheguei / tirar foto e recolher (obrigatória)</button>`;
+    botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="solicitarFoto('${p.id}','antes')">📷 Cheguei / tirar foto e recolher</button>`;
   } else if(p.status==='coletado'){
     botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="avancarStatus('${p.id}')">Segui viagem</button>`;
   } else if(p.status==='a_caminho' && temMaisParadas && !ultimaParada){
@@ -4618,7 +4780,7 @@ function telaBoasVindas(){
       </button>
 
       <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('cliente')">
-        🔐 Já tenho conta — Senha ou facial
+        🔐 Já tenho conta — Entrar
       </button>
 
       <div class="bv-cta-sub">Você pode conhecer e calcular antes de concluir o cadastro.</div>
@@ -4659,7 +4821,7 @@ function telaBoasVindas(){
       </button>
 
       <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('entregador')">
-        🔐 Já tenho conta — Senha ou facial
+        🔐 Já tenho conta — Entrar
       </button>
 
       <div style="text-align:center;margin-top:10px">
@@ -4740,7 +4902,7 @@ function telaAcessoCliente(){
   <div style="text-align:center;font-size:13px;color:var(--poeira);margin:-4px 0 14px">Quer entregar e ganhar dinheiro em vez de pedir? <span style="color:var(--mango);text-decoration:underline;cursor:pointer;font-weight:700" onclick="entrarBoasVindas('entregador')">Ir para o login de motorista</span></div>
   <div class="campo-motorista">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">Entrar como cliente</h2>
-    <div class="subtitulo">Entre com telefone e senha. A validação facial será solicitada somente ao confirmar uma corrida.</div>
+    <div class="subtitulo">Entre com telefone e senha. Sem selfie e sem reconhecimento facial.</div>
     <label>Telefone</label>
     <input type="tel" id="lc-telefone" value="${pc.loginTelefone}" placeholder="(35) 90000-0000">
     <label>Senha</label>
@@ -4748,11 +4910,6 @@ function telaAcessoCliente(){
     <div style="text-align:right;margin-top:-6px"><span style="font-size:13px;color:var(--poeira);text-decoration:underline;cursor:pointer" onclick="abrirEsqueciSenha('cliente')">Esqueci minha senha</span></div>
     ${pc.loginErro?`<div class="erro-campo">${pc.loginErro}</div>`:''}
     <button class="btn btn-azul" ${atributoDesabilitado('loginCliente')} onclick="executarComCarregando('loginCliente', loginCliente)">${rotuloCarregando('loginCliente', '🔐 Entrar com senha', 'Entrando...')}</button>
-    <div style="display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--poeira);font-size:12px">
-      <div style="height:1px;background:var(--linha);flex:1"></div><span>ou</span><div style="height:1px;background:var(--linha);flex:1"></div>
-    </div>
-    <button class="btn btn-secundario" ${atributoDesabilitado('loginFacialCliente')} onclick="executarComCarregando('loginFacialCliente', loginFacialCliente)">${rotuloCarregando('loginFacialCliente', '🙂 Entrar com reconhecimento facial', 'Abrindo câmera...')}</button>
-    <div style="font-size:12px;color:var(--poeira);margin-top:7px;text-align:center">Digite apenas o telefone acima para entrar com o rosto cadastrado.</div>
     <div style="margin-top:16px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
       <div style="font-weight:700;color:var(--osso);font-size:16px">Ainda não tem conta?</div>
       <div style="font-size:14.5px;color:var(--poeira);margin-top:3px">Receba seus pedidos sem dor de cabeça — de onde estiver, pro seu negócio ou pra sua casa!</div>
@@ -4779,7 +4936,7 @@ function telaCadastroCliente(){
   </div>
   <div class="campo-motorista">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">${c.recuperando?'Continuar cadastro':'Criar conta'}</h2>
-    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">${c.recuperando?'Cadastro encontrado. Seus dados foram recuperados. Confirme a senha e conclua a validação facial.':'Cadastro rápido para confirmar sua corrida. Use seu telefone e uma senha fácil de lembrar.'}</div>
+    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">${c.recuperando?'Cadastro encontrado. Confirme seus dados e a senha para continuar.':'Cadastro rápido para confirmar sua corrida. Use seu telefone e uma senha fácil de lembrar.'}</div>
     <label>O seu nome</label>
     <input type="text" id="cc-nome" value="${c.nome}" oninput="estado.painelCliente.cadastro.nome=this.value" placeholder="Ex: Ana Souza">
     <label>Telefone</label>
@@ -4828,9 +4985,7 @@ function fixarEtapaPedidoNaTela(seletor='.etapa-conteudo'){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const alvo = document.querySelector(seletor) || document.querySelector('.etapa-conteudo');
     if(!alvo) return;
-    // Enquadra o início exato da ação no topo útil da tela.
-    // Evita deixar veículo/título acima ou botão Continuar fora do quadro por causa do scroll anterior.
-    const topo = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY);
+    const topo = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY - 8);
     window.scrollTo({top:topo, behavior:'auto'});
   }));
 }
@@ -5000,7 +5155,7 @@ function telaCliente(){
     ${f.tipoRetirada==='agendado' ? `<input type="datetime-local" id="c-horario-agendado" value="${f.horarioAgendado}">` : ''}
 
     <label style="font-size:18px;color:var(--osso)">🚘 Escolha o veículo <span style="color:var(--mango)">(obrigatório)</span></label>
-    <div style="font-size:12px;color:var(--poeira);margin:-2px 0 6px">Toque no veículo desejado.</div>
+    <div style="font-size:13px;color:var(--poeira);margin:-2px 0 8px">Toque em uma opção. A selecionada fica destacada em amarelo.</div>
     <div class="veiculos" id="escolha-veiculo-pedido">
       ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${f.veiculo===k?'sel':''}" onclick="mudarVeiculo('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
     </div>
@@ -5537,7 +5692,7 @@ function telaMotorista(){
         ? `<div class="vazio"><span class="emoji-grande">🛵</span>Sem pedidos por agora${Object.keys(contagemPorVeiculoOutro).length>0
             ? `<div style="margin-top:8px;font-size:13px;color:var(--poeira)">Sem pedidos para o seu veículo (${(VEICULOS[m.veiculo]||{}).label||m.veiculo}) no momento — há ${Object.entries(contagemPorVeiculoOutro).map(([v,n])=>`${n} de ${(VEICULOS[v]||{}).label||v}`).join(', ')} esperando, mas só aparecem pra motoristas com o veículo compatível.</div>`
             : ''}</div>`
-        : filaPedidosMotoristaHTML(disponiveis)
+        : disponiveis.map(cartaoPedidoDisponivel).join('')
     }
   </div>`;
 
@@ -5987,15 +6142,7 @@ function render(){
     </div>` : ''}
     <input type="file" id="input-doc-motorista" accept="image/*" style="display:none" onchange="processarDocumentoSelecionado(this)">
     <input type="file" id="input-doc-reenvio" accept="image/*" style="display:none" onchange="processarReenvioDocumento(this)">
-    ${estado.alertaMotorista ? `
-    <div class="alerta-motorista" onclick="fecharAlertaMotorista()">
-      <div class="alerta-emoji">🛵</div>
-      <div class="alerta-texto">
-        <div class="alerta-titulo">Motorista encontrado!</div>
-        <div class="alerta-sub">${estado.alertaMotorista.nome} aceitou o seu pedido e está a caminho. Você ainda tem ${Math.round(JANELA_CANCELAMENTO_MS/60000)} minutos pra cancelar sem custo.</div>
-      </div>
-      <button class="alerta-fechar" onclick="event.stopPropagation();fecharAlertaMotorista()">&times;</button>
-    </div>` : ''}
+    ${estado.alertaMotorista ? popupMotoristaEncontradoHTML() : ''}
     ${estado.avisoGeralExibido ? `
     <div class="alerta-motorista" onclick="fecharAvisoGeral()">
       <div class="alerta-emoji">📢</div>
@@ -6100,7 +6247,15 @@ function render(){
       montarMapa('mapa-m-'+p.id, p);
     }
   });
+  if(estado.alertaMotorista){
+    const pp = estado.pedidos.find(x=>x.id===estado.alertaMotorista.pedidoId);
+    if(pp && pp.origemCoord && pp.destinoCoord){
+      idsMapasAtivos.add('mapa-encontrado-'+pp.id);
+      montarMapa('mapa-encontrado-'+pp.id, pp);
+    }
+  }
   limparMapasInativos(idsMapasAtivos);
+  solicitarTelaAcesa();
   if(estado.admin.aberto && estado.admin.logado && estado.admin.aba==='resumo') montarMapaAdminGeral();
   if(estado.chatAberto) renderChat();
   if(estado.suporteAberto) renderSuporteChat();
@@ -6559,7 +6714,6 @@ async function cadastrarCliente(){
   c.nome = document.getElementById('cc-nome')?.value.trim() || c.nome || '';
   c.telefone = document.getElementById('cc-telefone')?.value.trim() || c.telefone || '';
   c.senha = document.getElementById('cc-senha')?.value || c.senha || '';
-
   if(!c.nome||!c.telefone||!c.senha){ c.erro='Preenche todos os campos.'; render(); return; }
   if(c.senha.length<4){ c.erro='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   c.erro='';
@@ -6567,23 +6721,22 @@ async function cadastrarCliente(){
   const { data: existente, error: erroConsulta } = await meuPerfilCliente(c.telefone);
   if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tente novamente.'; render(); return; }
 
-  const cadastroCompleto = !!(existente && existente.facial_ativa && Array.isArray(existente.face_descriptor) && existente.face_descriptor.length);
-  if(cadastroCompleto){ c.erro='Este telefone já tem uma conta completa. Entre com sua senha.'; render(); return; }
+  if(existente && existente.senha_hash){
+    const senhaHashExistente = await hashSenha(c.senha);
+    if(existente.senha_hash !== senhaHashExistente){
+      c.erro='Este telefone já está cadastrado. Entre com a senha correta.';
+      render(); return;
+    }
+    await entrarNoPainelCliente(existente);
+    return;
+  }
 
   const senhaHash = await hashSenha(c.senha);
   const { error: erroSalvar } = await sb.rpc('entrega_cliente_cadastrar_ou_retomar', { p_telefone: c.telefone, p_nome: c.nome, p_senha_hash: senhaHash });
   if(erroSalvar){ console.error(erroSalvar); c.erro='Não consegui salvar o cadastro agora. Tente novamente.'; render(); return; }
 
-  // A conta só é concluída depois que a validação facial for salva com sucesso.
-  const facial = await fluxoFacial({tipo:'cliente',telefone:c.telefone,modo:'cadastro'});
-  if(!facial.ok){
-    c.recuperando=true;
-    c.erro=facial.cancelado ? 'Validação facial cancelada. Toque em Continuar cadastro para tentar novamente.' : (facial.erro||'Não foi possível concluir a validação facial. Tente novamente.');
-    render(); return;
-  }
-
   const { data: confirmado, error: erroConfirmacao } = await meuPerfilCliente(c.telefone);
-  if(erroConfirmacao || !confirmado || !confirmado.facial_ativa){ c.erro='A validação foi feita, mas não consegui confirmar o acesso. Tente entrar novamente.'; render(); return; }
+  if(erroConfirmacao || !confirmado){ c.erro='Cadastro salvo, mas não consegui abrir sua conta. Tente entrar novamente.'; render(); return; }
 
   try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
   registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
@@ -6595,7 +6748,6 @@ async function cadastrarCliente(){
   if(estado.notificacoesStatus==='granted') inscreverPushReal(); else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),1200);
   setTimeout(()=>{clienteBemVindoAnimando=false;render();},4000);
 }
-
 async function entrarNoPainelCliente(data){
   estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   estado.filtroTelefoneCliente = data.telefone;
@@ -6660,26 +6812,6 @@ async function loginCliente(){
 
   if(!data){
     pc.loginErro='Não encontrámos conta com este telefone. Faça seu cadastro.';
-    render();
-    return;
-  }
-
-  const cadastroCompleto = !!(
-    data.facial_ativa &&
-    Array.isArray(data.face_descriptor) &&
-    data.face_descriptor.length
-  );
-
-  // Se ficou pela metade, o caminho correto é CONCLUIR, não dizer que já está cadastrado.
-  if(!cadastroCompleto){
-    estado.painelCliente.tela='cadastro';
-    estado.painelCliente.cadastro={
-      nome:data.nome||'',
-      telefone:data.telefone||telefone,
-      senha:senha,
-      recuperando:true,
-      erro:''
-    };
     render();
     return;
   }
@@ -8465,7 +8597,7 @@ async function excluirMotoristaAdmin(id, nome){
   await carregarMotoristasAdmin();
 }
 
-window.selecionarPedidoMotorista=selecionarPedidoMotorista; window.criarPedido=criarPedido; window.calcularCorrida=calcularCorrida; window.aceitarPedido=aceitarPedido;
+window.criarPedido=criarPedido; window.calcularCorrida=calcularCorrida; window.aceitarPedido=aceitarPedido;
 window.avancarStatus=avancarStatus; window.mudarVeiculo=mudarVeiculo; window.mudarModo=mudarModo; window.alternarRoca=alternarRoca;
 window.entrarComoMotorista=entrarComoMotorista; window.sairMotorista=sairMotorista; window.carregarPedidos=carregarPedidos;
 window.abrirGPS=abrirGPS; window.abrirChat=abrirChat; window.fecharChat=fecharChat; window.enviarMensagem=enviarMensagem;
