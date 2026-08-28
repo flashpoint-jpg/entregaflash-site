@@ -4682,8 +4682,8 @@ function telaCadastroCliente(){
     </div>
   </div>
   <div class="campo-motorista">
-    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">Criar conta</h2>
-    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">Cadastro rápido para confirmar sua corrida. Use seu telefone e uma senha fácil de lembrar.</div>
+    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">${c.recuperando?'Continuar cadastro':'Criar conta'}</h2>
+    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">${c.recuperando?'Cadastro encontrado. Seus dados foram recuperados. Confirme a senha e conclua a validação facial.':'Cadastro rápido para confirmar sua corrida. Use seu telefone e uma senha fácil de lembrar.'}</div>
     <label>O seu nome</label>
     <input type="text" id="cc-nome" value="${c.nome}" oninput="estado.painelCliente.cadastro.nome=this.value" placeholder="Ex: Ana Souza">
     <label>Telefone</label>
@@ -4692,7 +4692,7 @@ function telaCadastroCliente(){
     <input type="text" id="cc-senha" value="${c.senha}" oninput="estado.painelCliente.cadastro.senha=this.value" placeholder="Mínimo 4 caracteres" style="-webkit-text-security:disc;text-security:disc;">
     
     ${c.erro?`<div class="erro-campo">${c.erro}</div>`:''}
-    <button class="btn btn-primario" ${atributoDesabilitado('cadastrarCliente')} onclick="executarComCarregando('cadastrarCliente', cadastrarCliente)">${rotuloCarregando('cadastrarCliente', 'Cadastrar', 'Cadastrando...')}</button>
+    <button class="btn btn-primario" ${atributoDesabilitado('cadastrarCliente')} onclick="executarComCarregando('cadastrarCliente', cadastrarCliente)">${rotuloCarregando('cadastrarCliente', c.recuperando?'Continuar cadastro':'Cadastrar', c.recuperando?'Continuando...':'Cadastrando...')}</button>
     <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:8px">Cadastro gratuito. Sem mensalidade. Sem pegadinha.</div>
     <div class="link-alt">Já tem conta? <a onclick="irParaLoginCliente()">Entre aqui</a></div>
   </div>`;
@@ -5075,9 +5075,23 @@ function passosHTML(atual){
   for(let i=1;i<=6;i++) html += `<div class="p ${i<atual?'feito':i===atual?'atual':''}"></div>`;
   html += '</div>';
   if(atual===1){
-    html += `<div style="text-align:center;font-size:13.5px;font-weight:600;color:var(--mango);margin-top:8px">🎯 Comece a ganhar dinheiro entregando em Muzambinho e região!</div>`;
+    html += `<div style="text-align:center;margin-top:8px">
+      <div style="font-family:'Rajdhani';font-size:15px;font-weight:800;color:var(--mango);text-transform:uppercase;letter-spacing:.35px">⚡ Pré-cadastro rápido</div>
+      <div style="font-size:12.5px;color:var(--poeira);margin-top:2px">Leva menos de 1 minuto • documentos só na ativação</div>
+    </div>`;
   }
   return html;
+}
+
+function alternarSenhaMotorista(){
+  const input=document.getElementById('cm-senha');
+  const botao=document.getElementById('cm-senha-ver');
+  if(!input) return;
+  const mostrando=input.dataset.mostrando==='1';
+  input.dataset.mostrando=mostrando?'0':'1';
+  input.style.webkitTextSecurity=mostrando?'disc':'none';
+  input.style.textSecurity=mostrando?'disc':'none';
+  if(botao) botao.textContent=mostrando?'👁':'🙈';
 }
 
 function telaCadastroMotorista(){
@@ -5096,20 +5110,20 @@ function telaCadastroMotorista(){
   let corpo='';
   if(c.etapa===1){
     corpo = `
-    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 10px">Criar conta</h2>
+    <h2 style="font-family:'Rajdhani';font-weight:800;font-size:19px;text-transform:uppercase;margin:0 0 4px">Quero trabalhar com entregas</h2>
+    <div style="font-size:13px;color:var(--poeira);margin:0 0 12px;line-height:1.4">Preencha seus dados básicos. Você conhece o app primeiro e envia os documentos só quando for ativar a conta.</div>
     <div class="campo-icone"><span class="ic">👤</span><input type="text" id="cm-nome" value="${c.nome}" placeholder="Nome completo"></div>
     <div class="campo-icone"><span class="ic">📞</span><input type="tel" id="cm-telefone" value="${c.telefone}" placeholder="Telefone / WhatsApp"></div>
     <div class="campo-icone"><span class="ic">🏙️</span><input type="text" id="cm-cidade" value="${c.cidade}" placeholder="Cidade"></div>
-    <div class="campo-icone"><span class="ic">🔒</span><input type="text" id="cm-senha" value="${c.senha}" placeholder="Escolha uma senha fácil de lembrar" style="-webkit-text-security:disc;text-security:disc;"></div>
-    <div style="font-size:12.5px;color:var(--poeira);margin:0 0 10px">⚡ Este é só o pré-cadastro. Você pode conhecer o sistema antes de enviar documentos.</div>
-    <label style="margin-top:10px">Como você entrega?</label>
+    <div class="campo-icone" style="position:relative;padding-right:48px"><span class="ic">🔒</span><input type="text" id="cm-senha" value="${c.senha}" placeholder="Crie uma senha" style="-webkit-text-security:disc;text-security:disc;padding-right:42px"><button id="cm-senha-ver" type="button" onclick="event.stopPropagation();alternarSenhaMotorista()" aria-label="Mostrar ou ocultar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:transparent;font-size:20px;cursor:pointer;padding:0">👁</button></div>
+    <label style="margin-top:10px;font-size:15px">Como você entrega?</label>
     <div class="veiculos">
-      ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${c.veiculo===k?'sel':''}" onclick="mudarVeiculoCadastro('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
+      ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${c.veiculo===k?'sel':''}" onclick="mudarVeiculoCadastro('${k}')" style="position:relative">${c.veiculo===k?'<span style="position:absolute;top:6px;right:7px;color:var(--mango);font-weight:900;font-size:15px">✓</span>':''}<span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
     </div>
-    <div style="font-size:12px;color:var(--poeira);margin-top:6px">📄 CPF, documentos e uma selfie simples ficam para a ativação da conta. Assim você conhece o app primeiro.</div>
+    <div style="margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(255,201,60,.08);border:1px solid rgba(255,201,60,.28);font-size:12.5px;color:var(--poeira);line-height:1.45"><b style="color:var(--osso)">📦 Receba pedidos na sua região</b><br>Escolha quando ficar disponível e aceite as entregas que quiser.</div>
     ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
-    <button class="btn btn-primario" ${c.enviando?'disabled':''} onclick="avancarEtapa1()" style="border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">${c.enviando?'<span class="girando"></span>':'☁️ FAZER PRÉ-CADASTRO'}</button>
-    <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:8px">✅ Cadastro gratuito • Sem mensalidade<br>Sem pegadinha — comece quando quiser!</div>
+    <button class="btn btn-primario" ${c.enviando?'disabled':''} onclick="avancarEtapa1()" style="border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:17px;min-height:56px">${c.enviando?'<span class="girando"></span>':'QUERO SER MOTORISTA ⚡'}</button>
+    <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:7px">✅ Cadastro grátis • Sem mensalidade • Documentos só na ativação</div>
     <div class="link-alt">Já é cadastrado? <a onclick="irParaLogin()">Entrar</a></div>`;
   } else if(c.etapa===2){
     corpo = `
@@ -6398,7 +6412,7 @@ async function exigirFacialDaConta(tipo,data){
 }
 // ================= FIM BIOMETRIA FACIAL =================
 
-function irParaCadastroCliente(){ estado.painelCliente.tela='cadastro'; estado.painelCliente.cadastro={nome:'',telefone:'',senha:'',erro:''}; render(); }
+function irParaCadastroCliente(){ estado.painelCliente.tela='cadastro'; estado.painelCliente.cadastro={nome:'',telefone:'',senha:'',erro:'',recuperando:false}; render(); }
 function irParaLoginCliente(){ estado.painelCliente.tela='entrar'; estado.painelCliente.loginErro=''; render(); }
 
 async function cadastrarCliente(){
@@ -6413,7 +6427,9 @@ async function cadastrarCliente(){
 
   const { data: existente, error: erroConsulta } = await sb.from('entrega_clientes').select('*').eq('telefone', c.telefone).maybeSingle();
   if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tente novamente.'; render(); return; }
-  if(existente && existente.senha_hash){ c.erro='Este telefone já tem uma conta. Entre com sua senha.'; render(); return; }
+
+  const cadastroCompleto = !!(existente && existente.facial_ativa && Array.isArray(existente.face_descriptor) && existente.face_descriptor.length);
+  if(cadastroCompleto){ c.erro='Este telefone já tem uma conta completa. Entre com sua senha.'; render(); return; }
 
   const senhaHash = await hashSenha(c.senha);
   const agora = Date.now();
@@ -6427,8 +6443,16 @@ async function cadastrarCliente(){
   }
   if(erroSalvar){ console.error(erroSalvar); c.erro='Não consegui salvar o cadastro agora. Tente novamente.'; render(); return; }
 
+  // A conta só é concluída depois que a validação facial for salva com sucesso.
+  const facial = await fluxoFacial({tipo:'cliente',telefone:c.telefone,modo:'cadastro'});
+  if(!facial.ok){
+    c.recuperando=true;
+    c.erro=facial.cancelado ? 'Validação facial cancelada. Toque em Continuar cadastro para tentar novamente.' : (facial.erro||'Não foi possível concluir a validação facial. Tente novamente.');
+    render(); return;
+  }
+
   const { data: confirmado, error: erroConfirmacao } = await sb.from('entrega_clientes').select('*').eq('telefone',c.telefone).maybeSingle();
-  if(erroConfirmacao || !confirmado){ c.erro='Cadastro salvo, mas não consegui confirmar o acesso. Tente entrar com telefone e senha.'; render(); return; }
+  if(erroConfirmacao || !confirmado || !confirmado.facial_ativa){ c.erro='A validação foi feita, mas não consegui confirmar o acesso. Tente entrar novamente.'; render(); return; }
 
   try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
   registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
@@ -6470,7 +6494,8 @@ async function loginFacialCliente(){
       nome:data.nome||'',
       telefone:data.telefone||telefone,
       senha:'',
-      erro:'Este cadastro ficou pela metade. Digite a senha que deseja usar e conclua agora a validação facial.'
+      recuperando:true,
+      erro:''
     };
     render();
     return;
@@ -6525,7 +6550,8 @@ async function loginCliente(){
       nome:data.nome||'',
       telefone:data.telefone||telefone,
       senha:senha,
-      erro:'Encontramos um cadastro que ficou pela metade. Seus dados foram recuperados; conclua agora a validação facial.'
+      recuperando:true,
+      erro:''
     };
     render();
     return;
