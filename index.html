@@ -106,9 +106,12 @@ fbq('track', 'PageView');
       radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
       linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
   }
-  .bv-cabecalho{display:flex;align-items:center;gap:12px;margin-bottom:26px;}
+  .bv-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:26px;}
   .bv-logo-badge{background:transparent;border-radius:0;padding:0;display:inline-flex;align-items:center;box-shadow:none;flex-shrink:0;}
   .bv-cabecalho .logo-img{width:150px;height:auto;display:block;}
+  .bv-topo-destaque{margin-left:auto;min-width:132px;max-width:168px;padding:10px 12px;border-radius:16px;background:linear-gradient(145deg,rgba(255,201,60,.18),rgba(255,255,255,.07));border:1px solid rgba(255,201,60,.38);box-shadow:0 7px 18px rgba(0,0,0,.16);text-align:left;}
+  .bv-topo-destaque strong{display:block;color:var(--mango);font-family:'Rajdhani';font-size:15px;line-height:1.05;text-transform:uppercase;letter-spacing:.2px;}
+  .bv-topo-destaque span{display:block;color:#fff;font-size:11.5px;font-weight:700;line-height:1.25;margin-top:4px;}
   .bv-cabecalho .tagline{font-size:13.5px;color:rgba(255,255,255,0.9);margin:0;letter-spacing:0.2px;text-transform:none;font-weight:800;line-height:1.4;text-align:left;border-left:1px solid rgba(255,255,255,0.3);padding-left:12px;}
   .tagline-acende{display:inline-block;animation:tagline-acende-luz 2.4s ease-in-out infinite;}
   @keyframes tagline-acende-luz{
@@ -144,6 +147,26 @@ fbq('track', 'PageView');
   .bv-escolha-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:18px 16px 20px;margin-bottom:16px;}
   .bv-escolha-ilustracao{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-bottom:-4px;}
   .bv-escolha-ilustracao-img{width:100%;max-width:400px;height:auto;display:block;margin:0 -2%;}
+  /* Home mobile: primeira tela mais limpa e ação imediata */
+  .bv-acoes-rapidas{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 13px;}
+  .bv-acao-rapida{min-height:48px;border:0;border-radius:14px;padding:10px 8px;font:900 13px 'Karla';cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.18);}
+  .bv-acao-cliente{background:var(--mango);color:#171d4a;}
+  .bv-acao-motorista{background:#fff;color:#202a69;}
+  @media(max-width:600px){
+    .bv-wrap{padding:16px 16px 28px;}
+    .bv-cabecalho{margin-bottom:10px;gap:10px;}
+    .bv-cabecalho .logo-img{width:112px;}
+    .bv-topo-destaque{min-width:0;max-width:145px;padding:9px 10px;border-radius:14px;}
+    .bv-topo-destaque strong{font-size:13.5px;}
+    .bv-topo-destaque span{font-size:10.5px;}
+    .bv-titulo-grande{font-size:27px;line-height:1.08;margin:2px 0 7px;}
+    .bv-subtagline{font-size:13.5px!important;line-height:1.4!important;margin-bottom:8px!important;}
+    .bv-escolha-card{padding:8px 10px 10px!important;margin-bottom:12px!important;border-radius:15px;}
+    .bv-escolha-ilustracao-img{max-width:255px;}
+    .bv-cartao{padding:15px;margin-bottom:12px;}
+    .bv-cartao .bv-titulo{font-size:17px;margin-bottom:6px;}
+    .bv-cartao .bv-titulo img{height:28px!important;}
+  }
   .bv-escolha-colunas{display:flex;gap:14px;}
   .bv-escolha-col{flex:1;position:relative;border-radius:14px;padding:16px 8px 14px;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);transition:all .15s;}
   .bv-escolha-col.selecionada{border-color:rgba(255,201,60,0.6);background:rgba(255,201,60,0.08);}
@@ -4424,6 +4447,10 @@ function telaBoasVindas(){
       <div class="bv-logo-badge">
         <img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash">
       </div>
+      <div class="bv-topo-destaque">
+        <strong>⚡ Entrega rápida</strong>
+        <span>A partir de R$ 3 • cidade e zona rural</span>
+      </div>
     </div>
 
     <!-- Primeira mensagem: quem veio do anúncio entende o serviço em poucos segundos -->
@@ -4435,9 +4462,14 @@ function telaBoasVindas(){
       Mercado, farmácia, documentos, encomendas e muito mais.
     </div>
 
-    <div style="display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:0 auto 18px">
-      <span style="padding:7px 10px;border-radius:999px;background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.30);font-size:12px;font-weight:700">📍 Muzambinho e região</span>
-      <span style="padding:7px 10px;border-radius:999px;background:rgba(111,207,106,.10);border:1px solid rgba(111,207,106,.30);font-size:12px;font-weight:700">🌿 Cidade + zona rural</span>
+    <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:0 auto 10px">
+      <span style="padding:6px 9px;border-radius:999px;background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.30);font-size:11.5px;font-weight:700">📍 Muzambinho e região</span>
+      <span style="padding:6px 9px;border-radius:999px;background:rgba(111,207,106,.10);border:1px solid rgba(111,207,106,.30);font-size:11.5px;font-weight:700">🌿 Cidade + zona rural</span>
+    </div>
+
+    <div class="bv-acoes-rapidas">
+      <button class="bv-acao-rapida bv-acao-cliente" onclick="entrarComoVisitante('cliente')">📦 PEDIR ENTREGA</button>
+      <button class="bv-acao-rapida bv-acao-motorista" onclick="iniciarPreparacaoBV('entregador')">🏍️ SER MOTORISTA</button>
     </div>
 
     <div class="bv-escolha-card" style="margin-bottom:14px">
