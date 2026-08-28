@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega</title>
-<link rel="manifest" href="entregaflash-manifest.json">
+<link rel="manifest" href="entregaflash-manifest.json?v=20260828-1">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -1295,7 +1295,28 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  try{ await navigator.serviceWorker.register('entregaflash-sw.js'); }catch(e){ console.warn('Service worker indisponível', e); }
+  try{
+    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-1', { updateViaCache: 'none' });
+
+    // Procura uma versão nova sempre que o app abre.
+    try{ await reg.update(); }catch(e){}
+
+    // Quando o novo Service Worker assume o controle, recarrega uma única vez
+    // para o cliente já instalado entrar imediatamente na versão atual.
+    let recarregando = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if(recarregando) return;
+      recarregando = true;
+      window.location.replace('./index.html?v=20260828-1');
+    });
+
+    // Se o app ficar aberto por muito tempo, confere atualização ao voltar à tela.
+    document.addEventListener('visibilitychange', () => {
+      if(document.visibilityState === 'visible') reg.update().catch(()=>{});
+    });
+  }catch(e){
+    console.warn('Service worker indisponível', e);
+  }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
