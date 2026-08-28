@@ -6360,7 +6360,11 @@ async function enviarReenvioDocumentos(){
 // =================== CONTA DE CLIENTE ===================
 
 // ================= BIOMETRIA FACIAL + PROVA DE MOVIMENTO =================
-const FACE_MODELS_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+const FACE_MODELS_URLS = [
+  'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights',
+  'https://unpkg.com/face-api.js@0.22.2/weights',
+  'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights'
+];
 let faceModelsReady = false;
 let faceModelsLoading = null;
 
@@ -6372,15 +6376,25 @@ async function carregarModelosFaciais(){
   if(faceModelsReady) return true;
   if(faceModelsLoading) return faceModelsLoading;
   faceModelsLoading=(async()=>{
-    const limite=Date.now()+12000;
+    const limite=Date.now()+18000;
     while(typeof faceapi==='undefined' && Date.now()<limite) await new Promise(r=>setTimeout(r,150));
-    if(typeof faceapi==='undefined') throw new Error('Biblioteca facial não carregou. Verifique sua internet.');
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS_URL)
-    ]);
-    faceModelsReady=true; return true;
+    if(typeof faceapi==='undefined') throw new Error('Validação facial não carregou. Confira sua internet e tente novamente.');
+    let ultimoErro=null;
+    for(const baseUrl of FACE_MODELS_URLS){
+      try{
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri(baseUrl),
+          faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl),
+          faceapi.nets.faceRecognitionNet.loadFromUri(baseUrl)
+        ]);
+        faceModelsReady=true;
+        return true;
+      }catch(e){
+        ultimoErro=e;
+        console.warn('Falha ao carregar modelos faciais em',baseUrl,e);
+      }
+    }
+    throw new Error('Não consegui carregar a validação facial. Verifique a internet e tente novamente.');
   })().catch(e=>{ faceModelsLoading=null; throw e; });
   return faceModelsLoading;
 }
@@ -6419,20 +6433,41 @@ async function fluxoFacial({tipo,telefone,modo='cadastro',descriptorSalvo=null})
   let stream=null, cancelado=false; modal.querySelector('#ef-face-cancel').onclick=()=>{cancelado=true; if(stream) stream.getTracks().forEach(t=>t.stop()); fecharModalFacial();};
   try{
     instr.textContent='Carregando validação facial…';
+    if(!window.isSecureContext) throw new Error('A câmera só funciona no site seguro (HTTPS). Abra o Entregas Flash pelo endereço oficial.');
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Este aparelho ou navegador não liberou acesso à câmera.');
     await carregarModelosFaciais(); if(cancelado) return {ok:false,cancelado:true};
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:720}},audio:false});
-    video.srcObject=stream; await video.play();
-    const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.55});
+    instr.textContent='Abrindo câmera…';
+    try{
+      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:640},height:{ideal:640}},audio:false});
+    }catch(e){
+      if(e && (e.name==='OverconstrainedError' || e.name==='NotFoundError')){
+        stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
+      }else if(e && (e.name==='NotAllowedError' || e.name==='SecurityError')){
+        throw new Error('Permissão da câmera bloqueada. Libere a câmera para o Entregas Flash nas configurações do navegador/app.');
+      }else if(e && e.name==='NotReadableError'){
+        throw new Error('A câmera está sendo usada por outro aplicativo. Feche a câmera/WhatsApp e tente novamente.');
+      }else{
+        throw e;
+      }
+    }
+    video.srcObject=stream;
+    await new Promise((resolve,reject)=>{
+      const t=setTimeout(()=>reject(new Error('A câmera demorou para iniciar. Tente novamente.')),7000);
+      const pronto=()=>{clearTimeout(t);resolve();};
+      if(video.readyState>=2) pronto(); else video.onloadedmetadata=pronto;
+    });
+    await video.play();
+    const opts=new faceapi.TinyFaceDetectorOptions({inputSize:160,scoreThreshold:.42});
     let base=null, ultimaDet=null;
     const etapas=[
       {txt:'Posicione o rosto',ico:'🙂',ok:m=>!!m,tempo:900},
-      {txt:'Vire para a esquerda',ico:'←',ok:m=>base && Math.abs(m.nx-base.nx)>.055,tempo:650},
-      {txt:'Olhe para cima',ico:'↑',ok:m=>base && (m.ny-base.ny)<-.035,tempo:650},
-      {txt:'Volte ao centro',ico:'✓',ok:m=>base && Math.abs(m.nx-base.nx)<.055,tempo:700}
+      {txt:'Vire para a esquerda',ico:'←',ok:m=>base && Math.abs(m.nx-base.nx)>.035,tempo:650},
+      {txt:'Olhe para cima',ico:'↑',ok:m=>base && (m.ny-base.ny)<-.025,tempo:650},
+      {txt:'Volte ao centro',ico:'✓',ok:m=>base && Math.abs(m.nx-base.nx)<.045,tempo:700}
     ];
     for(let ei=0;ei<etapas.length;ei++){
       const e=etapas[ei]; instr.textContent=e.txt; arrow.textContent=e.ico; prog.style.width=((ei/etapas.length)*100)+'%';
-      let iniciou=0, limite=Date.now()+15000;
+      let iniciou=0, limite=Date.now()+20000;
       while(Date.now()<limite){
         if(cancelado) return {ok:false,cancelado:true};
         const det=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceDescriptor();
