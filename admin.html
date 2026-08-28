@@ -7,7 +7,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega Flash | Painel Administrativo</title>
-<link rel="manifest" href="manifest-admin.json?v=20260828-admin-3">
+<link rel="manifest" href="manifest-admin.json?v=20260828-admin-4">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -1103,7 +1103,7 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  try{ await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-admin-3', { updateViaCache: 'none' }); }catch(e){ console.warn('Service worker indisponível', e); }
+  try{ await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-admin-4', { updateViaCache: 'none' }); }catch(e){ console.warn('Service worker indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
@@ -5425,7 +5425,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">NOVO PAINEL • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL NOVO • CIDADES • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -6612,11 +6612,11 @@ function resumoMotoristasPorCidadeHTML(){
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px">
       <div>
         <b style="font-family:'Rajdhani';font-weight:800;font-size:16px;text-transform:uppercase;color:var(--mango)">📍 Motoristas por cidade</b>
-        <div style="font-size:12.5px;color:var(--poeira);margin-top:2px">Bateu o olho, já sabe onde sua operação está mais forte.</div>
+        <div style="font-size:12.5px;color:var(--poeira);margin-top:2px">Total por cidade, online, aprovados e quem ainda precisa concluir cadastro.</div>
       </div>
       <span class="selo">${motoristas.length} total</span>
     </div>
-    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px">
       ${cidades.map(([cidade,d])=>`
         <div style="background:var(--painel-alt);border:1px solid var(--linha);border-radius:10px;padding:11px 12px;min-width:0">
           <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
@@ -6665,12 +6665,14 @@ function adminAbaResumoHTML(){
     (m.lat_atual==null || m.lng_atual==null || (agoraTs - Number(m.lat_atualizado_em||0)) >= POSICAO_MOTORISTA_MAX_IDADE_MS)
   );
   return `
+    ${resumoSituacaoMotoristasHTML()}
+    ${resumoMotoristasPorCidadeHTML()}
     <div class="admin-cartao" style="background:linear-gradient(135deg, var(--painel-alt), var(--painel));border:2px solid var(--mango);margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
         <span class="ponto-pulsante" style="background:var(--chama)"></span>
         <b style="font-family:'Rajdhani';font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:0.3px;color:var(--mango)">AO VIVO — Operação agora</b>
       </div>
-      <div class="admin-grade-cartoes colunas-3" style="gap:10px">
+      <div class="admin-grade-cartoes" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
         <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px">
           <div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--verde);line-height:1">${motoristasOnlineAgora}</div>
           <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">🟢 Motoristas online</div>
@@ -6699,7 +6701,6 @@ function adminAbaResumoHTML(){
     <div class="cf-nota" style="background:rgba(127,174,114,0.1);border:1px solid rgba(127,174,114,0.3);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-bottom:14px">
       ✅ A carteira do cliente agora é 100% automática: o cliente gera o Pix, paga, e o saldo cai sozinho (via webhook do Mercado Pago) — sem precisar de nada manual. Se algum caso específico der problema, ainda dá pra creditar na mão pela aba "👤 Clientes".
     </div>
-    ${resumoMotoristasPorCidadeHTML()}
     ${resumoAdminHTML()}
     ${fluxoFinanceiroAdminHTML()}`;
 }
