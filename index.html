@@ -292,11 +292,18 @@ fbq('track', 'PageView');
   .secao-icone .bolha{width:30px;height:30px;border-radius:50%;background:rgba(255,201,60,0.15);border:1px solid var(--mango);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
   .secao-icone .txt{font-family:'Rajdhani';font-weight:700;font-size:15.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--osso);}
   .secao-icone .txt b{color:var(--mango);}
-  .veiculos{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;}
-  .veiculos button{padding:14px 4px;border-radius:14px;border:1px solid var(--linha);background:var(--painel-alt);color:var(--poeira);font-family:'Karla';font-weight:600;font-size:14.5px;cursor:pointer;}
+  /* Fluxo mobile: cada ação abre enquadrada na tela, sem esconder o começo da etapa. */
+  .veiculos{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-top:6px;}
+  .veiculos button{min-height:62px;padding:7px 3px;border-radius:12px;border:1.5px solid var(--linha);background:var(--painel-alt);color:var(--osso);font-family:'Karla';font-weight:800;font-size:11px;line-height:1.08;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,.10);position:relative;overflow:hidden;}
+  .veiculos button::after{content:'';display:none;}
+  .veiculos button.sel{border-color:var(--mango);color:var(--mango);background:rgba(255,201,60,0.12);box-shadow:0 0 0 2px rgba(255,201,60,.10);}
+  .veiculos button .emoji{display:block;font-size:21px;line-height:1;margin-bottom:5px;}
   .extras-acordeao-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;padding:4px 0;}
-  .veiculos button.sel{border-color:var(--mango);color:var(--mango);background:rgba(255,201,60,0.08);}
-  .veiculos button .emoji{display:block;font-size:20.5px;margin-bottom:9px;}
+  .etapa-conteudo{min-height:calc(100dvh - 118px);scroll-margin-top:0;}
+  .etapa-titulo-fixo{position:relative;top:auto;z-index:1;background:none;padding:0;margin-bottom:8px;}
+  #pedido-buscando-tela{min-height:calc(100dvh - 118px);display:flex;flex-direction:column;justify-content:center;}
+  @media (max-width:390px){.veiculos{gap:4px}.veiculos button{font-size:10px;padding:6px 2px}.veiculos button .emoji{font-size:19px}}
+  @media (min-width:700px){.veiculos{gap:8px}.veiculos button{font-size:13px;min-height:68px}.veiculos button .emoji{font-size:23px}}
   .sugestoes:not(:empty){border:1px solid var(--linha);border-radius:14px;overflow:hidden;margin-top:6px;}
   .sugestao-item{padding:10px 12px;font-size:14.5px;background:var(--painel-alt);cursor:pointer;border-bottom:1px solid var(--linha);}
   .sugestao-item:last-child{border-bottom:none;}
@@ -719,6 +726,15 @@ fbq('track', 'PageView');
 .notificacao-motorista-destaque{margin:0 0 12px;padding:12px;border:1px solid rgba(255,190,61,.45);background:rgba(255,190,61,.10);border-radius:12px}
 .notificacao-motorista-destaque b{display:block;margin-bottom:4px}
 
+
+/* ===== FILA COMPACTA DE PEDIDOS DO MOTORISTA ===== */
+.motorista-fila-topo{position:sticky;top:8px;z-index:35;background:var(--painel);border:1px solid var(--linha);border-radius:14px;padding:10px;margin-bottom:10px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.motorista-fila-titulo{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:13px;color:var(--poeira);margin-bottom:7px}.motorista-fila-titulo b{color:var(--osso);font-size:14px}
+.motorista-fila-scroll{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}.motorista-fila-scroll::-webkit-scrollbar{display:none}
+.motorista-fila-item{flex:0 0 150px;border:1px solid var(--linha);background:var(--painel-alt);border-radius:11px;padding:8px;text-align:left;color:var(--osso);cursor:pointer}.motorista-fila-item.ativo{border:2px solid var(--mango);padding:7px}
+.motorista-fila-item .mf-valor{font-family:'Rajdhani';font-weight:800;font-size:18px;color:var(--mango)}.motorista-fila-item .mf-rota{font-size:11px;line-height:1.25;color:var(--poeira);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}.motorista-fila-item .mf-dist{font-size:10.5px;color:var(--poeira);margin-top:4px}
+.motorista-pedido-foco>.pedido{margin:0}.motorista-pedido-foco{scroll-margin-top:82px}
+@media(max-width:520px){.motorista-fila-item{flex-basis:132px}.motorista-fila-topo{margin-left:-2px;margin-right:-2px}.motorista-pedido-foco .vitais{gap:5px}.motorista-pedido-foco .vital{padding:8px 5px}.motorista-pedido-foco .vital-num{font-size:18px}}
 </style>
 </head>
 <body>
@@ -3128,8 +3144,10 @@ async function criarPedido(){
   // ou quando o realtime informar que um motorista aceitou.
   estado.pedidos = [pedido, ...estado.pedidos.filter(x=>x.id!==pedido.id)];
   render();
+  fixarEtapaPedidoNaTela('#pedido-buscando-tela');
   mostrarToast(f.tipoRetirada==='agendado' ? 'Pedido agendado com sucesso!' : 'Pedido criado! Buscando um motorista...', 'sucesso');
   await carregarPedidos();
+  fixarEtapaPedidoNaTela('#pedido-buscando-tela');
 }
 
 // ---------- múltiplas paradas de entrega ----------
@@ -3154,7 +3172,7 @@ function moverParada(idx, direcao){
 // ---------- agora ou agendar retirada ----------
 function definirTipoRetirada(tipo){
   estado.form.tipoRetirada = tipo;
-  render();
+  renderEtapaPedidoFixa();
 }
 function seloPrioridadeHTML(p, margemTopo){
   if(!p.prioridade) return '';
@@ -3181,7 +3199,7 @@ function definirPrioridade(valor){
   // clicar de novo no mesmo nível desliga a prioridade
   estado.form.prioridadeValor = (estado.form.prioridadeValor===valor) ? 0 : valor;
   estado.form.prioridade = estado.form.prioridadeValor>0;
-  render();
+  renderEtapaPedidoFixa('#escolha-veiculo-pedido');
 }
 // permite ao cliente aumentar a prioridade de um pedido que ainda está buscando motorista,
 // pra dar mais destaque a ele sem precisar cancelar e refazer o pedido
@@ -3210,11 +3228,11 @@ async function aumentarPrioridadeBusca(id, novoValor){
 }
 function alternarExtra(chave){
   estado.form.extras[chave] = !estado.form.extras[chave];
-  render();
+  renderEtapaPedidoFixa();
 }
 function alternarExtrasAberto(){
   estado.extrasAberto = !estado.extrasAberto;
-  render();
+  renderEtapaPedidoFixa();
 }
 function abrirEditarDistancia(){
   estado.editarDistanciaAberto = true;
@@ -4345,6 +4363,23 @@ function cartaoPedidoCliente(p){
     ${acoesPedidoHTML(p)}
   </div>`;
 }
+let pedidoMotoristaFocoId = null;
+function selecionarPedidoMotorista(id){
+  pedidoMotoristaFocoId=id;
+  render();
+  requestAnimationFrame(()=>document.getElementById('motorista-pedido-foco')?.scrollIntoView({behavior:'smooth',block:'start'}));
+}
+function filaPedidosMotoristaHTML(lista){
+  if(!lista || lista.length===0) return '';
+  const foco = lista.find(p=>p.id===pedidoMotoristaFocoId) || lista[0];
+  pedidoMotoristaFocoId=foco.id;
+  const fila = lista.map((p,i)=>`<button type="button" class="motorista-fila-item ${p.id===foco.id?'ativo':''}" onclick="selecionarPedidoMotorista('${p.id}')">
+    <div class="mf-valor">R$ ${ganhoMotorista(p.preco,p).toFixed(2)}</div>
+    <div class="mf-rota">${p.origem} → ${p.destino}</div>
+    <div class="mf-dist">${p.distanciaAteMim!=null?p.distanciaAteMim.toFixed(1)+' km até coleta':'Novo pedido'}${p.id===foco.id?' · aberto':''}</div>
+  </button>`).join('');
+  return `<div class="motorista-fila-topo"><div class="motorista-fila-titulo"><b>🔔 ${lista.length} ${lista.length===1?'pedido disponível':'pedidos disponíveis'}</b><span>Toque para ver</span></div><div class="motorista-fila-scroll">${fila}</div></div><div id="motorista-pedido-foco" class="motorista-pedido-foco">${cartaoPedidoDisponivel(foco)}</div>`;
+}
 function cartaoPedidoDisponivel(p){
   const rkm = p.distancia>0 ? (p.preco/p.distancia) : null;
   const maiorNivel = niveisPrioridade()[niveisPrioridade().length-1].valor;
@@ -4787,15 +4822,21 @@ function irEtapaPedido(alvo){
   render();
   fixarEtapaPedidoNaTela();
 }
-function fixarEtapaPedidoNaTela(){
-  // Dois frames garantem que o HTML novo já foi calculado antes de posicionar.
-  // Usa rolagem imediata: a etapa seguinte fica parada no ponto certo e só muda se o cliente rolar.
+function fixarEtapaPedidoNaTela(seletor='.etapa-conteudo'){
+  // Mantém cada ação na etapa atual. Qualquer render interno (veículo, prioridade, agendamento)
+  // volta para a mesma área, em vez de jogar o cliente para cima da página.
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const alvo = document.querySelector('.etapa-conteudo');
+    const alvo = document.querySelector(seletor) || document.querySelector('.etapa-conteudo');
     if(!alvo) return;
-    const topo = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY - 10);
+    // Enquadra o início exato da ação no topo útil da tela.
+    // Evita deixar veículo/título acima ou botão Continuar fora do quadro por causa do scroll anterior.
+    const topo = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY);
     window.scrollTo({top:topo, behavior:'auto'});
   }));
+}
+function renderEtapaPedidoFixa(seletor='.etapa-conteudo'){
+  render();
+  fixarEtapaPedidoNaTela(seletor);
 }
 
 function entregasConfirmadasCliente(){
@@ -4908,6 +4949,7 @@ function telaCliente(){
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
     ${f.etapaPedido===1 ? `
+    <div class="etapa-titulo-fixo"><div class="faixa-incentivo-pedido">⚡ ETAPA 1 • Informe os endereços</div></div>
     <div class="faixa-incentivo-pedido">⚡ Peça em poucos passos • Rápido e seguro</div>
     <div class="voz-endereco-ajuda">🎙️ <b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.</div><label style="margin-top:0">Endereço de recolha</label>
     ${campoEnderecoComVoz('c-origem', f.origem, 'Rua, número, bairro ou ponto de referência', 'origem')}
@@ -4949,6 +4991,7 @@ function telaCliente(){
     <button class="btn btn-primario" style="margin-top:12px" onclick="irEtapaPedido(2)">Continuar →</button>
     ` : ''}
     ${f.etapaPedido===2 ? `
+    <div class="etapa-titulo-fixo"><div class="faixa-incentivo-pedido">🚗 ETAPA 2 • Escolha retirada e veículo</div></div>
     <label style="margin-top:0">Retirada</label>
     <div class="aba-mini">
       <button class="${f.tipoRetirada==='agora'?'ativo':''}" onclick="definirTipoRetirada('agora')">Retirar agora</button>
@@ -4956,8 +4999,9 @@ function telaCliente(){
     </div>
     ${f.tipoRetirada==='agendado' ? `<input type="datetime-local" id="c-horario-agendado" value="${f.horarioAgendado}">` : ''}
 
-    <label>Veículo</label>
-    <div class="veiculos">
+    <label style="font-size:18px;color:var(--osso)">🚘 Escolha o veículo <span style="color:var(--mango)">(obrigatório)</span></label>
+    <div style="font-size:12px;color:var(--poeira);margin:-2px 0 6px">Toque no veículo desejado.</div>
+    <div class="veiculos" id="escolha-veiculo-pedido">
       ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${f.veiculo===k?'sel':''}" onclick="mudarVeiculo('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
     </div>
     ${(VEICULOS[f.veiculo].limitePeso || VEICULOS[f.veiculo].volume) ? `
@@ -4996,6 +5040,7 @@ function telaCliente(){
     </div>
     ` : ''}
     ${f.etapaPedido===3 ? `
+    <div class="etapa-titulo-fixo"><div class="faixa-incentivo-pedido">✅ ETAPA 3 • Confira e confirme</div></div>
     <label style="margin-top:0">Resumo do pedido</label>
     <div class="end" style="margin-bottom:10px"><b>Recolha</b>${f.origem}<b style="margin-top:8px">Entrega</b>${f.destino}</div>
     ${estado.calculando ? `<div class="subtitulo" style="margin-top:4px"><span class="girando girando-escuro"></span> Calculando o valor da corrida...</div>` : ''}
@@ -5492,7 +5537,7 @@ function telaMotorista(){
         ? `<div class="vazio"><span class="emoji-grande">🛵</span>Sem pedidos por agora${Object.keys(contagemPorVeiculoOutro).length>0
             ? `<div style="margin-top:8px;font-size:13px;color:var(--poeira)">Sem pedidos para o seu veículo (${(VEICULOS[m.veiculo]||{}).label||m.veiculo}) no momento — há ${Object.entries(contagemPorVeiculoOutro).map(([v,n])=>`${n} de ${(VEICULOS[v]||{}).label||v}`).join(', ')} esperando, mas só aparecem pra motoristas com o veículo compatível.</div>`
             : ''}</div>`
-        : disponiveis.map(cartaoPedidoDisponivel).join('')
+        : filaPedidosMotoristaHTML(disponiveis)
     }
   </div>`;
 
@@ -6122,9 +6167,9 @@ function setDeep(path,value){
 function mudarVeiculo(k){
   estado.form.veiculo=k;
   if(estado.form.distancia!=null){ estado.form.duracaoMin = Math.max(3, Math.round((estado.form.distancia/VEICULOS[k].veloc)*60)); }
-  render();
+  renderEtapaPedidoFixa('#escolha-veiculo-pedido');
 }
-function alternarRoca(){ estado.form.roca = !estado.form.roca; render(); }
+function alternarRoca(){ estado.form.roca = !estado.form.roca; renderEtapaPedidoFixa(); }
 function mudarModo(m){ estado.modo=m; estado.ultimoPedidosJSON=''; salvarLocal('ef_modo', m); render(); carregarPedidos(); atualizarPresencaTipo(); }
 function voltarParaEscolhaModo(){ estado.telaBoasVindas = true; bvPreparando = null; removerLocal('ef_modo'); render(); }
 function irParaCadastroEntregadorViaBanner(){
@@ -8420,7 +8465,7 @@ async function excluirMotoristaAdmin(id, nome){
   await carregarMotoristasAdmin();
 }
 
-window.criarPedido=criarPedido; window.calcularCorrida=calcularCorrida; window.aceitarPedido=aceitarPedido;
+window.selecionarPedidoMotorista=selecionarPedidoMotorista; window.criarPedido=criarPedido; window.calcularCorrida=calcularCorrida; window.aceitarPedido=aceitarPedido;
 window.avancarStatus=avancarStatus; window.mudarVeiculo=mudarVeiculo; window.mudarModo=mudarModo; window.alternarRoca=alternarRoca;
 window.entrarComoMotorista=entrarComoMotorista; window.sairMotorista=sairMotorista; window.carregarPedidos=carregarPedidos;
 window.abrirGPS=abrirGPS; window.abrirChat=abrirChat; window.fecharChat=fecharChat; window.enviarMensagem=enviarMensagem;
