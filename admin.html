@@ -2,9 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega Flash | Painel Administrativo</title>
-<link rel="manifest" href="manifest-admin.json?v=20260828-admin-1">
+<link rel="manifest" href="manifest-admin.json?v=20260828-admin-3">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -1100,14 +1103,7 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  try{
-    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-admin-1', { updateViaCache:'none' });
-    try{ await reg.update(); }catch(e){}
-    // Reconfere a versão ao voltar para o painel, sem recarregar a tela à força.
-    document.addEventListener('visibilitychange', ()=>{
-      if(document.visibilityState==='visible') reg.update().catch(()=>{});
-    });
-  }catch(e){ console.warn('Service worker indisponível', e); }
+  try{ await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-admin-3', { updateViaCache: 'none' }); }catch(e){ console.warn('Service worker indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
@@ -5429,7 +5425,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><h3>Painel administrativo</h3><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">NOVO PAINEL • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -6595,6 +6591,61 @@ function adminCorpoHTML(){
     <div class="admin-aba-corpo">${corpo}</div>`;
 }
 
+function normalizarCidadePainel(nome){
+  return String(nome||'').trim().replace(/\s+/g,' ');
+}
+function resumoMotoristasPorCidadeHTML(){
+  const motoristas = estado.admin.motoristas||[];
+  const mapa = {};
+  motoristas.forEach(m=>{
+    const cidade = normalizarCidadePainel(m.cidade) || 'Cidade não informada';
+    if(!mapa[cidade]) mapa[cidade]={total:0,online:0,aguardando:0,aprovados:0};
+    mapa[cidade].total++;
+    if(m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status)) mapa[cidade].online++;
+    if(['basico','liberado','pendente'].includes(m.status)) mapa[cidade].aguardando++;
+    if(m.status==='aprovado') mapa[cidade].aprovados++;
+  });
+  const cidades = Object.entries(mapa).sort((a,b)=> b[1].total-a[1].total || a[0].localeCompare(b[0],'pt-BR'));
+  if(!cidades.length) return '';
+  return `
+  <div class="admin-cartao" style="margin-bottom:14px;border:1px solid rgba(255,201,60,.45);background:linear-gradient(145deg,rgba(255,201,60,.08),var(--painel))">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:12px">
+      <div>
+        <b style="font-family:'Rajdhani';font-weight:800;font-size:16px;text-transform:uppercase;color:var(--mango)">📍 Motoristas por cidade</b>
+        <div style="font-size:12.5px;color:var(--poeira);margin-top:2px">Bateu o olho, já sabe onde sua operação está mais forte.</div>
+      </div>
+      <span class="selo">${motoristas.length} total</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px">
+      ${cidades.map(([cidade,d])=>`
+        <div style="background:var(--painel-alt);border:1px solid var(--linha);border-radius:10px;padding:11px 12px;min-width:0">
+          <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+            <b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏙️ ${cidade}</b>
+            <b style="font-family:'Rajdhani';font-size:22px;color:var(--mango)">${d.total}</b>
+          </div>
+          <div style="font-size:11.5px;color:var(--poeira);margin-top:5px;display:flex;gap:9px;flex-wrap:wrap">
+            <span style="color:var(--verde)">● ${d.online} online</span>
+            <span>✅ ${d.aprovados} ativos</span>
+            ${d.aguardando?`<span style="color:var(--chama)">⏳ ${d.aguardando} pend.</span>`:''}
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+function resumoSituacaoMotoristasHTML(){
+  const ms=estado.admin.motoristas||[];
+  const online=ms.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status)).length;
+  const semDocs=ms.filter(m=>['basico','liberado'].includes(m.status)).length;
+  const analise=ms.filter(m=>m.status==='pendente').length;
+  const aprovados=ms.filter(m=>m.status==='aprovado').length;
+  return `
+  <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px">
+    <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--verde)">${online}</div><div style="font-size:12px">🟢 Online agora</div></div>
+    <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--chama)">${semDocs}</div><div style="font-size:12px">📄 Sem documentos</div></div>
+    <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--mango)">${analise}</div><div style="font-size:12px">⏳ Em análise</div></div>
+    <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800">${aprovados}</div><div style="font-size:12px">✅ Aprovados</div></div>
+  </div>`;
+}
 function adminAbaResumoHTML(){
   const a = estado.admin;
   if(a.motoristas.length===0 && a.carregando) return skeletonLista(4);
@@ -6648,6 +6699,7 @@ function adminAbaResumoHTML(){
     <div class="cf-nota" style="background:rgba(127,174,114,0.1);border:1px solid rgba(127,174,114,0.3);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-bottom:14px">
       ✅ A carteira do cliente agora é 100% automática: o cliente gera o Pix, paga, e o saldo cai sozinho (via webhook do Mercado Pago) — sem precisar de nada manual. Se algum caso específico der problema, ainda dá pra creditar na mão pela aba "👤 Clientes".
     </div>
+    ${resumoMotoristasPorCidadeHTML()}
     ${resumoAdminHTML()}
     ${fluxoFinanceiroAdminHTML()}`;
 }
@@ -7096,6 +7148,8 @@ function adminAbaMotoristasHTML(){
   const ativos=a.motoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
   const outros=a.motoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
   return `
+    ${resumoSituacaoMotoristasHTML()}
+    ${resumoMotoristasPorCidadeHTML()}
     <div class="admin-lista-secao"><b>🟢 Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
     ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista online agora.</div>`}
     ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>📄 Ainda não enviaram documentos</b><span class="selo selo-aguardando">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
