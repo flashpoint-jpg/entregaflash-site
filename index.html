@@ -804,6 +804,216 @@ body:has(.motorista-encontrado-full){overflow:hidden}
 .motorista-encontrado-full .leaflet-control-container{pointer-events:none}
 </style>
 
+
+<style id="ef-cliente-profissional-v3">
+/* Visual mais limpo e profissional para a solicitação do cliente */
+body.modo-cliente .conteudo{padding-bottom:92px}
+body.modo-cliente .card{
+  border-radius:20px;
+  box-shadow:0 5px 18px rgba(0,0,0,.10);
+}
+body.modo-cliente .campo-endereco,
+body.modo-cliente input[type="text"],
+body.modo-cliente input[type="tel"],
+body.modo-cliente select,
+body.modo-cliente textarea{
+  min-height:56px;border-radius:14px!important;
+}
+.ef-rota-principal{
+  background:#fff;border-radius:20px;padding:14px;margin:10px 10px 18px;
+  box-shadow:0 5px 18px rgba(0,0,0,.11);
+}
+.ef-rota-linha{
+  display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;
+  padding:13px 10px;border:1px solid #e7e9ef;border-radius:14px;margin:8px 0;background:#fbfcff;
+}
+.ef-rota-ponto{width:13px;height:13px;border:3px solid #f4b400;border-radius:50%;margin:auto}
+.ef-rota-pin{font-size:20px;text-align:center}
+.ef-rota-label{font-size:11px;color:#81879a;text-transform:uppercase;font-weight:800;letter-spacing:.5px}
+.ef-rota-valor{font-size:16px;font-weight:800;color:#202642;margin-top:3px;line-height:1.25}
+.ef-veiculos-grid{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important;
+}
+.ef-veiculo-card{
+  min-height:104px!important;border:1px solid #dfe3ed!important;border-radius:16px!important;
+  background:#fff!important;padding:13px!important;box-shadow:none!important;
+}
+.ef-veiculo-card.selecionado{
+  border:2px solid #f5b400!important;background:#fffaf0!important;
+  box-shadow:0 0 0 3px rgba(245,180,0,.10)!important;
+}
+.ef-veiculo-emoji{font-size:35px!important}
+.ef-busca-full{
+  position:fixed!important;inset:0!important;z-index:2147483646!important;
+  background:#f7f8fb;display:flex;flex-direction:column;color:#202642;
+}
+.ef-busca-topo{
+  height:68px;min-height:68px;background:#fff;display:grid;grid-template-columns:52px 1fr 52px;
+  align-items:center;border-bottom:1px solid #eceef3;
+}
+.ef-busca-topo strong{text-align:center;font-size:17px}
+.ef-busca-mapa{height:48vh;min-height:320px;position:relative;background:#e9edf2}
+.ef-busca-painel{
+  margin:-12px 12px 16px;background:#fff;border-radius:20px;position:relative;z-index:4;
+  padding:20px;box-shadow:0 5px 18px rgba(0,0,0,.12)
+}
+.ef-busca-pulsos{display:flex;gap:6px;margin-bottom:15px}
+.ef-busca-pulsos span{height:5px;border-radius:999px;background:#e1e4ea;flex:1}
+.ef-busca-pulsos span.ativo{background:#f5b400}
+.ef-busca-titulo{font-size:23px;font-weight:900;line-height:1.15}
+.ef-busca-sub{font-size:15px;color:#7c8291;margin-top:7px;line-height:1.35}
+.ef-prioridade-box{
+  margin-top:18px;border:1px solid #e4e7ee;border-radius:15px;padding:15px;background:#fbfcff
+}
+.ef-prioridade-box strong{font-size:15px}
+.ef-prioridade-opcoes{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:3px}
+.ef-prioridade-opcoes button{
+  flex:0 0 auto;border:1px solid #cfd4df;border-radius:999px;background:#fff;padding:10px 14px;
+  font-weight:800;color:#343a4c
+}
+/* O mapa ativo nunca recebe animação/fade do contêiner. */
+.mapa,.mef-mapa,.ef-busca-mapa .leaflet-container{
+  animation:none!important;transition:none!important;
+}
+.leaflet-tile{will-change:auto!important}
+@media(max-width:380px){
+  .ef-veiculos-grid{gap:8px!important}
+  .ef-veiculo-card{min-height:96px!important;padding:10px!important}
+}
+</style>
+
+
+<style id="ef-cliente-fluxo-completo-v4">
+/* ---------- fluxo completo do cliente ---------- */
+.ef-status-shell{
+  position:relative;
+  margin:10px 10px 18px;
+  border-radius:22px;
+  overflow:hidden;
+  background:#fff;
+  box-shadow:0 6px 20px rgba(0,0,0,.11);
+}
+.ef-status-head{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:16px 16px 13px;
+  border-bottom:1px solid #eceef4;
+  background:#fff;
+}
+.ef-status-icone{
+  width:42px;height:42px;border-radius:13px;
+  display:grid;place-items:center;
+  background:linear-gradient(145deg,#fff8d6,#ffe99a);
+  font-size:23px;flex:0 0 auto;
+}
+.ef-status-txt b{
+  display:block;
+  font-size:18px;
+  color:#1f2742;
+  line-height:1.1;
+}
+.ef-status-txt span{
+  display:block;
+  margin-top:4px;
+  color:#7b8191;
+  font-size:13px;
+}
+.ef-progresso{
+  padding:14px 16px 16px;
+  background:#fff;
+}
+.ef-progresso-linha{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:5px;
+  margin-bottom:10px;
+}
+.ef-progresso-linha i{
+  height:5px;border-radius:999px;background:#e5e8ef;display:block;
+}
+.ef-progresso-linha i.ok{background:#f7b500}
+.ef-progresso-legenda{
+  display:flex;justify-content:space-between;gap:8px;
+  font-size:10px;color:#8c92a1;font-weight:800;text-transform:uppercase;
+}
+.ef-cliente-mapa-grande{
+  height:48vh!important;
+  min-height:330px!important;
+  border-radius:0!important;
+  overflow:hidden!important;
+  margin:0!important;
+  background:#e8edf3!important;
+}
+.ef-cliente-info-flutuante{
+  position:absolute;
+  left:14px;right:14px;bottom:14px;
+  z-index:500;
+  border-radius:16px;
+  background:rgba(255,255,255,.96);
+  padding:12px 14px;
+  box-shadow:0 4px 16px rgba(0,0,0,.18);
+}
+.ef-cliente-info-flutuante b{
+  display:block;
+  font-size:23px;
+  color:#18203a;
+}
+.ef-cliente-info-flutuante span{
+  display:block;
+  margin-top:2px;
+  font-size:13px;
+  color:#707789;
+}
+.ef-acoes-cliente{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  border-top:1px solid #eceef4;
+}
+.ef-acoes-cliente button{
+  min-height:58px;
+  border:0;
+  background:#fff;
+  font-size:13px;
+  font-weight:800;
+  color:#27304b;
+}
+.ef-acoes-cliente button+button{border-left:1px solid #eceef4}
+.ef-final-card{
+  margin:16px 12px 22px;
+  padding:24px 18px;
+  border-radius:22px;
+  background:#fff;
+  text-align:center;
+  box-shadow:0 6px 20px rgba(0,0,0,.10);
+}
+.ef-final-card .check{
+  width:72px;height:72px;border-radius:50%;
+  display:grid;place-items:center;margin:0 auto 14px;
+  background:#eaf8ee;font-size:38px;
+}
+.ef-final-card h2{margin:0;color:#1e2744;font-size:24px}
+.ef-final-card p{color:#7c8291;font-size:14px;line-height:1.45}
+.ef-final-card .resumo{
+  margin-top:16px;padding:14px;border-radius:15px;background:#f7f8fb;text-align:left
+}
+.ef-final-card .resumo div{
+  display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px
+}
+.ef-final-card .resumo b{color:#202742}
+.ef-full-stage{
+  position:fixed!important;inset:0!important;z-index:2147483645!important;
+  background:#f6f7fa!important;
+  overflow:auto!important;
+}
+body:has(.ef-full-stage){overflow:hidden!important}
+/* evita piscadas de transição */
+.ef-full-stage,.ef-status-shell,.ef-cliente-mapa-grande,
+.ef-full-stage .leaflet-container,.ef-full-stage .leaflet-pane{
+  animation:none!important;
+}
+</style>
+
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -1964,10 +2174,13 @@ function popupMotoristaEncontradoHTML(){
   <div class="motorista-encontrado-full" role="dialog" aria-modal="true" aria-label="Motorista encontrado">
     <div class="mef-topo">
       <button class="mef-voltar" onclick="fecharAlertaMotorista()" aria-label="Fechar">‹</button>
-      <div class="mef-titulo">Aguardando o motorista parceiro</div>
+      <div class="mef-titulo">Motorista a caminho</div>
       <button class="mef-fechar" onclick="fecharAlertaMotorista()" aria-label="Fechar">×</button>
     </div>
 
+    <div class="ef-status-shell" style="margin:0;border-radius:0;box-shadow:none">
+      ${etapaClienteHTML(p)}
+    </div>
     <div class="mef-aviso">
       <span class="mef-info">ⓘ</span>
       <span><b>${statusTxt}</b><br><strong>${p.origem||''}</strong></span>
@@ -1994,7 +2207,7 @@ function popupMotoristaEncontradoHTML(){
           <div class="mef-nota">⭐ ${Number(p.motoristaNotaMedia!=null?p.motoristaNotaMedia:5).toFixed(2)}</div>
         </div>
       </div>
-      <div class="mef-confirmacao">Confira os dados do motorista antes da recolha do pedido.</div>
+      <div class="mef-confirmacao">Acompanhe o motorista em tempo real até a recolha.</div>
       <div class="mef-acoes">
         <button onclick="abrirChat('${p.id}')">💬 <b>Chat</b></button>
         <button onclick="ligarPara('${p.motoristaTelefone||''}')">📞 <b>Ligar</b></button>
@@ -3935,16 +4148,16 @@ async function avancarStatus(id){
           creditarSaldoMotorista(p.motoristaTelefone, valorAjudante)
         ]);
         if(creditoSolicitante.ok && creditoAjudante.ok){
-          mostrarToast(`Entrega concluída! Tu ficaste com R$ ${valorAjudante.toFixed(2)} e R$ ${valorSolicitante.toFixed(2)} foi creditado a quem te chamou.`, 'sucesso');
+          mostrarToast(`Entrega concluída com sucesso! Tu ficaste com R$ ${valorAjudante.toFixed(2)} e R$ ${valorSolicitante.toFixed(2)} foi creditado a quem te chamou.`, 'sucesso');
         } else {
-          mostrarErro('Entrega concluída, mas houve um erro ao dividir o valor. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
+          mostrarErro('Entrega concluída com sucesso, mas houve um erro ao dividir o valor. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
         }
       } else {
         const resultadoCredito = await creditarSaldoMotorista(p.motoristaTelefone, ganhoTotal);
         if(resultadoCredito.ok){
-          mostrarToast(`Entrega concluída! R$ ${ganhoTotal.toFixed(2)} creditado.`, 'sucesso');
+          mostrarToast(`Entrega concluída com sucesso! R$ ${ganhoTotal.toFixed(2)} creditado.`, 'sucesso');
         } else {
-          mostrarErro('Entrega concluída, mas houve um erro ao creditar o valor na sua carteira. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
+          mostrarErro('Entrega concluída com sucesso, mas houve um erro ao creditar o valor na sua carteira. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
         }
       }
     }
@@ -4390,6 +4603,26 @@ function iniciarTickRadarBusca(){
 
 // ---------- relógio da janela grátis de cancelamento (cliente) ----------
 let relogioCancelTickInterval = null;
+
+function etapaClienteHTML(p){
+  if(!p) return '';
+  let n=1, titulo='Buscando um motorista parceiro', sub='Estamos procurando motoristas próximos.';
+  if(p.motoristaTelefone && p.status==='indo_coletar'){ n=2; titulo='Motorista a caminho'; sub='Acompanhe a aproximação em tempo real.'; }
+  if(['coletado','a_caminho'].includes(p.status)){ n=3; titulo='Sua entrega está a caminho'; sub='O motorista já recolheu o pedido.'; }
+  if(p.status==='entregue'){ n=4; titulo='Entrega concluída'; sub='Seu pedido chegou ao destino.'; }
+  const icons=['🔎','🛵','📦','✅'];
+  return `<div class="ef-status-head">
+    <div class="ef-status-icone">${icons[n-1]}</div>
+    <div class="ef-status-txt"><b>${titulo}</b><span>${sub}</span></div>
+  </div>
+  <div class="ef-progresso">
+    <div class="ef-progresso-linha">
+      <i class="${n>=1?'ok':''}"></i><i class="${n>=2?'ok':''}"></i><i class="${n>=3?'ok':''}"></i><i class="${n>=4?'ok':''}"></i>
+    </div>
+    <div class="ef-progresso-legenda"><span>Busca</span><span>Recolha</span><span>Em rota</span><span>Entregue</span></div>
+  </div>`;
+}
+
 function relogioCancelamentoHTML(p){
   // só mostra enquanto o pedido ainda pode ser cancelado e a corrida já foi aceita (janela em contagem)
   if(p.status!=='indo_coletar' || !p.aceitoEm) return '';
@@ -5050,7 +5283,7 @@ function popupEntregaConcluidaHTML(){
   const p = pedidoEntregaPendenteConfirmacao();
   if(!p) return '';
   estado.entregaConfirmacaoPedidoId = p.id;
-  return `<div class="entrega-concluida-fundo" role="dialog" aria-modal="true" aria-label="Entrega concluída">
+  return `<div class="entrega-concluida-fundo" role="dialog" aria-modal="true" aria-label="Entrega concluída com sucesso">
     <div class="entrega-concluida-popup">
       <div class="ec-icone">🎉</div>
       <div class="ec-titulo">Parabéns! Sua entrega foi concluída.</div>
@@ -5086,7 +5319,7 @@ function telaCliente(){
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
     return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
       <div style="font-size:54px"><span class="girando-emoji">🔎</span></div>
-      <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
+      <h2 style="font-size:27px;margin:8px 0 5px">Buscando um motorista parceiro...</h2>
       <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
       <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
       <div style="margin-top:15px;font-size:14px;color:var(--poeira)">Estamos procurando o motorista disponível mais adequado para a sua entrega.</div>
@@ -5192,7 +5425,7 @@ function telaCliente(){
     </div>
     ${f.tipoRetirada==='agendado' ? `<input type="datetime-local" id="c-horario-agendado" value="${f.horarioAgendado}">` : ''}
 
-    <label style="font-size:18px;color:var(--osso)">🚘 Escolha o veículo <span style="color:var(--mango)">(obrigatório)</span></label>
+    <label style="font-size:18px;color:var(--osso)">🚘 Veículos disponíveis <span style="color:var(--mango)">(obrigatório)</span></label>
     <div style="font-size:13px;color:var(--poeira);margin:-2px 0 8px">Toque em uma opção. A selecionada fica destacada em amarelo.</div>
     <div class="veiculos" id="escolha-veiculo-pedido">
       ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${f.veiculo===k?'sel':''}" onclick="mudarVeiculo('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
@@ -5935,7 +6168,7 @@ function comoFuncionaClienteHTML(){
   return `
   <div class="cf-passo"><div class="num">1</div><div class="conteudo"><b>Cria a sua conta</b><span>Cadastra-te com nome, telefone e senha. Depois é só entrar sempre com o mesmo telefone.</span></div></div>
   <div class="cf-passo"><div class="num">2</div><div class="conteudo"><b>Peça a sua entrega</b><span>Informe o endereço de retirada e de entrega. Pode adicionar até ${MAX_PARADAS_EXTRA+1} endereços numa única corrida e reordená-los como quiser.</span></div></div>
-  <div class="cf-passo"><div class="num">3</div><div class="conteudo"><b>Escolha o veículo</b><span>${Object.values(VEICULOS).map(v=>v.emoji+' '+v.label).join(' · ')} — o preço é calculado automaticamente pela distância.</span></div></div>
+  <div class="cf-passo"><div class="num">3</div><div class="conteudo"><b>Veículos disponíveis</b><span>${Object.values(VEICULOS).map(v=>v.emoji+' '+v.label).join(' · ')} — o preço é calculado automaticamente pela distância.</span></div></div>
   <div class="cf-passo"><div class="num">4</div><div class="conteudo"><b>Confirme e acompanhe</b><span>O pedido vai para os entregadores da região. Assim que um aceita, aparece a foto, o veículo, a placa e a nota dele — e você vê tudo no mapa em tempo real, com o tempo estimado de chegada.</span></div></div>
   <div class="cf-passo"><div class="num">5</div><div class="conteudo"><b>Fale com o entregador</b><span>Use o chat ou o botão "Ligar" a qualquer momento durante a entrega.</span></div></div>
   <div class="cf-passo"><div class="num">6</div><div class="conteudo"><b>Receba e avalie</b><span>O entregador tira foto na coleta e na entrega — é a sua garantia de que o produto saiu e chegou certinho. No final, avalie o entregador de 1 a 5 estrelas.</span></div></div>
@@ -6067,6 +6300,8 @@ function _efAssinaturaTela(){
   ].join('|');
 }
 function render(){
+  document.body.classList.toggle('modo-cliente', estado.modo==='cliente');
+  document.body.classList.toggle('modo-motorista', estado.modo==='entregador');
   const app = document.getElementById('app');
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
