@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega</title>
-<link rel="manifest" href="entregaflash-manifest.json?v=20260828-1">
+<link rel="manifest" href="entregaflash-manifest.json">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -85,6 +85,10 @@ fbq('track', 'PageView');
   /* Cliente logado: cabeçalho mais compacto para destacar o pedido */
   header.topo.cliente-logado{padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;}
   header.topo.cliente-logado .marca .logo-img{width:105px;}
+  header.topo.motorista-logado{padding:calc(7px + env(safe-area-inset-top,0px)) 14px 7px;}
+  header.topo.motorista-logado .marca .logo-img{width:86px;}
+  header.topo.motorista-logado .tagline{font-size:10px;margin-top:2px;line-height:1.15;}
+  header.topo.motorista-logado .btn-instalar-topo{top:9px;right:10px;width:34px;height:34px;font-size:17px;}
   .faixa-incentivo-pedido{margin:10px 0 14px;padding:11px 13px;border-radius:12px;background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.34);color:var(--osso);font-size:14px;font-weight:800;line-height:1.35;text-align:center;}
   .micro-incentivo-pedido{margin:10px 2px 0;text-align:center;color:var(--poeira);font-size:13.5px;line-height:1.35;}
   .tagline{font-size:13px;color:var(--poeira);margin:8px 0 0;letter-spacing:1px;text-transform:uppercase;font-weight:600;text-align:center;}
@@ -106,12 +110,9 @@ fbq('track', 'PageView');
       radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
       linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
   }
-  .bv-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:26px;}
+  .bv-cabecalho{display:flex;align-items:center;gap:12px;margin-bottom:26px;}
   .bv-logo-badge{background:transparent;border-radius:0;padding:0;display:inline-flex;align-items:center;box-shadow:none;flex-shrink:0;}
   .bv-cabecalho .logo-img{width:150px;height:auto;display:block;}
-  .bv-topo-destaque{margin-left:auto;min-width:132px;max-width:168px;padding:10px 12px;border-radius:16px;background:linear-gradient(145deg,rgba(255,201,60,.18),rgba(255,255,255,.07));border:1px solid rgba(255,201,60,.38);box-shadow:0 7px 18px rgba(0,0,0,.16);text-align:left;}
-  .bv-topo-destaque strong{display:block;color:var(--mango);font-family:'Rajdhani';font-size:15px;line-height:1.05;text-transform:uppercase;letter-spacing:.2px;}
-  .bv-topo-destaque span{display:block;color:#fff;font-size:11.5px;font-weight:700;line-height:1.25;margin-top:4px;}
   .bv-cabecalho .tagline{font-size:13.5px;color:rgba(255,255,255,0.9);margin:0;letter-spacing:0.2px;text-transform:none;font-weight:800;line-height:1.4;text-align:left;border-left:1px solid rgba(255,255,255,0.3);padding-left:12px;}
   .tagline-acende{display:inline-block;animation:tagline-acende-luz 2.4s ease-in-out infinite;}
   @keyframes tagline-acende-luz{
@@ -147,26 +148,6 @@ fbq('track', 'PageView');
   .bv-escolha-card{background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);border-radius:18px;padding:18px 16px 20px;margin-bottom:16px;}
   .bv-escolha-ilustracao{display:flex;justify-content:center;align-items:flex-end;gap:10px;margin-bottom:-4px;}
   .bv-escolha-ilustracao-img{width:100%;max-width:400px;height:auto;display:block;margin:0 -2%;}
-  /* Home mobile: primeira tela mais limpa e ação imediata */
-  .bv-acoes-rapidas{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:0 0 13px;}
-  .bv-acao-rapida{min-height:48px;border:0;border-radius:14px;padding:10px 8px;font:900 13px 'Karla';cursor:pointer;box-shadow:0 6px 16px rgba(0,0,0,.18);}
-  .bv-acao-cliente{background:var(--mango);color:#171d4a;}
-  .bv-acao-motorista{background:#fff;color:#202a69;}
-  @media(max-width:600px){
-    .bv-wrap{padding:16px 16px 28px;}
-    .bv-cabecalho{margin-bottom:10px;gap:10px;}
-    .bv-cabecalho .logo-img{width:112px;}
-    .bv-topo-destaque{min-width:0;max-width:145px;padding:9px 10px;border-radius:14px;}
-    .bv-topo-destaque strong{font-size:13.5px;}
-    .bv-topo-destaque span{font-size:10.5px;}
-    .bv-titulo-grande{font-size:27px;line-height:1.08;margin:2px 0 7px;}
-    .bv-subtagline{font-size:13.5px!important;line-height:1.4!important;margin-bottom:8px!important;}
-    .bv-escolha-card{padding:8px 10px 10px!important;margin-bottom:12px!important;border-radius:15px;}
-    .bv-escolha-ilustracao-img{max-width:255px;}
-    .bv-cartao{padding:15px;margin-bottom:12px;}
-    .bv-cartao .bv-titulo{font-size:17px;margin-bottom:6px;}
-    .bv-cartao .bv-titulo img{height:28px!important;}
-  }
   .bv-escolha-colunas{display:flex;gap:14px;}
   .bv-escolha-col{flex:1;position:relative;border-radius:14px;padding:16px 8px 14px;text-align:center;cursor:pointer;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.03);transition:all .15s;}
   .bv-escolha-col.selecionada{border-color:rgba(255,201,60,0.6);background:rgba(255,201,60,0.08);}
@@ -292,17 +273,11 @@ fbq('track', 'PageView');
   .secao-icone .bolha{width:30px;height:30px;border-radius:50%;background:rgba(255,201,60,0.15);border:1px solid var(--mango);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
   .secao-icone .txt{font-family:'Rajdhani';font-weight:700;font-size:15.5px;text-transform:uppercase;letter-spacing:0.4px;color:var(--osso);}
   .secao-icone .txt b{color:var(--mango);}
-  .veiculos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:8px;}
-  .veiculos button{min-height:92px;padding:13px 8px;border-radius:16px;border:2px solid var(--linha);background:var(--painel-alt);color:var(--osso);font-family:'Karla';font-weight:800;font-size:14.5px;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.12);position:relative;}
-  .veiculos button::after{content:'Selecionar';display:block;font-size:10.5px;font-weight:700;color:var(--poeira);margin-top:4px;text-transform:uppercase;letter-spacing:.4px;}
-  .veiculos button.sel::after{content:'✓ Selecionado';color:var(--mango);}
+  .veiculos{display:grid;grid-template-columns:repeat(auto-fill,minmax(74px,1fr));gap:8px;}
+  .veiculos button{padding:14px 4px;border-radius:14px;border:1px solid var(--linha);background:var(--painel-alt);color:var(--poeira);font-family:'Karla';font-weight:600;font-size:14.5px;cursor:pointer;}
   .extras-acordeao-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;padding:4px 0;}
-  .veiculos button.sel{border-color:var(--mango);color:var(--mango);background:rgba(255,201,60,0.12);box-shadow:0 0 0 3px rgba(255,201,60,.12),0 5px 15px rgba(0,0,0,.14);}
-  .veiculos button .emoji{display:block;font-size:30px;line-height:1;margin-bottom:8px;}
-  .etapa-conteudo{min-height:calc(100vh - 155px);scroll-margin-top:12px;}
-  .etapa-titulo-fixo{position:sticky;top:0;z-index:20;background:linear-gradient(180deg,var(--painel) 78%,rgba(0,0,0,0));padding:4px 0 12px;margin-bottom:8px;}
-  #pedido-buscando-tela{min-height:72vh;display:flex;flex-direction:column;justify-content:center;}
-  @media (min-width:520px){.veiculos{grid-template-columns:repeat(4,minmax(0,1fr));}}
+  .veiculos button.sel{border-color:var(--mango);color:var(--mango);background:rgba(255,201,60,0.08);}
+  .veiculos button .emoji{display:block;font-size:20.5px;margin-bottom:9px;}
   .sugestoes:not(:empty){border:1px solid var(--linha);border-radius:14px;overflow:hidden;margin-top:6px;}
   .sugestao-item{padding:10px 12px;font-size:14.5px;background:var(--painel-alt);cursor:pointer;border-bottom:1px solid var(--linha);}
   .sugestao-item:last-child{border-bottom:none;}
@@ -449,6 +424,17 @@ fbq('track', 'PageView');
   .entrega-concluida-popup .ec-titulo{font-family:'Rajdhani';font-weight:800;font-size:27px;line-height:1.08;color:var(--osso);margin:4px 0 8px;text-transform:uppercase;}
   .entrega-concluida-popup .ec-sub{font-size:14.5px;line-height:1.5;color:var(--poeira);margin-bottom:14px;}
   .entrega-concluida-popup .ec-dados{text-align:left;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:12px 13px;margin:12px 0;}
+  .ec-comprovante{margin:12px 0 4px;text-align:left;}
+  .ec-comprovante-titulo{font-family:'Rajdhani';font-size:17px;font-weight:800;text-transform:uppercase;color:var(--verde);margin-bottom:8px;}
+  .ec-fotos{display:grid;grid-template-columns:1fr 1.35fr;gap:9px;}
+  .ec-foto{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:15px;padding:7px;cursor:pointer;}
+  .ec-foto.entrega{border-color:rgba(127,174,114,.65);background:rgba(127,174,114,.08);}
+  .ec-foto img{width:100%;height:126px;object-fit:cover;border-radius:11px;display:block;}
+  .ec-foto.entrega img{height:160px;}
+  .ec-foto span{display:block;font-size:11px;font-weight:800;text-transform:uppercase;color:var(--poeira);margin:6px 2px 1px;}
+  .ec-foto.entrega span{color:var(--verde);}
+  .ec-sem-foto{background:rgba(255,201,60,.08);border:1px dashed rgba(255,201,60,.4);border-radius:14px;padding:12px;color:var(--mango);font-size:13px;text-align:center;}
+  @media(max-width:360px){.ec-fotos{grid-template-columns:1fr}.ec-foto img,.ec-foto.entrega img{height:145px}}
   @keyframes entregaPop{from{opacity:0;transform:scale(.78) translateY(22px)}to{opacity:1;transform:scale(1) translateY(0)}}
   @keyframes entregaPopFundo{from{opacity:0}to{opacity:1}}
 
@@ -726,294 +712,6 @@ fbq('track', 'PageView');
 .notificacao-motorista-destaque b{display:block;margin-bottom:4px}
 
 </style>
-
-<style id="estilo-motorista-encontrado-full">
-.motorista-encontrado-full{
-  position:fixed !important; inset:0 !important; z-index:2147483647 !important; background:#f7f7f7; color:#222;
-  display:flex; flex-direction:column; overflow:auto; overscroll-behavior:contain;
-  font-family:Arial,Helvetica,sans-serif;
-}
-.mef-topo{
-  height:72px; min-height:72px; background:#fff; display:grid;
-  grid-template-columns:56px 1fr 56px; align-items:center; border-bottom:1px solid #eee;
-  position:sticky; top:0; z-index:5;
-}
-.mef-titulo{font-size:18px;font-weight:800;text-align:center;line-height:1.2}
-.mef-voltar,.mef-fechar{
-  border:0;background:transparent;color:#444;font-size:38px;line-height:1;cursor:pointer;height:56px
-}
-.mef-fechar{font-size:32px}
-.mef-aviso{
-  background:#fff; margin:0; padding:14px 16px; display:flex; gap:11px; align-items:flex-start;
-  font-size:15px; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.08); z-index:3
-}
-.mef-aviso strong{color:#e75d16}
-.mef-info{color:#ef6c22;font-size:23px;line-height:1}
-.mef-mapa-wrap{position:relative;height:56vh;min-height:390px;background:#ececec;overflow:hidden}
-.mef-mapa{position:absolute;inset:0;width:100%;height:100%}
-.mef-eta{
-  position:absolute;left:18px;top:94px;z-index:500;background:#fff;border-radius:10px;
-  padding:9px 12px;box-shadow:0 3px 12px rgba(0,0,0,.18);display:flex;align-items:center;gap:9px
-}
-.mef-eta b{font-size:28px;color:#111}
-.mef-eta span{font-size:13px;color:#777;max-width:92px;line-height:1.1}
-.mef-live{
-  position:absolute;left:14px;bottom:12px;z-index:500;background:rgba(255,255,255,.94);
-  border-radius:999px;padding:7px 10px;font-size:10px;font-weight:800;letter-spacing:.6px;color:#333
-}
-.mef-live span{display:inline-block;width:8px;height:8px;border-radius:50%;background:#35c75a;margin-right:5px;
-  box-shadow:0 0 0 0 rgba(53,199,90,.5);animation:mefPulse 1.5s infinite}
-@keyframes mefPulse{70%{box-shadow:0 0 0 8px rgba(53,199,90,0)}100%{box-shadow:0 0 0 0 rgba(53,199,90,0)}}
-.mef-card{
-  background:#fff;margin:-1px 16px 18px;border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.14);
-  position:relative;z-index:4;overflow:hidden
-}
-.mef-card-cab{padding:20px 20px 12px;display:flex;justify-content:space-between;gap:16px;align-items:center}
-.mef-nome{font-size:21px;font-weight:800;line-height:1.18;margin-bottom:7px}
-.mef-placa{display:inline-block;background:#f6f6f6;border-radius:7px;padding:6px 10px;font-size:17px;font-weight:900;letter-spacing:1px}
-.mef-veiculo{margin-top:9px;font-size:14px;color:#555;text-transform:capitalize}
-.mef-foto-area{text-align:center;min-width:82px}
-.mef-foto{width:76px;height:76px;border-radius:50%;object-fit:cover;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.18)}
-.mef-foto-vazia{display:grid;place-items:center;background:#eee;font-size:30px}
-.mef-nota{background:#fff;border-radius:8px;padding:4px 7px;margin:-10px auto 0;position:relative;width:max-content;box-shadow:0 2px 6px rgba(0,0,0,.15);font-weight:800}
-.mef-confirmacao{padding:0 20px 16px;text-align:center;color:#888;font-size:13px}
-.mef-acoes{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid #eee}
-.mef-acoes button{border:0;background:#fff;padding:17px 8px;font-size:16px;color:#333;cursor:pointer}
-.mef-acoes button+button{border-left:1px solid #eee}
-body:has(.motorista-encontrado-full){overflow:hidden}
-@media(max-width:420px){
-  .mef-topo{height:64px;min-height:64px}
-  .mef-titulo{font-size:16px}
-  .mef-mapa-wrap,.mef-mapa{min-height:50vh}
-  .mef-card{margin-left:10px;margin-right:10px}
-  .mef-nome{font-size:18px}
-}
-</style>
-
-
-<style id="ef-fix-mapa-v2">
-.icone-motorista-anim{
-  width:42px;height:42px;border-radius:50%;
-  display:grid;place-items:center;background:#fff;
-  border:3px solid #ffb000;box-shadow:0 3px 12px rgba(0,0,0,.28);
-  transform:translate3d(0,0,0);will-change:transform;
-}
-.icone-motorista-anim span{font-size:25px;line-height:1}
-.mapa,.mef-mapa{transform:translateZ(0);backface-visibility:hidden}
-.leaflet-container{background:#e9ecef}
-.motorista-encontrado-full .leaflet-control-container{pointer-events:none}
-</style>
-
-
-<style id="ef-cliente-profissional-v3">
-/* Visual mais limpo e profissional para a solicitação do cliente */
-body.modo-cliente .conteudo{padding-bottom:92px}
-body.modo-cliente .card{
-  border-radius:20px;
-  box-shadow:0 5px 18px rgba(0,0,0,.10);
-}
-body.modo-cliente .campo-endereco,
-body.modo-cliente input[type="text"],
-body.modo-cliente input[type="tel"],
-body.modo-cliente select,
-body.modo-cliente textarea{
-  min-height:56px;border-radius:14px!important;
-}
-.ef-rota-principal{
-  background:#fff;border-radius:20px;padding:14px;margin:10px 10px 18px;
-  box-shadow:0 5px 18px rgba(0,0,0,.11);
-}
-.ef-rota-linha{
-  display:grid;grid-template-columns:28px 1fr;gap:9px;align-items:center;
-  padding:13px 10px;border:1px solid #e7e9ef;border-radius:14px;margin:8px 0;background:#fbfcff;
-}
-.ef-rota-ponto{width:13px;height:13px;border:3px solid #f4b400;border-radius:50%;margin:auto}
-.ef-rota-pin{font-size:20px;text-align:center}
-.ef-rota-label{font-size:11px;color:#81879a;text-transform:uppercase;font-weight:800;letter-spacing:.5px}
-.ef-rota-valor{font-size:16px;font-weight:800;color:#202642;margin-top:3px;line-height:1.25}
-.ef-veiculos-grid{
-  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:11px!important;
-}
-.ef-veiculo-card{
-  min-height:104px!important;border:1px solid #dfe3ed!important;border-radius:16px!important;
-  background:#fff!important;padding:13px!important;box-shadow:none!important;
-}
-.ef-veiculo-card.selecionado{
-  border:2px solid #f5b400!important;background:#fffaf0!important;
-  box-shadow:0 0 0 3px rgba(245,180,0,.10)!important;
-}
-.ef-veiculo-emoji{font-size:35px!important}
-.ef-busca-full{
-  position:fixed!important;inset:0!important;z-index:2147483646!important;
-  background:#f7f8fb;display:flex;flex-direction:column;color:#202642;
-}
-.ef-busca-topo{
-  height:68px;min-height:68px;background:#fff;display:grid;grid-template-columns:52px 1fr 52px;
-  align-items:center;border-bottom:1px solid #eceef3;
-}
-.ef-busca-topo strong{text-align:center;font-size:17px}
-.ef-busca-mapa{height:48vh;min-height:320px;position:relative;background:#e9edf2}
-.ef-busca-painel{
-  margin:-12px 12px 16px;background:#fff;border-radius:20px;position:relative;z-index:4;
-  padding:20px;box-shadow:0 5px 18px rgba(0,0,0,.12)
-}
-.ef-busca-pulsos{display:flex;gap:6px;margin-bottom:15px}
-.ef-busca-pulsos span{height:5px;border-radius:999px;background:#e1e4ea;flex:1}
-.ef-busca-pulsos span.ativo{background:#f5b400}
-.ef-busca-titulo{font-size:23px;font-weight:900;line-height:1.15}
-.ef-busca-sub{font-size:15px;color:#7c8291;margin-top:7px;line-height:1.35}
-.ef-prioridade-box{
-  margin-top:18px;border:1px solid #e4e7ee;border-radius:15px;padding:15px;background:#fbfcff
-}
-.ef-prioridade-box strong{font-size:15px}
-.ef-prioridade-opcoes{display:flex;gap:8px;overflow-x:auto;margin-top:12px;padding-bottom:3px}
-.ef-prioridade-opcoes button{
-  flex:0 0 auto;border:1px solid #cfd4df;border-radius:999px;background:#fff;padding:10px 14px;
-  font-weight:800;color:#343a4c
-}
-/* O mapa ativo nunca recebe animação/fade do contêiner. */
-.mapa,.mef-mapa,.ef-busca-mapa .leaflet-container{
-  animation:none!important;transition:none!important;
-}
-.leaflet-tile{will-change:auto!important}
-@media(max-width:380px){
-  .ef-veiculos-grid{gap:8px!important}
-  .ef-veiculo-card{min-height:96px!important;padding:10px!important}
-}
-</style>
-
-
-<style id="ef-cliente-fluxo-completo-v4">
-/* ---------- fluxo completo do cliente ---------- */
-.ef-status-shell{
-  position:relative;
-  margin:10px 10px 18px;
-  border-radius:22px;
-  overflow:hidden;
-  background:#fff;
-  box-shadow:0 6px 20px rgba(0,0,0,.11);
-}
-.ef-status-head{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:16px 16px 13px;
-  border-bottom:1px solid #eceef4;
-  background:#fff;
-}
-.ef-status-icone{
-  width:42px;height:42px;border-radius:13px;
-  display:grid;place-items:center;
-  background:linear-gradient(145deg,#fff8d6,#ffe99a);
-  font-size:23px;flex:0 0 auto;
-}
-.ef-status-txt b{
-  display:block;
-  font-size:18px;
-  color:#1f2742;
-  line-height:1.1;
-}
-.ef-status-txt span{
-  display:block;
-  margin-top:4px;
-  color:#7b8191;
-  font-size:13px;
-}
-.ef-progresso{
-  padding:14px 16px 16px;
-  background:#fff;
-}
-.ef-progresso-linha{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  gap:5px;
-  margin-bottom:10px;
-}
-.ef-progresso-linha i{
-  height:5px;border-radius:999px;background:#e5e8ef;display:block;
-}
-.ef-progresso-linha i.ok{background:#f7b500}
-.ef-progresso-legenda{
-  display:flex;justify-content:space-between;gap:8px;
-  font-size:10px;color:#8c92a1;font-weight:800;text-transform:uppercase;
-}
-.ef-cliente-mapa-grande{
-  height:48vh!important;
-  min-height:330px!important;
-  border-radius:0!important;
-  overflow:hidden!important;
-  margin:0!important;
-  background:#e8edf3!important;
-}
-.ef-cliente-info-flutuante{
-  position:absolute;
-  left:14px;right:14px;bottom:14px;
-  z-index:500;
-  border-radius:16px;
-  background:rgba(255,255,255,.96);
-  padding:12px 14px;
-  box-shadow:0 4px 16px rgba(0,0,0,.18);
-}
-.ef-cliente-info-flutuante b{
-  display:block;
-  font-size:23px;
-  color:#18203a;
-}
-.ef-cliente-info-flutuante span{
-  display:block;
-  margin-top:2px;
-  font-size:13px;
-  color:#707789;
-}
-.ef-acoes-cliente{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  border-top:1px solid #eceef4;
-}
-.ef-acoes-cliente button{
-  min-height:58px;
-  border:0;
-  background:#fff;
-  font-size:13px;
-  font-weight:800;
-  color:#27304b;
-}
-.ef-acoes-cliente button+button{border-left:1px solid #eceef4}
-.ef-final-card{
-  margin:16px 12px 22px;
-  padding:24px 18px;
-  border-radius:22px;
-  background:#fff;
-  text-align:center;
-  box-shadow:0 6px 20px rgba(0,0,0,.10);
-}
-.ef-final-card .check{
-  width:72px;height:72px;border-radius:50%;
-  display:grid;place-items:center;margin:0 auto 14px;
-  background:#eaf8ee;font-size:38px;
-}
-.ef-final-card h2{margin:0;color:#1e2744;font-size:24px}
-.ef-final-card p{color:#7c8291;font-size:14px;line-height:1.45}
-.ef-final-card .resumo{
-  margin-top:16px;padding:14px;border-radius:15px;background:#f7f8fb;text-align:left
-}
-.ef-final-card .resumo div{
-  display:flex;justify-content:space-between;gap:12px;padding:6px 0;font-size:13px
-}
-.ef-final-card .resumo b{color:#202742}
-.ef-full-stage{
-  position:fixed!important;inset:0!important;z-index:2147483645!important;
-  background:#f6f7fa!important;
-  overflow:auto!important;
-}
-body:has(.ef-full-stage){overflow:hidden!important}
-/* evita piscadas de transição */
-.ef-full-stage,.ef-status-shell,.ef-cliente-mapa-grande,
-.ef-full-stage .leaflet-container,.ef-full-stage .leaflet-pane{
-  animation:none!important;
-}
-</style>
-
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -1057,38 +755,6 @@ body:has(.ef-full-stage){overflow:hidden!important}
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-/* ============================================================
-   ACESSO SEGURO — entrega_clientes / entrega_motoristas agora só
-   são acessíveis via funções RPC (SECURITY DEFINER) no banco, não
-   mais direto pela tabela. Estes helpers imitam o formato de
-   resposta do supabase-js ({data, error}) pra minimizar a troca
-   nos pontos de uso existentes.
-============================================================ */
-async function meuPerfilCliente(telefone){
-  const { data, error } = await sb.rpc('entrega_cliente_meu_perfil', { p_telefone: telefone });
-  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
-}
-async function meuPerfilMotorista(telefone){
-  const { data, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
-  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
-}
-async function autenticarCliente(telefone, senhaHash){
-  const { data, error } = await sb.rpc('entrega_cliente_autenticar', { p_telefone: telefone, p_senha_hash: senhaHash });
-  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
-}
-async function autenticarMotorista(telefone, senhaHash){
-  const { data, error } = await sb.rpc('entrega_motorista_autenticar', { p_telefone: telefone, p_senha_hash: senhaHash });
-  return { data: Array.isArray(data) ? (data[0]||null) : data, error };
-}
-async function upsertProprioCliente(telefone, senhaHash, dados){
-  const { data, error } = await sb.rpc('entrega_cliente_upsert_proprio', { p_telefone: telefone, p_senha_hash: senhaHash||'', p_dados: dados });
-  return { data, error };
-}
-async function upsertProprioMotorista(telefone, senhaHash, dados){
-  const { data, error } = await sb.rpc('entrega_motorista_upsert_proprio', { p_telefone: telefone, p_senha_hash: senhaHash||'', p_dados: dados });
-  return { data, error };
-}
 
 // ---- Presença em tempo real do site (contador no painel admin) ----
 const EF_PRESENCA_CANAL = 'entregaflash_site_online_v1';
@@ -1246,8 +912,8 @@ function corridasFundadorRestantes(m=estado.motorista){
   return Math.max(0, limiteFundadorMotorista(m) - entregasConcluidasMotorista(m.telefone).length);
 }
 
-let ATRASO_PRIORIDADE_PRO_MS = 15000; // motoristas Free veem o pedido 15s depois dos Pro
-let RAIO_GEOFENCE_KM = 0.30; // 300m — tolerância base; a precisão real do GPS também é considerada
+let ATRASO_PRIORIDADE_PRO_MS = 45000; // motoristas Free só veem o pedido 45s depois dos Pro
+let RAIO_GEOFENCE_KM = 0.15; // 150m — distância máxima do endereço para poder coletar/finalizar
 let TAXA_PRIORIDADE_VALOR = 12; // R$ acrescidos numa entrega prioritária (nível 1 — os demais níveis são múltiplos deste valor)
 function niveisPrioridade(){
   // níveis de prioridade que o cliente pode escolher (quanto mais alto, mais destaque pro motorista)
@@ -1484,7 +1150,7 @@ let estado = {
   suporteAberto:false, suporteMensagens:[], canalSuporte:null, suporteNaoLidas:0, suporteContexto:{telefone:'',nome:''},
   contatoRapido:{ aberto:false, nome:'', telefone:'', contexto:'cliente', erro:'', enviando:false },
   sugestoesTemp:{ origem:[], destino:[] },
-  alertaMotorista:null, alertaMotoristaFechados:{}, avisoGeralExibido:null, fotoAmpliada:null, statusAnterior:{}, statusAnteriorMotorista:{}, statusAnteriorEntregaMotorista:{},
+  alertaMotorista:null, avisoGeralExibido:null, fotoAmpliada:null, statusAnterior:{}, statusAnteriorMotorista:{}, statusAnteriorEntregaMotorista:{},
   podeInstalar:false, appInstalado:false, comoInstalarAberto:false, editarDistanciaAberto:false, extrasAberto:false, popupInstalarAberto:false,
   onboardingAberto:false, onboardingSlide:0,
   notificacoesStatus: (typeof Notification!=='undefined') ? Notification.permission : 'unsupported',
@@ -1621,28 +1287,7 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  try{
-    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-1', { updateViaCache: 'none' });
-
-    // Procura uma versão nova sempre que o app abre.
-    try{ await reg.update(); }catch(e){}
-
-    // Quando o novo Service Worker assume o controle, recarrega uma única vez
-    // para o cliente já instalado entrar imediatamente na versão atual.
-    let recarregando = false;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if(recarregando) return;
-      recarregando = true;
-      window.location.replace('./index.html?v=20260828-1');
-    });
-
-    // Se o app ficar aberto por muito tempo, confere atualização ao voltar à tela.
-    document.addEventListener('visibilitychange', () => {
-      if(document.visibilityState === 'visible') reg.update().catch(()=>{});
-    });
-  }catch(e){
-    console.warn('Service worker indisponível', e);
-  }
+  try{ await navigator.serviceWorker.register('entregaflash-sw.js'); }catch(e){ console.warn('Service worker indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
@@ -1711,7 +1356,7 @@ async function restaurarSessao(){
   try{
     const clienteTel = localStorage.getItem('ef_cliente_telefone');
     if(clienteTel){
-      const { data } = await meuPerfilCliente(clienteTel);
+      const { data } = await sb.from('entrega_clientes').select('*').eq('telefone', clienteTel).maybeSingle();
       if(data && !data.bloqueado){
         estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
         estado.filtroTelefoneCliente = data.telefone;
@@ -1721,7 +1366,7 @@ async function restaurarSessao(){
 
     const motoristaTel = localStorage.getItem('ef_motorista_telefone');
     if(motoristaTel){
-      const { data } = await meuPerfilMotorista(motoristaTel);
+      const { data } = await sb.from('entrega_motoristas').select('*').eq('telefone', motoristaTel).maybeSingle();
       if(data && STATUS_ACESSO_PAINEL.includes(data.status)){
         estado.motorista = {
           nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:localStorage.getItem('ef_motorista_disponivel')==='true',
@@ -2124,126 +1769,14 @@ function tocarSomNovoPedido(){
   if(navigator.vibrate) navigator.vibrate([90,60,90,60,90]);
 }
 function dispararAlertaMotorista(pedido){
-  // Abre uma tela inteira no cliente assim que o motorista aceita.
-  // Não fecha sozinho: o cliente fecha pelo X quando quiser.
+  // Não renderiza aqui: carregarPedidos() fará um único render ao final da atualização.
+  // Isso evita dois redesenhos seguidos justamente quando o motorista aceita a corrida.
   estado.alertaMotorista = { nome: pedido.motoristaNome||'Um entregador', pedidoId: pedido.id };
   tocarSomAlerta();
+  clearTimeout(window._alertaMotoristaTimer);
+  window._alertaMotoristaTimer = setTimeout(()=>{ estado.alertaMotorista=null; render(); }, 7000);
 }
-function fecharAlertaMotorista(){
-  if(estado.alertaMotorista && estado.alertaMotorista.pedidoId){
-    estado.alertaMotoristaFechados[estado.alertaMotorista.pedidoId]=true;
-  }
-  estado.alertaMotorista=null;
-  render();
-}
-function garantirPopupMotoristaCliente(pedidos){
-  if(estado.modo!=='cliente' || !estado.filtroTelefoneCliente) return;
-  const ativos = pedidos
-    .filter(p=>p.clienteTelefone===estado.filtroTelefoneCliente &&
-      p.motoristaTelefone &&
-      ['indo_coletar','coletado','a_caminho'].includes(p.status))
-    .sort((a,b)=>(Number(b.aceitoEm||b.criadoEm||0)-Number(a.aceitoEm||a.criadoEm||0)));
-  if(!ativos.length){
-    estado.alertaMotorista=null;
-    return;
-  }
-  const p = ativos[0];
-  if(estado.alertaMotoristaFechados[p.id]) return;
-  if(!estado.alertaMotorista || estado.alertaMotorista.pedidoId!==p.id){
-    estado.alertaMotorista={nome:p.motoristaNome||'Motorista parceiro',pedidoId:p.id};
-  }
-}
-
-function popupMotoristaEncontradoHTML(){
-  if(!estado.alertaMotorista) return '';
-  const p = estado.pedidos.find(x=>x.id===estado.alertaMotorista.pedidoId);
-  if(!p) return '';
-  const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
-  let km = null, min = null;
-  if(p.motoristaCoord && alvo){
-    km = Math.max(0, Number(distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon)) || 0);
-    const velocidade = (VEICULOS[p.motoristaVeiculoTipo||p.veiculo]&&VEICULOS[p.motoristaVeiculoTipo||p.veiculo].veloc) || 28;
-    min = Math.max(1,Math.round((km/velocidade)*60));
-  }
-  const statusTxt = p.status==='indo_coletar'
-    ? `O motorista está a caminho da recolha`
-    : (p.status==='coletado'||p.status==='a_caminho' ? `Seu pedido está a caminho` : `Motorista encontrado`);
-  const distanciaTxt = km==null ? 'Atualizando localização...' : `${km.toFixed(km<1?2:1)} km de distância`;
-  const tempoTxt = min==null ? '—' : `${min} min`;
-  return `
-  <div class="motorista-encontrado-full" role="dialog" aria-modal="true" aria-label="Motorista encontrado">
-    <div class="mef-topo">
-      <button class="mef-voltar" onclick="fecharAlertaMotorista()" aria-label="Fechar">‹</button>
-      <div class="mef-titulo">Motorista a caminho</div>
-      <button class="mef-fechar" onclick="fecharAlertaMotorista()" aria-label="Fechar">×</button>
-    </div>
-
-    <div class="ef-status-shell" style="margin:0;border-radius:0;box-shadow:none">
-      ${etapaClienteHTML(p)}
-    </div>
-    <div class="mef-aviso">
-      <span class="mef-info">ⓘ</span>
-      <span><b>${statusTxt}</b><br><strong>${p.origem||''}</strong></span>
-    </div>
-
-    <div class="mef-mapa-wrap">
-      <div class="mef-mapa" id="mapa-encontrado-${p.id}"></div>
-      <div class="mef-eta">
-        <b id="popup-eta-min-${p.id}">${tempoTxt}</b>
-        <span id="popup-eta-km-${p.id}">${distanciaTxt}</span>
-      </div>
-      <div class="mef-live"><span></span> LOCALIZAÇÃO EM TEMPO REAL</div>
-    </div>
-
-    <div class="mef-card">
-      <div class="mef-card-cab">
-        <div>
-          <div class="mef-nome">${p.motoristaNome||'Motorista parceiro'}</div>
-          ${p.motoristaPlaca ? `<div class="mef-placa">${p.motoristaPlaca}</div>` : ''}
-          <div class="mef-veiculo">${VEICULOS[p.motoristaVeiculoTipo||p.veiculo]?.emoji||'🛵'} ${p.motoristaMarca||VEICULOS[p.motoristaVeiculoTipo||p.veiculo]?.label||''} ${p.motoristaCor||''}</div>
-        </div>
-        <div class="mef-foto-area">
-          ${p.motoristaFotoUrl ? `<img src="${p.motoristaFotoUrl}" class="mef-foto" alt="Foto do motorista">` : `<div class="mef-foto mef-foto-vazia">🛵</div>`}
-          <div class="mef-nota">⭐ ${Number(p.motoristaNotaMedia!=null?p.motoristaNotaMedia:5).toFixed(2)}</div>
-        </div>
-      </div>
-      <div class="mef-confirmacao">Acompanhe o motorista em tempo real até a recolha.</div>
-      <div class="mef-acoes">
-        <button onclick="abrirChat('${p.id}')">💬 <b>Chat</b></button>
-        <button onclick="ligarPara('${p.motoristaTelefone||''}')">📞 <b>Ligar</b></button>
-      </div>
-    </div>
-  </div>`;
-}
-
-// ---------- mantém a tela do motorista acesa durante corrida ativa ----------
-let efWakeLock = null;
-async function solicitarTelaAcesa(){
-  try{
-    if(estado.modo!=='entregador' || !estado.motorista.ativo) return;
-    const temCorridaAtiva = estado.pedidos.some(p=>
-      p.motoristaTelefone===estado.motorista.telefone &&
-      ['indo_coletar','coletado','a_caminho'].includes(p.status)
-    );
-    if(!temCorridaAtiva) return liberarTelaAcesa();
-    if(!('wakeLock' in navigator) || document.visibilityState!=='visible') return;
-    if(efWakeLock && !efWakeLock.released) return;
-    efWakeLock = await navigator.wakeLock.request('screen');
-    efWakeLock.addEventListener('release', ()=>{ efWakeLock=null; });
-  }catch(e){
-    console.warn('Wake Lock indisponível:', e);
-  }
-}
-async function liberarTelaAcesa(){
-  try{
-    if(efWakeLock && !efWakeLock.released) await efWakeLock.release();
-  }catch(e){}
-  efWakeLock = null;
-}
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible') solicitarTelaAcesa();
-});
-
+function fecharAlertaMotorista(){ clearTimeout(window._alertaMotoristaTimer); estado.alertaMotorista=null; render(); }
 function detectarMotoristaEncontrado(novos){
   if(estado.modo!=='cliente' || !estado.filtroTelefoneCliente) return;
   const MENSAGENS_STATUS = {
@@ -2282,26 +1815,11 @@ function detectarMotoristaEncontrado(novos){
     estado.statusAnterior[np.id] = np.status;
   });
 }
-// Distribuição progressiva de corridas por proximidade da coleta.
-// 0–29s: até 8 km | 30–59s: até 15 km | 60–89s: até 30 km | 90s+: toda a região.
-function pedidoLiberadoPorProximidade(p, agoraTs=Date.now()){
-  if(!p || p.status!=='buscando') return false;
-  const idadeMs = Math.max(0, agoraTs - Number(p.criadoEm||agoraTs));
-  if(idadeMs >= 90000) return true;
-  if(!ultimaPosicaoMotorista || !p.origemCoord) return false;
-  const d = distanciaKm(ultimaPosicaoMotorista.lat, ultimaPosicaoMotorista.lon, p.origemCoord.lat, p.origemCoord.lon);
-  if(!Number.isFinite(d)) return false;
-  const raio = idadeMs < 30000 ? 8 : (idadeMs < 60000 ? 15 : 30);
-  return d <= raio;
-}
-
 function detectarNovosPedidosMotorista(novos){
   if(estado.modo!=='entregador' || !estado.motorista.ativo || !estado.motorista.disponivel) return;
   novos.forEach(np=>{
     if(np.status!=='buscando') return;
     if(estado.statusAnteriorMotorista[np.id]) return;
-    // Só toca quando a corrida entra no raio atual deste motorista.
-    if(!pedidoLiberadoPorProximidade(np)) return;
     estado.statusAnteriorMotorista[np.id] = true;
     tocarSomNovoPedido();
     notificar('🆕 Novo pedido disponível!', `${np.origem} → ${np.destino} · R$ ${Number(np.preco).toFixed(2)}`, 'novo-'+np.id);
@@ -2413,10 +1931,7 @@ function estaDigitandoEndereco(){
 // ou se foi só o motorista andando — nesse caso só o mapa precisa mexer, não a tela inteira.
 function pedidoSemPosicao(p){
   const c = Object.assign({}, p);
-  delete c.motoristaCoord;
-  delete c.atualizadoEm;
-  // Campos de telemetria/tempo não podem recriar a tela e fazer o mapa piscar.
-  delete c.motoristaAtualizadoEm;
+  delete c.motoristaCoord; delete c.atualizadoEm;
   return c;
 }
 let _carregarPedidosEmAndamento = false;
@@ -2450,7 +1965,6 @@ async function carregarPedidos(){
     detectarMotoristaEncontrado(novos);
     detectarNovosPedidosMotorista(novos);
     detectarCancelamentoClienteMotorista(novos);
-    garantirPopupMotoristaCliente(novos);
     const novoJSONEstrutural = JSON.stringify(novos.map(pedidoSemPosicao));
     // se nada além da posição do motorista/timestamp mudou, não precisamos redesenhar a tela toda —
     // só atualizamos os mapas ao vivo (o marcador desliza suave até o novo ponto). Isso é o que
@@ -2482,47 +1996,17 @@ async function carregarPedidos(){
 }
 // atualiza só os marcadores dos mapas já abertos na tela (sem tocar no resto do DOM) —
 // usado quando a única coisa que mudou foi a posição do motorista em trânsito.
-function atualizarEtaAoVivo(p){
-  if(!p || !p.motoristaCoord) return;
-  const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
-  if(!alvo) return;
-  const km = Math.max(0, Number(distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon)) || 0);
-  const velocidade = (VEICULOS[p.veiculo]&&VEICULOS[p.veiculo].veloc) || 28;
-  const min = Math.max(1, Math.round((km/velocidade)*60));
-  const txt = p.status==='indo_coletar' ? 'até a coleta' : 'até o destino';
-  const elMin = document.getElementById('eta-min-'+p.id);
-  const elSub = document.getElementById('eta-sub-'+p.id);
-  if(elMin) elMin.textContent = '~'+min+' min';
-  if(elSub) elSub.textContent = km.toFixed(km<1?2:1)+' km '+txt+' · atualizado agora';
-  registrarEta(p.id,min);
-}
 function atualizarMapasAoVivo(pedidos){
   pedidos.forEach(p=>{
     if(!p.origemCoord || !p.destinoCoord || p.status==='buscando' || p.status==='entregue' || p.status==='cancelado') return;
-    atualizarEtaAoVivo(p);
-    if(estado.modo==='cliente' && p.clienteTelefone===estado.filtroTelefoneCliente){
-      montarMapa('mapa-c-'+p.id, p);
-      if(estado.alertaMotorista && estado.alertaMotorista.pedidoId===p.id){
-        montarMapa('mapa-encontrado-'+p.id, p);
-        const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
-        if(p.motoristaCoord && alvo){
-          const km = Math.max(0, Number(distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon)) || 0);
-          const velocidade = (VEICULOS[p.motoristaVeiculoTipo||p.veiculo]&&VEICULOS[p.motoristaVeiculoTipo||p.veiculo].veloc)||28;
-          const min = Math.max(1,Math.round((km/velocidade)*60));
-          const e1=document.getElementById('popup-eta-min-'+p.id);
-          const e2=document.getElementById('popup-eta-km-'+p.id);
-          if(e1) e1.textContent=min+' min';
-          if(e2) e2.textContent=km.toFixed(km<1?2:1)+' km de distância';
-        }
-      }
-    }
+    if(estado.modo==='cliente' && p.clienteTelefone===estado.filtroTelefoneCliente){ montarMapa('mapa-c-'+p.id, p); }
     if(estado.modo==='entregador' && estado.motorista.ativo && p.motoristaTelefone===estado.motorista.telefone){ montarMapa('mapa-m-'+p.id, p); }
   });
 }
 async function verificarBloqueioAtivo(){
   try{
     if(estado.cliente.logado && estado.cliente.telefone){
-      const { data } = await sb.rpc('entrega_cliente_consultar_status', { p_telefone: estado.cliente.telefone }).then(r => ({ data: Array.isArray(r.data)?(r.data[0]||null):r.data, error: r.error }));
+      const { data } = await sb.from('entrega_clientes').select('bloqueado').eq('telefone', estado.cliente.telefone).maybeSingle();
       if(data && data.bloqueado){
         sairCliente();
         estado.painelCliente.loginErro='Esta conta foi bloqueada. Fala com o suporte para mais informações.';
@@ -2532,7 +2016,7 @@ async function verificarBloqueioAtivo(){
       }
     }
     if(estado.motorista.ativo && estado.motorista.telefone){
-      const { data } = await sb.rpc('entrega_motorista_consultar_status', { p_telefone: estado.motorista.telefone }).then(r => ({ data: Array.isArray(r.data)?(r.data[0]||null):r.data, error: r.error }));
+      const { data } = await sb.from('entrega_motoristas').select('status').eq('telefone', estado.motorista.telefone).maybeSingle();
       if(data && data.status==='bloqueado'){
         sairMotorista();
         estado.painelMotorista.loginErro='O seu cadastro foi bloqueado. Fala com o suporte para mais informações.';
@@ -2559,21 +2043,17 @@ function assinarPedidosRealtime(){
 // ---------- motoristas online ----------
 async function carregarMotoristasOnline(){
   try{
-    const { data: count, error } = await sb.rpc('entrega_contar_motoristas_disponiveis', { p_status_validos: ['aprovado'] });
+    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).eq('status', 'aprovado');
     if(error){ console.error(error); return; }
     if(count!==estado.motoristasOnline){ estado.motoristasOnline = count||0; if(!estaDigitandoEndereco()) render(); }
   }catch(e){ console.error(e); }
 }
 let canalMotoristasOnlineRealtime = null;
-let intervaloMotoristasOnlinePoll = null;
 function assinarMotoristasOnlineRealtime(){
   if(canalMotoristasOnlineRealtime) return;
   canalMotoristasOnlineRealtime = sb.channel('motoristas-online-realtime')
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_motoristas'}, ()=>{ carregarMotoristasOnline(); })
     .subscribe();
-  // Plano B: sem policy aberta de leitura, o Realtime não avisa mais quando a
-  // disponibilidade de algum motorista muda — reconta periodicamente.
-  if(!intervaloMotoristasOnlinePoll) intervaloMotoristasOnlinePoll = setInterval(carregarMotoristasOnline, 15000);
 }
 
 // ---------- avisos gerais do admin (alerta pra todos os motoristas/clientes) ----------
@@ -2653,35 +2133,31 @@ function encerrarCarteiraClienteRealtime(){
 
 // ---------- estado do motorista logado (tempo real) ----------
 let canalMotoristaLogadoRealtime = null;
-let intervaloMotoristaLogadoPoll = null;
-function processarAtualizacaoMotoristaLogado(novo){
-  if(!novo) return;
-  if(novo.status==='bloqueado'){ debounce('motorista-logado', verificarBloqueioAtivo); return; }
-  // status mudou (ex: pendente/básico -> aprovado, ou reprovado) — atualiza a tela na hora,
-  // sem precisar recarregar a página
-  if(novo.status && novo.status!==estado.motorista.status){
-    const statusAnterior = estado.motorista.status;
-    estado.motorista.status = novo.status;
-    estado.motorista.plano = novo.plano || estado.motorista.plano;
-    estado.motorista.veiculo = novo.veiculo_tipo || estado.motorista.veiculo;
-    estado.motorista.marca = novo.veiculo_marca || estado.motorista.marca;
-    estado.motorista.placa = novo.veiculo_placa || estado.motorista.placa;
-    estado.motorista.cor = novo.veiculo_cor || estado.motorista.cor;
-    estado.motorista.fotoMotoristaUrl = novo.foto_motorista_url || estado.motorista.fotoMotoristaUrl;
-    estado.motorista.raioAtendimentoKm = novo.raio_atendimento_km!=null ? novo.raio_atendimento_km : estado.motorista.raioAtendimentoKm;
-    if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
-      mostrarToast('🎉 Seu cadastro foi aprovado! Já pode começar a receber pedidos.', 'sucesso');
-      notificar('🎉 Cadastro aprovado!', 'Já pode começar a receber pedidos no Entrega Flash.');
-    }
-    render();
-  }
-}
 function assinarMotoristaLogadoRealtime(telefone){
   encerrarMotoristaLogadoRealtime();
   if(!telefone) return;
   canalMotoristaLogadoRealtime = sb.channel('motorista-logado-realtime:'+telefone)
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_motoristas', filter:'telefone=eq.'+telefone}, (payload)=>{
-      processarAtualizacaoMotoristaLogado(payload.new || {});
+      const novo = payload.new || {};
+      if(novo.status==='bloqueado'){ debounce('motorista-logado', verificarBloqueioAtivo); return; }
+      // status mudou (ex: pendente/básico -> aprovado, ou reprovado) — atualiza a tela na hora,
+      // sem precisar recarregar a página
+      if(novo.status && novo.status!==estado.motorista.status){
+        const statusAnterior = estado.motorista.status;
+        estado.motorista.status = novo.status;
+        estado.motorista.plano = novo.plano || estado.motorista.plano;
+        estado.motorista.veiculo = novo.veiculo_tipo || estado.motorista.veiculo;
+        estado.motorista.marca = novo.veiculo_marca || estado.motorista.marca;
+        estado.motorista.placa = novo.veiculo_placa || estado.motorista.placa;
+        estado.motorista.cor = novo.veiculo_cor || estado.motorista.cor;
+        estado.motorista.fotoMotoristaUrl = novo.foto_motorista_url || estado.motorista.fotoMotoristaUrl;
+        estado.motorista.raioAtendimentoKm = novo.raio_atendimento_km!=null ? novo.raio_atendimento_km : estado.motorista.raioAtendimentoKm;
+        if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
+          mostrarToast('🎉 Seu cadastro foi aprovado! Já pode começar a receber pedidos.', 'sucesso');
+          notificar('🎉 Cadastro aprovado!', 'Já pode começar a receber pedidos no Entrega Flash.');
+        }
+        render();
+      }
     })
     .on('postgres_changes', {event:'*', schema:'public', table:'entrega_saldos', filter:'telefone=eq.'+telefone}, ()=>{
       debounce('motorista-logado-saldo', carregarSaldoMotorista);
@@ -2691,15 +2167,6 @@ function assinarMotoristaLogadoRealtime(telefone){
     })
     .subscribe();
   carregarChamadosAmigo();
-  // Plano B: como entrega_motoristas agora só é lido via função RPC (protegida),
-  // o Realtime não recebe mais eventos de UPDATE dessa tabela pra quem não tem
-  // policy de leitura aberta. Este polling garante que aprovação/bloqueio do
-  // motorista continuem sendo detectados mesmo assim.
-  if(intervaloMotoristaLogadoPoll) clearInterval(intervaloMotoristaLogadoPoll);
-  intervaloMotoristaLogadoPoll = setInterval(async ()=>{
-    const { data } = await meuPerfilMotorista(telefone);
-    if(data) processarAtualizacaoMotoristaLogado(data);
-  }, 20000);
 }
 async function carregarChamadosAmigo(){
   const { data, error } = await sb.from('entrega_chamados_amigo').select('*').eq('status','aberto').order('criado_em',{ascending:false});
@@ -2711,7 +2178,6 @@ async function carregarChamadosAmigo(){
 }
 function encerrarMotoristaLogadoRealtime(){
   if(canalMotoristaLogadoRealtime){ sb.removeChannel(canalMotoristaLogadoRealtime); canalMotoristaLogadoRealtime=null; }
-  if(intervaloMotoristaLogadoPoll){ clearInterval(intervaloMotoristaLogadoPoll); intervaloMotoristaLogadoPoll=null; }
 }
 
 // ---------- chat ----------
@@ -3568,10 +3034,8 @@ async function criarPedido(){
   // ou quando o realtime informar que um motorista aceitou.
   estado.pedidos = [pedido, ...estado.pedidos.filter(x=>x.id!==pedido.id)];
   render();
-  fixarEtapaPedidoNaTela('#pedido-buscando-tela');
   mostrarToast(f.tipoRetirada==='agendado' ? 'Pedido agendado com sucesso!' : 'Pedido criado! Buscando um motorista...', 'sucesso');
   await carregarPedidos();
-  fixarEtapaPedidoNaTela('#pedido-buscando-tela');
 }
 
 // ---------- múltiplas paradas de entrega ----------
@@ -3596,7 +3060,7 @@ function moverParada(idx, direcao){
 // ---------- agora ou agendar retirada ----------
 function definirTipoRetirada(tipo){
   estado.form.tipoRetirada = tipo;
-  renderEtapaPedidoFixa();
+  render();
 }
 function seloPrioridadeHTML(p, margemTopo){
   if(!p.prioridade) return '';
@@ -3623,7 +3087,7 @@ function definirPrioridade(valor){
   // clicar de novo no mesmo nível desliga a prioridade
   estado.form.prioridadeValor = (estado.form.prioridadeValor===valor) ? 0 : valor;
   estado.form.prioridade = estado.form.prioridadeValor>0;
-  renderEtapaPedidoFixa('#escolha-veiculo-pedido');
+  render();
 }
 // permite ao cliente aumentar a prioridade de um pedido que ainda está buscando motorista,
 // pra dar mais destaque a ele sem precisar cancelar e refazer o pedido
@@ -3652,11 +3116,11 @@ async function aumentarPrioridadeBusca(id, novoValor){
 }
 function alternarExtra(chave){
   estado.form.extras[chave] = !estado.form.extras[chave];
-  renderEtapaPedidoFixa();
+  render();
 }
 function alternarExtrasAberto(){
   estado.extrasAberto = !estado.extrasAberto;
-  renderEtapaPedidoFixa();
+  render();
 }
 function abrirEditarDistancia(){
   estado.editarDistanciaAberto = true;
@@ -3674,8 +3138,14 @@ async function avaliarMotorista(pedidoId, nota){
   if(!p || p.status!=='entregue' || p.avaliacaoNota || !p.motoristaTelefone) return;
   const { error: erroPedido } = await sb.from('entrega_pedidos').update({ avaliacao_nota: nota }).eq('id', pedidoId);
   if(erroPedido){ console.error(erroPedido); mostrarToast('Erro ao salvar a avaliação.', 'erro'); return; }
-  // a média é recalculada no próprio banco (evita confiar num valor calculado no navegador)
-  await sb.rpc('entrega_registrar_avaliacao_motorista', { p_telefone: p.motoristaTelefone, p_nota: nota });
+  const { data: mot, error: erroMot } = await sb.from('entrega_motoristas').select('nota_media,total_avaliacoes').eq('telefone', p.motoristaTelefone).maybeSingle();
+  if(!erroMot && mot){
+    const totalAtual = Number(mot.total_avaliacoes)||0;
+    const mediaAtual = Number(mot.nota_media)||5;
+    const novoTotal = totalAtual+1;
+    const novaMedia = Math.round(((mediaAtual*totalAtual)+nota)/novoTotal*100)/100;
+    await sb.from('entrega_motoristas').update({ nota_media:novaMedia, total_avaliacoes:novoTotal }).eq('telefone', p.motoristaTelefone);
+  }
   registrarAlertaAdmin('avaliacao_recebida', `${p.clienteNome||'Cliente'} avaliou ${p.motoristaNome||'motorista'} (${p.motoristaTelefone||''}) com ${nota} estrela(s).`, pedidoId);
   mostrarToast('Obrigado pela avaliação!', 'sucesso');
   estado.ultimoPedidosJSON='';
@@ -3860,7 +3330,7 @@ function abrirTrocaPlanoMotorista(){
 function fecharTrocaPlanoMotorista(){ resetTrocaPlanoMotorista(); render(); }
 async function carregarDadosMotoristaParaPlano(){
   const t = estado.trocaPlanoMotorista, m = estado.motorista;
-  const { data, error } = await meuPerfilMotorista(m.telefone);
+  const { data, error } = await sb.from('entrega_motoristas').select('id,cpf,plano,taxa_status').eq('telefone', m.telefone).maybeSingle();
   if(error || !data) throw new Error('Não foi possível localizar o cadastro do motorista.');
   t.motoristaId = data.id; t.cpf = data.cpf||'';
   return data;
@@ -3872,8 +3342,7 @@ async function gerarPixUpgradeMotorista(){
   try{
     const dadosMotorista = await carregarDadosMotoristaParaPlano();
     // deixa a taxa pendente, mas NÃO libera o Pro antes de o pagamento ser confirmado
-    // (o valor de R$19,99 é fixado dentro da própria função no banco, não vem do navegador)
-    const { error: erroPend } = await sb.rpc('entrega_motorista_solicitar_upgrade_pro', { p_telefone: m.telefone });
+    const { error: erroPend } = await sb.from('entrega_motoristas').update({ taxa_valor:PLANOS.pro.preco, taxa_status:'pendente' }).eq('id', dadosMotorista.id);
     if(erroPend) throw erroPend;
     const resp = await fetch(`${FUNCOES_URL}/criar-cobranca-pix`, {
       method:'POST', headers:{'Content-Type':'application/json'},
@@ -3892,11 +3361,9 @@ function iniciarPollingUpgradeMotorista(){
   planoPixPollTimer=setInterval(async()=>{
     const t=estado.trocaPlanoMotorista;
     if(!t.motoristaId || t.status==='pago'){ clearInterval(planoPixPollTimer); planoPixPollTimer=null; return; }
-    // a confirmação em si é revalidada dentro da função no banco (taxa_status precisa
-    // estar 'pago' de verdade pra ativar o plano — o navegador não decide isso sozinho)
-    const { data, error } = await sb.rpc('entrega_motorista_confirmar_pro_se_pago', { p_telefone: estado.motorista.telefone });
-    const linha = Array.isArray(data) ? data[0] : data;
-    if(linha && linha.taxa_status==='pago'){
+    const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id',t.motoristaId).maybeSingle();
+    if(data && data.taxa_status==='pago'){
+      const { error } = await sb.from('entrega_motoristas').update({ plano:'pro' }).eq('id',t.motoristaId);
       if(error){ console.error(error); t.erro='Pagamento confirmado, mas houve erro ao ativar o plano. Fale com o suporte.'; render(); return; }
       t.status='pago'; estado.motorista.plano='pro'; clearInterval(planoPixPollTimer); planoPixPollTimer=null;
       mostrarToast('⭐ Pagamento confirmado! Plano Pro ativado.', 'sucesso'); render();
@@ -3912,7 +3379,8 @@ async function mudarMotoristaParaFree(){
   if(m.plano==='free'){ mostrarToast('Você já está no plano Free.'); return; }
   if(!(await confirmarAcao('Voltar para o plano Free? Os benefícios do Pro serão removidos.'))) return;
   try{
-    const { error }=await sb.rpc('entrega_motorista_voltar_free', { p_telefone: m.telefone });
+    const dados=await carregarDadosMotoristaParaPlano();
+    const { error }=await sb.from('entrega_motoristas').update({ plano:'free' }).eq('id',dados.id);
     if(error) throw error;
     estado.motorista.plano='free'; resetTrocaPlanoMotorista(); mostrarToast('Plano alterado para Free.', 'sucesso'); render();
   }catch(e){ console.error(e); mostrarToast('Não consegui alterar o plano agora.', 'erro'); }
@@ -4020,9 +3488,8 @@ async function aceitarPedido(id){
   registrarAlertaAdmin('pedido_aceito', `${mo.nome||'Um motorista'} (${mo.telefone||''}) aceitou o pedido de ${p.clienteNome||'?'}.${acrescimoValor>0?` Acréscimo de R$ ${acrescimoValor.toFixed(2)} aplicado (${motivosAcrescimo.map(m=>m.label).join(', ')}).`:''}`, id);
   enviarPushServidor('cliente', p.clienteTelefone, 'Entregador encontrado!', `${mo.nome||'Um entregador'} vai levar o seu pedido.`);
   if(acrescimoValor>0) enviarPushServidor('cliente', p.clienteTelefone, 'Acréscimo aplicado', `Sua corrida caiu em ${motivosAcrescimo.map(m=>m.label).join(', ')}: foi cobrado um acréscimo de R$ ${acrescimoValor.toFixed(2)}.`);
-  mostrarToast(acrescimoValor>0 ? `Pedido aceito! Acréscimo Pro de R$ ${acrescimoValor.toFixed(2)} aplicado (${motivosAcrescimo.map(m=>m.label).join(', ')}).` : 'Pedido aceito! A tela ficará acesa durante a corrida. Toque em "Iniciar corrida" quando estiver pronto.', 'sucesso');
+  mostrarToast(acrescimoValor>0 ? `Pedido aceito! Acréscimo Pro de R$ ${acrescimoValor.toFixed(2)} aplicado (${motivosAcrescimo.map(m=>m.label).join(', ')}).` : 'Pedido aceito! Toque em "Iniciar corrida" quando estiver pronto para seguir até a coleta.', 'sucesso');
   await carregarPedidos();
-  solicitarTelaAcesa();
 }
 async function iniciarCorrida(id){
   const p = estado.pedidos.find(x=>x.id===id);
@@ -4148,16 +3615,16 @@ async function avancarStatus(id){
           creditarSaldoMotorista(p.motoristaTelefone, valorAjudante)
         ]);
         if(creditoSolicitante.ok && creditoAjudante.ok){
-          mostrarToast(`Entrega concluída com sucesso! Tu ficaste com R$ ${valorAjudante.toFixed(2)} e R$ ${valorSolicitante.toFixed(2)} foi creditado a quem te chamou.`, 'sucesso');
+          mostrarToast(`Entrega concluída! Tu ficaste com R$ ${valorAjudante.toFixed(2)} e R$ ${valorSolicitante.toFixed(2)} foi creditado a quem te chamou.`, 'sucesso');
         } else {
-          mostrarErro('Entrega concluída com sucesso, mas houve um erro ao dividir o valor. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
+          mostrarErro('Entrega concluída, mas houve um erro ao dividir o valor. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
         }
       } else {
         const resultadoCredito = await creditarSaldoMotorista(p.motoristaTelefone, ganhoTotal);
         if(resultadoCredito.ok){
-          mostrarToast(`Entrega concluída com sucesso! R$ ${ganhoTotal.toFixed(2)} creditado.`, 'sucesso');
+          mostrarToast(`Entrega concluída! R$ ${ganhoTotal.toFixed(2)} creditado.`, 'sucesso');
         } else {
-          mostrarErro('Entrega concluída com sucesso, mas houve um erro ao creditar o valor na sua carteira. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
+          mostrarErro('Entrega concluída, mas houve um erro ao creditar o valor na sua carteira. Avisa o suporte com o ID deste pedido, vamos corrigir manualmente.');
         }
       }
     }
@@ -4178,23 +3645,18 @@ function obterPosicaoAtual(){
   return new Promise((resolve)=>{
     if(!navigator.geolocation){ resolve(null); return; }
     navigator.geolocation.getCurrentPosition(
-      (pos)=>resolve({
-        lat:pos.coords.latitude,
-        lon:pos.coords.longitude,
-        accuracy:Number(pos.coords.accuracy)||0
-      }),
-      ()=>resolve(ultimaPosicaoMotorista ? {...ultimaPosicaoMotorista, accuracy:80} : null),
-      { enableHighAccuracy:true, timeout:10000, maximumAge:3000 }
+      (pos)=>resolve({ lat:pos.coords.latitude, lon:pos.coords.longitude }),
+      ()=>resolve(ultimaPosicaoMotorista || null),
+      { enableHighAccuracy:true, timeout:8000, maximumAge:5000 }
     );
   });
 }
 async function verificarNoEndereco(coordAlvo){
-  if(!coordAlvo) return { dentro:true, distanciaKm:0 };
+  if(!coordAlvo) return { dentro:true, distanciaKm:0 }; // sem coordenada cadastrada, não bloqueia
   const posicao = await obterPosicaoAtual();
   if(!posicao) return { dentro:false, distanciaKm:null, semGps:true };
   const distanciaKmAtual = distanciaKm(posicao.lat, posicao.lon, coordAlvo.lat, coordAlvo.lon);
-  const toleranciaKm = Math.max(RAIO_GEOFENCE_KM, Math.min(0.55, ((posicao.accuracy||0)+70)/1000));
-  return { dentro: distanciaKmAtual<=toleranciaKm, distanciaKm: distanciaKmAtual, toleranciaKm };
+  return { dentro: distanciaKmAtual<=RAIO_GEOFENCE_KM, distanciaKm: distanciaKmAtual };
 }
 async function solicitarFoto(pedidoId, tipo){
   const p = estado.pedidos.find(x=>x.id===pedidoId);
@@ -4292,9 +3754,9 @@ function iniciarRastreioMotorista(){
         mostrarToast(msg, 'erro');
       }
     },
-    { enableHighAccuracy:true, maximumAge:3000, timeout:12000 }
+    { enableHighAccuracy:true, maximumAge:10000 }
   );
-  if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 3000);
+  if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 8000);
 }
 function pararRastreioMotorista(){ if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; } avisoLocalizacaoMostrado=false; }
 async function enviarPosicaoMotorista(){
@@ -4302,11 +3764,11 @@ async function enviarPosicaoMotorista(){
   // grava a posição atual do motorista sempre que ele estiver logado — isso alimenta o mapa
   // geral do admin, que mostra motoristas disponíveis mesmo sem corrida em andamento
   if(estado.motorista.telefone){
-    sb.rpc('entrega_motorista_atualizar_localizacao', {
-      p_telefone: estado.motorista.telefone, p_lat: ultimaPosicaoMotorista.lat, p_lng: ultimaPosicaoMotorista.lon
-    });
+    sb.from('entrega_motoristas').update({
+      lat_atual: ultimaPosicaoMotorista.lat, lng_atual: ultimaPosicaoMotorista.lon, lat_atualizado_em: Date.now()
+    }).eq('telefone', estado.motorista.telefone);
   }
-  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status));
+  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0) return;
   await Promise.all(ativos.map(p=>sb.from('entrega_pedidos').update({
     motorista_lat: ultimaPosicaoMotorista.lat, motorista_lng: ultimaPosicaoMotorista.lon, motorista_atualizado_em: Date.now()
@@ -4333,8 +3795,8 @@ function montarMapa(containerId, pedido){
       const div = document.createElement('div');
       div.style.width='100%'; div.style.height='100%';
       slot.appendChild(div);
-      const map = L.map(div,{zoomControl:false, attributionControl:false, fadeAnimation:false, zoomAnimation:false, markerZoomAnimation:false, preferCanvas:true});
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{updateWhenIdle:false,keepBuffer:4}).addTo(map);
+      const map = L.map(div,{zoomControl:false, attributionControl:false});
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
       L.marker(pO,{icon:L.divIcon({className:'',html:'<div style="width:12px;height:12px;border-radius:50%;background:#ff5a3c;border:2px solid #fff"></div>'})}).addTo(map);
       L.marker(pD,{icon:L.divIcon({className:'',html:'<div style="width:12px;height:12px;border-radius:50%;background:#7fae72;border:2px solid #fff"></div>'})}).addTo(map);
       L.polyline([pO,pD],{color:'#a9a89c',weight:2,opacity:0.35,dashArray:'5,7'}).addTo(map);
@@ -4356,7 +3818,7 @@ function montarMapa(containerId, pedido){
         m.mMotorista = L.marker(pM,{icon:iconeMotorista(emoji)}).addTo(m.map);
         m.linhaMotorista = L.polyline([pM,alvo],{color:'#ffc93c',weight:5,opacity:0.9,lineCap:'round'}).addTo(m.map);
         m.posAtual = pM;
-        // Não refaz zoom aqui: evita o "pulo/pisca" quando o primeiro GPS chega.
+        m.map.fitBounds([pO,pD,pM],{padding:[24,24]});
       } else if(m.posAtual && (m.posAtual[0]!==pM[0] || m.posAtual[1]!==pM[1])){
         animarMotorista(m, m.posAtual, pM, alvo);
       } else if(m.linhaMotorista){
@@ -4366,7 +3828,7 @@ function montarMapa(containerId, pedido){
   },30);
 }
 function iconeMotorista(emoji){
-  return L.divIcon({ className:'', html:`<div class="icone-motorista-anim"><span>${emoji}</span></div>`, iconSize:[42,42], iconAnchor:[21,21] });
+  return L.divIcon({ className:'', html:`<div class="icone-motorista-anim"><span>${emoji}</span></div>`, iconSize:[30,30], iconAnchor:[15,15] });
 }
 // bolinha colorida usada no mapa geral do admin (disponível / em corrida / cliente aguardando)
 function iconeBolinhaMapa(emoji, classeCor){
@@ -4550,7 +4012,7 @@ function etaHTML(pedido){
   const min = Math.max(1, Math.round((km/VEICULOS[pedido.veiculo].veloc)*60));
   const txt = pedido.status==='indo_coletar' ? 'até a coleta' : 'até o seu endereço';
   registrarEta(pedido.id, min);
-  return `<div class="eta-banner"><div class="eta-min" id="eta-min-${pedido.id}">~${min} min</div><div class="eta-sub" id="eta-sub-${pedido.id}">${km.toFixed(km<1?2:1)} km ${txt} · atualizado em tempo real</div></div>`;
+  return `<div class="eta-banner"><div class="eta-min" id="eta-min-${pedido.id}">~${min} min</div><div class="eta-sub" id="eta-sub-${pedido.id}">${km.toFixed(1)} km ${txt} · atualizado em tempo real</div></div>`;
 }
 // ---------- contagem regressiva do ETA em tempo real ----------
 // a cada atualização real de posição (registrarEta) fixamos o valor "oficial"; entre uma
@@ -4603,26 +4065,6 @@ function iniciarTickRadarBusca(){
 
 // ---------- relógio da janela grátis de cancelamento (cliente) ----------
 let relogioCancelTickInterval = null;
-
-function etapaClienteHTML(p){
-  if(!p) return '';
-  let n=1, titulo='Buscando um motorista parceiro', sub='Estamos procurando motoristas próximos.';
-  if(p.motoristaTelefone && p.status==='indo_coletar'){ n=2; titulo='Motorista a caminho'; sub='Acompanhe a aproximação em tempo real.'; }
-  if(['coletado','a_caminho'].includes(p.status)){ n=3; titulo='Sua entrega está a caminho'; sub='O motorista já recolheu o pedido.'; }
-  if(p.status==='entregue'){ n=4; titulo='Entrega concluída'; sub='Seu pedido chegou ao destino.'; }
-  const icons=['🔎','🛵','📦','✅'];
-  return `<div class="ef-status-head">
-    <div class="ef-status-icone">${icons[n-1]}</div>
-    <div class="ef-status-txt"><b>${titulo}</b><span>${sub}</span></div>
-  </div>
-  <div class="ef-progresso">
-    <div class="ef-progresso-linha">
-      <i class="${n>=1?'ok':''}"></i><i class="${n>=2?'ok':''}"></i><i class="${n>=3?'ok':''}"></i><i class="${n>=4?'ok':''}"></i>
-    </div>
-    <div class="ef-progresso-legenda"><span>Busca</span><span>Recolha</span><span>Em rota</span><span>Entregue</span></div>
-  </div>`;
-}
-
 function relogioCancelamentoHTML(p){
   // só mostra enquanto o pedido ainda pode ser cancelado e a corrida já foi aceita (janela em contagem)
   if(p.status!=='indo_coletar' || !p.aceitoEm) return '';
@@ -4656,12 +4098,26 @@ function iniciarTickRelogioCancelamento(){
 // ---------- trilha/selo ----------
 function trilhaHTML(status){
   const i = ESTAGIOS.indexOf(status);
+  const labels = ['Buscando','A caminho da coleta','Recolhido','Em rota','Entregue'];
   let pontos='';
   ESTAGIOS.forEach((e,idx)=>{
-    pontos += `<div class="ponto ${idx<i?'feito':''} ${idx===i?'atual':''}"></div>`;
-    if(idx<ESTAGIOS.length-1) pontos += `<div class="barra ${idx<i?'feito':''}"></div>`;
+    const concluido = i>=0 && idx<i;
+    const atual = idx===i;
+    const entregueConcluido = status==='entregue' && idx===i;
+    const feito = concluido || entregueConcluido;
+    pontos += `<div class="ponto ${feito?'feito':''} ${atual&&!entregueConcluido?'atual':''}">${feito?'✓':(atual?String(idx+1):'')}</div>`;
+    if(idx<ESTAGIOS.length-1){
+      const barraFeita = i>idx || status==='entregue';
+      const barraAtual = i===idx && status!=='entregue';
+      pontos += `<div class="barra ${barraFeita?'feito':''} ${barraAtual?'atual':''}"></div>`;
+    }
   });
-  return `<div class="trilha">${pontos}</div><div class="etiquetas"><span>Buscando</span><span>Coleta</span><span>Recolhido</span><span>Rota</span><span>Entregue</span></div>`;
+  const etiquetas = labels.map((l,idx)=>{
+    const feito = (i>idx) || (status==='entregue' && idx===i);
+    const atual = idx===i && status!=='entregue';
+    return `<span class="${feito?'feito':''} ${atual?'atual':''}">${feito?'✓ ':''}${l}</span>`;
+  }).join('');
+  return `<div class="trilha">${pontos}</div><div class="etiquetas">${etiquetas}</div>`;
 }
 function seloHTML(status){
   if(status==='buscando') return `<span class="selo selo-buscando">Buscando</span>`;
@@ -4859,7 +4315,7 @@ function cartaoPedidoAtivo(p){
   if(aguardandoInicio){
     botaoAcao = `<button class="btn btn-primario btn-pequeno" ${atributoDesabilitado('iniciarCorrida_'+p.id)} onclick="executarComCarregando('iniciarCorrida_${p.id}', ()=>iniciarCorrida('${p.id}'))">${rotuloCarregando('iniciarCorrida_'+p.id, '▶️ Iniciar corrida', 'Iniciando...')}</button>`;
   } else if(p.status==='indo_coletar'){
-    botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="solicitarFoto('${p.id}','antes')">📷 Cheguei / tirar foto e recolher</button>`;
+    botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="solicitarFoto('${p.id}','antes')">📷 Cheguei / tirar foto e recolher (obrigatória)</button>`;
   } else if(p.status==='coletado'){
     botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="avancarStatus('${p.id}')">Segui viagem</button>`;
   } else if(p.status==='a_caminho' && temMaisParadas && !ultimaParada){
@@ -4948,6 +4404,18 @@ function fotosHTML(p){
     </div>
   </div>`;
 }
+function fotosFinalizacaoClienteHTML(p){
+  if(!p.fotoAntesUrl && !p.fotoDepoisUrl){
+    return `<div class="ec-comprovante"><div class="ec-comprovante-titulo">📸 Comprovante da entrega</div><div class="ec-sem-foto">A foto final ainda está sendo sincronizada. Ela aparecerá aqui automaticamente.</div></div>`;
+  }
+  return `<div class="ec-comprovante">
+    <div class="ec-comprovante-titulo">📸 Comprovante da entrega</div>
+    <div class="ec-fotos">
+      ${p.fotoAntesUrl ? `<div class="ec-foto" onclick="ampliarFoto('${p.fotoAntesUrl}')"><img src="${p.fotoAntesUrl}" alt="Foto da coleta"><span>Foto da coleta</span></div>` : ''}
+      ${p.fotoDepoisUrl ? `<div class="ec-foto entrega" onclick="ampliarFoto('${p.fotoDepoisUrl}')"><img src="${p.fotoDepoisUrl}" alt="Foto da entrega concluída"><span>✅ Foto da entrega concluída</span></div>` : ''}
+    </div>
+  </div>`;
+}
 
 // ---------- telas ----------
 function telaPreparandoBV(){
@@ -4997,10 +4465,6 @@ function telaBoasVindas(){
       <div class="bv-logo-badge">
         <img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash">
       </div>
-      <div class="bv-topo-destaque">
-        <strong>⚡ Entrega rápida</strong>
-        <span>A partir de R$ 3 • cidade e zona rural</span>
-      </div>
     </div>
 
     <!-- Primeira mensagem: quem veio do anúncio entende o serviço em poucos segundos -->
@@ -5012,14 +4476,9 @@ function telaBoasVindas(){
       Mercado, farmácia, documentos, encomendas e muito mais.
     </div>
 
-    <div style="display:flex;justify-content:center;gap:6px;flex-wrap:wrap;margin:0 auto 10px">
-      <span style="padding:6px 9px;border-radius:999px;background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.30);font-size:11.5px;font-weight:700">📍 Muzambinho e região</span>
-      <span style="padding:6px 9px;border-radius:999px;background:rgba(111,207,106,.10);border:1px solid rgba(111,207,106,.30);font-size:11.5px;font-weight:700">🌿 Cidade + zona rural</span>
-    </div>
-
-    <div class="bv-acoes-rapidas">
-      <button class="bv-acao-rapida bv-acao-cliente" onclick="entrarComoVisitante('cliente')">📦 PEDIR ENTREGA</button>
-      <button class="bv-acao-rapida bv-acao-motorista" onclick="iniciarPreparacaoBV('entregador')">🏍️ SER MOTORISTA</button>
+    <div style="display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:0 auto 18px">
+      <span style="padding:7px 10px;border-radius:999px;background:rgba(255,201,60,.12);border:1px solid rgba(255,201,60,.30);font-size:12px;font-weight:700">📍 Muzambinho e região</span>
+      <span style="padding:7px 10px;border-radius:999px;background:rgba(111,207,106,.10);border:1px solid rgba(111,207,106,.30);font-size:12px;font-weight:700">🌿 Cidade + zona rural</span>
     </div>
 
     <div class="bv-escolha-card" style="margin-bottom:14px">
@@ -5051,7 +4510,7 @@ function telaBoasVindas(){
       </button>
 
       <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('cliente')">
-        🔐 Já tenho conta — Entrar
+        🔐 Já tenho conta — Senha ou facial
       </button>
 
       <div class="bv-cta-sub">Você pode conhecer e calcular antes de concluir o cadastro.</div>
@@ -5092,7 +4551,7 @@ function telaBoasVindas(){
       </button>
 
       <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('entregador')">
-        🔐 Já tenho conta — Entrar
+        🔐 Já tenho conta — Senha ou facial
       </button>
 
       <div style="text-align:center;margin-top:10px">
@@ -5173,7 +4632,7 @@ function telaAcessoCliente(){
   <div style="text-align:center;font-size:13px;color:var(--poeira);margin:-4px 0 14px">Quer entregar e ganhar dinheiro em vez de pedir? <span style="color:var(--mango);text-decoration:underline;cursor:pointer;font-weight:700" onclick="entrarBoasVindas('entregador')">Ir para o login de motorista</span></div>
   <div class="campo-motorista">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">Entrar como cliente</h2>
-    <div class="subtitulo">Entre com telefone e senha. Sem selfie e sem reconhecimento facial.</div>
+    <div class="subtitulo">Entre com telefone e senha. A validação facial será solicitada somente ao confirmar uma corrida.</div>
     <label>Telefone</label>
     <input type="tel" id="lc-telefone" value="${pc.loginTelefone}" placeholder="(35) 90000-0000">
     <label>Senha</label>
@@ -5181,6 +4640,11 @@ function telaAcessoCliente(){
     <div style="text-align:right;margin-top:-6px"><span style="font-size:13px;color:var(--poeira);text-decoration:underline;cursor:pointer" onclick="abrirEsqueciSenha('cliente')">Esqueci minha senha</span></div>
     ${pc.loginErro?`<div class="erro-campo">${pc.loginErro}</div>`:''}
     <button class="btn btn-azul" ${atributoDesabilitado('loginCliente')} onclick="executarComCarregando('loginCliente', loginCliente)">${rotuloCarregando('loginCliente', '🔐 Entrar com senha', 'Entrando...')}</button>
+    <div style="display:flex;align-items:center;gap:10px;margin:10px 0;color:var(--poeira);font-size:12px">
+      <div style="height:1px;background:var(--linha);flex:1"></div><span>ou</span><div style="height:1px;background:var(--linha);flex:1"></div>
+    </div>
+    <button class="btn btn-secundario" ${atributoDesabilitado('loginFacialCliente')} onclick="executarComCarregando('loginFacialCliente', loginFacialCliente)">${rotuloCarregando('loginFacialCliente', '🙂 Entrar com reconhecimento facial', 'Abrindo câmera...')}</button>
+    <div style="font-size:12px;color:var(--poeira);margin-top:7px;text-align:center">Digite apenas o telefone acima para entrar com o rosto cadastrado.</div>
     <div style="margin-top:16px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
       <div style="font-weight:700;color:var(--osso);font-size:16px">Ainda não tem conta?</div>
       <div style="font-size:14.5px;color:var(--poeira);margin-top:3px">Receba seus pedidos sem dor de cabeça — de onde estiver, pro seu negócio ou pra sua casa!</div>
@@ -5206,8 +4670,8 @@ function telaCadastroCliente(){
     </div>
   </div>
   <div class="campo-motorista">
-    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">${c.recuperando?'Continuar cadastro':'Criar conta'}</h2>
-    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">${c.recuperando?'Cadastro encontrado. Confirme seus dados e a senha para continuar.':'Cadastro rápido para confirmar sua corrida. Use seu telefone e uma senha fácil de lembrar.'}</div>
+    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">Criar conta</h2>
+    <div style="font-size:13px;color:var(--poeira);margin:0 0 10px;line-height:1.45">Cadastro rápido para confirmar sua corrida. Use seu telefone e uma senha fácil de lembrar.</div>
     <label>O seu nome</label>
     <input type="text" id="cc-nome" value="${c.nome}" oninput="estado.painelCliente.cadastro.nome=this.value" placeholder="Ex: Ana Souza">
     <label>Telefone</label>
@@ -5216,7 +4680,7 @@ function telaCadastroCliente(){
     <input type="text" id="cc-senha" value="${c.senha}" oninput="estado.painelCliente.cadastro.senha=this.value" placeholder="Mínimo 4 caracteres" style="-webkit-text-security:disc;text-security:disc;">
     
     ${c.erro?`<div class="erro-campo">${c.erro}</div>`:''}
-    <button class="btn btn-primario" ${atributoDesabilitado('cadastrarCliente')} onclick="executarComCarregando('cadastrarCliente', cadastrarCliente)">${rotuloCarregando('cadastrarCliente', c.recuperando?'Continuar cadastro':'Cadastrar', c.recuperando?'Continuando...':'Cadastrando...')}</button>
+    <button class="btn btn-primario" ${atributoDesabilitado('cadastrarCliente')} onclick="executarComCarregando('cadastrarCliente', cadastrarCliente)">${rotuloCarregando('cadastrarCliente', 'Cadastrar', 'Cadastrando...')}</button>
     <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:8px">Cadastro gratuito. Sem mensalidade. Sem pegadinha.</div>
     <div class="link-alt">Já tem conta? <a onclick="irParaLoginCliente()">Entre aqui</a></div>
   </div>`;
@@ -5250,19 +4714,15 @@ function irEtapaPedido(alvo){
   render();
   fixarEtapaPedidoNaTela();
 }
-function fixarEtapaPedidoNaTela(seletor='.etapa-conteudo'){
-  // Mantém cada ação na etapa atual. Qualquer render interno (veículo, prioridade, agendamento)
-  // volta para a mesma área, em vez de jogar o cliente para cima da página.
+function fixarEtapaPedidoNaTela(){
+  // Dois frames garantem que o HTML novo já foi calculado antes de posicionar.
+  // Usa rolagem imediata: a etapa seguinte fica parada no ponto certo e só muda se o cliente rolar.
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const alvo = document.querySelector(seletor) || document.querySelector('.etapa-conteudo');
+    const alvo = document.querySelector('.etapa-conteudo');
     if(!alvo) return;
-    const topo = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY - 8);
+    const topo = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY - 10);
     window.scrollTo({top:topo, behavior:'auto'});
   }));
-}
-function renderEtapaPedidoFixa(seletor='.etapa-conteudo'){
-  render();
-  fixarEtapaPedidoNaTela(seletor);
 }
 
 function entregasConfirmadasCliente(){
@@ -5283,13 +4743,14 @@ function popupEntregaConcluidaHTML(){
   const p = pedidoEntregaPendenteConfirmacao();
   if(!p) return '';
   estado.entregaConfirmacaoPedidoId = p.id;
-  return `<div class="entrega-concluida-fundo" role="dialog" aria-modal="true" aria-label="Entrega concluída com sucesso">
+  return `<div class="entrega-concluida-fundo" role="dialog" aria-modal="true" aria-label="Entrega concluída">
     <div class="entrega-concluida-popup">
       <div class="ec-icone">🎉</div>
       <div class="ec-titulo">Parabéns! Sua entrega foi concluída.</div>
       <div class="ec-sub">O entregador marcou o pedido como entregue. Confira os dados e confirme que recebeu tudo certinho.</div>
       <div class="ec-dados"><b>📍 Recolha</b><br>${p.origem}<br><br><b>📍 Entrega</b><br>${p.destino}<br><br><b>Pedido</b> ${p.id}</div>
-      ${fotosHTML(p)}
+      ${trilhaHTML('entregue')}
+      ${fotosFinalizacaoClienteHTML(p)}
       <div class="preco" style="margin:14px 0 4px">R$ ${Number(p.preco||0).toFixed(2)}</div>
       <button class="btn btn-verde" style="width:100%;margin-top:14px" onclick="confirmarRecebimentoCliente('${p.id}')">✅ Confirmar que recebi</button>
       <div style="font-size:12px;color:var(--poeira);margin-top:10px">Este aviso fica na tela até você confirmar o recebimento.</div>
@@ -5319,7 +4780,7 @@ function telaCliente(){
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
     return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
       <div style="font-size:54px"><span class="girando-emoji">🔎</span></div>
-      <h2 style="font-size:27px;margin:8px 0 5px">Buscando um motorista parceiro...</h2>
+      <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
       <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
       <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
       <div style="margin-top:15px;font-size:14px;color:var(--poeira)">Estamos procurando o motorista disponível mais adequado para a sua entrega.</div>
@@ -5375,7 +4836,6 @@ function telaCliente(){
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
     ${f.etapaPedido===1 ? `
-    <div class="etapa-titulo-fixo"><div class="faixa-incentivo-pedido">⚡ ETAPA 1 • Informe os endereços</div></div>
     <div class="faixa-incentivo-pedido">⚡ Peça em poucos passos • Rápido e seguro</div>
     <div class="voz-endereco-ajuda">🎙️ <b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.</div><label style="margin-top:0">Endereço de recolha</label>
     ${campoEnderecoComVoz('c-origem', f.origem, 'Rua, número, bairro ou ponto de referência', 'origem')}
@@ -5417,7 +4877,6 @@ function telaCliente(){
     <button class="btn btn-primario" style="margin-top:12px" onclick="irEtapaPedido(2)">Continuar →</button>
     ` : ''}
     ${f.etapaPedido===2 ? `
-    <div class="etapa-titulo-fixo"><div class="faixa-incentivo-pedido">🚗 ETAPA 2 • Escolha retirada e veículo</div></div>
     <label style="margin-top:0">Retirada</label>
     <div class="aba-mini">
       <button class="${f.tipoRetirada==='agora'?'ativo':''}" onclick="definirTipoRetirada('agora')">Retirar agora</button>
@@ -5425,9 +4884,8 @@ function telaCliente(){
     </div>
     ${f.tipoRetirada==='agendado' ? `<input type="datetime-local" id="c-horario-agendado" value="${f.horarioAgendado}">` : ''}
 
-    <label style="font-size:18px;color:var(--osso)">🚘 Veículos disponíveis <span style="color:var(--mango)">(obrigatório)</span></label>
-    <div style="font-size:13px;color:var(--poeira);margin:-2px 0 8px">Toque em uma opção. A selecionada fica destacada em amarelo.</div>
-    <div class="veiculos" id="escolha-veiculo-pedido">
+    <label>Veículo</label>
+    <div class="veiculos">
       ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${f.veiculo===k?'sel':''}" onclick="mudarVeiculo('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
     </div>
     ${(VEICULOS[f.veiculo].limitePeso || VEICULOS[f.veiculo].volume) ? `
@@ -5466,7 +4924,6 @@ function telaCliente(){
     </div>
     ` : ''}
     ${f.etapaPedido===3 ? `
-    <div class="etapa-titulo-fixo"><div class="faixa-incentivo-pedido">✅ ETAPA 3 • Confira e confirme</div></div>
     <label style="margin-top:0">Resumo do pedido</label>
     <div class="end" style="margin-bottom:10px"><b>Recolha</b>${f.origem}<b style="margin-top:8px">Entrega</b>${f.destino}</div>
     ${estado.calculando ? `<div class="subtitulo" style="margin-top:4px"><span class="girando girando-escuro"></span> Calculando o valor da corrida...</div>` : ''}
@@ -5607,23 +5064,9 @@ function passosHTML(atual){
   for(let i=1;i<=6;i++) html += `<div class="p ${i<atual?'feito':i===atual?'atual':''}"></div>`;
   html += '</div>';
   if(atual===1){
-    html += `<div style="text-align:center;margin-top:8px">
-      <div style="font-family:'Rajdhani';font-size:15px;font-weight:800;color:var(--mango);text-transform:uppercase;letter-spacing:.35px">⚡ Pré-cadastro rápido</div>
-      <div style="font-size:12.5px;color:var(--poeira);margin-top:2px">Leva menos de 1 minuto • documentos só na ativação</div>
-    </div>`;
+    html += `<div style="text-align:center;font-size:13.5px;font-weight:600;color:var(--mango);margin-top:8px">🎯 Comece a ganhar dinheiro entregando em Muzambinho e região!</div>`;
   }
   return html;
-}
-
-function alternarSenhaMotorista(){
-  const input=document.getElementById('cm-senha');
-  const botao=document.getElementById('cm-senha-ver');
-  if(!input) return;
-  const mostrando=input.dataset.mostrando==='1';
-  input.dataset.mostrando=mostrando?'0':'1';
-  input.style.webkitTextSecurity=mostrando?'disc':'none';
-  input.style.textSecurity=mostrando?'disc':'none';
-  if(botao) botao.textContent=mostrando?'👁':'🙈';
 }
 
 function telaCadastroMotorista(){
@@ -5642,20 +5085,20 @@ function telaCadastroMotorista(){
   let corpo='';
   if(c.etapa===1){
     corpo = `
-    <h2 style="font-family:'Rajdhani';font-weight:800;font-size:19px;text-transform:uppercase;margin:0 0 4px">Quero trabalhar com entregas</h2>
-    <div style="font-size:13px;color:var(--poeira);margin:0 0 12px;line-height:1.4">Preencha seus dados básicos. Você conhece o app primeiro e envia os documentos só quando for ativar a conta.</div>
+    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 10px">Criar conta</h2>
     <div class="campo-icone"><span class="ic">👤</span><input type="text" id="cm-nome" value="${c.nome}" placeholder="Nome completo"></div>
     <div class="campo-icone"><span class="ic">📞</span><input type="tel" id="cm-telefone" value="${c.telefone}" placeholder="Telefone / WhatsApp"></div>
     <div class="campo-icone"><span class="ic">🏙️</span><input type="text" id="cm-cidade" value="${c.cidade}" placeholder="Cidade"></div>
-    <div class="campo-icone" style="position:relative;padding-right:48px"><span class="ic">🔒</span><input type="text" id="cm-senha" value="${c.senha}" placeholder="Crie uma senha" style="-webkit-text-security:disc;text-security:disc;padding-right:42px"><button id="cm-senha-ver" type="button" onclick="event.stopPropagation();alternarSenhaMotorista()" aria-label="Mostrar ou ocultar senha" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:0;background:transparent;font-size:20px;cursor:pointer;padding:0">👁</button></div>
-    <label style="margin-top:10px;font-size:15px">Como você entrega?</label>
+    <div class="campo-icone"><span class="ic">🔒</span><input type="text" id="cm-senha" value="${c.senha}" placeholder="Escolha uma senha fácil de lembrar" style="-webkit-text-security:disc;text-security:disc;"></div>
+    <div style="font-size:12.5px;color:var(--poeira);margin:0 0 10px">⚡ Este é só o pré-cadastro. Você pode conhecer o sistema antes de enviar documentos.</div>
+    <label style="margin-top:10px">Como você entrega?</label>
     <div class="veiculos">
-      ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${c.veiculo===k?'sel':''}" onclick="mudarVeiculoCadastro('${k}')" style="position:relative">${c.veiculo===k?'<span style="position:absolute;top:6px;right:7px;color:var(--mango);font-weight:900;font-size:15px">✓</span>':''}<span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
+      ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${c.veiculo===k?'sel':''}" onclick="mudarVeiculoCadastro('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
     </div>
-    <div style="margin-top:10px;padding:10px 12px;border-radius:11px;background:rgba(255,201,60,.08);border:1px solid rgba(255,201,60,.28);font-size:12.5px;color:var(--poeira);line-height:1.45"><b style="color:var(--osso)">📦 Receba pedidos na sua região</b><br>Escolha quando ficar disponível e aceite as entregas que quiser.</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:6px">📄 CPF, documentos e uma selfie simples ficam para a ativação da conta. Assim você conhece o app primeiro.</div>
     ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
-    <button class="btn btn-primario" ${c.enviando?'disabled':''} onclick="avancarEtapa1()" style="border-radius:12px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px;font-size:17px;min-height:56px">${c.enviando?'<span class="girando"></span>':'QUERO SER MOTORISTA ⚡'}</button>
-    <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:7px">✅ Cadastro grátis • Sem mensalidade • Documentos só na ativação</div>
+    <button class="btn btn-primario" ${c.enviando?'disabled':''} onclick="avancarEtapa1()" style="border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">${c.enviando?'<span class="girando"></span>':'☁️ FAZER PRÉ-CADASTRO'}</button>
+    <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:8px">✅ Cadastro gratuito • Sem mensalidade<br>Sem pegadinha — comece quando quiser!</div>
     <div class="link-alt">Já é cadastrado? <a onclick="irParaLogin()">Entrar</a></div>`;
   } else if(c.etapa===2){
     corpo = `
@@ -5886,8 +5329,6 @@ function telaMotorista(){
   const agoraTs = Date.now();
   const disponiveis = m.disponivel ? estado.pedidos
     .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
-    // Libera primeiro aos mais próximos e amplia automaticamente se ninguém aceitar.
-    .filter(p=>pedidoLiberadoPorProximidade(p, agoraTs))
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
     // raio de atendimento é um benefício do plano Pro — só filtra por distância quem tem plano Pro e configurou um raio
     .filter(p=> !(m.plano==='pro' && m.raioAtendimentoKm && p.distanciaAteMim!=null) || p.distanciaAteMim<=m.raioAtendimentoKm)
@@ -6168,7 +5609,7 @@ function comoFuncionaClienteHTML(){
   return `
   <div class="cf-passo"><div class="num">1</div><div class="conteudo"><b>Cria a sua conta</b><span>Cadastra-te com nome, telefone e senha. Depois é só entrar sempre com o mesmo telefone.</span></div></div>
   <div class="cf-passo"><div class="num">2</div><div class="conteudo"><b>Peça a sua entrega</b><span>Informe o endereço de retirada e de entrega. Pode adicionar até ${MAX_PARADAS_EXTRA+1} endereços numa única corrida e reordená-los como quiser.</span></div></div>
-  <div class="cf-passo"><div class="num">3</div><div class="conteudo"><b>Veículos disponíveis</b><span>${Object.values(VEICULOS).map(v=>v.emoji+' '+v.label).join(' · ')} — o preço é calculado automaticamente pela distância.</span></div></div>
+  <div class="cf-passo"><div class="num">3</div><div class="conteudo"><b>Escolha o veículo</b><span>${Object.values(VEICULOS).map(v=>v.emoji+' '+v.label).join(' · ')} — o preço é calculado automaticamente pela distância.</span></div></div>
   <div class="cf-passo"><div class="num">4</div><div class="conteudo"><b>Confirme e acompanhe</b><span>O pedido vai para os entregadores da região. Assim que um aceita, aparece a foto, o veículo, a placa e a nota dele — e você vê tudo no mapa em tempo real, com o tempo estimado de chegada.</span></div></div>
   <div class="cf-passo"><div class="num">5</div><div class="conteudo"><b>Fale com o entregador</b><span>Use o chat ou o botão "Ligar" a qualquer momento durante a entrega.</span></div></div>
   <div class="cf-passo"><div class="num">6</div><div class="conteudo"><b>Receba e avalie</b><span>O entregador tira foto na coleta e na entrega — é a sua garantia de que o produto saiu e chegou certinho. No final, avalie o entregador de 1 a 5 estrelas.</span></div></div>
@@ -6300,8 +5741,6 @@ function _efAssinaturaTela(){
   ].join('|');
 }
 function render(){
-  document.body.classList.toggle('modo-cliente', estado.modo==='cliente');
-  document.body.classList.toggle('modo-motorista', estado.modo==='entregador');
   const app = document.getElementById('app');
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
@@ -6415,7 +5854,15 @@ function render(){
     </div>` : ''}
     <input type="file" id="input-doc-motorista" accept="image/*" style="display:none" onchange="processarDocumentoSelecionado(this)">
     <input type="file" id="input-doc-reenvio" accept="image/*" style="display:none" onchange="processarReenvioDocumento(this)">
-    ${estado.alertaMotorista ? popupMotoristaEncontradoHTML() : ''}
+    ${estado.alertaMotorista ? `
+    <div class="alerta-motorista" onclick="fecharAlertaMotorista()">
+      <div class="alerta-emoji">🛵</div>
+      <div class="alerta-texto">
+        <div class="alerta-titulo">Motorista encontrado!</div>
+        <div class="alerta-sub">${estado.alertaMotorista.nome} aceitou o seu pedido e está a caminho. Você ainda tem ${Math.round(JANELA_CANCELAMENTO_MS/60000)} minutos pra cancelar sem custo.</div>
+      </div>
+      <button class="alerta-fechar" onclick="event.stopPropagation();fecharAlertaMotorista()">&times;</button>
+    </div>` : ''}
     ${estado.avisoGeralExibido ? `
     <div class="alerta-motorista" onclick="fecharAvisoGeral()">
       <div class="alerta-emoji">📢</div>
@@ -6477,7 +5924,7 @@ function render(){
     _ultimoHeaderHTML = headerHTML;
   }
   const _cabecalhoAtual = document.getElementById('app-header');
-  if(_cabecalhoAtual) _cabecalhoAtual.className = 'topo' + (estado.modo==='cliente' && estado.cliente.logado ? ' cliente-logado' : '');
+  if(_cabecalhoAtual) _cabecalhoAtual.className = 'topo' + (estado.modo==='cliente' && estado.cliente.logado ? ' cliente-logado' : '') + (estado.modo==='entregador' && estado.motorista.ativo ? ' motorista-logado' : '');
   document.getElementById('app-resto').innerHTML = restoHTML;
   const bind=(id,path)=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',(e)=>setDeep(path,e.target.value)); };
   bind('c-nome','form.nome'); bind('c-telefone','form.telefone'); bind('c-origem','form.origem');
@@ -6520,15 +5967,7 @@ function render(){
       montarMapa('mapa-m-'+p.id, p);
     }
   });
-  if(estado.alertaMotorista){
-    const pp = estado.pedidos.find(x=>x.id===estado.alertaMotorista.pedidoId);
-    if(pp && pp.origemCoord && pp.destinoCoord){
-      idsMapasAtivos.add('mapa-encontrado-'+pp.id);
-      montarMapa('mapa-encontrado-'+pp.id, pp);
-    }
-  }
   limparMapasInativos(idsMapasAtivos);
-  solicitarTelaAcesa();
   if(estado.admin.aberto && estado.admin.logado && estado.admin.aba==='resumo') montarMapaAdminGeral();
   if(estado.chatAberto) renderChat();
   if(estado.suporteAberto) renderSuporteChat();
@@ -6595,9 +6034,9 @@ function setDeep(path,value){
 function mudarVeiculo(k){
   estado.form.veiculo=k;
   if(estado.form.distancia!=null){ estado.form.duracaoMin = Math.max(3, Math.round((estado.form.distancia/VEICULOS[k].veloc)*60)); }
-  renderEtapaPedidoFixa('#escolha-veiculo-pedido');
+  render();
 }
-function alternarRoca(){ estado.form.roca = !estado.form.roca; renderEtapaPedidoFixa(); }
+function alternarRoca(){ estado.form.roca = !estado.form.roca; render(); }
 function mudarModo(m){ estado.modo=m; estado.ultimoPedidosJSON=''; salvarLocal('ef_modo', m); render(); carregarPedidos(); atualizarPresencaTipo(); }
 function voltarParaEscolhaModo(){ estado.telaBoasVindas = true; bvPreparando = null; removerLocal('ef_modo'); render(); }
 function irParaCadastroEntregadorViaBanner(){
@@ -6623,12 +6062,16 @@ async function entrarComoMotorista(){
 }
 function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); if(estado.motorista.telefone) atualizarDisponibilidadeDB(estado.motorista.telefone,false); estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
 async function atualizarDisponibilidadeDB(telefone, disponivel){
-  const temPosicao = disponivel && ultimaPosicaoMotorista;
-  const { error } = await sb.rpc('entrega_motorista_definir_disponivel_com_posicao', {
-    p_telefone: telefone, p_disponivel: disponivel,
-    p_lat: temPosicao ? ultimaPosicaoMotorista.lat : null,
-    p_lng: temPosicao ? ultimaPosicaoMotorista.lon : null
-  });
+  const agora = Date.now();
+  const payload = { disponivel, disponivel_atualizado_em: agora };
+  // Ao entrar online, grava a posição capturada no MESMO update do status.
+  // Assim nunca aparece "online" no resumo sem existir coordenada para o mapa.
+  if(disponivel && ultimaPosicaoMotorista){
+    payload.lat_atual = ultimaPosicaoMotorista.lat;
+    payload.lng_atual = ultimaPosicaoMotorista.lon;
+    payload.lat_atualizado_em = agora;
+  }
+  const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
   return !error;
 }
 async function alternarDisponibilidade(){
@@ -6668,7 +6111,7 @@ async function alternarDisponibilidade(){
 async function salvarRaioAtendimento(valor){
   const m = estado.motorista;
   const km = valor ? Number(valor) : null;
-  const { error } = await sb.rpc('entrega_motorista_definir_raio_atendimento', { p_telefone: m.telefone, p_km: km });
+  const { error } = await sb.from('entrega_motoristas').update({ raio_atendimento_km: km }).eq('telefone', m.telefone);
   if(error){ console.error(error); mostrarToast('Erro ao gravar o raio de atendimento.', 'erro'); return; }
   m.raioAtendimentoKm = km;
   mostrarToast(km ? `Raio de atendimento ajustado pra ${km} km.` : 'Raio de atendimento removido — voltas a ver todos os pedidos.', 'sucesso');
@@ -6714,7 +6157,7 @@ async function avisarClienteOcorrenciaEntrega(pedido, fase='ocorrencia'){
 // botão SOS flutuante (visível em todas as telas do motorista Pro): acha a entrega
 // em andamento e abre direto o chamado; se houver mais de uma, pergunta qual.
 function abrirSOSFlutuante(){
-  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status));
+  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0){ mostrarToast('Você só pode chamar um motorista amigo durante uma entrega em andamento.'); return; }
   // se houver mais de uma entrega ativa, chama ajuda pra mais recente (a que provavelmente está em mãos agora)
   const escolhida = ativos.sort((a,b)=>b.iniciadoEm-a.iniciadoEm)[0];
@@ -6833,11 +6276,7 @@ async function enviarReenvioDocumentos(){
 // =================== CONTA DE CLIENTE ===================
 
 // ================= BIOMETRIA FACIAL + PROVA DE MOVIMENTO =================
-const FACE_MODELS_URLS = [
-  'https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/weights',
-  'https://unpkg.com/face-api.js@0.22.2/weights',
-  'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@0.22.2/weights'
-];
+const FACE_MODELS_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
 let faceModelsReady = false;
 let faceModelsLoading = null;
 
@@ -6849,25 +6288,15 @@ async function carregarModelosFaciais(){
   if(faceModelsReady) return true;
   if(faceModelsLoading) return faceModelsLoading;
   faceModelsLoading=(async()=>{
-    const limite=Date.now()+18000;
+    const limite=Date.now()+12000;
     while(typeof faceapi==='undefined' && Date.now()<limite) await new Promise(r=>setTimeout(r,150));
-    if(typeof faceapi==='undefined') throw new Error('Validação facial não carregou. Confira sua internet e tente novamente.');
-    let ultimoErro=null;
-    for(const baseUrl of FACE_MODELS_URLS){
-      try{
-        await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(baseUrl),
-          faceapi.nets.faceLandmark68Net.loadFromUri(baseUrl),
-          faceapi.nets.faceRecognitionNet.loadFromUri(baseUrl)
-        ]);
-        faceModelsReady=true;
-        return true;
-      }catch(e){
-        ultimoErro=e;
-        console.warn('Falha ao carregar modelos faciais em',baseUrl,e);
-      }
-    }
-    throw new Error('Não consegui carregar a validação facial. Verifique a internet e tente novamente.');
+    if(typeof faceapi==='undefined') throw new Error('Biblioteca facial não carregou. Verifique sua internet.');
+    await Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS_URL),
+      faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS_URL),
+      faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS_URL)
+    ]);
+    faceModelsReady=true; return true;
   })().catch(e=>{ faceModelsLoading=null; throw e; });
   return faceModelsLoading;
 }
@@ -6906,41 +6335,20 @@ async function fluxoFacial({tipo,telefone,modo='cadastro',descriptorSalvo=null})
   let stream=null, cancelado=false; modal.querySelector('#ef-face-cancel').onclick=()=>{cancelado=true; if(stream) stream.getTracks().forEach(t=>t.stop()); fecharModalFacial();};
   try{
     instr.textContent='Carregando validação facial…';
-    if(!window.isSecureContext) throw new Error('A câmera só funciona no site seguro (HTTPS). Abra o Entregas Flash pelo endereço oficial.');
-    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Este aparelho ou navegador não liberou acesso à câmera.');
     await carregarModelosFaciais(); if(cancelado) return {ok:false,cancelado:true};
-    instr.textContent='Abrindo câmera…';
-    try{
-      stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'user'},width:{ideal:640},height:{ideal:640}},audio:false});
-    }catch(e){
-      if(e && (e.name==='OverconstrainedError' || e.name==='NotFoundError')){
-        stream=await navigator.mediaDevices.getUserMedia({video:true,audio:false});
-      }else if(e && (e.name==='NotAllowedError' || e.name==='SecurityError')){
-        throw new Error('Permissão da câmera bloqueada. Libere a câmera para o Entregas Flash nas configurações do navegador/app.');
-      }else if(e && e.name==='NotReadableError'){
-        throw new Error('A câmera está sendo usada por outro aplicativo. Feche a câmera/WhatsApp e tente novamente.');
-      }else{
-        throw e;
-      }
-    }
-    video.srcObject=stream;
-    await new Promise((resolve,reject)=>{
-      const t=setTimeout(()=>reject(new Error('A câmera demorou para iniciar. Tente novamente.')),7000);
-      const pronto=()=>{clearTimeout(t);resolve();};
-      if(video.readyState>=2) pronto(); else video.onloadedmetadata=pronto;
-    });
-    await video.play();
-    const opts=new faceapi.TinyFaceDetectorOptions({inputSize:160,scoreThreshold:.42});
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:720}},audio:false});
+    video.srcObject=stream; await video.play();
+    const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.55});
     let base=null, ultimaDet=null;
     const etapas=[
       {txt:'Posicione o rosto',ico:'🙂',ok:m=>!!m,tempo:900},
-      {txt:'Vire para a esquerda',ico:'←',ok:m=>base && Math.abs(m.nx-base.nx)>.035,tempo:650},
-      {txt:'Olhe para cima',ico:'↑',ok:m=>base && (m.ny-base.ny)<-.025,tempo:650},
-      {txt:'Volte ao centro',ico:'✓',ok:m=>base && Math.abs(m.nx-base.nx)<.045,tempo:700}
+      {txt:'Vire para a esquerda',ico:'←',ok:m=>base && Math.abs(m.nx-base.nx)>.055,tempo:650},
+      {txt:'Olhe para cima',ico:'↑',ok:m=>base && (m.ny-base.ny)<-.035,tempo:650},
+      {txt:'Volte ao centro',ico:'✓',ok:m=>base && Math.abs(m.nx-base.nx)<.055,tempo:700}
     ];
     for(let ei=0;ei<etapas.length;ei++){
       const e=etapas[ei]; instr.textContent=e.txt; arrow.textContent=e.ico; prog.style.width=((ei/etapas.length)*100)+'%';
-      let iniciou=0, limite=Date.now()+20000;
+      let iniciou=0, limite=Date.now()+15000;
       while(Date.now()<limite){
         if(cancelado) return {ok:false,cancelado:true};
         const det=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceDescriptor();
@@ -6961,7 +6369,7 @@ async function fluxoFacial({tipo,telefone,modo='cadastro',descriptorSalvo=null})
       if(distancia>.58) throw new Error('O rosto não corresponde ao cadastro desta conta.');
     } else {
       const tabela=tipo==='motorista'?'entrega_motoristas':'entrega_clientes';
-      const { error } = await sb.rpc('entrega_definir_biometria_facial', { p_tipo: tipo, p_telefone: telefone, p_descriptor: desc });
+      const {error}=await sb.from(tabela).update({face_descriptor:desc,facial_ativa:true,facial_cadastrada_em:Date.now()}).eq('telefone',telefone);
       if(error) throw new Error('Não consegui salvar a biometria facial. '+(error.message||''));
     }
     status.textContent='Identidade confirmada com sucesso.'; await new Promise(r=>setTimeout(r,450));
@@ -6979,7 +6387,7 @@ async function exigirFacialDaConta(tipo,data){
 }
 // ================= FIM BIOMETRIA FACIAL =================
 
-function irParaCadastroCliente(){ estado.painelCliente.tela='cadastro'; estado.painelCliente.cadastro={nome:'',telefone:'',senha:'',erro:'',recuperando:false}; render(); }
+function irParaCadastroCliente(){ estado.painelCliente.tela='cadastro'; estado.painelCliente.cadastro={nome:'',telefone:'',senha:'',erro:''}; render(); }
 function irParaLoginCliente(){ estado.painelCliente.tela='entrar'; estado.painelCliente.loginErro=''; render(); }
 
 async function cadastrarCliente(){
@@ -6987,29 +6395,29 @@ async function cadastrarCliente(){
   c.nome = document.getElementById('cc-nome')?.value.trim() || c.nome || '';
   c.telefone = document.getElementById('cc-telefone')?.value.trim() || c.telefone || '';
   c.senha = document.getElementById('cc-senha')?.value || c.senha || '';
+
   if(!c.nome||!c.telefone||!c.senha){ c.erro='Preenche todos os campos.'; render(); return; }
   if(c.senha.length<4){ c.erro='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   c.erro='';
 
-  const { data: existente, error: erroConsulta } = await meuPerfilCliente(c.telefone);
+  const { data: existente, error: erroConsulta } = await sb.from('entrega_clientes').select('*').eq('telefone', c.telefone).maybeSingle();
   if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tente novamente.'; render(); return; }
-
-  if(existente && existente.senha_hash){
-    const senhaHashExistente = await hashSenha(c.senha);
-    if(existente.senha_hash !== senhaHashExistente){
-      c.erro='Este telefone já está cadastrado. Entre com a senha correta.';
-      render(); return;
-    }
-    await entrarNoPainelCliente(existente);
-    return;
-  }
+  if(existente && existente.senha_hash){ c.erro='Este telefone já tem uma conta. Entre com sua senha.'; render(); return; }
 
   const senhaHash = await hashSenha(c.senha);
-  const { error: erroSalvar } = await sb.rpc('entrega_cliente_cadastrar_ou_retomar', { p_telefone: c.telefone, p_nome: c.nome, p_senha_hash: senhaHash });
+  const agora = Date.now();
+  let erroSalvar = null;
+  if(existente){
+    const { error } = await sb.from('entrega_clientes').update({nome:c.nome,senha_hash:senhaHash,facial_ativa:false,atualizado_em:agora}).eq('telefone',c.telefone);
+    erroSalvar=error;
+  }else{
+    const { error } = await sb.from('entrega_clientes').insert({telefone:c.telefone,nome:c.nome,senha_hash:senhaHash,facial_ativa:false,criado_em:agora,atualizado_em:agora});
+    erroSalvar=error;
+  }
   if(erroSalvar){ console.error(erroSalvar); c.erro='Não consegui salvar o cadastro agora. Tente novamente.'; render(); return; }
 
-  const { data: confirmado, error: erroConfirmacao } = await meuPerfilCliente(c.telefone);
-  if(erroConfirmacao || !confirmado){ c.erro='Cadastro salvo, mas não consegui abrir sua conta. Tente entrar novamente.'; render(); return; }
+  const { data: confirmado, error: erroConfirmacao } = await sb.from('entrega_clientes').select('*').eq('telefone',c.telefone).maybeSingle();
+  if(erroConfirmacao || !confirmado){ c.erro='Cadastro salvo, mas não consegui confirmar o acesso. Tente entrar com telefone e senha.'; render(); return; }
 
   try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
   registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
@@ -7021,6 +6429,7 @@ async function cadastrarCliente(){
   if(estado.notificacoesStatus==='granted') inscreverPushReal(); else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),1200);
   setTimeout(()=>{clienteBemVindoAnimando=false;render();},4000);
 }
+
 async function entrarNoPainelCliente(data){
   estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   estado.filtroTelefoneCliente = data.telefone;
@@ -7040,7 +6449,7 @@ async function loginFacialCliente(){
   const telefone = document.getElementById('lc-telefone')?.value.trim();
   if(!telefone){ pc.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
   pc.loginErro='';
-  const { data, error } = await meuPerfilCliente(telefone);
+  const { data, error } = await sb.from('entrega_clientes').select('*').eq('telefone', telefone).maybeSingle();
   if(error){ pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; }
   if(!data){ pc.loginErro='Não encontrámos conta com este telefone.'; render(); return; }
   if(data.bloqueado){ pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.'; render(); return; }
@@ -7050,8 +6459,7 @@ async function loginFacialCliente(){
       nome:data.nome||'',
       telefone:data.telefone||telefone,
       senha:'',
-      recuperando:true,
-      erro:''
+      erro:'Este cadastro ficou pela metade. Digite a senha que deseja usar e conclua agora a validação facial.'
     };
     render();
     return;
@@ -7075,7 +6483,11 @@ async function loginCliente(){
   pc.loginErro='';
   const senhaHash = await hashSenha(senha);
 
-  const { data, error } = await meuPerfilCliente(telefone);
+  const { data, error } = await sb
+    .from('entrega_clientes')
+    .select('*')
+    .eq('telefone', telefone)
+    .maybeSingle();
 
   if(error){
     pc.loginErro='Erro ao consultar a conta. Tenta novamente.';
@@ -7085,6 +6497,25 @@ async function loginCliente(){
 
   if(!data){
     pc.loginErro='Não encontrámos conta com este telefone. Faça seu cadastro.';
+    render();
+    return;
+  }
+
+  const cadastroCompleto = !!(
+    data.facial_ativa &&
+    Array.isArray(data.face_descriptor) &&
+    data.face_descriptor.length
+  );
+
+  // Se ficou pela metade, o caminho correto é CONCLUIR, não dizer que já está cadastrado.
+  if(!cadastroCompleto){
+    estado.painelCliente.tela='cadastro';
+    estado.painelCliente.cadastro={
+      nome:data.nome||'',
+      telefone:data.telefone||telefone,
+      senha:senha,
+      erro:'Encontramos um cadastro que ficou pela metade. Seus dados foram recuperados; conclua agora a validação facial.'
+    };
     render();
     return;
   }
@@ -7144,7 +6575,7 @@ async function loginFacialMotorista(){
   const telefone = document.getElementById('lm-telefone')?.value.trim();
   if(!telefone){ pm.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
   pm.loginErro='';
-  const { data, error } = await meuPerfilMotorista(telefone);
+  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
@@ -7171,7 +6602,7 @@ async function loginMotorista(){
   if(!telefone||!senha){ pm.loginErro='Preenche telefone e senha.'; render(); return; }
   pm.loginErro='';
   const senhaHash = await hashSenha(senha);
-  const { data, error } = await meuPerfilMotorista(telefone);
+  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone. Cadastra-te abaixo.'; render(); return; }
   if(data.senha_hash !== senhaHash){ pm.loginErro='Senha incorreta.'; render(); return; }
@@ -7192,7 +6623,7 @@ async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
   const telefone = pm.telefoneLiberado || pm.loginTelefone;
-  const { data, error } = await meuPerfilMotorista(telefone);
+  const { data, error } = await sb.from('entrega_motoristas').select('*').eq('telefone', telefone).maybeSingle();
   pm.carregandoLiberado = false;
   if(error || !data){ mostrarToast('Erro ao carregar o cadastro. Tenta entrar de novo.', 'erro'); render(); return; }
   const c = pm.cadastro;
@@ -7209,24 +6640,60 @@ async function continuarParaDocumentos(){
 async function salvarEtapaCadastro(campos){
   const c = estado.painelMotorista.cadastro;
   const agora = Date.now();
-  if(!c.id){ c.id = 'mot'+agora+Math.floor(Math.random()*1000); }
 
-  if(!c.senhaHash){
+  // IMPORTANTE: depois do pré-cadastro, as etapas seguintes devem ATUALIZAR
+  // o mesmo motorista. Usar upsert com um objeto parcial fazia o Postgres
+  // tentar um INSERT sem senha_hash antes de resolver o conflito, e a coluna
+  // senha_hash é NOT NULL. Por isso aparecia o erro do print.
+  let existente = null;
+  try{
+    if(c.id){
+      const r = await sb.from('entrega_motoristas').select('id,criado_em').eq('id', c.id).maybeSingle();
+      if(r.error && r.error.code!=='PGRST116') throw r.error;
+      existente = r.data || null;
+    }
+    if(!existente && c.telefone){
+      const r = await sb.from('entrega_motoristas').select('id,criado_em').eq('telefone', c.telefone).maybeSingle();
+      if(r.error && r.error.code!=='PGRST116') throw r.error;
+      existente = r.data || null;
+    }
+  }catch(e){
+    console.error('Erro ao localizar cadastro existente:', e);
+  }
+
+  if(existente){
+    c.id = existente.id;
+    c.criadoEm = c.criadoEm || existente.criado_em || agora;
+    const atualizacao = { atualizado_em: agora, ...campos };
+    if(c.nome && atualizacao.nome===undefined) atualizacao.nome = c.nome;
+    if(c.cpf && atualizacao.cpf===undefined) atualizacao.cpf = c.cpf;
+    if(c.telefone && atualizacao.telefone===undefined) atualizacao.telefone = c.telefone;
+    if(c.cidade && atualizacao.cidade===undefined) atualizacao.cidade = c.cidade;
+    // Só toca na senha quando uma nova senha/hash realmente foi informada.
+    if(c.senhaHash && atualizacao.senha_hash===undefined) atualizacao.senha_hash = c.senhaHash;
+
+    const { error } = await sb.from('entrega_motoristas').update(atualizacao).eq('id', c.id);
+    if(error){ console.error(error); mostrarToast('Erro ao atualizar o cadastro: '+(error.message||''), 'erro'); return false; }
+    return true;
+  }
+
+  // Primeiro cadastro: aqui sim criamos a linha completa, incluindo senha_hash.
+  if(!c.id){ c.id = 'mot'+agora+Math.floor(Math.random()*1000); }
+  const linha = { id:c.id, criado_em:c.criadoEm||agora, atualizado_em:agora };
+  if(c.nome) linha.nome = c.nome;
+  if(c.cpf) linha.cpf = c.cpf;
+  if(c.telefone) linha.telefone = c.telefone;
+  if(c.cidade) linha.cidade = c.cidade;
+  if(c.senhaHash) linha.senha_hash = c.senhaHash;
+  Object.assign(linha, campos);
+
+  if(!linha.senha_hash){
     mostrarToast('Não foi possível criar o cadastro porque a senha não foi carregada. Volte ao início e informe a senha novamente.', 'erro');
     return false;
   }
 
-  const dados = { id:c.id, ...campos };
-  if(c.nome && dados.nome===undefined) dados.nome = c.nome;
-  if(c.cpf && dados.cpf===undefined) dados.cpf = c.cpf;
-  if(c.cidade && dados.cidade===undefined) dados.cidade = c.cidade;
-
-  // entrega_motorista_upsert_proprio já resolve sozinho se é criação ou
-  // atualização (procura pelo telefone), e sempre grava a senha_hash certa.
-  const { error } = await upsertProprioMotorista(c.telefone, c.senhaHash, dados);
+  const { error } = await sb.from('entrega_motoristas').insert(linha);
   if(error){ console.error(error); mostrarToast('Erro ao gravar o cadastro: '+(error.message||''), 'erro'); return false; }
-  c.criadoEm = c.criadoEm || agora;
-  return true;
   c.criadoEm = c.criadoEm || agora;
   return true;
 }
@@ -7284,7 +6751,7 @@ async function avancarEtapa1(){
   if(!c.nome||!c.telefone||!c.cidade||!c.senha){ c.erroEtapa='Preenche todos os campos.'; render(); return; }
   if(c.senha.length<4){ c.erroEtapa='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   c.erroEtapa=''; c.enviando=true; render();
-  const { data: existente } = await meuPerfilMotorista(c.telefone);
+  const { data: existente } = await sb.from('entrega_motoristas').select('id,status').eq('telefone', c.telefone).maybeSingle();
   if(existente && existente.status!=='incompleto'){
     c.enviando=false; c.erroEtapa='Já existe cadastro com este telefone. Use "Já sou cadastrado" para entrar.';
     render(); return;
@@ -7439,9 +6906,8 @@ function iniciarPollingPix(){
   pixPollTimer = setInterval(async ()=>{
     const c = estado.painelMotorista.cadastro;
     if(!c.id || c.pix.status==='pago'){ clearInterval(pixPollTimer); pixPollTimer=null; return; }
-    const { data: taxaData } = await sb.rpc('entrega_motorista_taxa_status_por_id', { p_id: c.id });
-    const taxaLinha = Array.isArray(taxaData) ? taxaData[0] : taxaData;
-    if(taxaLinha && taxaLinha.taxa_status==='pago'){
+    const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id', c.id).maybeSingle();
+    if(data && data.taxa_status==='pago'){
       c.pix.status='pago'; clearInterval(pixPollTimer); pixPollTimer=null;
       dispararAnimacaoPlano('pro');
     }
@@ -7884,7 +7350,7 @@ async function carregarClientesAdmin(){
   // ela pra um placeholder no meio do caminho, senão o scroll da pessoa "pula" pro topo.
   const jaTinhaClientes = estado.admin.clientes.length>0;
   if(!jaTinhaClientes){ estado.admin.carregando=true; render(); }
-  const { data, error } = await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada });
+  const { data, error } = await sb.from('entrega_clientes').select('*').order('criado_em',{ascending:false});
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar clientes.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_clientes_saldos').select('telefone,saldo');
   estado.admin.carregando=false;
@@ -8632,7 +8098,6 @@ function saqueCardHTML(s){
 
 // =================== PAINEL ADMINISTRATIVO ===================
 let canalAdminRealtime = null;
-let intervaloAdminMotoristasClientesPoll = null;
 function assinarAdminRealtime(){
   if(canalAdminRealtime) return;
   canalAdminRealtime = sb.channel('admin-realtime')
@@ -8671,18 +8136,9 @@ function assinarAdminRealtime(){
       debounce('admin-motoristas', carregarMotoristasAdmin);
     })
     .subscribe();
-  // Plano B: entrega_motoristas/entrega_clientes agora só são lidas via RPC
-  // protegida — o Realtime não recebe mais eventos dessas duas tabelas pra
-  // quem não tem policy de leitura aberta. Este polling garante que o painel
-  // continue vendo cadastros novos/alterados mesmo assim.
-  if(intervaloAdminMotoristasClientesPoll) clearInterval(intervaloAdminMotoristasClientesPoll);
-  intervaloAdminMotoristasClientesPoll = setInterval(() => {
-    if(estado.admin.logado) { carregarMotoristasAdmin(); carregarClientesAdmin(); }
-  }, 20000);
 }
 function encerrarAdminRealtime(){
   if(canalAdminRealtime){ sb.removeChannel(canalAdminRealtime); canalAdminRealtime=null; }
-  if(intervaloAdminMotoristasClientesPoll){ clearInterval(intervaloAdminMotoristasClientesPoll); intervaloAdminMotoristasClientesPoll=null; }
 }
 function abrirAdmin(){
   estado.admin.aberto=true; salvarLocal('ef_admin_aberto','true'); render();
@@ -8782,8 +8238,7 @@ async function carregarMotoristasAdmin(){
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
   if(!jaTinhaMotoristas){ estado.admin.carregando=true; render(); }
-  const { data: dadosBrutos, error } = await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada });
-  const data = (dadosBrutos||[]).filter(m => m.status !== 'incompleto');
+  const { data, error } = await sb.from('entrega_motoristas').select('*').neq('status','incompleto').order('criado_em',{ascending:false});
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar cadastros.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_saldos').select('telefone,saldo');
   estado.admin.carregando=false;
