@@ -1096,6 +1096,7 @@ let estado = {
   calculando:false, falhaCalculo:false,
   transicaoPedido:{ ativa:false, alvo:null },
   pedidoBuscandoId:null,
+  entregaConfirmacaoPedidoId:null, // pedido recém-entregue aguardando confirmação visual do cliente
   sosClienteAtivo:false,
   carregando:{}, // chave->bool: controla a bolinha de "processando" de cada botão de ação
   modalConfirmar:null, // { mensagem, tituloBotaoOk } — substitui o confirm() nativo do navegador
@@ -1778,6 +1779,13 @@ function detectarMotoristaEncontrado(novos){
     } else if(anterior && anterior!==np.status && MENSAGENS_STATUS[np.status]){
       tocarSomAlerta();
       notificar('Entrega Flash', MENSAGENS_STATUS[np.status], 'pedido-'+np.id);
+      // Quando o motorista finaliza, fixa o cliente numa confirmação clara de entrega.
+      // Não deixa o pedido parecer preso em "coletado / aguardando rota".
+      if(np.status==='entregue'){
+        estado.pedidoBuscandoId = null;
+        estado.entregaConfirmacaoPedidoId = np.id;
+        estado.abaPedidosCliente = 'ativos';
+      }
     }
     estado.statusAnterior[np.id] = np.status;
   });
@@ -3551,7 +3559,14 @@ async function avancarStatus(id){
     if(campoTaxaEspera) payloadAvanco[campoTaxaEspera] = taxaEspera;
     const { error } = await sb.from('entrega_pedidos').update(payloadAvanco).eq('id', id);
     if(error){ console.error(error); mostrarToast('Erro ao atualizar o pedido.', 'erro'); return; }
+    // Reflete o novo status imediatamente no aparelho do motorista, sem esperar o próximo polling/realtime.
+    // O banco continua sendo a fonte de verdade e carregarPedidos() reconcilia logo depois.
+    p.status = novoStatus;
+    p.atualizadoEm = agora;
+    if(campoTaxaEspera) p[campoTaxaEspera==='taxa_espera_coleta'?'taxaEsperaColeta':'taxaEsperaEntrega'] = taxaEspera;
     estado.ultimoPedidosJSON='';
+    estado.ultimoPedidosJSONEstrutural='';
+    render();
     if(taxaEspera>0){
       // debita do cliente e credita 100% ao motorista, como compensação pelo tempo de espera
       try{ await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: p.clienteTelefone, p_delta: -taxaEspera }); }catch(e){ console.error(e); }
@@ -4646,11 +4661,47 @@ function irEtapaPedido(alvo){
   f.etapaPedido = alvo;
   if(alvo===3 && f.distancia==null && !estado.falhaCalculo){ calcularCorrida(); return; }
   render();
-  setTimeout(()=>{ document.querySelector('.etapa-conteudo')?.scrollIntoView({behavior:'smooth',block:'start'}); },30);
+  fixarEtapaPedidoNaTela();
+}
+function fixarEtapaPedidoNaTela(){
+  // Dois frames garantem que o HTML novo já foi calculado antes de posicionar.
+  // Usa rolagem imediata: a etapa seguinte fica parada no ponto certo e só muda se o cliente rolar.
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const alvo = document.querySelector('.etapa-conteudo');
+    if(!alvo) return;
+    const topo = Math.max(0, alvo.getBoundingClientRect().top + window.scrollY - 10);
+    window.scrollTo({top:topo, behavior:'auto'});
+  }));
+}
+
+function confirmarRecebimentoCliente(id){
+  const p = estado.pedidos.find(x=>x.id===id);
+  if(!p || p.status!=='entregue') return;
+  try{
+    const chave='ef_entregas_confirmadas_cliente';
+    const atuais=JSON.parse(localStorage.getItem(chave)||'[]');
+    if(!atuais.includes(id)){ atuais.push(id); localStorage.setItem(chave, JSON.stringify(atuais.slice(-100))); }
+  }catch(e){}
+  estado.entregaConfirmacaoPedidoId=null;
+  estado.abaPedidosCliente='historico';
+  render();
+  requestAnimationFrame(()=>window.scrollTo({top:0,behavior:'auto'}));
+  mostrarToast('Recebimento confirmado. Obrigado por usar o Entrega Flash!', 'sucesso');
 }
 
 function telaCliente(){
   const f = estado.form;
+  const pedidoEntregueConfirmar = estado.entregaConfirmacaoPedidoId ? estado.pedidos.find(p=>p.id===estado.entregaConfirmacaoPedidoId) : null;
+  if(pedidoEntregueConfirmar && pedidoEntregueConfirmar.status==='entregue' && pedidoEntregueConfirmar.clienteTelefone===estado.filtroTelefoneCliente){
+    return `<div class="cartao" id="pedido-entregue-confirmacao" style="text-align:center;padding:30px 18px;border:2px solid var(--verde)">
+      <div style="font-size:58px;line-height:1">✅</div>
+      <h2 style="font-size:26px;margin:10px 0 6px;color:var(--osso)">Parabéns! Seu pedido foi entregue com sucesso.</h2>
+      <div class="subtitulo" style="font-size:15px;line-height:1.55">Confirme abaixo que recebeu o pedido. Depois ele ficará disponível no seu histórico.</div>
+      <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoEntregueConfirmar.origem}<b style="margin-top:8px">Entrega</b>${pedidoEntregueConfirmar.destino}</div>
+      <div class="preco" style="margin:14px 0 2px">R$ ${pedidoEntregueConfirmar.preco.toFixed(2)}</div>
+      <button class="btn btn-verde" style="margin-top:18px;width:100%" onclick="confirmarRecebimentoCliente('${pedidoEntregueConfirmar.id}')">✅ Confirmar recebimento</button>
+    </div>`;
+  }
   const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
     return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
@@ -4658,7 +4709,7 @@ function telaCliente(){
       <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
       <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
       <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
-      <div style="margin-top:15px;font-size:14px;color:var(--poeira)">🟢 ${estado.motoristasOnline||0} motorista${estado.motoristasOnline===1?'':'s'} online agora</div>
+      <div style="margin-top:15px;font-size:14px;color:var(--poeira)">Estamos procurando o motorista disponível mais adequado para a sua entrega.</div>
       <button class="btn btn-secundario btn-pequeno" style="margin-top:18px" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
     </div>`;
   }
@@ -8218,7 +8269,7 @@ window.escolherPlano=escolherPlano;
 window.processarDocumentoSelecionado=processarDocumentoSelecionado; window.copiarPix=copiarPix;
 window.finalizarCadastroMotorista=finalizarCadastroMotorista; window.alternarTermos=alternarTermos;
 window.abrirAdmin=abrirAdmin; window.fecharAdmin=fecharAdmin; window.digitarSenhaAdmin=digitarSenhaAdmin;
-window.abrirWhatsAppLembreteDocumentos=abrirWhatsAppLembreteDocumentos; window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao;
+window.confirmarRecebimentoCliente=confirmarRecebimentoCliente; window.abrirWhatsAppLembreteDocumentos=abrirWhatsAppLembreteDocumentos; window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao;
 window.alternarEdicaoMotoristaAdmin=alternarEdicaoMotoristaAdmin; window.salvarEdicaoMotoristaAdmin=salvarEdicaoMotoristaAdmin;
 window.alternarEdicaoClienteAdmin=alternarEdicaoClienteAdmin; window.salvarEdicaoClienteAdmin=salvarEdicaoClienteAdmin;
 window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearClienteAdmin=bloquearClienteAdmin;
@@ -8292,7 +8343,8 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
     if(estado.notificacoesStatus==='granted') inscreverPushReal();
   });
   carregarPedidos();
-  setInterval(carregarPedidos, 15000);
+  // Fallback do realtime: mantém cliente e motorista sincronizados mesmo se o websocket oscilar.
+  setInterval(carregarPedidos, 7000);
   iniciarTickEta();
   iniciarTickTempoPedidos();
   iniciarTickRelogioCancelamento();
