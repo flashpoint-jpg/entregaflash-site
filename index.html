@@ -794,6 +794,63 @@ h1,h2,h3,.titulo,.bv-titulo{font-family:Inter,system-ui,sans-serif!important;fon
 .bv-logo-badge .logo-img,.marca .logo-img{width:auto!important;max-width:min(280px,72vw)!important;height:auto!important;max-height:112px!important;object-fit:contain!important;position:static!important;transform:none!important}
 @media(max-width:520px){.bv-logo-badge .logo-img,.marca .logo-img{max-width:190px!important;max-height:82px!important}.bv-hero-real .bv-cabecalho{min-height:88px!important;margin-bottom:24px!important}}
 </style>
+
+<style id="ef-engajamento-conversao-v1">
+/* Conversão: prova de valor, urgência legítima e onboarding claro */
+.ef-live-proof{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:14px 0 2px;padding:11px 13px;border-radius:13px;background:rgba(9,11,14,.76);border:1px solid rgba(255,148,24,.28);max-width:690px;backdrop-filter:blur(10px)}
+.ef-live-dot{width:9px;height:9px;border-radius:50%;background:#37d67a;box-shadow:0 0 0 5px rgba(55,214,122,.12);animation:efPulse 1.8s infinite}
+.ef-live-proof strong{color:#fff}.ef-live-proof span{font-size:12.5px;color:#c8cbd1}
+@keyframes efPulse{50%{box-shadow:0 0 0 9px rgba(55,214,122,0)}}
+.ef-conv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
+.ef-conv-item{padding:14px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.4}
+.ef-conv-item b{display:block;color:#fff;margin-bottom:4px;font-size:13.5px}.ef-conv-item span{color:#aeb2ba}
+.ef-founder-box{position:relative;overflow:hidden;margin:14px 0;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(255,177,38,.20),rgba(255,122,0,.08));border:1px solid rgba(255,177,38,.55)}
+.ef-founder-box:before{content:'FUNDADOR';position:absolute;right:-22px;top:13px;transform:rotate(35deg);font-size:10px;font-weight:900;letter-spacing:.12em;color:#111;background:#ffb126;padding:5px 26px}
+.ef-founder-title{font-weight:900;color:#fff;font-size:17px;padding-right:70px}.ef-founder-value{font-size:24px;font-weight:950;color:#ffb126;line-height:1.05;margin-top:4px}.ef-founder-sub{font-size:13px;color:#d4d6da;line-height:1.45;margin-top:6px;max-width:620px}
+.ef-trust-mini{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.ef-trust-mini span{font-size:11.5px;font-weight:750;color:#e9ebee;padding:7px 9px;border-radius:999px;background:#171a20;border:1px solid rgba(255,255,255,.09)}
+.ef-steps-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.ef-step-mini{padding:10px;border-radius:12px;background:#15181d;border:1px solid rgba(255,255,255,.09);font-size:12px;color:#c5c8ce}.ef-step-mini b{color:#ffb126;display:block;margin-bottom:2px}
+.ef-cta-note{text-align:center;font-size:11.5px;color:#a8acb3;margin-top:7px}
+@media(max-width:700px){.ef-conv-grid,.ef-steps-mini{grid-template-columns:1fr}.ef-founder-value{font-size:21px}.ef-live-proof{align-items:flex-start}.ef-founder-box{padding:14px}}
+</style>
+
+
+<style id="ef-logo-transparente-global">
+/* Logo Entrega Flash: sempre sem fundo em todas as telas */
+.bv-logo-badge,
+.marca .bv-logo-badge,
+.bv-cabecalho .bv-logo-badge,
+.splash-logo-badge,
+.esm-brand,
+.esm-logo {
+  background: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.bv-logo-badge::before,
+.bv-logo-badge::after,
+.splash-logo-badge::before,
+.splash-logo-badge::after {
+  display: none !important;
+  content: none !important;
+}
+.logo-img,
+.bv-logo-badge img,
+.marca img,
+.splash-logo-badge img {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.splash-logo-badge {
+  padding: 0 !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+</style>
+
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -4512,10 +4569,15 @@ function telaBoasVindas(){
       <div class="bv-chips">
         <span class="bv-chip"> Atuação regional</span><span class="bv-chip"> Cidade + zona rural</span><span class="bv-chip"> Acompanhe pelo celular</span>
       </div>
-      <div class="bv-hero-actions">
-        <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')"> PEDIR UMA ENTREGA</button>
-        <button class="btn btn-azul" onclick="iniciarPreparacaoBV('entregador')"> QUERO FAZER ENTREGAS</button>
+      <div class="ef-live-proof">
+        <i class="ef-live-dot"></i>
+        <div><strong>Entrega Flash em funcionamento</strong><br><span>Peça pelo celular, acompanhe o atendimento e veja o motorista quando a corrida for aceita.</span></div>
       </div>
+      <div class="bv-hero-actions">
+        <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')"> PEDIR ENTREGA AGORA</button>
+        <button class="btn btn-azul" onclick="iniciarPreparacaoBV('entregador')"> QUERO GANHAR COM ENTREGAS</button>
+      </div>
+      <div class="ef-cta-note">Cliente: cadastro simples • Motorista: pré-cadastro grátis</div>
     </section>
 
     <div class="bv-strip">
@@ -4541,10 +4603,15 @@ function telaBoasVindas(){
       <div class="bv-titulo"><img src="${LOGO_ENTREGA_FLASH_CLIENTE}" alt="Cliente" style="height:34px;width:auto;display:block"> Preciso de uma entrega</div>
       <div class="subtitulo">Peça em poucos passos e acompanhe tudo pelo celular.</div>
       <div class="bv-grid-benefits">
-        <div class="bv-benefit"> Entregas com valor acessível</div><div class="bv-benefit"> Cidade, bairro e zona rural</div>
-        <div class="bv-benefit"> Acompanhamento da corrida</div><div class="bv-benefit"> Solicitação simples e rápida</div>
+        <div class="bv-benefit"> Veja o valor antes de confirmar</div><div class="bv-benefit"> Cidade, bairro e zona rural</div>
+        <div class="bv-benefit"> Acompanhe motorista e andamento</div><div class="bv-benefit"> Avaliação e registro da entrega</div>
       </div>
-      <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')"> QUERO PEDIR ENTREGA</button>
+      <div class="ef-conv-grid">
+        <div class="ef-conv-item"><b>1. Informe os endereços</b><span>Origem, destino e referência quando precisar.</span></div>
+        <div class="ef-conv-item"><b>2. Confirme o pedido</b><span>Você acompanha a busca por um entregador.</span></div>
+        <div class="ef-conv-item"><b>3. Acompanhe a entrega</b><span>Quando aceito, veja os dados do motorista e o andamento.</span></div>
+      </div>
+      <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')"> PEDIR MINHA ENTREGA</button>
       <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('cliente')"> Já tenho conta — Entrar</button>
     </section>
 
@@ -4553,10 +4620,16 @@ function telaBoasVindas(){
         <div class="bv-kicker">Seja um entregador parceiro</div>
         <h2>Ganhe fazendo <span>entregas</span></h2>
         <div class="subtitulo">Trabalhe na sua região usando bicicleta, moto, carro, van ou caminhão.</div>
-        <div class="bv-driver-benefits">
-          <div> Faça seu próprio horário</div><div> Receba por entrega</div><div> Bicicleta também é aceita</div><div> Benefício para motoristas fundadores</div>
+        <div class="ef-founder-box">
+          <div class="ef-founder-title">Benefício Motorista Fundador</div>
+          <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
+          <div class="ef-founder-sub">Durante as 10 primeiras entregas elegíveis do benefício fundador, a plataforma não desconta comissão. Depois, valem as regras normais do plano escolhido.</div>
         </div>
-        <button class="btn btn-primario" onclick="iniciarPreparacaoBV('entregador')"> QUERO ME CADASTRAR</button>
+        <div class="bv-driver-benefits">
+          <div> Faça seu próprio horário</div><div> Receba por entrega</div><div> Bicicleta também é aceita</div><div> Plano Free sem mensalidade</div>
+        </div>
+        <div class="ef-trust-mini"><span>Pré-cadastro rápido</span><span>Você escolhe quais corridas aceitar</span><span>Suporte dentro do app</span></div>
+        <button class="btn btn-primario" onclick="iniciarPreparacaoBV('entregador')"> GARANTIR MEU PRÉ-CADASTRO</button>
         <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('entregador')"> Já sou cadastrado — Entrar</button>
         <div style="text-align:center;margin-top:10px"><span style="font-size:12.5px;color:var(--poeira);text-decoration:underline;cursor:pointer" onclick="entrarComoVisitante('entregador')"> Quero conhecer primeiro, sem cadastro</span></div>
       </div>
@@ -4999,7 +5072,7 @@ function telaAcessoMotorista(){
       <div style="font-size:30px;line-height:1"></div>
       <div style="flex:1">
         <div style="font-weight:700;color:var(--osso);font-size:16px">Ainda não é entregador?</div>
-        <div style="font-size:14.5px;color:var(--poeira);margin-top:3px">Seja nosso parceiro e comece a trabalhar agora mesmo!</div>
+        <div style="font-size:14.5px;color:var(--poeira);margin-top:3px">Faça seu pré-cadastro grátis e conclua a ativação para começar a receber pedidos.</div>
         <button class="btn btn-primario btn-pequeno" style="margin-top:10px" onclick="irParaCadastro()"> Cadastre-se</button>
       </div>
     </div>
@@ -5011,7 +5084,7 @@ function passosHTML(atual){
   for(let i=1;i<=6;i++) html += `<div class="p ${i<atual?'feito':i===atual?'atual':''}"></div>`;
   html += '</div>';
   if(atual===1){
-    html += `<div style="text-align:center;font-size:13.5px;font-weight:600;color:var(--mango);margin-top:8px"> Comece a ganhar dinheiro entregando em Muzambinho e região!</div>`;
+    html += `<div style="text-align:center;font-size:13.5px;font-weight:600;color:var(--mango);margin-top:8px"> Faça seu pré-cadastro e prepare sua conta para receber entregas na região!</div>`;
   }
   return html;
 }
@@ -5024,10 +5097,16 @@ function telaCadastroMotorista(){
     <div style="font-size:14.5px;color:var(--poeira);line-height:1.55">
       O <b style="color:var(--osso)">Entrega Flash</b> conecta você a quem precisa de uma entrega em Muzambinho e região — você aceita as corridas que quiser, no seu tempo livre, com bicicleta, moto, carro ou caminhão.
     </div>
-    <div style="margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
-      <div style="font-weight:700;color:var(--osso);font-size:15px"> Plano Free — sem pagar nada</div>
-      <div style="font-size:14px;color:var(--poeira);margin-top:4px">Você já começa a trabalhar de graça. Pagar é opcional: quem quiser o plano Pro (mais entregas prioritárias e saque mais rápido) faz uma <b style="color:var(--osso)">taxa única</b>, sem mensalidade.</div>
+    <div class="ef-founder-box" style="margin-top:12px">
+      <div class="ef-founder-title">Seu benefício de fundador</div>
+      <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
+      <div class="ef-founder-sub">Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</div>
     </div>
+    <div style="margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
+      <div style="font-weight:700;color:var(--osso);font-size:15px"> Plano Free — sem mensalidade</div>
+      <div style="font-size:14px;color:var(--poeira);margin-top:4px">Você pode começar pelo Free. O Pro é opcional e oferece vantagens adicionais conforme as configurações atuais do app.</div>
+    </div>
+    <div class="ef-steps-mini"><div class="ef-step-mini"><b>1. Pré-cadastro</b>Nome, WhatsApp, cidade e veículo.</div><div class="ef-step-mini"><b>2. Ativação</b>Complete os dados e envie os documentos.</div><div class="ef-step-mini"><b>3. Fique online</b>Depois de aprovado, escolha quando receber pedidos.</div></div>
   </div>` : '';
   let corpo='';
   if(c.etapa===1){
