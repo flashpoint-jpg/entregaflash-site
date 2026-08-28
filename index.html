@@ -729,7 +729,7 @@ fbq('track', 'PageView');
 
 <style id="estilo-motorista-encontrado-full">
 .motorista-encontrado-full{
-  position:fixed; inset:0; z-index:999999; background:#f7f7f7; color:#222;
+  position:fixed !important; inset:0 !important; z-index:2147483647 !important; background:#f7f7f7; color:#222;
   display:flex; flex-direction:column; overflow:auto; overscroll-behavior:contain;
   font-family:Arial,Helvetica,sans-serif;
 }
@@ -749,8 +749,8 @@ fbq('track', 'PageView');
 }
 .mef-aviso strong{color:#e75d16}
 .mef-info{color:#ef6c22;font-size:23px;line-height:1}
-.mef-mapa-wrap{position:relative;min-height:54vh;background:#ececec;overflow:hidden}
-.mef-mapa{position:absolute;inset:0;width:100%;height:100%;min-height:54vh}
+.mef-mapa-wrap{position:relative;height:56vh;min-height:390px;background:#ececec;overflow:hidden}
+.mef-mapa{position:absolute;inset:0;width:100%;height:100%}
 .mef-eta{
   position:absolute;left:18px;top:94px;z-index:500;background:#fff;border-radius:10px;
   padding:9px 12px;box-shadow:0 3px 12px rgba(0,0,0,.18);display:flex;align-items:center;gap:9px
@@ -788,6 +788,20 @@ body:has(.motorista-encontrado-full){overflow:hidden}
   .mef-card{margin-left:10px;margin-right:10px}
   .mef-nome{font-size:18px}
 }
+</style>
+
+
+<style id="ef-fix-mapa-v2">
+.icone-motorista-anim{
+  width:42px;height:42px;border-radius:50%;
+  display:grid;place-items:center;background:#fff;
+  border:3px solid #ffb000;box-shadow:0 3px 12px rgba(0,0,0,.28);
+  transform:translate3d(0,0,0);will-change:transform;
+}
+.icone-motorista-anim span{font-size:25px;line-height:1}
+.mapa,.mef-mapa{transform:translateZ(0);backface-visibility:hidden}
+.leaflet-container{background:#e9ecef}
+.motorista-encontrado-full .leaflet-control-container{pointer-events:none}
 </style>
 
 </head>
@@ -1260,7 +1274,7 @@ let estado = {
   suporteAberto:false, suporteMensagens:[], canalSuporte:null, suporteNaoLidas:0, suporteContexto:{telefone:'',nome:''},
   contatoRapido:{ aberto:false, nome:'', telefone:'', contexto:'cliente', erro:'', enviando:false },
   sugestoesTemp:{ origem:[], destino:[] },
-  alertaMotorista:null, avisoGeralExibido:null, fotoAmpliada:null, statusAnterior:{}, statusAnteriorMotorista:{}, statusAnteriorEntregaMotorista:{},
+  alertaMotorista:null, alertaMotoristaFechados:{}, avisoGeralExibido:null, fotoAmpliada:null, statusAnterior:{}, statusAnteriorMotorista:{}, statusAnteriorEntregaMotorista:{},
   podeInstalar:false, appInstalado:false, comoInstalarAberto:false, editarDistanciaAberto:false, extrasAberto:false, popupInstalarAberto:false,
   onboardingAberto:false, onboardingSlide:0,
   notificacoesStatus: (typeof Notification!=='undefined') ? Notification.permission : 'unsupported',
@@ -1906,8 +1920,28 @@ function dispararAlertaMotorista(pedido){
   tocarSomAlerta();
 }
 function fecharAlertaMotorista(){
+  if(estado.alertaMotorista && estado.alertaMotorista.pedidoId){
+    estado.alertaMotoristaFechados[estado.alertaMotorista.pedidoId]=true;
+  }
   estado.alertaMotorista=null;
   render();
+}
+function garantirPopupMotoristaCliente(pedidos){
+  if(estado.modo!=='cliente' || !estado.filtroTelefoneCliente) return;
+  const ativos = pedidos
+    .filter(p=>p.clienteTelefone===estado.filtroTelefoneCliente &&
+      p.motoristaTelefone &&
+      ['indo_coletar','coletado','a_caminho'].includes(p.status))
+    .sort((a,b)=>(Number(b.aceitoEm||b.criadoEm||0)-Number(a.aceitoEm||a.criadoEm||0)));
+  if(!ativos.length){
+    estado.alertaMotorista=null;
+    return;
+  }
+  const p = ativos[0];
+  if(estado.alertaMotoristaFechados[p.id]) return;
+  if(!estado.alertaMotorista || estado.alertaMotorista.pedidoId!==p.id){
+    estado.alertaMotorista={nome:p.motoristaNome||'Motorista parceiro',pedidoId:p.id};
+  }
 }
 
 function popupMotoristaEncontradoHTML(){
@@ -1917,7 +1951,7 @@ function popupMotoristaEncontradoHTML(){
   const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
   let km = null, min = null;
   if(p.motoristaCoord && alvo){
-    km = distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon);
+    km = Math.max(0, Number(distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon)) || 0);
     const velocidade = (VEICULOS[p.motoristaVeiculoTipo||p.veiculo]&&VEICULOS[p.motoristaVeiculoTipo||p.veiculo].veloc) || 28;
     min = Math.max(1,Math.round((km/velocidade)*60));
   }
@@ -2166,7 +2200,10 @@ function estaDigitandoEndereco(){
 // ou se foi só o motorista andando — nesse caso só o mapa precisa mexer, não a tela inteira.
 function pedidoSemPosicao(p){
   const c = Object.assign({}, p);
-  delete c.motoristaCoord; delete c.atualizadoEm;
+  delete c.motoristaCoord;
+  delete c.atualizadoEm;
+  // Campos de telemetria/tempo não podem recriar a tela e fazer o mapa piscar.
+  delete c.motoristaAtualizadoEm;
   return c;
 }
 let _carregarPedidosEmAndamento = false;
@@ -2200,6 +2237,7 @@ async function carregarPedidos(){
     detectarMotoristaEncontrado(novos);
     detectarNovosPedidosMotorista(novos);
     detectarCancelamentoClienteMotorista(novos);
+    garantirPopupMotoristaCliente(novos);
     const novoJSONEstrutural = JSON.stringify(novos.map(pedidoSemPosicao));
     // se nada além da posição do motorista/timestamp mudou, não precisamos redesenhar a tela toda —
     // só atualizamos os mapas ao vivo (o marcador desliza suave até o novo ponto). Isso é o que
@@ -2235,7 +2273,7 @@ function atualizarEtaAoVivo(p){
   if(!p || !p.motoristaCoord) return;
   const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
   if(!alvo) return;
-  const km = distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon);
+  const km = Math.max(0, Number(distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon)) || 0);
   const velocidade = (VEICULOS[p.veiculo]&&VEICULOS[p.veiculo].veloc) || 28;
   const min = Math.max(1, Math.round((km/velocidade)*60));
   const txt = p.status==='indo_coletar' ? 'até a coleta' : 'até o destino';
@@ -2255,7 +2293,7 @@ function atualizarMapasAoVivo(pedidos){
         montarMapa('mapa-encontrado-'+p.id, p);
         const alvo = p.status==='indo_coletar' ? p.origemCoord : p.destinoCoord;
         if(p.motoristaCoord && alvo){
-          const km = distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon);
+          const km = Math.max(0, Number(distanciaKm(p.motoristaCoord.lat,p.motoristaCoord.lon,alvo.lat,alvo.lon)) || 0);
           const velocidade = (VEICULOS[p.motoristaVeiculoTipo||p.veiculo]&&VEICULOS[p.motoristaVeiculoTipo||p.veiculo].veloc)||28;
           const min = Math.max(1,Math.round((km/velocidade)*60));
           const e1=document.getElementById('popup-eta-min-'+p.id);
@@ -4043,7 +4081,7 @@ function iniciarRastreioMotorista(){
     },
     { enableHighAccuracy:true, maximumAge:3000, timeout:12000 }
   );
-  if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 5000);
+  if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 3000);
 }
 function pararRastreioMotorista(){ if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; } avisoLocalizacaoMostrado=false; }
 async function enviarPosicaoMotorista(){
@@ -4055,7 +4093,7 @@ async function enviarPosicaoMotorista(){
       p_telefone: estado.motorista.telefone, p_lat: ultimaPosicaoMotorista.lat, p_lng: ultimaPosicaoMotorista.lon
     });
   }
-  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
+  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0) return;
   await Promise.all(ativos.map(p=>sb.from('entrega_pedidos').update({
     motorista_lat: ultimaPosicaoMotorista.lat, motorista_lng: ultimaPosicaoMotorista.lon, motorista_atualizado_em: Date.now()
@@ -4105,7 +4143,7 @@ function montarMapa(containerId, pedido){
         m.mMotorista = L.marker(pM,{icon:iconeMotorista(emoji)}).addTo(m.map);
         m.linhaMotorista = L.polyline([pM,alvo],{color:'#ffc93c',weight:5,opacity:0.9,lineCap:'round'}).addTo(m.map);
         m.posAtual = pM;
-        m.map.fitBounds([pO,pD,pM],{padding:[24,24]});
+        // Não refaz zoom aqui: evita o "pulo/pisca" quando o primeiro GPS chega.
       } else if(m.posAtual && (m.posAtual[0]!==pM[0] || m.posAtual[1]!==pM[1])){
         animarMotorista(m, m.posAtual, pM, alvo);
       } else if(m.linhaMotorista){
@@ -4115,7 +4153,7 @@ function montarMapa(containerId, pedido){
   },30);
 }
 function iconeMotorista(emoji){
-  return L.divIcon({ className:'', html:`<div class="icone-motorista-anim"><span>${emoji}</span></div>`, iconSize:[30,30], iconAnchor:[15,15] });
+  return L.divIcon({ className:'', html:`<div class="icone-motorista-anim"><span>${emoji}</span></div>`, iconSize:[42,42], iconAnchor:[21,21] });
 }
 // bolinha colorida usada no mapa geral do admin (disponível / em corrida / cliente aguardando)
 function iconeBolinhaMapa(emoji, classeCor){
@@ -6441,7 +6479,7 @@ async function avisarClienteOcorrenciaEntrega(pedido, fase='ocorrencia'){
 // botão SOS flutuante (visível em todas as telas do motorista Pro): acha a entrega
 // em andamento e abre direto o chamado; se houver mais de uma, pergunta qual.
 function abrirSOSFlutuante(){
-  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
+  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0){ mostrarToast('Você só pode chamar um motorista amigo durante uma entrega em andamento.'); return; }
   // se houver mais de uma entrega ativa, chama ajuda pra mais recente (a que provavelmente está em mãos agora)
   const escolhida = ativos.sort((a,b)=>b.iniciadoEm-a.iniciadoEm)[0];
