@@ -6532,7 +6532,13 @@ function filtrarPedidosAdmin(){
   const a = estado.admin;
   const busca = (a.buscaPedidos||'').trim().toLowerCase();
   return (a.todosPedidos||[]).filter(p=>{
-    if(a.filtroPedidos!=='todos' && p.status!==a.filtroPedidos) return false;
+    if(a.filtroPedidos==='aguardando_confirmacao'){
+      const confirmado = !!(p.cliente_confirmou || p.confirmado_cliente || p.recebimento_confirmado || p.confirmado_em || p.cliente_confirmou_em);
+      if(p.status!=='entregue' || confirmado) return false;
+    } else if(a.filtroPedidos==='confirmados'){
+      const confirmado = !!(p.cliente_confirmou || p.confirmado_cliente || p.recebimento_confirmado || p.confirmado_em || p.cliente_confirmou_em);
+      if(p.status!=='entregue' || !confirmado) return false;
+    } else if(a.filtroPedidos!=='todos' && p.status!==a.filtroPedidos) return false;
     if(!busca) return true;
     return (p.cliente_nome||'').toLowerCase().includes(busca) || (p.cliente_telefone||'').includes(busca)
       || (p.motorista_nome||'').toLowerCase().includes(busca) || (p.motorista_telefone||'').includes(busca) || (p.id||'').includes(busca);
@@ -6850,14 +6856,42 @@ function adminAbaPedidosHTML(){
   const lista = filtrarPedidosAdmin();
   const filtros = [
     {id:'todos', label:'Todos'}, {id:'buscando', label:'Buscando'}, {id:'indo_coletar', label:'Indo coletar'},
-    {id:'coletado', label:'Coletado'}, {id:'a_caminho', label:'A caminho'}, {id:'entregue', label:'Entregues'}, {id:'cancelado', label:'Cancelados'}
+    {id:'coletado', label:'Coletado'}, {id:'a_caminho', label:'A caminho'}, {id:'entregue', label:'Entregues'},
+    {id:'aguardando_confirmacao', label:'⏳ Aguard. confirmação'}, {id:'confirmados', label:'✅ Confirmados'}, {id:'cancelado', label:'Cancelados'}
   ];
+  const entregues = (a.todosPedidos||[]).filter(p=>p.status==='entregue');
+  const confirmados = entregues.filter(p=>!!(p.cliente_confirmou || p.confirmado_cliente || p.recebimento_confirmado || p.confirmado_em || p.cliente_confirmou_em));
+  const comFoto = entregues.filter(p=>!!p.foto_depois_url);
   return `
+  <div class="admin-grade-cartoes colunas-3" style="margin-bottom:12px">
+    <div class="admin-cartao"><div class="subtitulo">📦 Entregues pelo motorista</div><b style="font-size:24px;color:var(--mango)">${entregues.length}</b></div>
+    <div class="admin-cartao"><div class="subtitulo">📸 Com foto de entrega</div><b style="font-size:24px;color:var(--verde)">${comFoto.length}</b></div>
+    <div class="admin-cartao"><div class="subtitulo">⏳ Aguardando cliente</div><b style="font-size:24px;color:var(--chama)">${Math.max(0,entregues.length-confirmados.length)}</b></div>
+  </div>
   <input type="text" placeholder="Buscar por nome, telefone ou ID..." value="${a.buscaPedidos}" oninput="digitarBuscaPedidosAdmin(this.value)" style="margin-bottom:10px">
   <div class="admin-filtros-grade">${filtros.map(f=>`<button class="${a.filtroPedidos===f.id?'ativo':''}" onclick="definirFiltroPedidosAdmin('${f.id}')">${f.label}</button>`).join('')}</div>
   <div class="subtitulo" style="margin-top:10px;margin-bottom:10px">${lista.length} pedido(s) — mostrando os 500 mais recentes do banco.</div>
   ${lista.length===0 ? `<div class="vazio"><span class="emoji-grande">📦</span>Nenhum pedido encontrado.</div>` : `<div class="admin-grade-cartoes colunas-3">${lista.map(pedidoCardAdminHTML).join('')}</div>`}`;
 }
+function comprovanteEntregaAdminHTML(p){
+  const entregue = p.status==='entregue';
+  const fotoColeta = p.foto_antes_url || p.fotoAntesUrl || null;
+  const fotoEntrega = p.foto_depois_url || p.fotoDepoisUrl || null;
+  const confirmado = !!(p.cliente_confirmou || p.confirmado_cliente || p.recebimento_confirmado || p.confirmado_em || p.cliente_confirmou_em);
+  const confirmadoEm = p.confirmado_em || p.cliente_confirmou_em || p.recebimento_confirmado_em || null;
+  if(!entregue && !fotoColeta && !fotoEntrega) return '';
+  const img=(url,titulo)=>url?`<a href="${url}" target="_blank" rel="noopener" style="display:block;flex:1;min-width:110px;text-decoration:none"><div style="font-size:11px;color:var(--poeira);margin-bottom:5px">${titulo}</div><img src="${url}" alt="${titulo}" style="width:100%;height:105px;object-fit:cover;border-radius:10px;border:1px solid var(--linha);background:var(--painel-alt)"></a>`:`<div style="flex:1;min-width:110px"><div style="font-size:11px;color:var(--poeira);margin-bottom:5px">${titulo}</div><div style="height:105px;border:1px dashed var(--linha);border-radius:10px;display:grid;place-items:center;color:var(--poeira);font-size:12px;text-align:center;padding:8px">📷 Foto não registrada</div></div>`;
+  return `<div style="margin-top:10px;padding:11px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid var(--linha)">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:8px"><b style="font-size:12px">📦 COMPROVANTE DA ENTREGA</b><span class="selo ${confirmado?'selo-entregue':'selo-andamento'}">${confirmado?'✅ Cliente confirmou':'⏳ Aguardando cliente'}</span></div>
+    <div class="am-linha"><span>Motorista finalizou</span><b>${entregue?'✅ Sim':'Ainda não'}</b></div>
+    <div class="am-linha"><span>Foto da entrega</span><b>${fotoEntrega?'✅ Recebida':'⚠️ Não registrada'}</b></div>
+    <div class="am-linha"><span>Confirmação do cliente</span><b>${confirmado?'✅ Confirmada':'⏳ Pendente'}</b></div>
+    ${confirmadoEm?`<div class="am-linha"><span>Confirmado em</span><b>${new Date(Number(confirmadoEm)||confirmadoEm).toLocaleString('pt-BR')}</b></div>`:''}
+    ${entregue?`<div class="am-linha"><span>Finalizado em</span><b>${p.atualizado_em?new Date(Number(p.atualizado_em)).toLocaleString('pt-BR'):'—'}</b></div>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:9px">${img(fotoColeta,'📸 Foto da coleta')}${img(fotoEntrega,'📸 Foto da entrega')}</div>
+  </div>`;
+}
+
 function pedidoCardAdminHTML(p){
   const editando = estado.admin.pedidoEditando===p.id;
   if(editando){
@@ -6901,6 +6935,7 @@ function pedidoCardAdminHTML(p){
       <div class="am-linha"><span>Valor</span><b>R$ ${Number(p.preco||0).toFixed(2)}</b></div>
       <div class="am-linha"><span>Criado em</span><b>${new Date(Number(p.criado_em)).toLocaleString('pt-BR')}</b></div>
       <div class="am-linha"><span>ID</span><b style="font-family:monospace;font-size:11.5px">${p.id}</b></div>
+      ${comprovanteEntregaAdminHTML(p)}
       <div style="display:flex;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoPedidoAdmin('${p.id}')">✏️ Editar</button>
         <button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" ${atributoDesabilitado('excluirPedidoAdmin_'+p.id)} onclick="executarComCarregando('excluirPedidoAdmin_${p.id}', ()=>excluirPedidoAdmin('${p.id}','${(p.cliente_nome||'').replace(/'/g,"\\'")}'))">${rotuloCarregando('excluirPedidoAdmin_'+p.id,'🗑️ Excluir','Excluindo...')}</button>
