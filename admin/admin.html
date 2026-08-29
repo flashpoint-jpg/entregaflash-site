@@ -6483,30 +6483,6 @@ async function finalizarCadastroMotorista(){
 }
 function alternarTermos(){ estado.painelMotorista.cadastro.aceitouTermos = !estado.painelMotorista.cadastro.aceitouTermos; render(); }
 
-let efFunilCadastroAdmin = {visita:0, escolheu:0, iniciou_cadastro:0, concluiu_cadastro:0};
-async function carregarFunilCadastroAdmin(){
-  if(!estado.admin.logado || !estado.admin.senhaDigitada) return;
-  try{
-    const {data,error}=await sb.rpc('entrega_admin_resumo_funil_anuncio',{p_senha:estado.admin.senhaDigitada});
-    if(error) throw error;
-    const novo={visita:0,escolheu:0,iniciou_cadastro:0,concluiu_cadastro:0};
-    (data||[]).filter(x=>x.papel==='motorista').forEach(x=>{ if(Object.prototype.hasOwnProperty.call(novo,x.tipo)) novo[x.tipo]=Number(x.total||0); });
-    efFunilCadastroAdmin=novo;
-  }catch(e){ console.warn('Funil cadastro admin:',e); }
-}
-function funilCadastroAdminHTML(){
-  const f=efFunilCadastroAdmin;
-  const pct=(a,b)=> b>0 ? Math.round((a/b)*100)+'%' : '—';
-  return `<div class="admin-cartao" style="border-color:rgba(255,82,55,.42)">
-    <b style="font-family:'Rajdhani';font-weight:800;font-size:15px;text-transform:uppercase">📊 Funil de motoristas do anúncio</b>
-    <div class="am-linha"><span>1. Abriram o site</span><b>${f.visita}</b></div>
-    <div class="am-linha"><span>2. Escolheram Motorista</span><b>${f.escolheu} <small>(${pct(f.escolheu,f.visita)})</small></b></div>
-    <div class="am-linha"><span>3. Iniciaram o cadastro</span><b>${f.iniciou_cadastro} <small>(${pct(f.iniciou_cadastro,f.escolheu)})</small></b></div>
-    <div class="am-linha"><span>4. Concluíram o pré-cadastro</span><b style="color:var(--verde)">${f.concluiu_cadastro} <small>(${pct(f.concluiu_cadastro,f.iniciou_cadastro)})</small></b></div>
-    <div class="subtitulo" style="margin-top:8px">Mostra onde as pessoas vindas do anúncio estão desistindo.</div>
-  </div>`;
-}
-
 function resumoAdminHTML(){
   const a = estado.admin;
   const motoristas = a.motoristas||[];
@@ -6533,7 +6509,6 @@ function resumoAdminHTML(){
 
   const presenca = estado.presenca||{total:0,clientes:0,motoristas:0};
   return `
-  ${funilCadastroAdminHTML()}
   <div class="admin-cartao">
     <b style="font-family:'Rajdhani';font-weight:700;font-size:14px;text-transform:uppercase">🟢 Online agora</b>
     <div class="am-linha"><span>Total com o app aberto</span><b style="color:var(--verde)">${presenca.total}</b></div>
@@ -7458,7 +7433,7 @@ function adminAbaSuporteHTML(){
 }
 
 async function atualizarPainelAdmin(){
-  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarFunilCadastroAdmin()]);
+  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin()]);
   await carregarSuporteAdmin();
 }
 async function ajustarSaldoMotoristaAdmin(telefone){
@@ -7709,7 +7684,7 @@ async function entrarAdmin(){
   estado.admin.logado=true;
   salvarLocal('ef_admin_logado','true');
   salvarLocal('ef_admin_senha', senha);
-  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin(), carregarFunilCadastroAdmin()]);
+  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin()]);
   await carregarSuporteAdmin();
   assinarSuporteAdminGlobal();
   assinarAdminRealtime();
