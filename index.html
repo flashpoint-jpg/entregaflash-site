@@ -1087,9 +1087,29 @@ function esconderSplash(){
   el.classList.add('splash-esconder');
   setTimeout(()=>{ if(el && el.parentNode) el.parentNode.removeChild(el); }, 600);
 }
-async function registrarInicioFunilAnuncio(papel){
-  try{ await sb.from('entrega_funil_anuncio').insert({ tipo:'iniciado', papel, criado_em: Date.now() }); }catch(e){ console.error(e); }
+// Funil do anúncio: registra cada etapa uma única vez por sessão do navegador.
+// Os nomes abaixo são os mesmos consumidos pelo resumo do painel administrativo.
+async function registrarEtapaFunilAnuncio(tipo, papel='motorista'){
+  try{
+    const chave = 'ef_funil_' + tipo + '_' + papel;
+    if(sessionStorage.getItem(chave)==='1') return;
+    const { error } = await sb.from('entrega_funil_anuncio').insert({ tipo, papel, criado_em: Date.now() });
+    if(error) throw error;
+    sessionStorage.setItem(chave,'1');
+  }catch(e){ console.warn('Funil anúncio:', tipo, e); }
 }
+function registrarInicioFunilAnuncio(papel){ return registrarEtapaFunilAnuncio('iniciou_cadastro', papel); }
+function registrarVisitaFunilAnuncio(){ return registrarEtapaFunilAnuncio('visita','motorista'); }
+function registrarEscolhaFunilAnuncio(papel){ return registrarEtapaFunilAnuncio('escolheu',papel); }
+function registrarConclusaoFunilAnuncio(papel){ return registrarEtapaFunilAnuncio('concluiu_cadastro',papel); }
+
+// Conta a abertura do site. A deduplicação por sessão evita somar vários renders/reloads internos.
+registrarVisitaFunilAnuncio();
+
+// Só considera "iniciou cadastro" quando a pessoa realmente começa a preencher o formulário.
+document.addEventListener('input', function(e){
+  if(e.target && /^cm-/.test(e.target.id||'')) registrarInicioFunilAnuncio('motorista');
+}, {passive:true});
 function urlBase64ToUint8Array(base64String){
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -4868,6 +4888,7 @@ function telaBoasVindas(){
   </div>`;
 }
 function escolherBoasVindas(papel){
+  if(papel==='entregador') registrarEscolhaFunilAnuncio('motorista');
   estado.telaBoasVindas = false;
   estado.modo = papel;
   salvarLocal('ef_modo', papel);
@@ -7057,6 +7078,7 @@ async function avancarEtapa1(){
     c.id = salvo.id;
     c.criadoEm = salvo.criado_em || Date.now();
     c.enviando=false;
+    await registrarConclusaoFunilAnuncio('motorista');
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista_basico'}); }catch(e){}
     registrarAlertaAdmin('novo_motorista_basico', `Novo motorista em cadastro básico: ${c.nome||''} (${c.telefone||''}).`);
 
@@ -8538,8 +8560,8 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
     try{
       const destinoAnuncio = new URLSearchParams(window.location.search).get('ir');
       if(destinoAnuncio && !estado.cliente.logado && !estado.motorista.ativo){
-        if(destinoAnuncio === 'cadastro-cliente'){ escolherBoasVindas('cliente'); registrarInicioFunilAnuncio('cliente'); }
-        else if(destinoAnuncio === 'cadastro-motorista'){ escolherBoasVindas('entregador'); registrarInicioFunilAnuncio('motorista'); }
+        if(destinoAnuncio === 'cadastro-cliente'){ escolherBoasVindas('cliente'); }
+        else if(destinoAnuncio === 'cadastro-motorista'){ escolherBoasVindas('entregador'); }
         else if(destinoAnuncio === 'login-cliente'){ entrarBoasVindas('cliente'); }
         else if(destinoAnuncio === 'login-motorista'){ entrarBoasVindas('entregador'); }
       }
