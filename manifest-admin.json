@@ -1,7 +1,7 @@
 {
   "name": "Entrega Flash Admin",
   "short_name": "Flash Admin",
-  "start_url": "./admin.html",
+  "start_url": "./admin.html?v=20260829-funil-2",
   "scope": "./",
   "display": "standalone",
   "background_color": "#171d4a",

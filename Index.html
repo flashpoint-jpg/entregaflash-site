@@ -324,20 +324,6 @@ fbq('track', 'PageView');
   .etiquetas span:last-child{text-align:right;}
 
   .mapa{width:100%;height:180px;border-radius:14px;margin-top:12px;background:var(--painel-alt);overflow:hidden;}
-  /* Rastreamento Ultra Premium do cliente */
-  .mapa-premium-overlay{position:fixed;inset:0;z-index:9998;background:#08090b;display:none;overflow:hidden}
-  .mapa-premium-overlay.aberto{display:block}
-  .mapa-premium-overlay .mapa-cliente-premium{position:absolute;inset:0;width:100%;height:100%;margin:0;border:0!important;border-radius:0!important;z-index:1}
-  .mapa-premium-topo{position:absolute;left:14px;right:14px;top:max(14px,env(safe-area-inset-top));z-index:1001;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px 12px 16px;border:1px solid rgba(255,255,255,.13);border-radius:20px;background:rgba(10,11,13,.88);backdrop-filter:blur(16px);box-shadow:0 12px 35px rgba(0,0,0,.35);color:#fff}
-  .mapa-premium-topo strong{display:block;font-size:15px;margin-top:3px}
-  .mapa-premium-kicker{display:block;color:#ff4438;font-size:10px;font-weight:900;letter-spacing:1.2px}
-  .mapa-premium-fechar{width:42px;height:42px;flex:0 0 42px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:#17191d;color:#fff;font-size:28px;line-height:38px;cursor:pointer}
-  .mapa-premium-card{position:absolute;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:1001;display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgba(255,255,255,.13);border-radius:22px;background:rgba(10,11,13,.91);backdrop-filter:blur(18px);box-shadow:0 -12px 40px rgba(0,0,0,.3);color:#fff}
-  .mapa-premium-veiculo{width:52px;height:52px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(145deg,#ff4538,#b5120a);font-size:28px;box-shadow:0 8px 24px rgba(255,55,45,.28)}
-  .mapa-premium-info{min-width:0;flex:1}.mapa-premium-info b{display:block;font-size:15px}.mapa-premium-info span{display:block;margin-top:3px;color:#b9bdc5;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .mapa-premium-eta{font-size:11px;text-align:right;max-width:120px}.mapa-premium-eta .eta-box{margin:0!important}
-  .icone-motorista-anim{width:42px!important;height:42px!important;border:3px solid #fff!important;box-shadow:0 8px 25px rgba(0,0,0,.42),0 0 0 5px rgba(255,67,55,.18)!important;font-size:23px!important}
-
   .mapa-admin-geral{width:100%;height:360px;border-radius:18px;overflow:hidden;background:var(--painel-alt);}
   .admin-resumo-card{border:1px solid var(--linha);border-radius:12px;background:var(--painel);overflow:hidden;margin-bottom:8px;}
   .admin-resumo-card[open]{border-color:rgba(255,147,48,.45);}
@@ -974,7 +960,7 @@ label,.subtitulo,.texto-ajuda,.hint,.ajuda{color:#c7cad0!important}
 .btn-sitio-roca{display:inline-flex!important;align-items:center!important;gap:7px!important}
 .btn-sitio-roca::before{content:"";width:16px;height:16px;display:inline-block;background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff9f0a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z'/%3E%3Ccircle cx='12' cy='10' r='2.5'/%3E%3C/svg%3E")}
 </style>
-<script>window.EF_BUILD='20260829-sem-tela-cadastro-recebido-v1';</script>
+<script>window.EF_BUILD='20260829-funil-cadastro-v2';</script>
 </head>
 
 <style id="ef-parceiros-premium">
@@ -1132,9 +1118,23 @@ function esconderSplash(){
   el.classList.add('splash-esconder');
   setTimeout(()=>{ if(el && el.parentNode) el.parentNode.removeChild(el); }, 600);
 }
-async function registrarInicioFunilAnuncio(papel){
-  try{ await sb.from('entrega_funil_anuncio').insert({ tipo:'iniciado', papel, criado_em: Date.now() }); }catch(e){ console.error(e); }
+
+// ===== FUNIL DE CADASTRO / ANÚNCIOS =====
+function efVeioDeAnuncio(){
+  try{ return !!new URLSearchParams(location.search).get('ir') || !!estado.viaAnuncio; }catch(e){ return false; }
 }
+async function registrarEtapaFunilAnuncio(tipo, papel='motorista'){
+  try{
+    if(!efVeioDeAnuncio()) return;
+    const chave = `ef_funil_${papel}_${tipo}`;
+    if(sessionStorage.getItem(chave)) return;
+    sessionStorage.setItem(chave,'1');
+    const { error } = await sb.from('entrega_funil_anuncio').insert({ tipo, papel, criado_em:Date.now() });
+    if(error){ sessionStorage.removeItem(chave); console.warn('Funil anúncio:', error.message||error); }
+  }catch(e){ console.warn('Funil anúncio:',e); }
+}
+
+async function registrarInicioFunilAnuncio(papel){ return registrarEtapaFunilAnuncio('escolheu', papel); }
 function urlBase64ToUint8Array(base64String){
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -1458,19 +1458,6 @@ let pixPollTimer = null;
 let planoPixPollTimer = null;
 
 let mapasAtivos = {};
-// mapa Ultra Premium do cliente: abre automaticamente quando um entregador aceita
-const mapasPremiumFechados = new Set();
-function fecharMapaPremium(id){
-  mapasPremiumFechados.add(String(id));
-  const el=document.getElementById('mapa-premium-'+id);
-  if(el) el.classList.remove('aberto');
-}
-function abrirMapaPremium(id){
-  mapasPremiumFechados.delete(String(id));
-  const el=document.getElementById('mapa-premium-'+id);
-  if(el){ el.classList.add('aberto'); setTimeout(()=>{ try{ const m=mapasAtivos['mapa-c-'+id]; if(m&&m.map) m.map.invalidateSize(); }catch(e){} },120); }
-}
-
 let mapaAdminGeral = null; // mapa único do painel admin com todos os motoristas em corrida
 const STATUS_MAPA_ADMIN = { indo_coletar:' Indo coletar', coletado:' Coletado, seguindo para entrega', a_caminho:' A caminho da entrega' };
 let etaEstado = {};
@@ -2066,7 +2053,6 @@ function dispararAlertaMotorista(pedido){
   // Não renderiza aqui: carregarPedidos() fará um único render ao final da atualização.
   // Isso evita dois redesenhos seguidos justamente quando o motorista aceita a corrida.
   estado.alertaMotorista = { nome: pedido.motoristaNome||'Um entregador', pedidoId: pedido.id };
-  mapasPremiumFechados.delete(String(pedido.id));
   tocarSomAlerta();
   clearTimeout(window._alertaMotoristaTimer);
   window._alertaMotoristaTimer = setTimeout(()=>{ estado.alertaMotorista=null; render(); }, 7000);
@@ -4096,8 +4082,7 @@ function montarMapa(containerId, pedido){
       setTimeout(()=>{ try{ m.map.invalidateSize(); }catch(e){} },0);
     }
     if(pM){
-      const tipoVeiculoMapa = pedido.motoristaVeiculoTipo || pedido.veiculo;
-      const emoji = (VEICULOS[tipoVeiculoMapa]&&VEICULOS[tipoVeiculoMapa].emoji)||'';
+      const emoji = (VEICULOS[pedido.veiculo]&&VEICULOS[pedido.veiculo].emoji)||'';
       if(!m.mMotorista){
         m.mMotorista = L.marker(pM,{icon:iconeMotorista(emoji)}).addTo(m.map);
         m.linhaMotorista = L.polyline([pM,alvo],{color:'#ffc93c',weight:5,opacity:0.9,lineCap:'round'}).addTo(m.map);
@@ -4534,7 +4519,7 @@ function cartaoPedidoCliente(p){
         ${p.motoristaVeiculoTipo ? `${VEICULOS[p.motoristaVeiculoTipo]?.emoji||''} ${p.motoristaMarca||''} ${p.motoristaCor||''} · Placa ${p.motoristaPlaca||''}` : ''}
       </div>
     </div>` : ''}
-    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa-premium-overlay ${mapasPremiumFechados.has(String(p.id))?'':'aberto'}" id="mapa-premium-${p.id}"><div class="mapa-premium-topo"><div><span class="mapa-premium-kicker">ENTREGA FLASH • AO VIVO</span><strong>${p.status==='indo_coletar'?'Motorista a caminho da retirada':p.status==='coletado'?'Pedido coletado':'Entrega a caminho'}</strong></div><button type="button" class="mapa-premium-fechar" onclick="fecharMapaPremium('${p.id}')" aria-label="Fechar mapa">×</button></div><div class="mapa mapa-cliente-premium" id="${mapaId}"></div><div class="mapa-premium-card"><div class="mapa-premium-veiculo">${VEICULOS[p.motoristaVeiculoTipo||p.veiculo]?.emoji||''}</div><div class="mapa-premium-info"><b>${p.motoristaNome||'Seu entregador'}</b><span>${p.motoristaMarca||''} ${p.motoristaCor||''}${p.motoristaPlaca?' • '+p.motoristaPlaca:''}</span></div><div class="mapa-premium-eta">${etaHTML(p)}</div></div></div><button type="button" class="btn btn-secundario btn-pequeno" style="margin-top:10px" onclick="abrirMapaPremium('${p.id}')">Abrir mapa em tela cheia</button>` : ''}
+    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa" id="${mapaId}"></div>${etaHTML(p)}` : ''}
     ${fotosHTML(p)}
     ${avaliacaoHTML(p)}
     ${emAndamento ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${botaoChatHTML(p.id, estado.chatNaoLidas[p.id]||0)}${botaoLigarHTML(p.motoristaTelefone)}<button type="button" class="btn btn-secundario btn-pequeno" onclick="compartilharPedido('${p.id}')"> Compartilhar</button></div>` : ''}
@@ -4931,6 +4916,7 @@ function telaBoasVindas(){
   </div>`;
 }
 function escolherBoasVindas(papel){
+  if(papel==='entregador') registrarEtapaFunilAnuncio('escolheu','motorista');
   estado.telaBoasVindas = false;
   estado.modo = papel;
   salvarLocal('ef_modo', papel);
@@ -7407,6 +7393,7 @@ function normalizarPlaca(placa){
 }
 
 async function avancarEtapa1(){
+  registrarEtapaFunilAnuncio('iniciou_cadastro','motorista');
   const c = estado.painelMotorista.cadastro;
   c.nome = document.getElementById('cm-nome').value.trim();
   c.telefone = (document.getElementById('cm-telefone').value || '').replace(/\D/g,'');
@@ -7432,6 +7419,7 @@ async function avancarEtapa1(){
     if(!salvo || !salvo.id) throw new Error('cadastro_nao_confirmado');
     c.id = salvo.id;
     c.criadoEm = salvo.criado_em || Date.now();
+    registrarEtapaFunilAnuncio('concluiu_cadastro','motorista');
     c.enviando=false;
     estado.painelMotorista.tela='login';
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista_basico'}); }catch(e){}
@@ -8879,6 +8867,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   // marca a visita como "via anúncio" pra cortar onboarding/popup de instalar/faixa de notificação
   try{
     estado.viaAnuncio = !!new URLSearchParams(window.location.search).get('ir');
+    if(estado.viaAnuncio) registrarEtapaFunilAnuncio('visita','motorista');
   }catch(e){ estado.viaAnuncio = false; }
   restaurarSessao().then(async ()=>{
     render();
@@ -8887,7 +8876,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
       const destinoAnuncio = new URLSearchParams(window.location.search).get('ir');
       if(destinoAnuncio && !estado.cliente.logado && !estado.motorista.ativo){
         if(destinoAnuncio === 'cadastro-cliente'){ escolherBoasVindas('cliente'); registrarInicioFunilAnuncio('cliente'); }
-        else if(destinoAnuncio === 'cadastro-motorista'){ escolherBoasVindas('entregador'); registrarInicioFunilAnuncio('motorista'); }
+        else if(destinoAnuncio === 'cadastro-motorista'){ escolherBoasVindas('entregador'); }
         else if(destinoAnuncio === 'login-cliente'){ entrarBoasVindas('cliente'); }
         else if(destinoAnuncio === 'login-motorista'){ entrarBoasVindas('entregador'); }
       }

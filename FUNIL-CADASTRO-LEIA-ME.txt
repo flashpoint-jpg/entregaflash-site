@@ -1,0 +1,16 @@
+ENTREGA FLASH — FUNIL DE MOTORISTAS
+
+Rastreamento adicionado ao site principal:
+1. visita — abriu o site vindo de link com ?ir=...
+2. escolheu — escolheu Motorista
+3. iniciou_cadastro — tentou avançar a primeira etapa do cadastro
+4. concluiu_cadastro — pré-cadastro confirmado pelo servidor
+
+Os eventos são gravados na tabela entrega_funil_anuncio e deduplicados por sessão do navegador.
+O arquivo admin-FUNIL-CADASTRO.html mostra o funil no Resumo do painel administrativo.
+
+
+CORREÇÃO 29/08:
+- admin.html atualizado com o medidor/funil no topo do Resumo.
+- cache do PWA administrativo atualizado para forçar a nova versão.
+- banco Supabase corrigido para salvar taxa de espera e acréscimos noturno/chuva/feriado.
