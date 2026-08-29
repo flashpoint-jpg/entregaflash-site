@@ -5587,8 +5587,9 @@ function concluirTreinamentoMotorista(){
   try{localStorage.setItem(chaveTreinamentoMotorista(),'concluido');}catch(e){}
   estado.treinamentoMotoristaEtapa=0;
   estado.treinamentoFotoProduto=null;
-  mostrarToast('Treinamento concluído! Agora você já sabe como funciona uma entrega.', 'sucesso');
+  mostrarToast('Treinamento concluído! Agora falta só enviar sua documentação.', 'sucesso');
   render();
+  setTimeout(()=>{ abrirDocumentacaoMotoristaDoPainel().catch(e=>{ console.error('Abrir documentação após treinamento:',e); mostrarToast('Toque em ENVIAR DOCUMENTAÇÃO para continuar.', 'info'); }); },900);
 }
 function treinamentoMotoristaHTML(){
   const m=estado.motorista||{};
@@ -6054,11 +6055,49 @@ function _efAssinaturaTela(){
     estado.abaPrincipalMotorista, estado.admin.aberto, estado.admin.aba
   ].join('|');
 }
+let efPreparandoPainelMotorista = false;
+let efPreparandoPainelTimer = null;
+let efPreparandoPainelInicio = 0;
+function telaPreparandoPainelMotorista(){
+  const decorrido = Date.now() - (efPreparandoPainelInicio||Date.now());
+  const fase = decorrido < 1500 ? 1 : decorrido < 3000 ? 2 : 3;
+  const titulo = fase===1 ? 'Preparando seu painel...' : fase===2 ? 'Configurando seu acesso...' : 'Acesso ao painel liberado';
+  const subtitulo = fase===1 ? 'Organizando sua área de motorista' : fase===2 ? 'Ativando o modo de treinamento' : 'Agora você já pode simular como funciona';
+  const pct = fase===1 ? 32 : fase===2 ? 72 : 100;
+  return `<div style="min-height:520px;display:flex;align-items:center;justify-content:center;padding:24px 18px">
+    <div style="width:100%;max-width:430px;text-align:center;padding:30px 22px;border-radius:24px;background:linear-gradient(160deg,rgba(18,22,30,.98),rgba(29,33,42,.98));border:1px solid rgba(255,190,61,.35);box-shadow:0 22px 70px rgba(0,0,0,.38)">
+      <div style="width:92px;height:92px;margin:0 auto 22px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,rgba(255,190,61,.24),rgba(255,190,61,.04));border:2px solid var(--mango);font-size:44px;animation:efPulsePremium 1s ease-in-out infinite">${fase===3?'✓':'⚡'}</div>
+      <div style="font-family:'Rajdhani';font-size:26px;font-weight:800;color:${fase===3?'var(--verde)':'var(--osso)'};letter-spacing:.2px">${titulo}</div>
+      <div style="font-size:14px;color:var(--poeira);margin-top:8px;line-height:1.45">${subtitulo}</div>
+      <div style="height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin:24px 0 12px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--mango),var(--verde));border-radius:999px;transition:width .45s ease"></div></div>
+      <div style="font-size:12px;font-weight:800;color:var(--mango);letter-spacing:.08em">ENTREGA FLASH • ACESSO SEGURO</div>
+    </div>
+    <style>@keyframes efPulsePremium{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,190,61,.22)}50%{transform:scale(1.06);box-shadow:0 0 0 14px rgba(255,190,61,0)}}@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style>
+  </div>`;
+}
+function iniciarPreparacaoPainelMotorista(){
+  if(efPreparandoPainelTimer) clearTimeout(efPreparandoPainelTimer);
+  efPreparandoPainelMotorista=true;
+  efPreparandoPainelInicio=Date.now();
+  render();
+  const atualiza1=setTimeout(()=>{ if(efPreparandoPainelMotorista) render(); },1500);
+  const atualiza2=setTimeout(()=>{ if(efPreparandoPainelMotorista) render(); },3000);
+  efPreparandoPainelTimer=setTimeout(()=>{
+    clearTimeout(atualiza1); clearTimeout(atualiza2);
+    efPreparandoPainelMotorista=false;
+    efPreparandoPainelTimer=null;
+    render();
+    window.scrollTo(0,0);
+    mostrarToast('Acesso ao painel liberado! Faça a simulação para conhecer o funcionamento.', 'sucesso');
+  },4000);
+}
+
 function render(){
   const app = document.getElementById('app');
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
   const _valores = capturarValoresInputs();
+  if(efPreparandoPainelMotorista){ app.innerHTML = telaPreparandoPainelMotorista(); window.scrollTo(0,0); return; }
   if(estado.parceiro && estado.parceiro.aberto){
     app.innerHTML = telaParceiros();
     restaurarFocoAtivo(_foco);
@@ -6870,6 +6909,12 @@ function sairCliente(){
 // aceitarPedido() e solicitarSaque())
 const STATUS_ACESSO_PAINEL = ['basico','liberado','pendente','aprovado'];
 async function entrarNoPainelMotorista(data){
+  // Mantém uma cópia do perfil retornado pelo login. Assim o botão de documentação
+  // não depende de uma segunda consulta para abrir a tela.
+  estado.painelMotorista.perfilLogado = data || null;
+  estado.modo = 'entregador';
+  estado.telaBoasVindas = false;
+  estado.painelMotorista.tela = 'entrar';
   // O login precisa abrir o painel IMEDIATAMENTE. Antes, a tela esperava carregar
   // os pedidos pela internet; em conexão lenta isso parecia que o login voltava/soltava
   // para a tela de entrada. Primeiro ativa a sessão e desenha o painel, depois atualiza
@@ -6883,7 +6928,7 @@ async function entrarNoPainelMotorista(data){
   estado.painelMotorista.loginErro='';
   estado.ultimoPedidosJSON='';
   salvarLocal('ef_motorista_telefone', data.telefone); salvarLocal('ef_modo','entregador');
-  render();
+  if(data.status==='basico' && !treinamentoMotoristaConcluido()) iniciarPreparacaoPainelMotorista(); else render();
   carregarPedidos().catch(e=>console.error('Falha ao atualizar pedidos após login:', e));
   carregarCancelamentosMotorista();
   carregarSaldoMotorista();
@@ -6945,12 +6990,70 @@ async function abrirDocumentacaoMotoristaDoPainel(){
   const pm = estado.painelMotorista;
   const m = estado.motorista || {};
   if(!m.telefone){ mostrarToast('Entre novamente para abrir a documentação.', 'erro'); return; }
+
+  // Abre a documentação IMEDIATAMENTE com os dados que já vieram no login.
+  // Isso evita o botão parecer "morto" quando a RPC de perfil demora ou falha.
+  const data = pm.perfilLogado || {};
+  const c = pm.cadastro;
+  c.id = data.id || c.id || null;
+  c.nome = data.nome || m.nome || c.nome || '';
+  c.cpf = data.cpf || c.cpf || '';
+  c.telefone = data.telefone || m.telefone || c.telefone || '';
+  c.cidade = data.cidade || c.cidade || '';
+  c.senhaHash = data.senha_hash || c.senhaHash || null;
+  c.criadoEm = data.criado_em || m.criadoEm || c.criadoEm || null;
+  c.veiculo = data.veiculo_tipo || m.veiculo || c.veiculo || 'moto';
+  c.marca = data.veiculo_marca || m.marca || c.marca || '';
+  c.placa = data.veiculo_placa || m.placa || c.placa || '';
+  c.cor = data.veiculo_cor || m.cor || c.cor || '';
+  c.fotoMotoristaUrl = data.foto_motorista_url || m.fotoMotoristaUrl || c.fotoMotoristaUrl || null;
+  c.fotoVeiculoFrenteUrl = data.foto_veiculo_url || m.fotoVeiculoUrl || c.fotoVeiculoFrenteUrl || null;
+  c.fotoVeiculoTrasUrl = data.foto_veiculo_tras_url || c.fotoVeiculoTrasUrl || null;
+  c.cnhUrl = data.cnh_url || c.cnhUrl || null;
+  c.crlvUrl = data.crlv_url || c.crlvUrl || null;
+  c.aceitaResponsabilidadeBike = data.aceita_responsabilidade_bike != null ? !!data.aceita_responsabilidade_bike : !!c.aceitaResponsabilidadeBike;
+  c.etapa = (c.cpf && c.marca) ? 3 : 2;
+  c.erroEtapa = '';
   pm.telefoneLiberado = m.telefone;
-  await continuarParaDocumentos();
+  pm.tela = 'cadastro';
+  render();
+
+  // Se o login não trouxe o ID, tenta completar o perfil em segundo plano.
+  // A tela continua aberta mesmo se essa consulta falhar.
+  if(!c.id){
+    try{
+      const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: m.telefone });
+      const perfil = Array.isArray(dadosPerfil) ? (dadosPerfil[0] || null) : dadosPerfil;
+      if(!error && perfil){
+        pm.perfilLogado = Object.assign({}, data, perfil);
+        c.id = perfil.id || c.id;
+        c.nome = perfil.nome || c.nome;
+        c.cpf = perfil.cpf || c.cpf;
+        c.cidade = perfil.cidade || c.cidade;
+        c.senhaHash = perfil.senha_hash || c.senhaHash;
+        c.criadoEm = perfil.criado_em || c.criadoEm;
+        c.veiculo = perfil.veiculo_tipo || c.veiculo;
+        c.marca = perfil.veiculo_marca || c.marca;
+        c.placa = perfil.veiculo_placa || c.placa;
+        c.cor = perfil.veiculo_cor || c.cor;
+        c.fotoMotoristaUrl = perfil.foto_motorista_url || c.fotoMotoristaUrl;
+        c.fotoVeiculoFrenteUrl = perfil.foto_veiculo_url || c.fotoVeiculoFrenteUrl;
+        c.fotoVeiculoTrasUrl = perfil.foto_veiculo_tras_url || c.fotoVeiculoTrasUrl;
+        c.cnhUrl = perfil.cnh_url || c.cnhUrl;
+        c.crlvUrl = perfil.crlv_url || c.crlvUrl;
+        c.aceitaResponsabilidadeBike = perfil.aceita_responsabilidade_bike != null ? !!perfil.aceita_responsabilidade_bike : c.aceitaResponsabilidadeBike;
+        c.etapa = (c.cpf && c.marca) ? 3 : 2;
+        if(pm.tela==='cadastro') render();
+      }
+    }catch(e){ console.warn('Não foi possível completar o perfil para documentação:', e); }
+  }
 }
 
 async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
+  if(estado.motorista && estado.motorista.ativo && estado.motorista.telefone){
+    return abrirDocumentacaoMotoristaDoPainel();
+  }
   pm.carregandoLiberado = true; render();
   const telefone = pm.telefoneLiberado || pm.loginTelefone;
   const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
