@@ -1135,7 +1135,7 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  try{ await navigator.serviceWorker.register('entregaflash-sw.js?v=20260828-admin-4', { updateViaCache: 'none' }); }catch(e){ console.warn('Service worker indisponível', e); }
+  try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const reg of regs){ if(reg.active && /entregaflash-sw\.js/.test(reg.active.scriptURL)) await reg.unregister(); } }catch(e){ console.warn('Service worker: limpeza do admin indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
