@@ -2,7 +2,7 @@
   "name": "Entrega Flash",
   "short_name": "Entrega Flash",
   "description": "Entregas rápidas e seguras em Muzambinho/MG e região.",
-  "start_url": "./index.html?v=20260828-1",
+  "start_url": "./index.html?v=20260829-2",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
@@ -33,5 +33,6 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "id": "./"
 }

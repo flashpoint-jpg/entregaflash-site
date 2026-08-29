@@ -1,32 +1,26 @@
-// Entrega Flash - Service Worker com atualização automática
-// Versão: 20260828-1
-const EF_VERSION = '20260828-1';
+// Entrega Flash - Service Worker com atualização forçada
+// Versão: 20260829-2
+const EF_VERSION = '20260829-2';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
-  // Não deixa a versão nova parada em "waiting".
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
-    // Remove qualquer cache antigo criado por versões anteriores do app.
     try {
       const nomes = await caches.keys();
       await Promise.all(nomes.map((nome) => caches.delete(nome)));
     } catch (e) {}
 
-    // Assume imediatamente as abas/apps já abertos.
     await self.clients.claim();
 
-    // Quem ainda estiver na URL antiga é levado para o index atual.
+    // Força quem estiver com uma instalação antiga aberta a entrar no index atual.
     const clientes = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const cliente of clientes) {
       try {
-        const u = new URL(cliente.url);
-        if (u.pathname.endsWith('/entregaflash.html')) {
-          await cliente.navigate(new URL(EF_HOME, self.registration.scope).href);
-        }
+        await cliente.navigate(new URL(EF_HOME, self.registration.scope).href);
       } catch (e) {}
     }
   })());
@@ -43,7 +37,8 @@ function normalizarUrl(url) {
   }
 }
 
-// Corrige inclusive instalações antigas cujo atalho ainda tenta abrir entregaflash.html.
+// Toda navegação antiga conhecida é redirecionada para o index atual.
+// Para o index normal, deixa a rede responder, evitando servir HTML antigo de cache.
 self.addEventListener('fetch', (event) => {
   if (event.request.mode !== 'navigate') return;
   try {
@@ -54,7 +49,6 @@ self.addEventListener('fetch', (event) => {
   } catch (e) {}
 });
 
-// Push em segundo plano.
 self.addEventListener('push', (event) => {
   let dados = { title: 'Entrega Flash', body: '', url: EF_HOME };
   try {
