@@ -324,6 +324,20 @@ fbq('track', 'PageView');
   .etiquetas span:last-child{text-align:right;}
 
   .mapa{width:100%;height:180px;border-radius:14px;margin-top:12px;background:var(--painel-alt);overflow:hidden;}
+  /* Rastreamento Ultra Premium do cliente */
+  .mapa-premium-overlay{position:fixed;inset:0;z-index:9998;background:#08090b;display:none;overflow:hidden}
+  .mapa-premium-overlay.aberto{display:block}
+  .mapa-premium-overlay .mapa-cliente-premium{position:absolute;inset:0;width:100%;height:100%;margin:0;border:0!important;border-radius:0!important;z-index:1}
+  .mapa-premium-topo{position:absolute;left:14px;right:14px;top:max(14px,env(safe-area-inset-top));z-index:1001;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 12px 12px 16px;border:1px solid rgba(255,255,255,.13);border-radius:20px;background:rgba(10,11,13,.88);backdrop-filter:blur(16px);box-shadow:0 12px 35px rgba(0,0,0,.35);color:#fff}
+  .mapa-premium-topo strong{display:block;font-size:15px;margin-top:3px}
+  .mapa-premium-kicker{display:block;color:#ff4438;font-size:10px;font-weight:900;letter-spacing:1.2px}
+  .mapa-premium-fechar{width:42px;height:42px;flex:0 0 42px;border:1px solid rgba(255,255,255,.16);border-radius:14px;background:#17191d;color:#fff;font-size:28px;line-height:38px;cursor:pointer}
+  .mapa-premium-card{position:absolute;left:14px;right:14px;bottom:max(14px,env(safe-area-inset-bottom));z-index:1001;display:flex;align-items:center;gap:12px;padding:14px;border:1px solid rgba(255,255,255,.13);border-radius:22px;background:rgba(10,11,13,.91);backdrop-filter:blur(18px);box-shadow:0 -12px 40px rgba(0,0,0,.3);color:#fff}
+  .mapa-premium-veiculo{width:52px;height:52px;display:grid;place-items:center;border-radius:17px;background:linear-gradient(145deg,#ff4538,#b5120a);font-size:28px;box-shadow:0 8px 24px rgba(255,55,45,.28)}
+  .mapa-premium-info{min-width:0;flex:1}.mapa-premium-info b{display:block;font-size:15px}.mapa-premium-info span{display:block;margin-top:3px;color:#b9bdc5;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .mapa-premium-eta{font-size:11px;text-align:right;max-width:120px}.mapa-premium-eta .eta-box{margin:0!important}
+  .icone-motorista-anim{width:42px!important;height:42px!important;border:3px solid #fff!important;box-shadow:0 8px 25px rgba(0,0,0,.42),0 0 0 5px rgba(255,67,55,.18)!important;font-size:23px!important}
+
   .mapa-admin-geral{width:100%;height:360px;border-radius:18px;overflow:hidden;background:var(--painel-alt);}
   .admin-resumo-card{border:1px solid var(--linha);border-radius:12px;background:var(--painel);overflow:hidden;margin-bottom:8px;}
   .admin-resumo-card[open]{border-color:rgba(255,147,48,.45);}
@@ -584,13 +598,43 @@ fbq('track', 'PageView');
   .cf-nota{font-size:12px;color:var(--poeira);margin-top:8px;line-height:1.5;font-style:italic;}
   .cf-ajuda{font-size:11.5px;color:var(--poeira);margin:-4px 0 4px;line-height:1.4;opacity:0.85;}
   .cf-titulo-secao{font-family:'Rajdhani';font-weight:700;font-size:16px;text-transform:uppercase;letter-spacing:0.4px;color:var(--osso);margin:22px 0 4px;}
-  .abas-motorista{position:fixed;left:0;right:0;bottom:0;z-index:80;display:flex;max-width:480px;margin:0 auto;background:rgba(33,42,99,0.88);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-top:1px solid var(--linha);box-shadow:0 -6px 24px rgba(0,0,0,0.45);padding-bottom:env(safe-area-inset-bottom,0);}
-  .abas-motorista button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 4px 8px;background:transparent;border:none;color:var(--poeira);font-family:'Karla';font-weight:700;font-size:11.5px;cursor:pointer;position:relative;transition:color .15s ease;}
-  .abas-motorista button .icone-aba{font-size:20px;line-height:1;transition:transform .18s cubic-bezier(.34,1.56,.64,1);}
-  .abas-motorista button.ativo{color:var(--mango);}
-  .abas-motorista button.ativo .icone-aba{transform:translateY(-2px) scale(1.12);}
-  .abas-motorista button.ativo::before{content:'';position:absolute;top:2px;left:28%;right:28%;height:3px;border-radius:3px;background:var(--mango);box-shadow:0 0 8px rgba(255,201,60,0.7);}
-  .conteudo-motorista{padding-bottom:78px;}
+  .abas-motorista{
+    position:fixed;left:50%;transform:translateX(-50%);bottom:max(10px,env(safe-area-inset-bottom,0px));
+    z-index:80;display:flex;align-items:center;gap:6px;width:calc(100% - 24px);max-width:456px;
+    padding:7px;border-radius:23px;
+    background:linear-gradient(180deg,rgba(24,25,29,.97),rgba(10,11,13,.98));
+    border:1px solid rgba(255,255,255,.10);
+    box-shadow:0 18px 45px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.06);
+    backdrop-filter:blur(22px) saturate(145%);-webkit-backdrop-filter:blur(22px) saturate(145%);
+  }
+  .abas-motorista::before{
+    content:'';position:absolute;left:18px;right:18px;top:0;height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.18),transparent);pointer-events:none;
+  }
+  .abas-motorista button{
+    flex:1;min-width:0;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;
+    padding:7px 5px;border:1px solid transparent;border-radius:17px;background:transparent;color:#94979e;
+    font-family:'Karla';font-weight:700;font-size:10.5px;letter-spacing:.15px;cursor:pointer;position:relative;
+    transition:transform .18s ease,color .18s ease,background .18s ease,border-color .18s ease,box-shadow .18s ease;
+  }
+  .abas-motorista button:active{transform:scale(.96);}
+  .abas-motorista button .icone-aba{
+    width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+    transition:transform .2s cubic-bezier(.34,1.56,.64,1),filter .18s ease;
+  }
+  .abas-motorista button .icone-aba svg{width:23px;height:23px;display:block;stroke:currentColor;}
+  .abas-motorista button.ativo{
+    color:#fff;background:linear-gradient(180deg,rgba(215,27,38,.98),rgba(145,8,17,.98));
+    border-color:rgba(255,255,255,.12);
+    box-shadow:0 8px 20px rgba(185,12,23,.28),inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .abas-motorista button.ativo .icone-aba{
+    transform:translateY(-1px) scale(1.06);filter:drop-shadow(0 2px 5px rgba(0,0,0,.35));
+  }
+  .abas-motorista button.ativo::after{
+    content:'';position:absolute;bottom:4px;width:18px;height:2px;border-radius:999px;background:rgba(255,255,255,.65);
+  }
+  .conteudo-motorista{padding-bottom:96px;}
   .btn-ficar-online{font-size:17px !important;padding:16px 0 !important;box-shadow:0 4px 16px rgba(0,0,0,0.35);}
   .aba-mini{display:flex;margin:0 0 14px;background:var(--painel-alt);border-radius:14px;padding:3px;border:1px solid var(--linha);}
   .aba-mini button{flex:1;padding:9px 0;border:none;background:transparent;color:var(--poeira);font-family:'Karla';font-weight:700;font-size:14.5px;border-radius:11px;cursor:pointer;transition:all .18s ease;}
@@ -1414,6 +1458,19 @@ let pixPollTimer = null;
 let planoPixPollTimer = null;
 
 let mapasAtivos = {};
+// mapa Ultra Premium do cliente: abre automaticamente quando um entregador aceita
+const mapasPremiumFechados = new Set();
+function fecharMapaPremium(id){
+  mapasPremiumFechados.add(String(id));
+  const el=document.getElementById('mapa-premium-'+id);
+  if(el) el.classList.remove('aberto');
+}
+function abrirMapaPremium(id){
+  mapasPremiumFechados.delete(String(id));
+  const el=document.getElementById('mapa-premium-'+id);
+  if(el){ el.classList.add('aberto'); setTimeout(()=>{ try{ const m=mapasAtivos['mapa-c-'+id]; if(m&&m.map) m.map.invalidateSize(); }catch(e){} },120); }
+}
+
 let mapaAdminGeral = null; // mapa único do painel admin com todos os motoristas em corrida
 const STATUS_MAPA_ADMIN = { indo_coletar:' Indo coletar', coletado:' Coletado, seguindo para entrega', a_caminho:' A caminho da entrega' };
 let etaEstado = {};
@@ -1593,7 +1650,7 @@ async function restaurarSessao(){
     if(clienteTel){
       const { data } = await sb.from('entrega_clientes').select('*').eq('telefone', clienteTel).maybeSingle();
       if(data && !data.bloqueado){
-        estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
+        estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, criadoEm:Number(data.criado_em)||null, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
         estado.filtroTelefoneCliente = data.telefone;
         estado.form.nome = data.nome; estado.form.telefone = data.telefone;
       } else { removerLocal('ef_cliente_telefone'); }
@@ -2009,6 +2066,7 @@ function dispararAlertaMotorista(pedido){
   // Não renderiza aqui: carregarPedidos() fará um único render ao final da atualização.
   // Isso evita dois redesenhos seguidos justamente quando o motorista aceita a corrida.
   estado.alertaMotorista = { nome: pedido.motoristaNome||'Um entregador', pedidoId: pedido.id };
+  mapasPremiumFechados.delete(String(pedido.id));
   tocarSomAlerta();
   clearTimeout(window._alertaMotoristaTimer);
   window._alertaMotoristaTimer = setTimeout(()=>{ estado.alertaMotorista=null; render(); }, 7000);
@@ -4038,7 +4096,8 @@ function montarMapa(containerId, pedido){
       setTimeout(()=>{ try{ m.map.invalidateSize(); }catch(e){} },0);
     }
     if(pM){
-      const emoji = (VEICULOS[pedido.veiculo]&&VEICULOS[pedido.veiculo].emoji)||'';
+      const tipoVeiculoMapa = pedido.motoristaVeiculoTipo || pedido.veiculo;
+      const emoji = (VEICULOS[tipoVeiculoMapa]&&VEICULOS[tipoVeiculoMapa].emoji)||'';
       if(!m.mMotorista){
         m.mMotorista = L.marker(pM,{icon:iconeMotorista(emoji)}).addTo(m.map);
         m.linhaMotorista = L.polyline([pM,alvo],{color:'#ffc93c',weight:5,opacity:0.9,lineCap:'round'}).addTo(m.map);
@@ -4475,7 +4534,7 @@ function cartaoPedidoCliente(p){
         ${p.motoristaVeiculoTipo ? `${VEICULOS[p.motoristaVeiculoTipo]?.emoji||''} ${p.motoristaMarca||''} ${p.motoristaCor||''} · Placa ${p.motoristaPlaca||''}` : ''}
       </div>
     </div>` : ''}
-    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa" id="${mapaId}"></div>${etaHTML(p)}` : ''}
+    ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa-premium-overlay ${mapasPremiumFechados.has(String(p.id))?'':'aberto'}" id="mapa-premium-${p.id}"><div class="mapa-premium-topo"><div><span class="mapa-premium-kicker">ENTREGA FLASH • AO VIVO</span><strong>${p.status==='indo_coletar'?'Motorista a caminho da retirada':p.status==='coletado'?'Pedido coletado':'Entrega a caminho'}</strong></div><button type="button" class="mapa-premium-fechar" onclick="fecharMapaPremium('${p.id}')" aria-label="Fechar mapa">×</button></div><div class="mapa mapa-cliente-premium" id="${mapaId}"></div><div class="mapa-premium-card"><div class="mapa-premium-veiculo">${VEICULOS[p.motoristaVeiculoTipo||p.veiculo]?.emoji||''}</div><div class="mapa-premium-info"><b>${p.motoristaNome||'Seu entregador'}</b><span>${p.motoristaMarca||''} ${p.motoristaCor||''}${p.motoristaPlaca?' • '+p.motoristaPlaca:''}</span></div><div class="mapa-premium-eta">${etaHTML(p)}</div></div></div><button type="button" class="btn btn-secundario btn-pequeno" style="margin-top:10px" onclick="abrirMapaPremium('${p.id}')">Abrir mapa em tela cheia</button>` : ''}
     ${fotosHTML(p)}
     ${avaliacaoHTML(p)}
     ${emAndamento ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${botaoChatHTML(p.id, estado.chatNaoLidas[p.id]||0)}${botaoLigarHTML(p.motoristaTelefone)}<button type="button" class="btn btn-secundario btn-pequeno" onclick="compartilharPedido('${p.id}')"> Compartilhar</button></div>` : ''}
@@ -5555,52 +5614,19 @@ function perfilMotoristaHTML(m){
 }
 // ---------- Treinamento único do motorista (100% local; nunca cria pedido real) ----------
 function chaveTreinamentoMotorista(){
-  const tel=(estado.motorista&&estado.motorista.telefone)||'novo';
-  return 'ef_treinamento_motorista_v3_'+String(tel).replace(/\D/g,'');
+  const m=estado.motorista||{};
+  const tel=String(m.telefone||'novo').replace(/\D/g,'');
+  const criado=String(m.criadoEm||m.criado_em||'semdata').replace(/\D/g,'');
+  // Se o cadastro for excluído e criado novamente, criado_em muda e o treinamento volta
+  // automaticamente como numa conta realmente nova, mesmo no mesmo celular.
+  return 'ef_treinamento_motorista_v4_'+tel+'_'+criado;
 }
 function treinamentoMotoristaConcluido(){
   try{return localStorage.getItem(chaveTreinamentoMotorista())==='concluido';}catch(e){return false;}
 }
 function etapaTreinamentoMotorista(){
   if(typeof estado.treinamentoMotoristaEtapa!=='number') estado.treinamentoMotoristaEtapa=0;
-  return estado.treinamentoMotoristaEtapa;
-}
-function pedidoTreinamentoDemo(){
-  const e=etapaTreinamentoMotorista();
-  const status = e===0 ? 'buscando' : e===1||e===2 ? 'indo_coletar' : e===3 ? 'coletado' : e===4 ? 'a_caminho' : 'entregue';
-  return {
-    id:'DEMO-001', status, preco:14.50, distancia:2.8, veiculo:(estado.motorista&&estado.motorista.veiculo)||'moto',
-    origem:'Farmácia Central (exemplo)', destino:'Bairro Centro (exemplo)', clienteNome:'Cliente demonstração', clienteTelefone:'(00) 00000-0000',
-    origemCoord:{lat:-21.3718,lon:-46.5247}, destinoCoord:{lat:-21.3654,lon:-46.5155},
-    motoristaCoord:{lat:-21.3730,lon:-46.5270}, iniciadoEm:e>=1?Date.now()-45000:null, paradaAtual:0, paradas:[],
-    criadoEm:Date.now()-90000, aceitoEm:e>=1?Date.now()-45000:null, prioridade:false, extras:[], motoristaTelefone:(estado.motorista&&estado.motorista.telefone)||''
-  };
-}
-function abrirGPSTreinamento(){
-  mostrarToast('Demonstração: em um pedido real, GPS abre a rota até a coleta ou o cliente.', 'info');
-}
-function abrirChatTreinamento(){ estado.treinamentoChatAberto=true; render(); }
-function fecharChatTreinamento(){ estado.treinamentoChatAberto=false; render(); }
-function enviarChatTreinamento(){
-  const el=document.getElementById('chat-treinamento-input');
-  const txt=(el&&el.value||'').trim();
-  if(!txt){ mostrarToast('Digite uma mensagem para testar o chat.', 'info'); return; }
-  if(!Array.isArray(estado.treinamentoMensagens)) estado.treinamentoMensagens=[];
-  estado.treinamentoMensagens.push({de:'motorista',texto:txt});
-  estado.treinamentoMensagens.push({de:'cliente',texto:'Mensagem recebida. Este é o chat de demonstração.'});
-  render();
-}
-function chatTreinamentoHTML(){
-  if(!estado.treinamentoChatAberto) return '';
-  const msgs=Array.isArray(estado.treinamentoMensagens)&&estado.treinamentoMensagens.length ? estado.treinamentoMensagens : [
-    {de:'cliente',texto:'Olá! Estou aguardando a entrega. Este chat é apenas uma demonstração.'}
-  ];
-  return `<div class="modal-fundo" style="display:flex;z-index:500"><div class="modal-chat">
-    <div class="chat-topo"><h3>Chat · Cliente demonstração</h3><button class="chat-fechar" onclick="fecharChatTreinamento()">×</button></div>
-    <div class="chat-mensagens">${msgs.map(m=>`<div class="mensagem ${m.de==='motorista'?'minha':'outra'}"><div>${esc(m.texto)}</div></div>`).join('')}</div>
-    <div style="padding:8px 16px 0;font-size:11.5px;color:var(--mango);font-weight:700">MODO TREINAMENTO — nenhuma mensagem é enviada para cliente real.</div>
-    <div class="chat-envio"><input id="chat-treinamento-input" placeholder="Escreva uma mensagem de teste"><button onclick="enviarChatTreinamento()">Enviar</button></div>
-  </div></div>`;
+  return Math.max(0,Math.min(7,estado.treinamentoMotoristaEtapa));
 }
 function avancarTreinamentoMotorista(){
   const e=etapaTreinamentoMotorista();
@@ -5608,8 +5634,12 @@ function avancarTreinamentoMotorista(){
     mostrarToast('Tire a foto do produto para continuar o treinamento.', 'info');
     return;
   }
-  if(e<5){ estado.treinamentoMotoristaEtapa=e+1; render(); }
+  if(e<7){ estado.treinamentoMotoristaEtapa=e+1; render(); }
   else concluirTreinamentoMotorista();
+}
+function voltarTreinamentoMotorista(){
+  const e=etapaTreinamentoMotorista();
+  if(e>0){ estado.treinamentoMotoristaEtapa=e-1; render(); }
 }
 function processarFotoTreinamento(input){
   const arq=input&&input.files&&input.files[0];
@@ -5620,101 +5650,147 @@ function processarFotoTreinamento(input){
   leitor.onerror=()=>mostrarToast('Não foi possível abrir a foto. Tente novamente.', 'erro');
   leitor.readAsDataURL(arq);
 }
+function acaoRapidaTreinamento(tipo){
+  const msg={
+    navegar:'Simulação: no pedido real, este botão abre a navegação da rota.',
+    chat:'Simulação: aqui abre a conversa com o cliente durante a corrida.',
+    ligar:'Simulação: aqui aparece a opção de contato do cliente.'
+  }[tipo]||'Ação de demonstração.';
+  mostrarToast(msg,'info');
+}
+function simularSaqueTreinamento(){
+  estado.treinamentoSaqueSolicitado=true;
+  estado.treinamentoMotoristaEtapa=7;
+  mostrarToast('Simulação: pedido de saque enviado. Nenhum valor real foi movimentado.', 'sucesso');
+  render();
+}
 function concluirTreinamentoMotorista(){
   try{localStorage.setItem(chaveTreinamentoMotorista(),'concluido');}catch(e){}
   estado.treinamentoMotoristaEtapa=0;
   estado.treinamentoFotoProduto=null;
-  estado.treinamentoChatAberto=false;
-  estado.treinamentoMensagens=[];
-  estado.treinamentoConcluidoTela=true;
+  estado.treinamentoSaqueSolicitado=false;
+  mostrarToast('Simulação concluída! Agora é só enviar seus documentos para começar a trabalhar de verdade.', 'sucesso');
   render();
+  setTimeout(()=>{ abrirDocumentacaoMotoristaDoPainel().catch(e=>{ console.error('Abrir documentação após treinamento:',e); mostrarToast('Toque em ENVIAR DOCUMENTAÇÃO para continuar.', 'info'); }); },900);
 }
-function telaTreinamentoConcluidoHTML(){
-  if(!estado.treinamentoConcluidoTela) return '';
-  return `<div class="modal-fundo" style="display:flex;z-index:650;align-items:center;justify-content:center;padding:18px">
-    <div style="width:min(100%,430px);background:var(--card,#171717);border:1px solid rgba(255,255,255,.10);border-radius:24px;padding:26px 20px;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.55)">
-      <div style="width:72px;height:72px;margin:0 auto 14px;border-radius:50%;display:grid;place-items:center;background:rgba(34,197,94,.14);border:1px solid rgba(34,197,94,.35);font-size:38px">✓</div>
-      <div style="font-size:11px;letter-spacing:1.5px;font-weight:900;color:#22c55e;margin-bottom:7px">TREINAMENTO CONCLUÍDO</div>
-      <h2 style="margin:0 0 8px;font-size:24px">Você já sabe como funciona!</h2>
-      <p style="margin:0 auto 18px;max-width:350px;line-height:1.45;color:var(--texto-secundario,#bbb)">Agora falta só enviar sua documentação para liberar sua conta e, após a aprovação, começar a receber pedidos reais.</p>
-      <div style="padding:12px 14px;border-radius:14px;background:rgba(255,153,0,.08);border:1px solid rgba(255,153,0,.20);margin-bottom:16px;font-size:13px">Próximo passo: <b>enviar documentação</b></div>
-      <button class="btn btn-verde" style="width:100%;min-height:54px;font-size:15px;font-weight:900" onclick="irDocumentacaoAposTreinamento()">📄 ENVIAR DOCUMENTAÇÃO E LIBERAR PEDIDOS REAIS</button>
-      <div style="font-size:11px;color:var(--texto-secundario,#999);margin-top:10px">Pedidos reais são liberados somente após aprovação.</div>
+function mapaTreinamentoHTML(e){
+  const posicoes=[12,24,36,48,62,78,88,88];
+  const x=posicoes[Math.max(0,Math.min(posicoes.length-1,e))];
+  const status=e===0?'Pedido aguardando aceite':e<=2?'Indo para a coleta':e===3?'Coleta confirmada':e===4?'A caminho do cliente':'Chegou ao destino';
+  return `<div style="position:relative;height:210px;border-radius:16px;overflow:hidden;border:1px solid var(--linha);background:
+      linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/34px 34px,
+      linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/34px 34px,
+      linear-gradient(145deg,#20262d,#11161b);margin:10px 0 12px">
+    <div style="position:absolute;left:14px;top:12px;right:14px;display:flex;justify-content:space-between;gap:8px;z-index:3">
+      <span style="background:rgba(7,9,12,.86);border:1px solid var(--linha);border-radius:999px;padding:5px 9px;font-size:10.5px;font-weight:800;color:var(--osso)">MAPA · DEMONSTRAÇÃO</span>
+      <span style="background:rgba(7,9,12,.86);border:1px solid var(--linha);border-radius:999px;padding:5px 9px;font-size:10.5px;color:var(--verde)">${status}</span>
     </div>
+    <svg viewBox="0 0 400 210" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-label="Rota simulada da coleta até a entrega">
+      <path d="M35 160 C95 112,105 150,155 118 S235 70,285 98 S335 58,370 46" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="11" stroke-linecap="round"/>
+      <path d="M35 160 C95 112,105 150,155 118 S235 70,285 98 S335 58,370 46" fill="none" stroke="#ffc93c" stroke-width="4" stroke-linecap="round" stroke-dasharray="7 7"/>
+    </svg>
+    <div style="position:absolute;left:7%;bottom:16%;width:32px;height:32px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 12px rgba(0,0,0,.45);z-index:2">A</div>
+    <div style="position:absolute;right:5%;top:15%;width:32px;height:32px;border-radius:50%;background:var(--verde);color:#071006;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;box-shadow:0 3px 12px rgba(0,0,0,.45);z-index:2">B</div>
+    <div style="position:absolute;left:calc(${x}% - 18px);top:${e<3?'62%':e===3?'52%':e===4?'39%':'24%'};width:38px;height:38px;border-radius:50%;background:var(--mango);border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 0 7px rgba(255,201,60,.18),0 5px 14px rgba(0,0,0,.55);z-index:4;transition:all .45s ease">${(VEICULOS[(estado.motorista||{}).veiculo]||{}).emoji||'🏍️'}</div>
+    <div style="position:absolute;left:12px;bottom:10px;background:rgba(7,9,12,.88);border-radius:10px;padding:6px 9px;font-size:10.5px;color:var(--poeira);z-index:3">2,8 km · cerca de 8 min</div>
   </div>`;
 }
-async function irDocumentacaoAposTreinamento(){
-  estado.treinamentoConcluidoTela=false;
-  render();
-  try{ await abrirDocumentacaoMotoristaDoPainel(); }
-  catch(e){ console.error('Abrir documentação após treinamento:',e); estado.treinamentoConcluidoTela=true; render(); mostrarToast('Não foi possível abrir a documentação. Tente novamente.', 'erro'); }
+function carteiraTreinamentoHTML(e){
+  const saldo=e>=6?14.50:0;
+  const solicitado=!!estado.treinamentoSaqueSolicitado || e===7;
+  const plano=PLANOS[(estado.motorista||{}).plano]||PLANOS.free;
+  const prazo=plano.saqueDias>0?`até ${plano.saqueDias} dias`:'imediato';
+  return `<div style="border:1px solid var(--linha);border-radius:18px;overflow:hidden;background:linear-gradient(155deg,#1b2026,#0d1115);margin-top:12px">
+    <div style="padding:16px;border-bottom:1px solid var(--linha);display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div><div style="font-size:11px;color:var(--poeira);font-weight:800;letter-spacing:.08em">CARTEIRA · SIMULAÇÃO</div><div style="font-family:'Rajdhani';font-size:32px;font-weight:800;color:var(--osso);margin-top:3px">R$ ${(solicitado?0:saldo).toFixed(2)}</div><div style="font-size:12px;color:var(--poeira)">${solicitado?'Valor reservado para saque':'Saldo disponível para saque'}</div></div>
+      <div style="background:rgba(111,207,106,.12);border:1px solid rgba(111,207,106,.35);border-radius:12px;padding:8px 10px;text-align:right"><div style="font-size:10px;color:var(--poeira)">GANHOS HOJE</div><b style="color:var(--verde)">R$ 14,50</b><div style="font-size:10px;color:var(--poeira)">1 entrega</div></div>
+    </div>
+    <div style="padding:13px 16px;display:grid;grid-template-columns:1fr 1fr;gap:9px;border-bottom:1px solid var(--linha)">
+      <div style="background:rgba(255,255,255,.035);padding:10px;border-radius:12px"><div style="font-size:10px;color:var(--poeira)">ÚLTIMA CORRIDA</div><b style="color:var(--osso)">R$ 14,50</b></div>
+      <div style="background:rgba(255,255,255,.035);padding:10px;border-radius:12px"><div style="font-size:10px;color:var(--poeira)">PRAZO DO PLANO</div><b style="color:var(--osso)">${prazo}</b></div>
+    </div>
+    <div style="padding:14px 16px">
+      ${!solicitado?`<button class="btn btn-primario" style="width:100%;margin:0" onclick="simularSaqueTreinamento()">💸 SIMULAR SAQUE DE R$ 14,50</button><div style="font-size:11px;color:var(--poeira);text-align:center;margin-top:7px">Nenhum saque real será criado.</div>`:`<div style="border:1px solid rgba(111,207,106,.4);background:rgba(111,207,106,.08);border-radius:13px;padding:12px"><b style="color:var(--verde)">✓ SAQUE SOLICITADO — DEMONSTRAÇÃO</b><div style="font-size:12px;color:var(--poeira);line-height:1.45;margin-top:4px">No uso real, o pedido aparece no histórico de saques e segue o prazo do seu plano. Aqui nada foi enviado ao banco.</div></div>`}
+    </div>
+  </div>`;
 }
 function treinamentoMotoristaHTML(){
   const m=estado.motorista||{};
   if(!m.ativo || m.status==='aprovado' || treinamentoMotoristaConcluido()) return '';
   const e=etapaTreinamentoMotorista();
-  const p=pedidoTreinamentoDemo();
   const etapas=[
-    {titulo:'Novo pedido de demonstração',texto:'Veja exatamente como um pedido aparece antes de aceitar.',acao:'Aceitar pedido'},
-    {titulo:'Pedido aceito',texto:'Agora o painel mostra mapa, GPS, chat, cliente e os controles reais da corrida.',acao:'▶ Iniciar corrida'},
-    {titulo:'Indo para a coleta',texto:'Chegando na coleta, o aplicativo pede a foto obrigatória do produto.',acao:'Cheguei / tirar foto e recolher (obrigatória)'},
-    {titulo:'Coleta confirmada',texto:'Produto recolhido. O próximo passo é seguir viagem para o cliente.',acao:'Segui viagem'},
-    {titulo:'A caminho do cliente',texto:'GPS, mapa e chat continuam disponíveis até concluir a entrega.',acao:'Tirar foto e marcar entregue'},
-    {titulo:'Entrega concluída!',texto:'Pronto. Você conheceu a mesma tela e os mesmos controles usados em uma entrega real.',acao:'FINALIZAR TREINAMENTO'}
+    {titulo:'Novo pedido',texto:'Esta é a tela como a corrida vai aparecer: ganho, distância, coleta, destino e botão para aceitar.',acao:'ACEITAR DEMONSTRAÇÃO'},
+    {titulo:'Corrida aceita',texto:'O mapa abre com a rota até a coleta e os botões operacionais aparecem como no uso real.',acao:'CHEGUEI NA COLETA'},
+    {titulo:'Cheguei na coleta',texto:'Antes de sair com o item, registre a foto do produto. Na simulação a foto fica só no aparelho.',acao:'CONFIRMAR FOTO E COLETA'},
+    {titulo:'Coleta confirmada',texto:'O status muda e o mapa passa a mostrar o trajeto da coleta até o cliente.',acao:'SAIR PARA ENTREGA'},
+    {titulo:'A caminho do cliente',texto:'Acompanhe a rota e use o botão de confirmação quando chegar ao destino.',acao:'CONFIRMAR ENTREGA'},
+    {titulo:'Entrega confirmada',texto:'Agora veja como o ganho entra na carteira do motorista.',acao:'VER SALDO NA CARTEIRA'},
+    {titulo:'Carteira do motorista',texto:'O valor da corrida aparece no saldo e você pode conhecer a tela de saque sem movimentar dinheiro real.',acao:null},
+    {titulo:'Pronto para ganhar de verdade',texto:'Você já viu como tudo funciona. Agora falta só enviar seus documentos, aguardar a aprovação e começar a trabalhar e ganhar dinheiro de verdade. Fácil, rápido e prático.',acao:'ENVIAR DOCUMENTOS AGORA'}
   ];
   const x=etapas[e]||etapas[0];
   const fotoEtapa=e===2 ? `<div style="margin:12px 0;padding:12px;border:1px dashed var(--mango);border-radius:12px;text-align:center">
       ${estado.treinamentoFotoProduto?`<img src="${estado.treinamentoFotoProduto}" alt="Foto do produto no treinamento" style="width:100%;max-height:190px;object-fit:cover;border-radius:10px;margin-bottom:10px">`:''}
-      <label class="btn btn-verde btn-pequeno" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0">📷 ${estado.treinamentoFotoProduto?'TIRAR OUTRA FOTO':'TIRAR FOTO DO PRODUTO'}<input type="file" accept="image/*" capture="environment" onchange="processarFotoTreinamento(this)" style="display:none"></label>
-      <div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Treinamento: a foto fica somente no aparelho e não cria pedido real.</div>
+      <label class="btn btn-secundario btn-pequeno" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0">📷 ${estado.treinamentoFotoProduto?'TIRAR OUTRA FOTO':'TIRAR FOTO DO PRODUTO'}<input type="file" accept="image/*" capture="environment" onchange="processarFotoTreinamento(this)" style="display:none"></label>
+      <div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Demonstração: esta foto não é enviada ao pedido real.</div>
     </div>` : '';
-
-  let corpo='';
-  if(e===0){
-    corpo=`<div class="pedido" style="margin:0">
-      <div class="vitais">
-        <div class="vital vital-ganho"><div class="vital-num">R$ 14</div><div class="vital-rot">Você ganha</div></div>
-        <div class="vital"><div class="vital-num">0,6km</div><div class="vital-rot">Até a recolha</div></div>
-        <div class="vital"><div class="vital-num">2,8km</div><div class="vital-rot">Trajeto total</div></div>
-      </div>
-      <div class="linha-topo"><div class="end"><b>Recolha</b>${p.origem}<b style="margin-top:8px">Entrega</b>${p.destino}</div><div class="preco">R$ 14,50<span class="ganho">valor do pedido</span></div></div>
-      <div style="font-size:14px;color:var(--poeira);margin-bottom:8px">${(VEICULOS[p.veiculo]||{}).emoji||''} ${(VEICULOS[p.veiculo]||{}).label||'Moto'} · Pedido de demonstração</div>
-      <button class="btn btn-primario btn-pequeno" onclick="avancarTreinamentoMotorista()">Aceitar pedido</button>
-    </div>`;
-  }else{
-    const statusDemo = e===1||e===2?'indo_coletar':e===3?'coletado':e===4?'a_caminho':'entregue';
-    corpo=`<div class="pedido" style="margin:0">
-      <div class="linha-topo"><div class="end"><b>Recolha</b>${p.origem}<b style="margin-top:8px">Entrega</b>${p.destino}</div><div class="preco">R$ 14,50<span class="ganho">você recebe R$ 14,50</span></div></div>
-      ${seloHTML(statusDemo)}
-      ${trilhaHTML(statusDemo)}
-      <div style="font-size:14px;color:var(--poeira);margin-top:10px">Cliente: <b style="color:var(--osso)">Cliente demonstração</b> · (00) 00000-0000</div>
-      ${e<5?`<div class="gps-ao-vivo"><span class="ponto-pulsante"></span> localização a atualizar em tempo real</div>`:''}
-      ${e<5?`<div class="mapa" id="mapa-treinamento-motorista"></div>`:''}
-      ${fotoEtapa}
-      <div style="font-family:'Rajdhani';font-weight:800;font-size:17px;margin:12px 0 3px">${x.titulo}</div>
-      <div style="font-size:13px;color:var(--poeira);line-height:1.45;margin-bottom:8px">${x.texto}</div>
-      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-        ${e<5?`<button class="btn btn-azul btn-pequeno" onclick="abrirGPSTreinamento()"> GPS</button>`:''}
-        ${e<5?`<button class="btn btn-secundario btn-pequeno botao-chat" onclick="abrirChatTreinamento()"> Chat</button>`:''}
-        ${e<5?`<button class="btn-ligar btn-pequeno" onclick="mostrarToast('Demonstração: em uma corrida real, este botão liga para o cliente.','info')"> Ligar</button>`:''}
-        <button class="btn ${e===5?'btn-verde':(e===2?'btn-verde':'btn-primario')} btn-pequeno" onclick="avancarTreinamentoMotorista()">${x.acao}</button>
-      </div>
-    </div>`;
-  }
-  return `<div class="cartao" style="border:2px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.13),rgba(111,207,106,.06));overflow:hidden">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
-      <div style="font-family:'Rajdhani';font-weight:800;font-size:18px;color:var(--mango)">MODO TREINAMENTO</div>
-      <div style="font-size:11px;font-weight:800;letter-spacing:.04em;border:1px solid var(--mango);border-radius:999px;padding:4px 8px;color:var(--mango)">NÃO É PEDIDO REAL</div>
+  const mostrarMapa=e<=5;
+  const progresso=Math.round(((e+1)/8)*100);
+  return `<div class="cartao" style="border:2px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.12),rgba(111,207,106,.05));overflow:hidden;padding:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="font-family:'Rajdhani';font-weight:800;font-size:19px;color:var(--mango)">SIMULAÇÃO COMPLETA DO MOTORISTA</div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.06em;border:1px solid var(--mango);border-radius:999px;padding:5px 8px;color:var(--mango)">100% DEMONSTRAÇÃO</div>
     </div>
-    <div style="font-size:13px;color:var(--poeira);line-height:1.45;margin-bottom:12px">A apresentação abaixo usa o mesmo visual da corrida real: mapa, GPS, chat, contato do cliente e botões de cada etapa. As ações são simuladas e não movimentam pedido, saldo ou banco de dados.</div>
-    ${corpo}
-    ${e===5?`<div style="font-size:13px;color:var(--osso);line-height:1.45;margin-top:12px;text-align:center"><b>Treinamento completo.</b><br>Finalize para seguir diretamente ao envio da documentação.</div>`:''}
-    ${chatTreinamentoHTML()}
+    <div style="font-size:12.5px;color:var(--poeira);line-height:1.45;margin-bottom:11px">Veja exatamente o fluxo antes de trabalhar de verdade. Esta simulação não chama cliente, não cria corrida, não altera seu saldo e não solicita saque real.</div>
+    <div style="display:flex;gap:5px;margin-bottom:12px" aria-label="Progresso do treinamento">${Array.from({length:8},(_,i)=>`<span style="height:5px;flex:1;border-radius:999px;background:${i<=e?'var(--mango)':'var(--painel-alt)'}"></span>`).join('')}</div>
+
+    <div style="background:rgba(5,7,9,.68);border:1px solid var(--linha);border-radius:17px;padding:13px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div><div style="font-size:10px;color:var(--poeira);font-weight:800;letter-spacing:.07em">ETAPA ${e+1} DE 8</div><div style="font-family:'Rajdhani';font-weight:800;font-size:20px;color:var(--osso);margin-top:2px">${x.titulo}</div></div>
+        <div style="text-align:right"><div style="font-family:'Rajdhani';font-size:22px;font-weight:800;color:var(--verde)">R$ 14,50</div><div style="font-size:10px;color:var(--poeira)">ganho exemplo</div></div>
+      </div>
+      <div style="font-size:13px;color:var(--poeira);line-height:1.45;margin-top:7px">${x.texto}</div>
+
+      ${mostrarMapa?mapaTreinamentoHTML(e):''}
+      ${e<=5?`<div style="display:grid;gap:8px;margin:10px 0">
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:900;flex:none">A</div><div><b style="color:var(--osso);font-size:13px">Coleta · Farmácia Central</b><div style="font-size:11.5px;color:var(--poeira)">Rua Sete de Setembro, 120 · exemplo</div></div></div>
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:var(--verde);color:#071006;display:flex;align-items:center;justify-content:center;font-weight:900;flex:none">B</div><div><b style="color:var(--osso);font-size:13px">Entrega · Bairro Centro</b><div style="font-size:11.5px;color:var(--poeira)">Av. Principal, 85 · exemplo</div></div></div>
+      </div>`:''}
+      ${fotoEtapa}
+      ${e>=1 && e<=5?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 2px">
+        <button type="button" class="btn btn-secundario btn-pequeno" style="margin:0;padding:10px 5px;font-size:11px" onclick="acaoRapidaTreinamento('navegar')">🧭 NAVEGAR</button>
+        <button type="button" class="btn btn-secundario btn-pequeno" style="margin:0;padding:10px 5px;font-size:11px" onclick="acaoRapidaTreinamento('chat')">💬 CHAT</button>
+        <button type="button" class="btn btn-secundario btn-pequeno" style="margin:0;padding:10px 5px;font-size:11px" onclick="acaoRapidaTreinamento('ligar')">☎ CONTATO</button>
+      </div>`:''}
+      ${e>=6?carteiraTreinamentoHTML(e):''}
+      ${e===7?`<div style="margin-top:12px;border:1px solid rgba(111,207,106,.42);background:linear-gradient(135deg,rgba(111,207,106,.12),rgba(255,201,60,.07));border-radius:16px;padding:14px;text-align:center">
+        <div style="font-size:26px;margin-bottom:5px">🚀</div>
+        <div style="font-family:'Rajdhani';font-weight:800;font-size:19px;color:var(--verde)">AGORA É PRA VALER</div>
+        <div style="font-size:12.5px;color:var(--osso);line-height:1.5;margin-top:5px">Para começar a trabalhar e ganhar dinheiro de verdade, falta só uma coisa:</div>
+        <div style="font-family:'Rajdhani';font-weight:800;font-size:17px;color:var(--mango);margin-top:7px">ENVIAR SEUS DOCUMENTOS</div>
+        <div style="font-size:11.5px;color:var(--poeira);line-height:1.45;margin-top:5px">Envie, aguarde a aprovação e pronto. Fácil, rápido e prático.</div>
+      </div>`:''}
+
+      <div style="display:flex;gap:8px;align-items:center;margin-top:13px;flex-wrap:wrap">
+        ${e>0 && e<7?`<button class="btn btn-secundario btn-pequeno" style="margin:0;flex:0 0 auto" onclick="voltarTreinamentoMotorista()">← VOLTAR</button>`:''}
+        ${x.acao?`<button class="btn ${e===7?'btn-verde':'btn-primario'} btn-pequeno" style="margin:0;flex:1;min-width:180px" onclick="avancarTreinamentoMotorista()">${x.acao}</button>`:''}
+      </div>
+      ${e===6?`<div style="font-size:11.5px;color:var(--poeira);margin-top:9px;text-align:center">Para continuar, toque em <b style="color:var(--osso)">SIMULAR SAQUE</b>.</div>`:''}
+    </div>
+    <div style="font-size:11px;color:var(--poeira);text-align:center;margin-top:9px">Progresso ${progresso}% · dados fictícios para treinamento</div>
   </div>`;
 }
 
 function telaMotorista(){
   const m = estado.motorista;
+  const pm = estado.painelMotorista;
+  // Abre a documentação dentro do painel mesmo com o motorista já logado.
+  if(m.ativo && pm && pm.tela==='cadastro'){
+    return telaCadastroMotorista();
+  }
+  if(m.ativo && pm && pm.tela==='reenviar'){
+    return telaReenviarDocumentosMotorista();
+  }
   if(!m.ativo){
     if(estado.sessaoCarregando) return `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>`;
     return telaAcessoMotorista();
@@ -5780,7 +5856,7 @@ function telaMotorista(){
   <div class="link-taxas-topo" onclick="abrirComoFunciona('taxas')"> Ver todas as taxas e regras</div>
   ${blocoFundador}
   ${blocoAvisoAnalise}
-  ${treinamentoMotoristaHTML()}${telaTreinamentoConcluidoHTML()}
+  ${treinamentoMotoristaHTML()}
   ${blocoOnline}
   ${chamadosParaMim.length>0 ? `<div class="cartao" style="border:2px solid var(--chama)">
     <h2 style="color:var(--chama)"> Motorista amigo precisa de ajuda urgente</h2>
@@ -5855,10 +5931,34 @@ function telaMotorista(){
   <div class="conteudo-motorista">
     ${aba==='pedidos' ? blocoPedidos : aba==='historico' ? blocoHistorico : blocoPerfil}
   </div>
-  <div class="abas-motorista">
-    <button class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')"><span class="icone-aba"></span>Pedidos</button>
-    <button class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')"><span class="icone-aba"></span>Histórico</button>
-    <button class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')"><span class="icone-aba"></span>Perfil</button>
+  <div class="abas-motorista" aria-label="Menu do motorista">
+    <button class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')" aria-label="Pedidos">
+      <span class="icone-aba">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3.5 7.5h11l2 3.2h3.1a1.4 1.4 0 0 1 1.4 1.4v4.4h-2.2"/>
+          <path d="M7.4 16.5H12"/><circle cx="5.8" cy="16.6" r="2.1"/><circle cx="15.7" cy="16.6" r="2.1"/>
+          <path d="M3.5 7.5v6.9"/>
+        </svg>
+      </span>
+      <span>Pedidos</span>
+    </button>
+    <button class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')" aria-label="Histórico">
+      <span class="icone-aba">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4.7 8.2A8 8 0 1 1 4 15"/><path d="M4.7 4.7v3.5H8.2"/>
+          <path d="M12 7.8v4.5l3 1.7"/>
+        </svg>
+      </span>
+      <span>Histórico</span>
+    </button>
+    <button class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')" aria-label="Perfil">
+      <span class="icone-aba">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="8.1" r="3.2"/><path d="M5.5 19c.7-3.4 3-5.2 6.5-5.2s5.8 1.8 6.5 5.2"/>
+        </svg>
+      </span>
+      <span>Perfil</span>
+    </button>
   </div>
   ${estado.chamadoAmigoModal.aberto ? modalChamadoAmigoHTML() : ''}`;
 }
@@ -6154,7 +6254,116 @@ function telaPreparandoPainelMotorista(){
       <div style="height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin:24px 0 12px"><div style="height:100%;width:${pct}%;background:linear-gradient(90deg,var(--mango),var(--verde));border-radius:999px;transition:width .45s ease"></div></div>
       <div style="font-size:12px;font-weight:800;color:var(--mango);letter-spacing:.08em">ENTREGA FLASH • ACESSO SEGURO</div>
     </div>
-    <style>@keyframes efPulsePremium{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,190,61,.22)}50%{transform:scale(1.06);box-shadow:0 0 0 14px rgba(255,190,61,0)}}@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}</style>
+    <style>@keyframes efPulsePremium{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(255,190,61,.22)}50%{transform:scale(1.06);box-shadow:0 0 0 14px rgba(255,190,61,0)}}@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+/* ===== ENTREGA FLASH — ULTRA PREMIUM 29/08 ===== */
+main.ef-cliente-ultra{
+  position:relative;
+}
+main.ef-cliente-ultra::before{
+  content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;
+  background:
+    radial-gradient(circle at 15% 8%,rgba(216,28,38,.13),transparent 28%),
+    radial-gradient(circle at 92% 25%,rgba(255,201,60,.07),transparent 25%),
+    linear-gradient(180deg,rgba(8,9,12,.02),rgba(8,9,12,.28));
+}
+main.ef-cliente-ultra .cartao{
+  border-radius:22px!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  background:linear-gradient(180deg,rgba(27,29,35,.96),rgba(12,13,16,.97))!important;
+  box-shadow:0 18px 42px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.04)!important;
+}
+main.ef-cliente-ultra h2{
+  letter-spacing:.2px;
+}
+main.ef-cliente-ultra input,
+main.ef-cliente-ultra select,
+main.ef-cliente-ultra textarea{
+  border-radius:15px!important;
+  min-height:48px;
+  background:rgba(255,255,255,.045)!important;
+  border:1px solid rgba(255,255,255,.10)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+main.ef-cliente-ultra .btn{
+  border-radius:15px!important;
+  min-height:46px;
+  font-weight:800;
+  letter-spacing:.15px;
+}
+main.ef-cliente-ultra .btn-primario{
+  background:linear-gradient(180deg,#e12a35,#a70c17)!important;
+  box-shadow:0 9px 23px rgba(193,16,29,.25),inset 0 1px 0 rgba(255,255,255,.15)!important;
+}
+main.ef-cliente-ultra .passos-pedido,
+main.ef-cliente-ultra .pix-box{
+  border-radius:18px!important;
+}
+.admin-resumo-card{
+  border-radius:20px!important;
+  overflow:hidden;
+  background:linear-gradient(180deg,rgba(29,31,38,.98),rgba(14,15,19,.98))!important;
+  border:1px solid rgba(255,255,255,.09)!important;
+  box-shadow:0 16px 38px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.035);
+}
+.admin-resumo-card summary{
+  padding:16px 18px!important;
+  gap:12px!important;
+}
+.admin-resumo-card .admin-detalhes{
+  padding:16px 18px 18px!important;
+  border-top:1px solid rgba(255,255,255,.07);
+}
+.admin-resumo-card .am-linha{
+  display:grid!important;
+  grid-template-columns:minmax(112px,42%) minmax(0,1fr)!important;
+  align-items:start!important;
+  gap:10px 14px!important;
+  padding:9px 0!important;
+  border-bottom:1px solid rgba(255,255,255,.055);
+  line-height:1.35!important;
+}
+.admin-resumo-card .am-linha span{
+  color:#979aa3!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  text-transform:uppercase;
+  letter-spacing:.55px;
+}
+.admin-resumo-card .am-linha b{
+  color:#f7f7f8!important;
+  font-size:14px!important;
+  font-weight:750!important;
+  overflow-wrap:anywhere;
+  word-break:normal;
+  text-align:right;
+}
+.admin-resumo-card .btn{
+  border-radius:14px!important;
+  min-height:44px;
+  font-weight:800!important;
+  letter-spacing:.18px;
+}
+.admin-resumo-card select,
+.admin-resumo-card input{
+  border-radius:14px!important;
+  min-height:45px;
+}
+.admin-lista-secao{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  padding:12px 14px!important;
+  border-radius:15px;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.06);
+}
+@media(max-width:380px){
+  .admin-resumo-card .am-linha{grid-template-columns:1fr!important;gap:3px!important}
+  .admin-resumo-card .am-linha b{text-align:left!important}
+}
+
+</style>
   </div>`;
 }
 function iniciarPreparacaoPainelMotorista(){
@@ -6264,7 +6473,7 @@ function render(){
       <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar</button>
     </div>` : ''}
     ${!estado.viaAnuncio ? `<div class="link-instalar" onclick="abrirComoInstalar()"> Como instalar o app</div>` : ''}
-    <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
+    <main class="${(_efClasseTransicao+' '+(estado.modo==='cliente'&&estado.cliente.logado?'ef-cliente-ultra':'')).trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
     <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()"> Sugestões e Reclamações</button>
     <div class="rodape-discreto">
       <span onclick="abrirComoFunciona('${estado.modo==='cliente'?'cliente':'motorista'}')">como funciona o app</span>
@@ -6411,10 +6620,6 @@ function render(){
       montarMapa('mapa-m-'+p.id, p);
     }
   });
-  if(estado.modo==='entregador' && estado.motorista.ativo && estado.motorista.status!=='aprovado' && !treinamentoMotoristaConcluido() && etapaTreinamentoMotorista()>=1 && etapaTreinamentoMotorista()<5){
-    idsMapasAtivos.add('mapa-treinamento-motorista');
-    montarMapa('mapa-treinamento-motorista', pedidoTreinamentoDemo());
-  }
   limparMapasInativos(idsMapasAtivos);
   if(estado.admin.aberto && estado.admin.logado && estado.admin.aba==='resumo') montarMapaAdminGeral();
   if(estado.chatAberto) renderChat();
@@ -7483,6 +7688,12 @@ function resumoAdminHTML(){
   </div>`;
 }
 
+function formatarTelefoneExibicao(t){
+  const d=String(t||'').replace(/\D/g,'');
+  if(d.length===11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`;
+  if(d.length===10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
+  return t||'—';
+}
 function motoristaCardHTML(m, emRota){
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span> Em rota</span>`
@@ -7504,8 +7715,8 @@ function motoristaCardHTML(m, emRota){
         </div>
       </summary>
       <div class="admin-detalhes">
-      <div class="am-linha"><span>CPF</span><b>${m.cpf}</b></div>
-      <div class="am-linha"><span>Telefone</span><b>${m.telefone}</b></div>
+      <div class="am-linha"><span>CPF</span><b>${m.cpf||'—'}</b></div>
+      <div class="am-linha"><span>Telefone</span><b>${formatarTelefoneExibicao ? formatarTelefoneExibicao(m.telefone) : m.telefone}</b></div>
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b>${m.chave_pix||'—'}</b></div>
@@ -8628,8 +8839,7 @@ window.definirPapelAvisoGeral=definirPapelAvisoGeral; window.enviarAvisoGeralAdm
 window.salvarConfigGeralAdmin=salvarConfigGeralAdmin; window.ajustarSaldoMotoristaAdmin=ajustarSaldoMotoristaAdmin;
 window.ajustarSaldoClienteAdmin=ajustarSaldoClienteAdmin; window.dispararAjusteSaldoCliente=dispararAjusteSaldoCliente; window.enviarBoasVindasWhatsApp=enviarBoasVindasWhatsApp; window.enviarBoasVindasWhatsAppMotorista=enviarBoasVindasWhatsAppMotorista; window.marcarTaxaProPagaAdmin=marcarTaxaProPagaAdmin;
 window.alterarPlanoMotoristaAdmin=alterarPlanoMotoristaAdmin;
-window.avancarTreinamentoMotorista=avancarTreinamentoMotorista; window.concluirTreinamentoMotorista=concluirTreinamentoMotorista; window.irDocumentacaoAposTreinamento=irDocumentacaoAposTreinamento;
-window.abrirGPSTreinamento=abrirGPSTreinamento; window.abrirChatTreinamento=abrirChatTreinamento; window.fecharChatTreinamento=fecharChatTreinamento; window.enviarChatTreinamento=enviarChatTreinamento;
+window.avancarTreinamentoMotorista=avancarTreinamentoMotorista; window.concluirTreinamentoMotorista=concluirTreinamentoMotorista;
 window.alternarDisponibilidade=alternarDisponibilidade; window.solicitarSaque=solicitarSaque; window.marcarSaquePago=marcarSaquePago; window.testarSaqueAutomatico=testarSaqueAutomatico;
 window.salvarRaioAtendimento=salvarRaioAtendimento; window.abrirChamadoAmigo=abrirChamadoAmigo; window.fecharChamadoAmigo=fecharChamadoAmigo; window.enviarChamadoAmigo=enviarChamadoAmigo; window.cancelarChamadoAmigo=cancelarChamadoAmigo; window.ajudarChamadoAmigo=ajudarChamadoAmigo;
 window.abrirSOSFlutuante=abrirSOSFlutuante; window.acionarSOSCliente=acionarSOSCliente; window.fecharSOSCliente=fecharSOSCliente;
