@@ -1,5 +1,5 @@
-const CACHE='entrega-flash-admin-v3-20260829';
-const APP_SHELL=['./admin.html','./manifest-admin.json','./icon-admin-192.png','./icon-admin-512.png'];
+const CACHE='entrega-flash-admin-v4-20260829-mobile';
+const APP_SHELL=['/admin/admin.html','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
 self.addEventListener('install',event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).catch(()=>{}));
