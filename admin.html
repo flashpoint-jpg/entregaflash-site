@@ -6,14 +6,15 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Entrega Flash Admin | Ultra Premium</title>
-<link rel="manifest" href="manifest-admin.json?v=20260829-admin-standalone-3">
+<title>Entrega Flash | Painel Administrativo</title>
+<link rel="manifest" href="./manifest-admin.json?v=20260829-admin-mobile-4">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
 <link rel="preconnect" href="https://rgcclordmqjmwuzrrfbd.supabase.co" crossorigin>
-<meta name="theme-color" content="#08090b">
+<meta name="theme-color" content="#171d4a">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="Entrega Flash Admin">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Entrega Flash Admin">
@@ -531,7 +532,8 @@ fbq('track', 'PageView');
 }
 
   /* ---- painel administrativo: página inteira, sem barras de rolar horizontais ---- */
-  .modal-fundo-admin{align-items:stretch;justify-content:stretch;padding:0;}
+  .modal-fundo-admin{align-items:stretch;justify-content:stretch;padding:0;backface-visibility:hidden;transform:translateZ(0);contain:paint;}
+.modal-admin{backface-visibility:hidden;transform:translateZ(0);}
   .modal-admin{width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border-radius:0;margin:0;}
   .modal-admin .chat-topo{padding:16px 20px;flex-shrink:0;}
   .modal-admin .chat-topo h3{font-size:18.5px;}
@@ -812,98 +814,6 @@ main.ef-cliente-ultra .pix-box{
 
 </style>
 <!-- build: Entrega Flash Admin PWA dedicado -->
-
-<style id="ef-admin-ultra-premium-v4">
-/* ===== ENTREGA FLASH ADMIN · ULTRA PREMIUM ===== */
-.modal-fundo-admin{background:#050607!important;}
-.modal-admin{
-  --noite:#050607!important;
-  --painel:#101214!important;
-  --painel-alt:#171a1e!important;
-  --linha:rgba(255,255,255,.10)!important;
-  --mango:#ff3131!important;
-  --mango-escuro:#c9151e!important;
-  --chama:#ff4d38!important;
-  --escuro:#08090b!important;
-  --osso:#f7f8fa!important;
-  --poeira:#aeb4bf!important;
-  --verde:#42df88!important;
-  --azul:#59a9ff!important;
-  --roxo:#a78bfa!important;
-  background:
-    radial-gradient(circle at 14% -5%,rgba(255,36,52,.18),transparent 34%),
-    radial-gradient(circle at 92% 8%,rgba(255,80,40,.08),transparent 28%),
-    linear-gradient(155deg,#050607 0%,#090b0e 46%,#050607 100%)!important;
-  color:#f7f8fa!important;
-}
-.modal-admin .chat-topo{
-  min-height:86px!important;padding:12px 18px!important;
-  background:rgba(7,8,10,.90)!important;
-  border-bottom:1px solid rgba(255,69,69,.22)!important;
-  box-shadow:0 10px 32px rgba(0,0,0,.38)!important;
-  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
-}
-.ef-admin-head{display:flex;align-items:center;gap:12px;min-width:0}
-.ef-admin-head-logo{width:58px;height:58px;object-fit:contain;display:block;filter:drop-shadow(0 8px 16px rgba(255,28,45,.26))}
-.ef-admin-head-copy{min-width:0}.ef-admin-head-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;line-height:1;text-transform:uppercase;letter-spacing:.35px;color:#fff}
-.ef-admin-head-kicker{margin-top:5px;font-size:9.5px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase;color:#ff4a51;white-space:nowrap}
-.ef-admin-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
-.ef-admin-action{border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.055);color:#e9ebef;border-radius:12px;padding:9px 11px;font:700 12px 'Karla',sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.ef-admin-action.install{border-color:rgba(255,49,49,.35);background:linear-gradient(135deg,rgba(255,49,49,.22),rgba(113,8,17,.16));color:#fff}
-.ef-admin-action.exit{color:#aeb4bf}
-.modal-admin>.faixa-instalar,.modal-admin .chat-topo + .faixa-instalar{
-  margin:10px 16px 0!important;border-radius:16px!important;padding:10px 12px!important;
-  background:linear-gradient(135deg,rgba(255,48,48,.12),rgba(255,255,255,.035))!important;
-  border:1px solid rgba(255,68,68,.22)!important;box-shadow:none!important;
-}
-.modal-admin .faixa-instalar .icone{font-size:20px!important}.modal-admin .faixa-instalar .txt{font-size:12.5px!important;color:#fff!important}.modal-admin .faixa-instalar .sub{font-size:10.5px!important;color:#9ea5b0!important;line-height:1.25!important}
-.modal-admin .faixa-instalar .btn{padding:8px 10px!important;border-radius:10px!important;background:linear-gradient(135deg,#ff2e3d,#b80e1d)!important;color:#fff!important;border:0!important;box-shadow:0 7px 18px rgba(255,35,51,.18)!important}
-.admin-conteudo{background:transparent!important;padding:18px 18px 42px!important;scrollbar-color:#3a3d43 transparent;overscroll-behavior:contain}
-.admin-conteudo-inner{max-width:1380px!important;margin:0 auto!important}
-.admin-abas-grade{gap:9px!important;margin:2px 0 18px!important;padding:3px!important}
-.admin-abas-grade button{
-  flex:0 1 auto!important;min-width:118px!important;padding:11px 14px!important;border-radius:13px!important;
-  border:1px solid rgba(255,255,255,.09)!important;background:linear-gradient(180deg,#17191d,#111317)!important;
-  color:#b9bec8!important;box-shadow:0 7px 18px rgba(0,0,0,.18)!important;font-size:13px!important;
-}
-.admin-abas-grade button.ativo{background:linear-gradient(135deg,#ff3141,#b50e1c)!important;color:#fff!important;border-color:#ff4b58!important;box-shadow:0 8px 22px rgba(255,33,50,.25)!important}
-.admin-cartao,.admin-resumo-card,.cf-nota{
-  background:linear-gradient(155deg,rgba(25,27,31,.98),rgba(13,15,18,.98))!important;
-  border:1px solid rgba(255,255,255,.095)!important;border-radius:18px!important;
-  box-shadow:0 14px 34px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.035)!important;
-}
-.admin-cartao{padding:16px!important}.admin-cartao:hover{border-color:rgba(255,65,76,.24)!important}
-.admin-resumo-card[open]{border-color:rgba(255,57,69,.34)!important}
-.admin-resumo-card>summary{padding:14px 15px!important;min-height:60px!important}
-.admin-grade-cartoes{gap:12px!important}
-.admin-filtros-grade button{border-color:rgba(255,255,255,.1)!important;background:#101216!important;color:#abb1bb!important}
-.admin-filtros-grade button.ativo{background:rgba(255,48,61,.13)!important;color:#ff626d!important;border-color:rgba(255,72,84,.38)!important}
-.modal-admin input,.modal-admin select,.modal-admin textarea{background:#0d0f12!important;border:1px solid rgba(255,255,255,.10)!important;color:#fff!important;border-radius:12px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important}
-.modal-admin input:focus,.modal-admin select:focus,.modal-admin textarea:focus{border-color:#ff3e4c!important;box-shadow:0 0 0 3px rgba(255,48,61,.10)!important;outline:none!important}
-.modal-admin .btn-primario,.modal-admin .btn-verde{background:linear-gradient(135deg,#ff3241,#ba0e1d)!important;color:#fff!important;border:0!important;box-shadow:0 8px 20px rgba(255,33,50,.19)!important}
-.modal-admin .btn-secundario{background:#15171b!important;border-color:rgba(255,255,255,.10)!important;color:#e9ebef!important}
-.modal-admin .selo{background:#15171b!important;border:1px solid rgba(255,255,255,.09)!important;color:#d9dde4!important}
-.modal-admin .selo-andamento{color:#ffb44a!important}.modal-admin .selo-entregue{color:#50df8d!important}
-.modal-admin .am-linha{border-color:rgba(255,255,255,.07)!important}
-.modal-admin .mapa-admin-geral{border:1px solid rgba(255,255,255,.10)!important;box-shadow:0 16px 36px rgba(0,0,0,.24)!important}
-.modal-admin .ponto-pulsante{box-shadow:0 0 0 0 rgba(255,49,65,.45);animation:efAdminPulse 1.8s infinite!important}
-@keyframes efAdminPulse{0%{box-shadow:0 0 0 0 rgba(255,49,65,.42)}70%{box-shadow:0 0 0 9px rgba(255,49,65,0)}100%{box-shadow:0 0 0 0 rgba(255,49,65,0)}}
-/* nomes de cidades completos: não corta com reticências */
-.modal-admin .admin-cartao b[style*="white-space:nowrap"]{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.15!important;overflow-wrap:anywhere!important}
-/* remove azul antigo mesmo dos estilos inline com variáveis */
-.modal-admin [style*="var(--painel-alt)"],.modal-admin [style*="var(--painel)"]{--painel:#111317;--painel-alt:#181a1f}
-.modal-admin [style*="var(--mango)"]{--mango:#ff3847}
-.admin-login-shell{background:radial-gradient(circle at 50% -10%,rgba(255,39,54,.20),transparent 35%),linear-gradient(160deg,#07080a,#101217 55%,#07080a)!important}
-.admin-login-card{background:linear-gradient(160deg,rgba(25,27,31,.96),rgba(11,12,15,.98))!important;border-color:rgba(255,67,79,.18)!important;box-shadow:0 28px 70px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.06)!important}
-.admin-login-eyebrow,.admin-login-label span:last-child{color:#ff4e5a!important}.admin-login-btn{background:linear-gradient(135deg,#ff3141,#b70d1c)!important;box-shadow:0 16px 36px rgba(255,30,48,.24)!important}
-@media(min-width:760px){.admin-grade-cartoes{grid-template-columns:repeat(2,minmax(0,1fr))!important}.admin-grade-cartoes.colunas-3{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
-@media(min-width:1180px){.admin-grade-cartoes{grid-template-columns:repeat(3,minmax(0,1fr))!important}.admin-conteudo{padding:24px 32px 56px!important}}
-@media(max-width:680px){
-  .modal-admin .chat-topo{min-height:76px!important;padding:10px 12px!important}.ef-admin-head-logo{width:48px;height:48px}.ef-admin-head-title{font-size:18px}.ef-admin-head-kicker{font-size:8px;letter-spacing:1.15px}.ef-admin-action{padding:8px 9px;font-size:11px}.ef-admin-action.refresh{display:none}.admin-conteudo{padding:13px 12px 34px!important}.admin-abas-grade{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.admin-abas-grade button{min-width:0!important;width:100%!important;padding:10px 8px!important;font-size:12px!important}.admin-cartao{padding:14px!important}
-}
-@media(max-width:410px){.ef-admin-head-copy{max-width:150px}.ef-admin-head-kicker{display:none}.ef-admin-action.install{font-size:0}.ef-admin-action.install:after{content:'📲';font-size:16px}.ef-admin-action.exit{font-size:0}.ef-admin-action.exit:after{content:'↪';font-size:16px}}
-</style>
-
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -1294,10 +1204,32 @@ window.addEventListener('beforeinstallprompt', (e)=>{
 window.addEventListener('appinstalled', ()=>{
   estado.podeInstalar = false; estado.appInstalado = true; promptInstalacao = null; render();
 });
-function instalarApp(){
-  if(!promptInstalacao) return;
-  promptInstalacao.prompt();
-  promptInstalacao.userChoice.finally(()=>{ promptInstalacao=null; estado.podeInstalar=false; render(); });
+async function instalarApp(){
+  if(estado.appInstalado){
+    mostrarToast('O Painel Admin já está instalado neste aparelho.');
+    return;
+  }
+  if(!promptInstalacao){
+    abrirComoInstalar();
+    return;
+  }
+  try{
+    const evento = promptInstalacao;
+    promptInstalacao = null;
+    estado.podeInstalar = false;
+    await evento.prompt();
+    const escolha = await evento.userChoice;
+    if(escolha && escolha.outcome === 'accepted'){
+      mostrarToast('Instalação iniciada.');
+    }else{
+      abrirComoInstalar();
+    }
+  }catch(e){
+    console.warn('Falha ao abrir instalação do PWA', e);
+    abrirComoInstalar();
+  }finally{
+    render();
+  }
 }
 (function detectarStandaloneEiOS(){
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
@@ -1312,8 +1244,8 @@ function fecharPopupInstalar(){
   render();
 }
 function instalarPeloPopup(){
-  fecharPopupInstalar();
-  if(estado.podeInstalar) instalarApp(); else abrirComoInstalar();
+  estado.popupInstalarAberto=false;
+  instalarApp();
 }
 function popupInstalarHTML(){
   return `
@@ -2576,7 +2508,7 @@ async function carregarSuporteAdmin(){
     if(prioA!==prioB) return prioA-prioB;
     return b.ultimaEm - a.ultimaEm;
   });
-  render();
+  agendarRenderAdmin();
 }
 async function abrirSuporteAdmin(telefone){
   estado.admin.suporteAbertoTelefone = telefone;
@@ -5433,7 +5365,7 @@ function comoInstalarHTML(){
         <div class="cf-passo"><div class="num">🤖</div><div class="conteudo"><b>Android (Chrome)</b><span>Toque no menu ⋮ no canto superior direito e escolha "Instalar app" ou "Adicionar à tela inicial".</span></div></div>
         <div class="cf-passo"><div class="num">🍎</div><div class="conteudo"><b>iPhone (Safari)</b><span>Toque no ícone de Compartilhar (o quadrado com a seta ⬆️) na barra inferior e depois em "Adicionar à Tela de Início".</span></div></div>
         <div class="cf-passo"><div class="num">💻</div><div class="conteudo"><b>Computador (Chrome/Edge)</b><span>Clica no ícone de instalar ⊕ que aparece do lado direito da barra de endereço.</span></div></div>
-        ${(!estado.podeInstalar && estado.notificacoesStatus!=='unsupported') ? `<div class="subtitulo" style="margin-top:10px">Se não vires nenhuma dessas opções, o seu navegador ainda não detetou o app como instalável — confirma que está a aceder pelo link https com o endereço final do site.</div>` : ''}
+        ${!estado.podeInstalar ? `<div class="subtitulo" style="margin-top:12px;padding:10px;border-radius:10px;background:rgba(255,255,255,.06)"><b>No Android:</b> abra esta página diretamente no Google Chrome. Depois toque em <b>⋮</b> e escolha <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>. Se estiver dentro do navegador do Facebook/Instagram/WhatsApp, use “Abrir no Chrome”.</div>` : ''}
       </div>
     </div>
   </div>`;
@@ -5660,7 +5592,7 @@ function render(){
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
-      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}">📲</button>` : ''}
+      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar Painel Admin" onclick="instalarApp()">📲</button>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — Muzambinho e região</div>
   `;
@@ -5722,7 +5654,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div class="ef-admin-head"><img class="ef-admin-head-logo" src="icon-admin-192.png" alt="Entrega Flash Admin"><div class="ef-admin-head-copy"><div class="ef-admin-head-title">Entrega Flash Admin</div><div class="ef-admin-head-kicker">CENTRAL DE OPERAÇÕES • TEMPO REAL</div></div></div><div class="ef-admin-actions">${!estado.appInstalado?`<button class="ef-admin-action install" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}">📲 Instalar</button>`:''}${estado.admin.logado?`<button class="ef-admin-action refresh" onclick="atualizarPainelAdmin()">↻ Atualizar</button><button class="ef-admin-action exit" onclick="sairAdmin()">Sair</button>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL NOVO • CIDADES • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -5806,32 +5738,7 @@ function render(){
     document.getElementById('app-header').innerHTML = headerHTML;
     _ultimoHeaderHTML = headerHTML;
   }
-  const _restoDestino = document.getElementById('app-resto');
-  const _adminModalExistente = estado.admin.aberto ? _restoDestino.querySelector('.modal-fundo-admin') : null;
-  const _adminInnerExistente = _adminModalExistente ? _adminModalExistente.querySelector('.admin-conteudo-inner') : null;
-  const _adminScrollExistente = _adminModalExistente ? _adminModalExistente.querySelector('.admin-conteudo') : null;
-  if(_adminModalExistente && _adminInnerExistente){
-    // Admin já aberto: atualiza somente o miolo do painel. Antes, qualquer evento Realtime
-    // reescrevia #app-resto inteiro (mais de 1 MB de HTML), fazendo a tela piscar e saltar.
-    const _adminScrollTop = _adminScrollExistente ? _adminScrollExistente.scrollTop : 0;
-    const _adminFocoId = document.activeElement && document.activeElement.id ? document.activeElement.id : null;
-    const _adminSelStart = document.activeElement && typeof document.activeElement.selectionStart==='number' ? document.activeElement.selectionStart : null;
-    const _adminSelEnd = document.activeElement && typeof document.activeElement.selectionEnd==='number' ? document.activeElement.selectionEnd : null;
-    _adminInnerExistente.innerHTML = adminCorpoHTML();
-    // Cabeçalho do Admin muda apenas quando login/instalação muda; atualizar isoladamente não pisca o painel.
-    const _adminTopo = _adminModalExistente.querySelector('.chat-topo');
-    if(_adminTopo){
-      _adminTopo.innerHTML = `<div class="ef-admin-head"><img class="ef-admin-head-logo" src="icon-admin-192.png" alt="Entrega Flash Admin"><div class="ef-admin-head-copy"><div class="ef-admin-head-title">Entrega Flash Admin</div><div class="ef-admin-head-kicker">CENTRAL DE OPERAÇÕES • TEMPO REAL</div></div></div><div class="ef-admin-actions">${!estado.appInstalado?`<button class="ef-admin-action install" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}">📲 Instalar</button>`:''}${estado.admin.logado?`<button class="ef-admin-action refresh" onclick="atualizarPainelAdmin()">↻ Atualizar</button><button class="ef-admin-action exit" onclick="sairAdmin()">Sair</button>`:''}</div>`;
-    }
-    // Mantém a posição visual durante atualizações automáticas.
-    if(_adminScrollExistente) _adminScrollExistente.scrollTop = _adminScrollTop;
-    if(_adminFocoId){
-      const _f = document.getElementById(_adminFocoId);
-      if(_f){ try{ _f.focus({preventScroll:true}); if(_adminSelStart!==null && _f.setSelectionRange) _f.setSelectionRange(_adminSelStart,_adminSelEnd); }catch(e){} }
-    }
-  } else {
-    _restoDestino.innerHTML = restoHTML;
-  }
+  document.getElementById('app-resto').innerHTML = restoHTML;
   const bind=(id,path)=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',(e)=>setDeep(path,e.target.value)); };
   bind('c-nome','form.nome'); bind('c-telefone','form.telefone'); bind('c-origem','form.origem');
   bind('c-destino','form.destino'); bind('c-descricao','form.descricao');
@@ -6830,19 +6737,19 @@ async function carregarTodosPedidosAdmin(){
   // mesma lógica: só colapsa pro placeholder de "carregando" se ainda não havia pedidos
   // carregados. Numa atualização pós-edição, mantém a lista visível e evita o scroll pular.
   const jaTinhaPedidos = (estado.admin.todosPedidos||[]).length>0;
-  if(!jaTinhaPedidos){ estado.admin.carregando=true; render(); }
+  if(!jaTinhaPedidos){ estado.admin.carregando=true; agendarRenderAdmin(); }
   const { data, error } = await sb.from('entrega_pedidos').select('*').order('criado_em',{ascending:false}).limit(500);
   estado.admin.carregando=false;
   if(error){ console.error(error); mostrarToast('Erro ao carregar pedidos.', 'erro'); return; }
   estado.admin.todosPedidos = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function carregarClientesAdmin(){
   // só mostra a tela cheia de "carregando" no primeiro carregamento (lista ainda vazia).
   // Numa atualização depois de salvar uma edição, a lista já tem conteúdo — não colapsamos
   // ela pra um placeholder no meio do caminho, senão o scroll da pessoa "pula" pro topo.
   const jaTinhaClientes = estado.admin.clientes.length>0;
-  if(!jaTinhaClientes){ estado.admin.carregando=true; render(); }
+  if(!jaTinhaClientes){ estado.admin.carregando=true; agendarRenderAdmin(); }
   const { data, error } = await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada });
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar clientes.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_clientes_saldos').select('telefone,saldo');
@@ -6851,7 +6758,7 @@ async function carregarClientesAdmin(){
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
   estado.admin.clientes = (data||[]).map(c=>({ ...c, saldo: saldoPorTelefone[c.telefone]||0 }));
-  render();
+  agendarRenderAdmin();
 }
 function filtrarPedidosAdmin(){
   const a = estado.admin;
@@ -6958,7 +6865,7 @@ function resumoMotoristasPorCidadeHTML(){
       ${cidades.map(([cidade,d])=>`
         <div style="background:var(--painel-alt);border:1px solid var(--linha);border-radius:10px;padding:11px 12px;min-width:0">
           <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-            <b style="white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.15">🏙️ ${cidade}</b>
+            <b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏙️ ${cidade}</b>
             <b style="font-family:'Rajdhani';font-size:22px;color:var(--mango)">${d.total}</b>
           </div>
           <div style="font-size:11.5px;color:var(--poeira);margin-top:5px;display:flex;gap:9px;flex-wrap:wrap">
@@ -7626,7 +7533,7 @@ async function carregarSaquesAdmin(){
   const { data, error } = await sb.from('entrega_saques').select('*').order('criado_em',{ascending:false});
   if(error){ console.error(error); return; }
   estado.admin.saques = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function testarSaqueAutomatico(){
   if(!(await confirmarAcao('Isso vai rodar o robô de saque automático agora, processando qualquer saque pendente que já venceu o prazo. Continuar?'))) return;
@@ -7672,6 +7579,31 @@ function saqueCardHTML(s){
 let canalAdminRealtime = null;
 let intervaloAdminMotoristasClientesPoll = null;
 let adminOperacaoClienteEmAndamento = false;
+let _adminRenderTimer = null;
+function renderAdminParcial(){
+  if(estado.admin.aberto){
+    const area = document.querySelector('.admin-conteudo');
+    const inner = document.querySelector('.admin-conteudo-inner');
+    if(inner){
+      const scrollTop = area ? area.scrollTop : 0;
+      const foco = capturarFocoAtivo();
+      const valores = capturarValoresInputs();
+      inner.innerHTML = adminCorpoHTML();
+      restaurarValoresInputs(valores);
+      restaurarFocoAtivo(foco);
+      if(area) area.scrollTop = scrollTop;
+      if(estado.admin.logado && estado.admin.aba==='resumo'){
+        requestAnimationFrame(()=>{ try{ montarMapaAdminGeral(); }catch(e){ console.warn(e); } });
+      }
+      return;
+    }
+  }
+  render();
+}
+function agendarRenderAdmin(delay=90){
+  if(_adminRenderTimer) clearTimeout(_adminRenderTimer);
+  _adminRenderTimer = setTimeout(()=>{ _adminRenderTimer=null; renderAdminParcial(); }, delay);
+}
 function assinarAdminRealtime(){
   if(canalAdminRealtime) return;
   canalAdminRealtime = sb.channel('admin-realtime')
@@ -7763,7 +7695,7 @@ async function carregarAlertasAdmin(){
   const { data, error } = await sb.from('entrega_alertas_admin').select('*').order('criado_em',{ascending:false}).limit(200);
   if(error){ console.error(error); return; }
   estado.admin.alertas = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function marcarAlertaLido(id){
   const { error } = await sb.from('entrega_alertas_admin').update({ lido:true }).eq('id', id);
@@ -7796,7 +7728,7 @@ async function carregarMotoristasAdmin(){
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
-  if(!jaTinhaMotoristas){ estado.admin.carregando=true; render(); }
+  if(!jaTinhaMotoristas){ estado.admin.carregando=true; agendarRenderAdmin(); }
   const { data: dadosBrutos, error } = await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada });
   const data = (dadosBrutos||[]).filter(m => m.status !== 'incompleto');
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar cadastros.', 'erro'); return; }
@@ -7806,13 +7738,13 @@ async function carregarMotoristasAdmin(){
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
   estado.admin.motoristas = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  render();
+  agendarRenderAdmin();
 }
 async function carregarPedidosEntreguesAdmin(){
   const { data, error } = await sb.from('entrega_pedidos').select('preco,motorista_telefone').eq('status','entregue');
   if(error){ console.error(error); return; }
   estado.admin.pedidosEntregues = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function aprovarMotoristaAdmin(id){
   const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
