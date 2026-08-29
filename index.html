@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="ef-app-version" content="20260829-2">
+<meta name="ef-app-version" content="20260829-3">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega</title>
-<link rel="manifest" href="entregaflash-manifest.json?v=20260829-2">
+<link rel="manifest" href="entregaflash-manifest.json?v=20260829-3">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -964,6 +964,38 @@ label,.subtitulo,.texto-ajuda,.hint,.ajuda{color:#c7cad0!important}
 @media(prefers-reduced-motion:reduce){.ef-radar-pulse,.ef-radar-scan,.ef-radar-dot,.ef-busca-status span,.ef-busca-progresso::after,.busca-premium::before{animation:none!important}.ef-busca-status span:first-child{opacity:1;transform:none}}
 </style>
 
+
+<style id="ef-driver-premium-v202608293">
+.ef-nav-motorista-premium{
+  left:12px!important;right:12px!important;bottom:calc(10px + env(safe-area-inset-bottom,0px))!important;
+  width:auto!important;max-width:456px!important;border:1px solid rgba(255,151,16,.28)!important;
+  border-radius:22px!important;background:rgba(13,15,18,.94)!important;
+  box-shadow:0 -4px 26px rgba(0,0,0,.50),0 8px 30px rgba(255,116,0,.08)!important;
+  padding:6px!important;overflow:hidden!important;
+}
+.ef-nav-motorista-premium button{
+  min-height:56px!important;border-radius:16px!important;gap:4px!important;
+  font-size:11.5px!important;letter-spacing:.15px!important;
+}
+.ef-nav-motorista-premium button.ativo{
+  color:#fff!important;background:linear-gradient(135deg,rgba(255,177,36,.20),rgba(255,98,0,.14))!important;
+  box-shadow:inset 0 0 0 1px rgba(255,151,16,.24)!important;
+}
+.ef-nav-motorista-premium button.ativo::before{
+  top:0!important;left:24%!important;right:24%!important;height:3px!important;
+  background:linear-gradient(90deg,#ffb224,#ff6800)!important;box-shadow:0 0 12px rgba(255,117,0,.8)!important;
+}
+.ef-nav-motorista-premium .icone-aba{width:22px;height:22px;display:grid;place-items:center}
+.ef-nav-motorista-premium .icone-aba svg{
+  width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;
+}
+.conteudo-motorista{padding-bottom:98px!important}
+.conteudo-motorista .btn-ficar-online{
+  min-height:58px!important;border-radius:18px!important;font-size:18px!important;font-weight:800!important;
+  box-shadow:0 12px 26px rgba(255,111,0,.16)!important;
+}
+</style>
+
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -1537,7 +1569,7 @@ function agendarPopupInstalarSeNecessario(){
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-2', {
+    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-3', {
       scope: './',
       updateViaCache: 'none'
     });
@@ -4034,9 +4066,13 @@ async function enviarPosicaoMotorista(){
   // grava a posição atual do motorista sempre que ele estiver logado — isso alimenta o mapa
   // geral do admin, que mostra motoristas disponíveis mesmo sem corrida em andamento
   if(estado.motorista.telefone){
-    sb.from('entrega_motoristas').update({
-      lat_atual: ultimaPosicaoMotorista.lat, lng_atual: ultimaPosicaoMotorista.lon, lat_atualizado_em: Date.now()
-    }).eq('telefone', estado.motorista.telefone);
+    sb.rpc('entrega_motorista_atualizar_localizacao', {
+      p_telefone: estado.motorista.telefone,
+      p_lat: ultimaPosicaoMotorista.lat,
+      p_lng: ultimaPosicaoMotorista.lon
+    }).then(({ error })=>{
+      if(error) console.warn('Não foi possível atualizar a localização do motorista:', error);
+    });
   }
   const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0) return;
@@ -5594,10 +5630,16 @@ function telaMotorista(){
   <div class="conteudo-motorista">
     ${aba==='pedidos' ? blocoPedidos : aba==='historico' ? blocoHistorico : blocoPerfil}
   </div>
-  <div class="abas-motorista">
-    <button class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')"><span class="icone-aba"></span>Pedidos</button>
-    <button class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')"><span class="icone-aba"></span>Histórico</button>
-    <button class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')"><span class="icone-aba"></span>Perfil</button>
+  <div class="abas-motorista ef-nav-motorista-premium">
+    <button class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')" aria-label="Pedidos">
+      <span class="icone-aba"><svg viewBox="0 0 24 24"><path d="M4 7.5h16M6.5 4h11l1 16h-13l1-16ZM9 10v2a3 3 0 0 0 6 0v-2"/></svg></span><span>Pedidos</span>
+    </button>
+    <button class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')" aria-label="Histórico">
+      <span class="icone-aba"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8m0-5v5h5M12 7v5l3 2"/></svg></span><span>Histórico</span>
+    </button>
+    <button class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')" aria-label="Perfil">
+      <span class="icone-aba"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c.8-4 3.2-6 7.5-6s6.7 2 7.5 6"/></svg></span><span>Perfil</span>
+    </button>
   </div>
   ${estado.chamadoAmigoModal.aberto ? modalChamadoAmigoHTML() : ''}`;
 }
@@ -6200,17 +6242,16 @@ async function entrarComoMotorista(){
 }
 function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); if(estado.motorista.telefone) atualizarDisponibilidadeDB(estado.motorista.telefone,false); estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
 async function atualizarDisponibilidadeDB(telefone, disponivel){
-  const agora = Date.now();
-  const payload = { disponivel, disponivel_atualizado_em: agora };
-  // Ao entrar online, grava a posição capturada no MESMO update do status.
-  // Assim nunca aparece "online" no resumo sem existir coordenada para o mapa.
-  if(disponivel && ultimaPosicaoMotorista){
-    payload.lat_atual = ultimaPosicaoMotorista.lat;
-    payload.lng_atual = ultimaPosicaoMotorista.lon;
-    payload.lat_atualizado_em = agora;
-  }
-  const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
-  return !error;
+  const lat = (disponivel && ultimaPosicaoMotorista) ? ultimaPosicaoMotorista.lat : null;
+  const lng = (disponivel && ultimaPosicaoMotorista) ? ultimaPosicaoMotorista.lon : null;
+  const { data, error } = await sb.rpc('entrega_motorista_definir_disponivel_com_posicao', {
+    p_telefone: telefone,
+    p_disponivel: !!disponivel,
+    p_lat: lat,
+    p_lng: lng
+  });
+  if(error) console.error('Erro ao alterar disponibilidade:', error);
+  return !error && data !== false;
 }
 async function alternarDisponibilidade(){
   const m = estado.motorista;
@@ -6249,8 +6290,11 @@ async function alternarDisponibilidade(){
 async function salvarRaioAtendimento(valor){
   const m = estado.motorista;
   const km = valor ? Number(valor) : null;
-  const { error } = await sb.from('entrega_motoristas').update({ raio_atendimento_km: km }).eq('telefone', m.telefone);
-  if(error){ console.error(error); mostrarToast('Erro ao gravar o raio de atendimento.', 'erro'); return; }
+  const { data, error } = await sb.rpc('entrega_motorista_definir_raio_atendimento', {
+    p_telefone: m.telefone,
+    p_km: km
+  });
+  if(error || data===false){ console.error(error); mostrarToast('Erro ao gravar o raio de atendimento.', 'erro'); return; }
   m.raioAtendimentoKm = km;
   mostrarToast(km ? `Raio de atendimento ajustado pra ${km} km.` : 'Raio de atendimento removido — voltas a ver todos os pedidos.', 'sucesso');
   render();
