@@ -1,6 +1,6 @@
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260829-3
-const EF_VERSION = '20260829-3';
+// Versão: 20260829-5
+const EF_VERSION = '20260829-5';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {

@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="ef-app-version" content="20260829-3">
+<meta name="ef-app-version" content="20260829-5">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega</title>
-<link rel="manifest" href="entregaflash-manifest.json?v=20260829-3">
+<link rel="manifest" href="entregaflash-manifest.json?v=20260829-5">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -996,6 +996,213 @@ label,.subtitulo,.texto-ajuda,.hint,.ajuda{color:#c7cad0!important}
 }
 </style>
 
+
+<style id="ef-cliente-pedido-premium-v202608295">
+/* ===== Tela premium: pedido do cliente ===== */
+.ef-cliente-pedido-premium{
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(255,139,18,.28)!important;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(255,132,0,.11),transparent 30%),
+    linear-gradient(180deg,#17191d 0%,#101215 100%)!important;
+  box-shadow:0 20px 50px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+.ef-cliente-pedido-premium:before{
+  content:"";position:absolute;left:18px;right:18px;top:0;height:2px;border-radius:999px;
+  background:linear-gradient(90deg,transparent,#ffb224,#ff6800,transparent);
+  opacity:.9;
+}
+.ef-cliente-pedido-head{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  margin:-2px 0 8px;
+}
+.ef-cliente-pedido-kicker{
+  font-family:'Rajdhani';font-size:10px;font-weight:800;letter-spacing:1.7px;
+  color:#ff9b18;margin-bottom:2px;
+}
+.ef-cliente-pedido-head h2{
+  font-family:'Rajdhani';font-size:25px!important;font-weight:800!important;
+  letter-spacing:.1px;color:#fff;
+}
+.ef-cliente-pedido-sub{
+  color:#a9acb2;font-size:12.5px;line-height:1.35;margin-top:2px;
+}
+.ef-cliente-pedido-badge{
+  width:50px;height:50px;flex:0 0 50px;border-radius:16px;display:grid;place-items:center;
+  background:linear-gradient(145deg,rgba(255,178,36,.18),rgba(255,96,0,.10));
+  border:1px solid rgba(255,151,16,.34);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 10px 26px rgba(255,103,0,.10);
+  color:#ff9915;
+}
+.ef-cliente-pedido-badge svg{
+  width:27px;height:27px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+
+/* status de motoristas */
+.ef-cliente-pedido-premium > div:nth-of-type(2){
+  border-radius:12px;
+}
+
+/* barra de passos: aparência de app premium */
+.ef-cliente-pedido-premium .passos{
+  margin-top:15px!important;gap:7px!important;
+}
+.ef-cliente-pedido-premium .passos .p{
+  height:5px!important;border-radius:999px!important;background:#292c31!important;
+  border:0!important;box-shadow:none!important;
+}
+.ef-cliente-pedido-premium .passos .p.feito,
+.ef-cliente-pedido-premium .passos .p.atual{
+  background:linear-gradient(90deg,#ffb01f,#ff6b00)!important;
+  box-shadow:0 0 12px rgba(255,112,0,.24)!important;
+}
+
+/* conteúdo de cada etapa */
+.ef-cliente-pedido-premium .etapa-conteudo{
+  margin-top:16px!important;padding:16px!important;border-radius:17px;
+  background:linear-gradient(180deg,rgba(24,27,32,.86),rgba(15,17,20,.92));
+  border:1px solid #2a2d33;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.025);
+}
+.ef-cliente-pedido-premium label{
+  color:#eef0f2!important;font-size:13px!important;font-weight:750!important;
+  letter-spacing:.1px!important;text-transform:none!important;
+}
+.ef-cliente-pedido-premium input,
+.ef-cliente-pedido-premium textarea{
+  min-height:54px!important;border-radius:14px!important;
+  background:#111318!important;border:1px solid #30343b!important;color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important;
+}
+.ef-cliente-pedido-premium textarea{min-height:88px!important;padding-top:14px!important}
+.ef-cliente-pedido-premium input:focus,
+.ef-cliente-pedido-premium textarea:focus{
+  border-color:#ff9518!important;
+  box-shadow:0 0 0 3px rgba(255,145,19,.10)!important;
+}
+.ef-cliente-pedido-premium input::placeholder,
+.ef-cliente-pedido-premium textarea::placeholder{color:#777b84!important}
+
+/* Origem e destino com linguagem de rota */
+.ef-label-rota{
+  display:flex!important;align-items:center!important;gap:8px!important;
+}
+.ef-rota-dot{
+  width:11px;height:11px;border-radius:50%;display:inline-block;flex:0 0 11px;
+  box-shadow:0 0 0 4px rgba(255,255,255,.035);
+}
+.ef-rota-dot.origem{background:#39c98a;box-shadow:0 0 0 4px rgba(57,201,138,.10)}
+.ef-rota-dot.destino{background:#ff7814;box-shadow:0 0 0 4px rgba(255,120,20,.11)}
+
+.ef-dica-premium{
+  position:relative;border-radius:14px!important;padding:12px 13px!important;
+  background:linear-gradient(135deg,rgba(255,161,20,.11),rgba(255,103,0,.055))!important;
+  border:1px solid rgba(255,151,16,.20)!important;color:#c8c9cd!important;
+}
+.ef-dica-icone{color:#ff9a18;font-size:16px;margin-right:4px}
+
+/* botão rural e adicionar parada */
+.ef-cliente-pedido-premium .btn-sitio-roca{
+  display:inline-flex!important;align-items:center!important;min-height:34px;
+  padding:7px 10px!important;border-radius:10px!important;
+  background:#16191e!important;border:1px solid #2b3037!important;
+  color:#b9bcc2!important;text-decoration:none!important;
+}
+.ef-cliente-pedido-premium .btn-add-parada{
+  border-radius:13px!important;border:1px dashed rgba(255,151,16,.34)!important;
+  background:rgba(255,137,10,.045)!important;color:#ffc16a!important;
+}
+
+/* veículos */
+.ef-cliente-pedido-premium .veiculos{
+  gap:8px!important;
+}
+.ef-cliente-pedido-premium .veiculos button{
+  min-height:68px!important;border-radius:15px!important;background:#12151a!important;
+  border:1px solid #2e3238!important;color:#d9dadd!important;
+  box-shadow:none!important;
+}
+.ef-cliente-pedido-premium .veiculos button.sel{
+  background:linear-gradient(145deg,rgba(255,171,31,.17),rgba(255,100,0,.075))!important;
+  border-color:#ff9317!important;color:#fff!important;
+  box-shadow:0 0 0 2px rgba(255,143,20,.08),0 10px 22px rgba(255,103,0,.07)!important;
+}
+.ef-cliente-pedido-premium .veiculos .emoji{font-size:24px!important}
+
+/* prioridade */
+.ef-cliente-pedido-premium .prioridade-niveis{
+  gap:8px!important;margin-top:10px!important;
+}
+.ef-cliente-pedido-premium .prioridade-niveis button{
+  border-radius:13px!important;background:#12151a!important;border:1px solid #30343b!important;
+  color:#e4e5e7!important;min-height:58px!important;
+}
+.ef-cliente-pedido-premium .prioridade-niveis button.sel{
+  background:linear-gradient(145deg,rgba(255,173,31,.18),rgba(255,102,0,.08))!important;
+  border-color:#ff9216!important;box-shadow:0 8px 22px rgba(255,106,0,.08)!important;
+}
+
+/* extras */
+.ef-cliente-pedido-premium .extras-acordeao{
+  border:1px solid #2d3036!important;border-radius:15px!important;overflow:hidden;
+  background:#111318!important;
+}
+.ef-cliente-pedido-premium .extras-acordeao-cabecalho{
+  padding:14px!important;
+}
+
+/* ações */
+.ef-cliente-pedido-premium .btn.btn-primario{
+  min-height:55px!important;border-radius:15px!important;
+  background:linear-gradient(100deg,#ffb224 0%,#ff8b10 48%,#ff6700 100%)!important;
+  color:#101010!important;font-family:'Rajdhani';font-size:17px!important;font-weight:850!important;
+  box-shadow:0 12px 28px rgba(255,105,0,.16),inset 0 1px 0 rgba(255,255,255,.28)!important;
+  border:0!important;
+}
+.ef-cliente-pedido-premium .btn.btn-secundario{
+  min-height:55px!important;border-radius:15px!important;background:#15181d!important;
+  border:1px solid #31353c!important;color:#e8e9eb!important;
+}
+
+/* etapa 3 */
+.ef-resumo-titulo{
+  display:flex;align-items:center;gap:10px;padding:12px 13px;margin-bottom:12px;
+  border-radius:14px;background:rgba(57,201,138,.07);border:1px solid rgba(57,201,138,.18);
+}
+.ef-resumo-titulo>span{
+  width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+  background:#39c98a;color:#08130f;font-weight:900;
+}
+.ef-resumo-titulo b{display:block;color:#f3f5f5;font-size:14px}
+.ef-resumo-titulo small{display:block;color:#969aa1;font-size:11.5px;margin-top:1px}
+.ef-cliente-pedido-premium .end{
+  border-radius:14px!important;background:#111318!important;border:1px solid #2d3138!important;
+  padding:14px!important;line-height:1.45!important;
+}
+.ef-cliente-pedido-premium .estimativa{
+  border-radius:16px!important;padding:16px!important;
+  background:linear-gradient(135deg,rgba(255,177,36,.14),rgba(255,103,0,.07))!important;
+  border:1px solid rgba(255,151,16,.29)!important;
+}
+.ef-cliente-pedido-premium .estimativa .valor{
+  font-size:30px!important;color:#ffac21!important;
+  text-shadow:0 0 18px rgba(255,132,0,.12);
+}
+.ef-cliente-pedido-premium .cancelamento-motorista-box{
+  border-radius:13px!important;background:#111318!important;border:1px solid #292d33!important;
+  color:#9fa2a9!important;font-size:11.5px!important;line-height:1.45!important;
+}
+
+@media(max-width:420px){
+  .ef-cliente-pedido-head h2{font-size:23px!important}
+  .ef-cliente-pedido-badge{width:46px;height:46px;flex-basis:46px}
+  .ef-cliente-pedido-premium .etapa-conteudo{padding:13px!important}
+  .ef-cliente-pedido-premium .veiculos{grid-template-columns:repeat(3,1fr)!important}
+}
+</style>
+
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -1569,7 +1776,7 @@ function agendarPopupInstalarSeNecessario(){
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-3', {
+    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-5', {
       scope: './',
       updateViaCache: 'none'
     });
@@ -3193,42 +3400,72 @@ function semEnderecoModalHTML(){
 }
 
 async function exigirLocalizacaoOperacional(tipo){
-  // Não é usado na entrada do site. Só é chamado quando a localização é realmente necessária.
+  // Só pede localização quando realmente necessária.
   if(!window.isSecureContext){
     mostrarToast('Para usar a localização, abra o Entrega Flash pelo endereço HTTPS.', 'erro');
     return false;
   }
   if(!navigator.geolocation){
-    mostrarToast('Este navegador não tem suporte à localização.', 'erro');
+    mostrarToast('Este aparelho não tem suporte à localização.', 'erro');
     return false;
   }
-  mostrarToast(tipo==='motorista' ? 'Ative a localização para iniciar a rota.' : 'Ative a localização para confirmar o pedido.');
-  return await new Promise(resolve=>{
+
+  const salvarPosicao = (pos)=>{
+    const lat = Number(pos.coords.latitude);
+    const lon = Number(pos.coords.longitude);
+    estado.ultimaLocalizacao = { lat, lng:lon, em:Date.now() };
+    ultimaPosicaoMotorista = { lat, lon, em:Date.now() };
+    return true;
+  };
+
+  const tentar = (opcoes)=>new Promise(resolve=>{
     navigator.geolocation.getCurrentPosition(
-      pos=>{
-        try{
-          const lat = pos.coords.latitude, lon = pos.coords.longitude;
-          estado.ultimaLocalizacao = { lat, lng:lon };
-          // A mesma posição precisa alimentar o rastreio do motorista.
-          // Antes ela ficava só em estado.ultimaLocalizacao e o mapa do admin
-          // dependia de ultimaPosicaoMotorista, por isso o motorista podia ficar
-          // "online" com lat/lng vazios no banco.
-          ultimaPosicaoMotorista = { lat, lon };
-        }catch(e){}
-        resolve(true);
-      },
-      err=>{
-        const msg = err && err.code===1
-          ? 'Localização bloqueada. Permita o acesso à localização e tente novamente.'
-          : err && err.code===3
-            ? 'A localização demorou para responder. Verifique o GPS e tente novamente.'
-            : 'Não consegui obter sua localização. Verifique se o GPS está ligado e tente novamente.';
-        mostrarToast(msg, 'erro');
-        resolve(false);
-      },
-      { enableHighAccuracy:true, timeout:15000, maximumAge:30000 }
+      pos=>resolve(salvarPosicao(pos)),
+      err=>resolve({ erro:err }),
+      opcoes
     );
   });
+
+  mostrarToast(tipo==='motorista'
+    ? 'Localizando você para iniciar a rota...'
+    : 'Localizando você para confirmar o pedido...');
+
+  // 1ª tentativa: GPS preciso.
+  let resultado = await tentar({
+    enableHighAccuracy:true,
+    timeout:12000,
+    maximumAge:60000
+  });
+  if(resultado===true) return true;
+
+  const primeiroErro = resultado && resultado.erro;
+  if(primeiroErro && primeiroErro.code===1){
+    mostrarToast('Localização bloqueada. Permita o acesso à localização e tente novamente.', 'erro');
+    return false;
+  }
+
+  // 2ª tentativa automática: aceita localização de rede/Wi‑Fi e uma posição recente.
+  mostrarToast('GPS demorou. Tentando novamente automaticamente...');
+  resultado = await tentar({
+    enableHighAccuracy:false,
+    timeout:20000,
+    maximumAge:180000
+  });
+  if(resultado===true) return true;
+
+  // Se já existe uma posição recente capturada nesta sessão, usa como reserva.
+  if(ultimaPosicaoMotorista && ultimaPosicaoMotorista.em &&
+     (Date.now()-ultimaPosicaoMotorista.em) <= 180000){
+    mostrarToast('Usando sua última localização recente para iniciar a rota.');
+    return true;
+  }
+
+  const erro = resultado && resultado.erro;
+  const msg = erro && erro.code===1
+    ? 'Localização bloqueada. Libere a permissão de localização para o Entrega Flash.'
+    : 'Não consegui localizar você. Ligue a Localização/GPS do celular e tente novamente.';
+  mostrarToast(msg, 'erro');
+  return false;
 }
 
 async function criarPedido(){
@@ -5003,9 +5240,9 @@ function telaCliente(){
     </div>` : ''}
   </div>
 
-  <div class="cartao">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <h2 style="margin:0">Pedir entrega</h2>
+  <div class="cartao ef-cliente-pedido-premium">
+    <div class="ef-cliente-pedido-head">
+      <div><div class="ef-cliente-pedido-kicker">ENTREGA FLASH</div><h2 style="margin:0">Pedir entrega</h2><div class="ef-cliente-pedido-sub">Preencha em poucos passos e acompanhe tudo pelo app.</div></div><div class="ef-cliente-pedido-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 7h11v8H3zM14 10h3l4 4v1h-7zM7 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/></svg></div></div>
     </div>
     <div style="font-size:14px;color:var(--osso);display:flex;align-items:center;gap:6px;margin-top:2px">
       <span style="width:8px;height:8px;border-radius:50%;background:${estado.motoristasOnline>0?'#7fae72':'#a9a89c'};display:inline-block"></span>
@@ -5014,7 +5251,7 @@ function telaCliente(){
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
     ${f.etapaPedido===1 ? `
-    <div class="voz-endereco-ajuda"> <b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.</div><label style="margin-top:0">Endereço de recolha</label>
+    <div class="voz-endereco-ajuda ef-dica-premium"><span class="ef-dica-icone">✦</span> <b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.</div><label style="margin-top:0" class="ef-label-rota"><span class="ef-rota-dot origem"></span>Endereço de recolha</label>
     ${campoEnderecoComVoz('c-origem', f.origem, 'Rua, número, bairro ou ponto de referência', 'origem')}
     <div class="sugestoes" id="sugestoes-origem"></div>
     <div style="font-size:14px;margin-top:-4px;margin-bottom:10px">
@@ -5024,7 +5261,7 @@ function telaCliente(){
       ${f.origemReferencia ? ` Referência: ${f.origemReferencia}<br>` : ''}
       ${f.origemFotoUrl ? ` Foto do local anexada` : ''}
     </div>` : ''}
-    <label>Endereço de entrega</label>
+    <label class="ef-label-rota"><span class="ef-rota-dot destino"></span>Endereço de entrega</label>
     ${campoEnderecoComVoz('c-destino', f.destino, 'Rua, número, bairro ou ponto de referência', 'destino')}
     <div class="sugestoes" id="sugestoes-destino"></div>
     <div style="font-size:14px;margin-top:-4px;margin-bottom:10px">
@@ -5100,7 +5337,7 @@ function telaCliente(){
     </div>
     ` : ''}
     ${f.etapaPedido===3 ? `
-    <label style="margin-top:0">Resumo do pedido</label>
+    <div class="ef-resumo-titulo"><span>✓</span><div><b>Confira seu pedido</b><small>Revise os dados antes de confirmar</small></div></div>
     <div class="end" style="margin-bottom:10px"><b>Recolha</b>${f.origem}<b style="margin-top:8px">Entrega</b>${f.destino}</div>
     ${estado.calculando ? `<div class="subtitulo" style="margin-top:4px"><span class="girando girando-escuro"></span> Calculando o valor da corrida...</div>` : ''}
     ${estado.falhaCalculo ? `
