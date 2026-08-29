@@ -1,9 +1,9 @@
 Keep this file and signing.keystore in a safe place. You'll need these files if you want to upload future versions of your PWA to the Google Play Store.
 
 Key store file: signing.keystore
-Key store password: G_OlizyRjRO1
+Key store password: dEFjbsrC2Don
 Key alias: my-key-alias
-Key password: G_OlizyRjRO1
+Key password: dEFjbsrC2Don
 Signer's full name: Entrega Flash Admin
 Signer's organization: Entrega Flash
 Signer's organizational unit: Engineering
