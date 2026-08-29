@@ -930,6 +930,7 @@ label,.subtitulo,.texto-ajuda,.hint,.ajuda{color:#c7cad0!important}
 .btn-sitio-roca{display:inline-flex!important;align-items:center!important;gap:7px!important}
 .btn-sitio-roca::before{content:"";width:16px;height:16px;display:inline-block;background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff9f0a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z'/%3E%3Ccircle cx='12' cy='10' r='2.5'/%3E%3C/svg%3E")}
 </style>
+<script>window.EF_BUILD='20260829-sem-tela-cadastro-recebido-v1';</script>
 </head>
 
 <style id="ef-parceiros-premium">
@@ -5238,11 +5239,14 @@ function modalEdicaoPedidoHTML(){
 
 function telaAcessoMotorista(){
   const pm = estado.painelMotorista;
-  if(pm.tela==='basico'){
+  // Fluxo novo: as telas legadas 'basico' e 'liberado' não bloqueiam mais o motorista.
+  // Se vierem de cache/rascunho antigo, manda direto para o login com senha.
+  if(pm.tela==='basico' || pm.tela==='liberado') pm.tela='entrar';
+  if(pm.tela==='__legado_basico_desativado__'){
     return `<div class="box-status"><span class="bs-emoji"></span><div class="bs-titulo">Cadastro recebido!</div><div class="bs-texto">Já dá pra conhecer o app — falta só enviar os documentos. Estamos a analisar os teus dados e assim que for liberado, avisamos aqui e por WhatsApp pra enviares tudo e começares a receber corridas.</div>
       <button class="btn btn-secundario" style="margin-top:16px" onclick="irParaLogin()">Voltar</button></div>`;
   }
-  if(pm.tela==='liberado'){
+  if(pm.tela==='__legado_liberado_desativado__'){
     return `<div class="box-status"><span class="bs-emoji"></span><div class="bs-titulo">Cadastro liberado!</div><div class="bs-texto">Envia os teus documentos agora pra começares a receber corridas ainda hoje.</div>
       <button class="btn btn-primario" style="margin-top:16px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'A carregar...':' Enviar documentos'}</button></div>`;
   }
@@ -6324,7 +6328,7 @@ function restaurarRascunhosCadastro(){
       const bruto = localStorage.getItem('ef_motorista_rascunho');
       if(bruto){
         const r = JSON.parse(bruto);
-        estado.painelMotorista.tela = r.tela||'entrar';
+        estado.painelMotorista.tela = (r.tela==='basico' || r.tela==='liberado') ? 'entrar' : (r.tela||'entrar');
         Object.assign(estado.painelMotorista.cadastro, {
           etapa: r.etapa||1, id: r.id||null, nome: r.nome||'', telefone: r.telefone||'', cidade: r.cidade||'',
           veiculo: r.veiculo||'moto', cpf: r.cpf||'', marca: r.marca||'', placa: r.placa||'', cor: r.cor||''
