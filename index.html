@@ -2150,8 +2150,11 @@ function paraCamposDB(p){
 
 function estaDigitandoEndereco(){
   const el = document.activeElement;
-  if(!el || !el.id) return false;
-  return el.id==='c-origem' || el.id==='c-destino' || el.id.indexOf('c-parada-')===0;
+  if(!el) return false;
+  // Enquanto a pessoa digita telefone, senha, cadastro, endereço ou qualquer outro
+  // formulário, atualizações em tempo real não devem reconstruir a tela e tirar o foco.
+  if(el.tagName==='INPUT' || el.tagName==='TEXTAREA' || el.tagName==='SELECT' || el.isContentEditable) return true;
+  return false;
 }
 // remove os campos que mudam sozinhos a cada "tick" de GPS (posição do motorista e o timestamp de
 // atualização), pra podermos comparar se algo que realmente precisa de um redesenho da tela mudou,
@@ -5265,7 +5268,7 @@ function telaAcessoMotorista(){
   <div style="text-align:center;font-size:13px;color:var(--poeira);margin:-4px 0 14px">Quer pedir uma entrega em vez de trabalhar entregando? <span style="color:var(--azul);text-decoration:underline;cursor:pointer;font-weight:700" onclick="entrarBoasVindas('cliente')">Ir para o login de cliente</span></div>
   <div class="campo-motorista">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">Entrar como entregador</h2>
-    <div class="subtitulo">Escolha entre o plano Free e o Pro — vai escolher no cadastro.</div>
+    <div class="subtitulo">Digite telefone e senha. Você entra direto no painel e, se ainda não concluiu, verá o treinamento único.</div>
     <label>Telefone</label>
     <input type="tel" id="lm-telefone" value="${pm.loginTelefone}" placeholder="(35) 90000-0000">
     <label>Senha</label>
@@ -5657,16 +5660,19 @@ function telaMotorista(){
 
   const blocoAvisoAnalise = m.status!=='aprovado' ? `<div class="cartao" style="border:1px solid var(--sol,#e8b23d);background:rgba(232,178,61,0.08)">
     <div style="display:flex;align-items:flex-start;gap:10px">
-      <span style="font-size:20px">⏳</span>
-      <div style="font-size:13.5px;color:var(--osso);line-height:1.5">
-        <b>Cadastro ainda em análise.</b> Já podes conhecer o app e ficar online, mas só vais poder <b>aceitar corridas</b> e <b>fazer saque</b> depois de enviares os documentos e o administrador aprovar o teu cadastro.
+      <span style="font-size:20px">✅</span>
+      <div style="font-size:13.5px;color:var(--osso);line-height:1.5;flex:1">
+        <b>Seu painel já está disponível.</b> Faça o treinamento e conheça como os pedidos aparecem. Para <b>aceitar pedidos reais, ficar online de verdade e sacar</b>, envie sua documentação e aguarde a aprovação.
+        <button class="btn btn-primario" style="margin-top:12px;width:100%" onclick="abrirDocumentacaoMotoristaDoPainel()">📄 ENVIAR DOCUMENTAÇÃO</button>
       </div>
     </div>
   </div>` : '';
 
-  const blocoOnline = `<div class="cartao">
+  const blocoOnline = m.status==='aprovado' ? `<div class="cartao">
     <button class="btn btn-ficar-online ${m.disponivel?'btn-secundario':'btn-verde'}" ${atributoDesabilitado('alternarDisponibilidade')} onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${carregando('alternarDisponibilidade') ? '<span class="girando"></span>Atualizando...' : (m.disponivel?' Parar / ficar indisponível':' Iniciar rota')}</button>
     ${!m.disponivel ? `<div class="cf-ajuda" style="text-align:center;margin-top:6px"> Toque aqui para começar a receber pedidos</div>` : `<div style="display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--poeira)"><span>Hoje: <b style="color:var(--osso)">R$ ${ganhosHoje.toFixed(2)}</b> · ${entreguesHojeArr.length} entregas</span></div>`}
+  </div>` : `<div class="cartao" style="border:1px solid rgba(111,207,106,.45);background:rgba(111,207,106,.06)">
+    <div style="display:flex;align-items:center;gap:10px"><span class="ponto-pulsante" style="background:var(--verde)"></span><div><b style="color:var(--verde)">PAINEL DISPONÍVEL</b><div style="font-size:12.5px;color:var(--poeira);margin-top:2px">Você já pode fazer a simulação e conhecer o aplicativo. O modo online real será liberado após a aprovação.</div></div></div>
   </div>`;
 
   const blocoFundador = fundador ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.14),rgba(111,207,106,.08))">
@@ -6858,18 +6864,23 @@ function sairCliente(){
 // status que já podem entrar no painel (ver pedidos, ficar online) mesmo sem estarem aprovados —
 // só "aceitar pedido" e "saque" ficam bloqueados até status virem 'aprovado' (ver checagens em
 // aceitarPedido() e solicitarSaque())
-const STATUS_ACESSO_PAINEL = ['basico','pendente','aprovado'];
+const STATUS_ACESSO_PAINEL = ['basico','liberado','pendente','aprovado'];
 async function entrarNoPainelMotorista(data){
+  // O login precisa abrir o painel IMEDIATAMENTE. Antes, a tela esperava carregar
+  // os pedidos pela internet; em conexão lenta isso parecia que o login voltava/soltava
+  // para a tela de entrada. Primeiro ativa a sessão e desenha o painel, depois atualiza
+  // pedidos/saldo em segundo plano.
   estado.motorista = {
     nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:false,
     veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
     fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
     notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null
   };
+  estado.painelMotorista.loginErro='';
   estado.ultimoPedidosJSON='';
   salvarLocal('ef_motorista_telefone', data.telefone); salvarLocal('ef_modo','entregador');
-  await carregarPedidos();
   render();
+  carregarPedidos().catch(e=>console.error('Falha ao atualizar pedidos após login:', e));
   carregarCancelamentosMotorista();
   carregarSaldoMotorista();
   assinarMotoristaLogadoRealtime(data.telefone);
@@ -6887,7 +6898,6 @@ async function loginFacialMotorista(){
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
-  if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:data.senha_hash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -6914,7 +6924,6 @@ async function loginMotorista(){
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Telefone ou senha incorretos.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
-  if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:senhaHash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -6924,6 +6933,16 @@ async function loginMotorista(){
   // Senha e facial são duas formas independentes de entrada.
   // basico, pendente ou aprovado — todos entram no painel; aceitar/saque ficam travados até 'aprovado'
   if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); return; }
+  pm.loginErro='Seu cadastro foi encontrado, mas o status atual ("'+(data.status||'sem status')+'") ainda não está configurado para abrir o painel. Fale com o suporte.';
+  render();
+}
+
+async function abrirDocumentacaoMotoristaDoPainel(){
+  const pm = estado.painelMotorista;
+  const m = estado.motorista || {};
+  if(!m.telefone){ mostrarToast('Entre novamente para abrir a documentação.', 'erro'); return; }
+  pm.telefoneLiberado = m.telefone;
+  await continuarParaDocumentos();
 }
 
 async function continuarParaDocumentos(){
@@ -7016,10 +7035,18 @@ async function avancarEtapa1(){
     c.id = salvo.id;
     c.criadoEm = salvo.criado_em || Date.now();
     c.enviando=false;
-    estado.painelMotorista.tela='basico';
+    estado.painelMotorista.tela='login';
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista_basico'}); }catch(e){}
     registrarAlertaAdmin('novo_motorista_basico', `Novo motorista em cadastro básico: ${c.nome||''} (${c.telefone||''}).`);
-    render();
+    await entrarNoPainelMotorista({
+      nome:c.nome,
+      telefone:c.telefone,
+      status:'basico',
+      plano:'free',
+      veiculo_tipo:c.veiculo||'moto',
+      criado_em:c.criadoEm
+    });
+    mostrarToast('Cadastro feito! Seu painel já está disponível. Veja a demonstração abaixo.', 'sucesso');
   }catch(e){
     console.error('Cadastro básico motorista:',e);
     c.enviando=false;
