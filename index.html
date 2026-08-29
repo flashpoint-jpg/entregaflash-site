@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="ef-app-version" content="20260829-5">
+<meta name="ef-app-version" content="20260829-6">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega</title>
-<link rel="manifest" href="entregaflash-manifest.json?v=20260829-5">
+<link rel="manifest" href="entregaflash-manifest.json?v=20260829-6">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -1776,7 +1776,7 @@ function agendarPopupInstalarSeNecessario(){
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-5', {
+    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-6', {
       scope: './',
       updateViaCache: 'none'
     });
@@ -4009,23 +4009,26 @@ async function aceitarPedido(id){
       if(erroDebito){ acrescimoValor = 0; }
     }catch(e){ console.error(e); acrescimoValor = 0; }
   }
-  // .eq('status','buscando') garante que a aceitação só vale se NINGUÉM pegou o pedido antes —
-  // se dois motoristas tocarem "aceitar" ao mesmo tempo, só o primeiro consegue: o banco resolve
-  // isso sozinho, sem risco de dois motoristas ficarem com o mesmo pedido.
-  const { data, error } = await sb.from('entrega_pedidos').update({
-    status:'indo_coletar', motorista_nome: mo.nome, motorista_telefone: mo.telefone, atualizado_em: Date.now(),
-    motorista_foto_url: mo.fotoMotoristaUrl||null, motorista_veiculo_tipo: mo.veiculo||null,
-    motorista_marca: mo.marca||null, motorista_cor: mo.cor||null, motorista_placa: mo.placa||null,
-    motorista_nota_media: mo.notaMedia!=null?mo.notaMedia:5, motorista_total_avaliacoes: mo.totalAvaliacoes||0,
-    iniciado_em: null, aceito_em: Date.now(),
-    acrescimo_valor: acrescimoValor, acrescimo_motivos: JSON.stringify(motivosAcrescimo.map(m=>m.label)),
-    preco: p.preco + acrescimoValor
-  }).eq('id', id).eq('status','buscando').select('id');
-  if(error){ console.error(error); mostrarToast('Erro ao aceitar o pedido.', 'erro'); return; }
-  if(!data || data.length===0){
-    // ninguém ficou com o pedido: se já tinha debitado o acréscimo do cliente, estorna
+  // Aceitação atômica e segura pelo backend. Evita bloqueio de RLS/trigger
+  // e impede que dois motoristas aceitem o mesmo pedido ao mesmo tempo.
+  const { data: aceitou, error } = await sb.rpc('entrega_motorista_aceitar_pedido', {
+    p_id: id,
+    p_motorista_telefone: mo.telefone,
+    p_acrescimo_valor: acrescimoValor,
+    p_acrescimo_motivos: motivosAcrescimo.map(m=>m.label)
+  });
+  if(error){
+    console.error('Erro ao aceitar pedido:', error);
+    if(acrescimoValor>0){
+      try{ await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: p.clienteTelefone, p_delta: acrescimoValor }); }catch(e){ console.error(e); }
+    }
+    mostrarToast('Não foi possível aceitar o pedido agora. Tente novamente.', 'erro');
+    return;
+  }
+  if(aceitou !== true){
+    // Se já tinha debitado acréscimo, estorna porque o pedido não foi aceito.
     if(acrescimoValor>0){ try{ await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: p.clienteTelefone, p_delta: acrescimoValor }); }catch(e){ console.error(e); } }
-    mostrarErro('Esse pedido acabou de ser aceito por outro motorista. Escolhe outro da lista.');
+    mostrarErro('Esse pedido não está mais disponível. Atualizando a lista...');
     estado.ultimoPedidosJSON=''; await carregarPedidos();
     return;
   }
