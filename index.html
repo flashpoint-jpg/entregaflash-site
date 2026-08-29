@@ -5590,14 +5590,14 @@ function chaveTreinamentoMotorista(){
   const criado=String(m.criadoEm||m.criado_em||'semdata').replace(/\D/g,'');
   // Se o cadastro for excluído e criado novamente, criado_em muda e o treinamento volta
   // automaticamente como numa conta realmente nova, mesmo no mesmo celular.
-  return 'ef_treinamento_motorista_v3_'+tel+'_'+criado;
+  return 'ef_treinamento_motorista_v4_'+tel+'_'+criado;
 }
 function treinamentoMotoristaConcluido(){
   try{return localStorage.getItem(chaveTreinamentoMotorista())==='concluido';}catch(e){return false;}
 }
 function etapaTreinamentoMotorista(){
   if(typeof estado.treinamentoMotoristaEtapa!=='number') estado.treinamentoMotoristaEtapa=0;
-  return estado.treinamentoMotoristaEtapa;
+  return Math.max(0,Math.min(7,estado.treinamentoMotoristaEtapa));
 }
 function avancarTreinamentoMotorista(){
   const e=etapaTreinamentoMotorista();
@@ -5605,8 +5605,12 @@ function avancarTreinamentoMotorista(){
     mostrarToast('Tire a foto do produto para continuar o treinamento.', 'info');
     return;
   }
-  if(e<5){ estado.treinamentoMotoristaEtapa=e+1; render(); }
+  if(e<7){ estado.treinamentoMotoristaEtapa=e+1; render(); }
   else concluirTreinamentoMotorista();
+}
+function voltarTreinamentoMotorista(){
+  const e=etapaTreinamentoMotorista();
+  if(e>0){ estado.treinamentoMotoristaEtapa=e-1; render(); }
 }
 function processarFotoTreinamento(input){
   const arq=input&&input.files&&input.files[0];
@@ -5617,51 +5621,134 @@ function processarFotoTreinamento(input){
   leitor.onerror=()=>mostrarToast('Não foi possível abrir a foto. Tente novamente.', 'erro');
   leitor.readAsDataURL(arq);
 }
+function acaoRapidaTreinamento(tipo){
+  const msg={
+    navegar:'Simulação: no pedido real, este botão abre a navegação da rota.',
+    chat:'Simulação: aqui abre a conversa com o cliente durante a corrida.',
+    ligar:'Simulação: aqui aparece a opção de contato do cliente.'
+  }[tipo]||'Ação de demonstração.';
+  mostrarToast(msg,'info');
+}
+function simularSaqueTreinamento(){
+  estado.treinamentoSaqueSolicitado=true;
+  estado.treinamentoMotoristaEtapa=7;
+  mostrarToast('Simulação: pedido de saque enviado. Nenhum valor real foi movimentado.', 'sucesso');
+  render();
+}
 function concluirTreinamentoMotorista(){
   try{localStorage.setItem(chaveTreinamentoMotorista(),'concluido');}catch(e){}
   estado.treinamentoMotoristaEtapa=0;
   estado.treinamentoFotoProduto=null;
-  mostrarToast('Treinamento concluído! Agora falta só enviar sua documentação.', 'sucesso');
+  estado.treinamentoSaqueSolicitado=false;
+  mostrarToast('Simulação concluída! Agora é só enviar seus documentos para começar a trabalhar de verdade.', 'sucesso');
   render();
   setTimeout(()=>{ abrirDocumentacaoMotoristaDoPainel().catch(e=>{ console.error('Abrir documentação após treinamento:',e); mostrarToast('Toque em ENVIAR DOCUMENTAÇÃO para continuar.', 'info'); }); },900);
+}
+function mapaTreinamentoHTML(e){
+  const posicoes=[12,24,36,48,62,78,88,88];
+  const x=posicoes[Math.max(0,Math.min(posicoes.length-1,e))];
+  const status=e===0?'Pedido aguardando aceite':e<=2?'Indo para a coleta':e===3?'Coleta confirmada':e===4?'A caminho do cliente':'Chegou ao destino';
+  return `<div style="position:relative;height:210px;border-radius:16px;overflow:hidden;border:1px solid var(--linha);background:
+      linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px) 0 0/34px 34px,
+      linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px) 0 0/34px 34px,
+      linear-gradient(145deg,#20262d,#11161b);margin:10px 0 12px">
+    <div style="position:absolute;left:14px;top:12px;right:14px;display:flex;justify-content:space-between;gap:8px;z-index:3">
+      <span style="background:rgba(7,9,12,.86);border:1px solid var(--linha);border-radius:999px;padding:5px 9px;font-size:10.5px;font-weight:800;color:var(--osso)">MAPA · DEMONSTRAÇÃO</span>
+      <span style="background:rgba(7,9,12,.86);border:1px solid var(--linha);border-radius:999px;padding:5px 9px;font-size:10.5px;color:var(--verde)">${status}</span>
+    </div>
+    <svg viewBox="0 0 400 210" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%" aria-label="Rota simulada da coleta até a entrega">
+      <path d="M35 160 C95 112,105 150,155 118 S235 70,285 98 S335 58,370 46" fill="none" stroke="rgba(255,255,255,.15)" stroke-width="11" stroke-linecap="round"/>
+      <path d="M35 160 C95 112,105 150,155 118 S235 70,285 98 S335 58,370 46" fill="none" stroke="#ffc93c" stroke-width="4" stroke-linecap="round" stroke-dasharray="7 7"/>
+    </svg>
+    <div style="position:absolute;left:7%;bottom:16%;width:32px;height:32px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 12px rgba(0,0,0,.45);z-index:2">A</div>
+    <div style="position:absolute;right:5%;top:15%;width:32px;height:32px;border-radius:50%;background:var(--verde);color:#071006;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;box-shadow:0 3px 12px rgba(0,0,0,.45);z-index:2">B</div>
+    <div style="position:absolute;left:calc(${x}% - 18px);top:${e<3?'62%':e===3?'52%':e===4?'39%':'24%'};width:38px;height:38px;border-radius:50%;background:var(--mango);border:3px solid #fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 0 7px rgba(255,201,60,.18),0 5px 14px rgba(0,0,0,.55);z-index:4;transition:all .45s ease">${(VEICULOS[(estado.motorista||{}).veiculo]||{}).emoji||'🏍️'}</div>
+    <div style="position:absolute;left:12px;bottom:10px;background:rgba(7,9,12,.88);border-radius:10px;padding:6px 9px;font-size:10.5px;color:var(--poeira);z-index:3">2,8 km · cerca de 8 min</div>
+  </div>`;
+}
+function carteiraTreinamentoHTML(e){
+  const saldo=e>=6?14.50:0;
+  const solicitado=!!estado.treinamentoSaqueSolicitado || e===7;
+  const plano=PLANOS[(estado.motorista||{}).plano]||PLANOS.free;
+  const prazo=plano.saqueDias>0?`até ${plano.saqueDias} dias`:'imediato';
+  return `<div style="border:1px solid var(--linha);border-radius:18px;overflow:hidden;background:linear-gradient(155deg,#1b2026,#0d1115);margin-top:12px">
+    <div style="padding:16px;border-bottom:1px solid var(--linha);display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div><div style="font-size:11px;color:var(--poeira);font-weight:800;letter-spacing:.08em">CARTEIRA · SIMULAÇÃO</div><div style="font-family:'Rajdhani';font-size:32px;font-weight:800;color:var(--osso);margin-top:3px">R$ ${(solicitado?0:saldo).toFixed(2)}</div><div style="font-size:12px;color:var(--poeira)">${solicitado?'Valor reservado para saque':'Saldo disponível para saque'}</div></div>
+      <div style="background:rgba(111,207,106,.12);border:1px solid rgba(111,207,106,.35);border-radius:12px;padding:8px 10px;text-align:right"><div style="font-size:10px;color:var(--poeira)">GANHOS HOJE</div><b style="color:var(--verde)">R$ 14,50</b><div style="font-size:10px;color:var(--poeira)">1 entrega</div></div>
+    </div>
+    <div style="padding:13px 16px;display:grid;grid-template-columns:1fr 1fr;gap:9px;border-bottom:1px solid var(--linha)">
+      <div style="background:rgba(255,255,255,.035);padding:10px;border-radius:12px"><div style="font-size:10px;color:var(--poeira)">ÚLTIMA CORRIDA</div><b style="color:var(--osso)">R$ 14,50</b></div>
+      <div style="background:rgba(255,255,255,.035);padding:10px;border-radius:12px"><div style="font-size:10px;color:var(--poeira)">PRAZO DO PLANO</div><b style="color:var(--osso)">${prazo}</b></div>
+    </div>
+    <div style="padding:14px 16px">
+      ${!solicitado?`<button class="btn btn-primario" style="width:100%;margin:0" onclick="simularSaqueTreinamento()">💸 SIMULAR SAQUE DE R$ 14,50</button><div style="font-size:11px;color:var(--poeira);text-align:center;margin-top:7px">Nenhum saque real será criado.</div>`:`<div style="border:1px solid rgba(111,207,106,.4);background:rgba(111,207,106,.08);border-radius:13px;padding:12px"><b style="color:var(--verde)">✓ SAQUE SOLICITADO — DEMONSTRAÇÃO</b><div style="font-size:12px;color:var(--poeira);line-height:1.45;margin-top:4px">No uso real, o pedido aparece no histórico de saques e segue o prazo do seu plano. Aqui nada foi enviado ao banco.</div></div>`}
+    </div>
+  </div>`;
 }
 function treinamentoMotoristaHTML(){
   const m=estado.motorista||{};
   if(!m.ativo || m.status==='aprovado' || treinamentoMotoristaConcluido()) return '';
   const e=etapaTreinamentoMotorista();
   const etapas=[
-    {titulo:'Novo pedido de demonstração',texto:'Veja como um pedido aparece para você.',acao:'ACEITAR DEMONSTRAÇÃO'},
-    {titulo:'Pedido aceito',texto:'Na corrida real, agora você seguiria até o local da coleta.',acao:'CHEGUEI NA COLETA'},
-    {titulo:'Cheguei na coleta',texto:'Antes de sair com o item, tire uma foto do produto. Nesta demonstração a foto fica somente no seu aparelho e não é enviada ao banco.',acao:'CONFIRMAR FOTO E COLETA'},
-    {titulo:'Coleta confirmada',texto:'Produto conferido. Agora você seguiria até o endereço do cliente.',acao:'SAIR PARA ENTREGA'},
-    {titulo:'A caminho do cliente',texto:'O app acompanha a etapa da entrega até o destino.',acao:'CONFIRMAR ENTREGA'},
-    {titulo:'Entrega concluída!',texto:'Pronto. É assim que uma entrega funciona no Entrega Flash.',acao:'FINALIZAR TREINAMENTO'}
+    {titulo:'Novo pedido',texto:'Esta é a tela como a corrida vai aparecer: ganho, distância, coleta, destino e botão para aceitar.',acao:'ACEITAR DEMONSTRAÇÃO'},
+    {titulo:'Corrida aceita',texto:'O mapa abre com a rota até a coleta e os botões operacionais aparecem como no uso real.',acao:'CHEGUEI NA COLETA'},
+    {titulo:'Cheguei na coleta',texto:'Antes de sair com o item, registre a foto do produto. Na simulação a foto fica só no aparelho.',acao:'CONFIRMAR FOTO E COLETA'},
+    {titulo:'Coleta confirmada',texto:'O status muda e o mapa passa a mostrar o trajeto da coleta até o cliente.',acao:'SAIR PARA ENTREGA'},
+    {titulo:'A caminho do cliente',texto:'Acompanhe a rota e use o botão de confirmação quando chegar ao destino.',acao:'CONFIRMAR ENTREGA'},
+    {titulo:'Entrega confirmada',texto:'Agora veja como o ganho entra na carteira do motorista.',acao:'VER SALDO NA CARTEIRA'},
+    {titulo:'Carteira do motorista',texto:'O valor da corrida aparece no saldo e você pode conhecer a tela de saque sem movimentar dinheiro real.',acao:null},
+    {titulo:'Pronto para ganhar de verdade',texto:'Você já viu como tudo funciona. Agora falta só enviar seus documentos, aguardar a aprovação e começar a trabalhar e ganhar dinheiro de verdade. Fácil, rápido e prático.',acao:'ENVIAR DOCUMENTOS AGORA'}
   ];
   const x=etapas[e]||etapas[0];
   const fotoEtapa=e===2 ? `<div style="margin:12px 0;padding:12px;border:1px dashed var(--mango);border-radius:12px;text-align:center">
       ${estado.treinamentoFotoProduto?`<img src="${estado.treinamentoFotoProduto}" alt="Foto do produto no treinamento" style="width:100%;max-height:190px;object-fit:cover;border-radius:10px;margin-bottom:10px">`:''}
       <label class="btn btn-secundario btn-pequeno" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;margin:0">📷 ${estado.treinamentoFotoProduto?'TIRAR OUTRA FOTO':'TIRAR FOTO DO PRODUTO'}<input type="file" accept="image/*" capture="environment" onchange="processarFotoTreinamento(this)" style="display:none"></label>
-      <div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Treinamento: esta foto não é enviada como pedido real.</div>
+      <div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Demonstração: esta foto não é enviada ao pedido real.</div>
     </div>` : '';
-  return `<div class="cartao" style="border:2px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.13),rgba(111,207,106,.06));overflow:hidden">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px">
-      <div style="font-family:'Rajdhani';font-weight:800;font-size:18px;color:var(--mango)">MODO TREINAMENTO</div>
-      <div style="font-size:11px;font-weight:800;letter-spacing:.04em;border:1px solid var(--mango);border-radius:999px;padding:4px 8px;color:var(--mango)">NÃO É PEDIDO REAL</div>
+  const mostrarMapa=e<=5;
+  const progresso=Math.round(((e+1)/8)*100);
+  return `<div class="cartao" style="border:2px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.12),rgba(111,207,106,.05));overflow:hidden;padding:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+      <div style="font-family:'Rajdhani';font-weight:800;font-size:19px;color:var(--mango)">SIMULAÇÃO COMPLETA DO MOTORISTA</div>
+      <div style="font-size:10px;font-weight:800;letter-spacing:.06em;border:1px solid var(--mango);border-radius:999px;padding:5px 8px;color:var(--mango)">100% DEMONSTRAÇÃO</div>
     </div>
-    <div style="font-size:13px;color:var(--poeira);line-height:1.45;margin-bottom:12px">Esta demonstração aparece uma única vez para você entender como o aplicativo funciona. Ela não chama cliente, não movimenta saldo e não entra no sistema como corrida.</div>
-    <div class="pedido" style="margin:0">
-      <div class="vitais">
-        <div class="vital vital-ganho"><div class="vital-num">R$ 14,50</div><div class="vital-rot">Exemplo de ganho</div></div>
-        <div class="vital"><div class="vital-num">2,8 km</div><div class="vital-rot">Trajeto exemplo</div></div>
+    <div style="font-size:12.5px;color:var(--poeira);line-height:1.45;margin-bottom:11px">Veja exatamente o fluxo antes de trabalhar de verdade. Esta simulação não chama cliente, não cria corrida, não altera seu saldo e não solicita saque real.</div>
+    <div style="display:flex;gap:5px;margin-bottom:12px" aria-label="Progresso do treinamento">${Array.from({length:8},(_,i)=>`<span style="height:5px;flex:1;border-radius:999px;background:${i<=e?'var(--mango)':'var(--painel-alt)'}"></span>`).join('')}</div>
+
+    <div style="background:rgba(5,7,9,.68);border:1px solid var(--linha);border-radius:17px;padding:13px">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <div><div style="font-size:10px;color:var(--poeira);font-weight:800;letter-spacing:.07em">ETAPA ${e+1} DE 8</div><div style="font-family:'Rajdhani';font-weight:800;font-size:20px;color:var(--osso);margin-top:2px">${x.titulo}</div></div>
+        <div style="text-align:right"><div style="font-family:'Rajdhani';font-size:22px;font-weight:800;color:var(--verde)">R$ 14,50</div><div style="font-size:10px;color:var(--poeira)">ganho exemplo</div></div>
       </div>
-      <div style="font-family:'Rajdhani';font-weight:800;font-size:18px;margin:10px 0 4px">${x.titulo}</div>
-      <div style="font-size:13px;color:var(--poeira);line-height:1.45;margin-bottom:10px">${x.texto}</div>
-      <div style="font-size:13px;line-height:1.55;margin-bottom:12px"><b>Coleta (exemplo):</b> Farmácia Central<br><b>Entrega (exemplo):</b> Bairro Centro</div>
+      <div style="font-size:13px;color:var(--poeira);line-height:1.45;margin-top:7px">${x.texto}</div>
+
+      ${mostrarMapa?mapaTreinamentoHTML(e):''}
+      ${e<=5?`<div style="display:grid;gap:8px;margin:10px 0">
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:900;flex:none">A</div><div><b style="color:var(--osso);font-size:13px">Coleta · Farmácia Central</b><div style="font-size:11.5px;color:var(--poeira)">Rua Sete de Setembro, 120 · exemplo</div></div></div>
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:26px;height:26px;border-radius:50%;background:var(--verde);color:#071006;display:flex;align-items:center;justify-content:center;font-weight:900;flex:none">B</div><div><b style="color:var(--osso);font-size:13px">Entrega · Bairro Centro</b><div style="font-size:11.5px;color:var(--poeira)">Av. Principal, 85 · exemplo</div></div></div>
+      </div>`:''}
       ${fotoEtapa}
-      <div style="height:6px;background:var(--painel-alt);border-radius:999px;overflow:hidden;margin-bottom:12px"><div style="height:100%;width:${((e+1)/6)*100}%;background:var(--mango);border-radius:999px"></div></div>
-      <button class="btn ${e===5?'btn-verde':'btn-primario'} btn-pequeno" onclick="avancarTreinamentoMotorista()">${x.acao}</button>
+      ${e>=1 && e<=5?`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:10px 0 2px">
+        <button type="button" class="btn btn-secundario btn-pequeno" style="margin:0;padding:10px 5px;font-size:11px" onclick="acaoRapidaTreinamento('navegar')">🧭 NAVEGAR</button>
+        <button type="button" class="btn btn-secundario btn-pequeno" style="margin:0;padding:10px 5px;font-size:11px" onclick="acaoRapidaTreinamento('chat')">💬 CHAT</button>
+        <button type="button" class="btn btn-secundario btn-pequeno" style="margin:0;padding:10px 5px;font-size:11px" onclick="acaoRapidaTreinamento('ligar')">☎ CONTATO</button>
+      </div>`:''}
+      ${e>=6?carteiraTreinamentoHTML(e):''}
+      ${e===7?`<div style="margin-top:12px;border:1px solid rgba(111,207,106,.42);background:linear-gradient(135deg,rgba(111,207,106,.12),rgba(255,201,60,.07));border-radius:16px;padding:14px;text-align:center">
+        <div style="font-size:26px;margin-bottom:5px">🚀</div>
+        <div style="font-family:'Rajdhani';font-weight:800;font-size:19px;color:var(--verde)">AGORA É PRA VALER</div>
+        <div style="font-size:12.5px;color:var(--osso);line-height:1.5;margin-top:5px">Para começar a trabalhar e ganhar dinheiro de verdade, falta só uma coisa:</div>
+        <div style="font-family:'Rajdhani';font-weight:800;font-size:17px;color:var(--mango);margin-top:7px">ENVIAR SEUS DOCUMENTOS</div>
+        <div style="font-size:11.5px;color:var(--poeira);line-height:1.45;margin-top:5px">Envie, aguarde a aprovação e pronto. Fácil, rápido e prático.</div>
+      </div>`:''}
+
+      <div style="display:flex;gap:8px;align-items:center;margin-top:13px;flex-wrap:wrap">
+        ${e>0 && e<7?`<button class="btn btn-secundario btn-pequeno" style="margin:0;flex:0 0 auto" onclick="voltarTreinamentoMotorista()">← VOLTAR</button>`:''}
+        ${x.acao?`<button class="btn ${e===7?'btn-verde':'btn-primario'} btn-pequeno" style="margin:0;flex:1;min-width:180px" onclick="avancarTreinamentoMotorista()">${x.acao}</button>`:''}
+      </div>
+      ${e===6?`<div style="font-size:11.5px;color:var(--poeira);margin-top:9px;text-align:center">Para continuar, toque em <b style="color:var(--osso)">SIMULAR SAQUE</b>.</div>`:''}
     </div>
-    ${e===5?`<div style="font-size:13px;color:var(--osso);line-height:1.45;margin-top:12px;text-align:center"><b>Quer receber pedidos reais?</b><br>Finalize sua documentação e aguarde a aprovação para liberar as corridas.</div>`:''}
+    <div style="font-size:11px;color:var(--poeira);text-align:center;margin-top:9px">Progresso ${progresso}% · dados fictícios para treinamento</div>
   </div>`;
 }
 
