@@ -3,7 +3,7 @@
   "name": "Entrega Flash Admin",
   "short_name": "Flash Admin",
   "description": "Painel administrativo exclusivo da Entrega Flash",
-  "start_url": "/admin/admin.html",
+  "start_url": "/admin/admin.html?v=20260829-mobilefix-1",
   "scope": "/admin/",
   "display": "standalone",
   "orientation": "portrait",

@@ -7,7 +7,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega Flash | Painel Administrativo</title>
-<link rel="manifest" href="./manifest-admin.json?v=20260829-admin-mobile-4">
+<link rel="manifest" href="./manifest-admin.json?v=20260829-mobilefix-1">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -1314,10 +1314,20 @@ function agendarPopupInstalarSeNecessario(){
 }
 
 async function registrarServiceWorker(){
-  // PWA Admin isolado em /admin/: não interfere no app principal.
+  // Remove apenas o service worker ADMIN antigo que por engano podia ter escopo na raiz.
+  // Mantém intacto o service worker principal do app.
   if(!('serviceWorker' in navigator)) return;
   try{
-    await navigator.serviceWorker.register('./sw-admin.js', { scope:'./' });
+    const regs = await navigator.serviceWorker.getRegistrations();
+    for(const r of regs){
+      const scopePath = new URL(r.scope).pathname;
+      const worker = r.active || r.waiting || r.installing;
+      const script = worker ? worker.scriptURL : '';
+      if(scopePath === '/' && /sw-admin\.js(?:$|\?)/.test(script)){
+        await r.unregister();
+      }
+    }
+    await navigator.serviceWorker.register('./sw-admin.js?v=20260829-mobilefix-1', { scope:'./' });
   }catch(e){ console.warn('Service Worker do Admin indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
