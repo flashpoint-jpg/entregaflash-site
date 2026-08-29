@@ -6,13 +6,13 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>Entrega Flash | Painel Administrativo</title>
-<link rel="manifest" href="manifest-admin.json?v=20260828-admin-4">
+<title>Entrega Flash Admin | Ultra Premium</title>
+<link rel="manifest" href="manifest-admin.json?v=20260829-admin-standalone-3">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
 <link rel="preconnect" href="https://rgcclordmqjmwuzrrfbd.supabase.co" crossorigin>
-<meta name="theme-color" content="#171d4a">
+<meta name="theme-color" content="#08090b">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -483,6 +483,53 @@ fbq('track', 'PageView');
   .admin-filtros button{flex-shrink:0;padding:6px 11px;border:1px solid var(--linha);background:transparent;color:var(--poeira);font-family:'Karla';font-weight:600;font-size:12.5px;border-radius:20px;cursor:pointer;white-space:nowrap;}
   .admin-filtros button.ativo{background:rgba(255,201,60,0.15);color:var(--mango);border-color:var(--mango);}
 
+
+
+/* ===== ENTREGA FLASH ADMIN — LOGIN ULTRA PREMIUM ===== */
+.admin-login-shell{
+  min-height:calc(100dvh - 92px);display:grid;place-items:center;padding:28px 14px 42px;
+  position:relative;overflow:hidden;border-radius:24px;
+  background:
+    radial-gradient(circle at 15% 12%,rgba(255,201,60,.18),transparent 34%),
+    radial-gradient(circle at 88% 80%,rgba(255,87,34,.14),transparent 32%),
+    linear-gradient(155deg,#111219 0%,#171921 52%,#0d0e13 100%);
+}
+.admin-login-shell:before,.admin-login-shell:after{content:'';position:absolute;border-radius:999px;filter:blur(1px);pointer-events:none}
+.admin-login-shell:before{width:210px;height:210px;top:-110px;right:-75px;border:1px solid rgba(255,201,60,.18);box-shadow:0 0 80px rgba(255,201,60,.08)}
+.admin-login-shell:after{width:170px;height:170px;bottom:-95px;left:-75px;border:1px solid rgba(255,87,34,.15);box-shadow:0 0 80px rgba(255,87,34,.07)}
+.admin-login-card{
+  width:min(100%,430px);position:relative;z-index:1;padding:30px 24px 24px;border-radius:28px;
+  background:linear-gradient(160deg,rgba(37,39,49,.94),rgba(20,21,28,.97));
+  border:1px solid rgba(255,255,255,.08);box-shadow:0 28px 70px rgba(0,0,0,.46),inset 0 1px 0 rgba(255,255,255,.05);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+}
+.admin-login-brand{text-align:center;margin-bottom:24px}
+.admin-login-logo{width:112px;height:112px;object-fit:contain;display:block;margin:0 auto 12px;filter:drop-shadow(0 12px 20px rgba(0,0,0,.38))}
+.admin-login-eyebrow{display:inline-flex;align-items:center;gap:7px;padding:7px 11px;border-radius:999px;background:rgba(255,201,60,.10);border:1px solid rgba(255,201,60,.22);color:var(--mango);font-size:10px;font-weight:800;letter-spacing:1.35px;text-transform:uppercase}
+.admin-login-title{font-family:'Rajdhani',sans-serif;font-size:30px;line-height:1.05;font-weight:800;color:var(--osso);margin:13px 0 6px;letter-spacing:-.5px}
+.admin-login-subtitle{max-width:320px;margin:0 auto;color:var(--poeira);font-size:13.5px;line-height:1.5}
+.admin-login-label{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;color:#f6f2ea;font-size:12px;font-weight:800;letter-spacing:.35px}
+.admin-login-label span:last-child{font-size:10px;color:var(--verde);font-weight:800;letter-spacing:.6px;text-transform:uppercase}
+.admin-login-input-wrap{position:relative}
+.admin-login-input-wrap input{width:100%;height:58px;padding:0 54px 0 48px;border-radius:17px;background:#111319;border:1px solid rgba(255,255,255,.10);color:#fff;font-size:18px;letter-spacing:2px;outline:none;transition:.2s ease;box-shadow:inset 0 1px 0 rgba(255,255,255,.025)}
+.admin-login-input-wrap input:focus{border-color:rgba(255,201,60,.72);box-shadow:0 0 0 4px rgba(255,201,60,.10),0 12px 30px rgba(0,0,0,.18)}
+.admin-login-lock{position:absolute;left:17px;top:50%;transform:translateY(-50%);width:21px;height:21px;display:grid;place-items:center;color:var(--mango);pointer-events:none}
+.admin-login-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:38px;height:38px;border:0;border-radius:12px;background:transparent;color:var(--poeira);font-size:17px;cursor:pointer;display:grid;place-items:center}
+.admin-login-eye:hover,.admin-login-eye:focus{background:rgba(255,255,255,.06);color:var(--osso)}
+.admin-login-btn{height:58px;margin-top:16px;border:0;border-radius:17px;width:100%;cursor:pointer;font-family:'Karla',sans-serif;font-size:15px;font-weight:800;letter-spacing:.2px;color:#17120a;background:linear-gradient(135deg,#ffd84f 0%,#ffc13d 50%,#ff9d2e 100%);box-shadow:0 14px 30px rgba(255,166,46,.20),inset 0 1px 0 rgba(255,255,255,.45);transition:transform .16s ease,filter .16s ease,box-shadow .16s ease}
+.admin-login-btn:hover{filter:brightness(1.04);box-shadow:0 18px 34px rgba(255,166,46,.25),inset 0 1px 0 rgba(255,255,255,.45)}
+.admin-login-btn:active{transform:translateY(1px) scale(.995)}
+.admin-login-security{display:flex;align-items:center;justify-content:center;gap:7px;margin-top:16px;color:rgba(255,255,255,.47);font-size:10.5px;font-weight:700;letter-spacing:.25px}
+.admin-login-security .dot{width:6px;height:6px;border-radius:50%;background:var(--verde);box-shadow:0 0 0 4px rgba(46,204,113,.10)}
+.admin-login-version{text-align:center;color:rgba(255,255,255,.28);font-size:9px;margin-top:12px;letter-spacing:1px;text-transform:uppercase}
+@media(max-width:520px){
+  .admin-conteudo:has(.admin-login-shell){padding:0!important;background:#101117}
+  .admin-conteudo-inner:has(.admin-login-shell){max-width:none!important}
+  .admin-login-shell{min-height:calc(100dvh - 70px);border-radius:0;padding:24px 16px 36px}
+  .admin-login-card{padding:26px 19px 22px;border-radius:24px}
+  .admin-login-logo{width:96px;height:96px}.admin-login-title{font-size:28px}
+}
+
   /* ---- painel administrativo: página inteira, sem barras de rolar horizontais ---- */
   .modal-fundo-admin{align-items:stretch;justify-content:stretch;padding:0;}
   .modal-admin{width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border-radius:0;margin:0;}
@@ -765,6 +812,98 @@ main.ef-cliente-ultra .pix-box{
 
 </style>
 <!-- build: Entrega Flash Admin PWA dedicado -->
+
+<style id="ef-admin-ultra-premium-v4">
+/* ===== ENTREGA FLASH ADMIN · ULTRA PREMIUM ===== */
+.modal-fundo-admin{background:#050607!important;}
+.modal-admin{
+  --noite:#050607!important;
+  --painel:#101214!important;
+  --painel-alt:#171a1e!important;
+  --linha:rgba(255,255,255,.10)!important;
+  --mango:#ff3131!important;
+  --mango-escuro:#c9151e!important;
+  --chama:#ff4d38!important;
+  --escuro:#08090b!important;
+  --osso:#f7f8fa!important;
+  --poeira:#aeb4bf!important;
+  --verde:#42df88!important;
+  --azul:#59a9ff!important;
+  --roxo:#a78bfa!important;
+  background:
+    radial-gradient(circle at 14% -5%,rgba(255,36,52,.18),transparent 34%),
+    radial-gradient(circle at 92% 8%,rgba(255,80,40,.08),transparent 28%),
+    linear-gradient(155deg,#050607 0%,#090b0e 46%,#050607 100%)!important;
+  color:#f7f8fa!important;
+}
+.modal-admin .chat-topo{
+  min-height:86px!important;padding:12px 18px!important;
+  background:rgba(7,8,10,.90)!important;
+  border-bottom:1px solid rgba(255,69,69,.22)!important;
+  box-shadow:0 10px 32px rgba(0,0,0,.38)!important;
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);
+}
+.ef-admin-head{display:flex;align-items:center;gap:12px;min-width:0}
+.ef-admin-head-logo{width:58px;height:58px;object-fit:contain;display:block;filter:drop-shadow(0 8px 16px rgba(255,28,45,.26))}
+.ef-admin-head-copy{min-width:0}.ef-admin-head-title{font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:800;line-height:1;text-transform:uppercase;letter-spacing:.35px;color:#fff}
+.ef-admin-head-kicker{margin-top:5px;font-size:9.5px;font-weight:800;letter-spacing:1.7px;text-transform:uppercase;color:#ff4a51;white-space:nowrap}
+.ef-admin-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.ef-admin-action{border:1px solid rgba(255,255,255,.11);background:rgba(255,255,255,.055);color:#e9ebef;border-radius:12px;padding:9px 11px;font:700 12px 'Karla',sans-serif;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+.ef-admin-action.install{border-color:rgba(255,49,49,.35);background:linear-gradient(135deg,rgba(255,49,49,.22),rgba(113,8,17,.16));color:#fff}
+.ef-admin-action.exit{color:#aeb4bf}
+.modal-admin>.faixa-instalar,.modal-admin .chat-topo + .faixa-instalar{
+  margin:10px 16px 0!important;border-radius:16px!important;padding:10px 12px!important;
+  background:linear-gradient(135deg,rgba(255,48,48,.12),rgba(255,255,255,.035))!important;
+  border:1px solid rgba(255,68,68,.22)!important;box-shadow:none!important;
+}
+.modal-admin .faixa-instalar .icone{font-size:20px!important}.modal-admin .faixa-instalar .txt{font-size:12.5px!important;color:#fff!important}.modal-admin .faixa-instalar .sub{font-size:10.5px!important;color:#9ea5b0!important;line-height:1.25!important}
+.modal-admin .faixa-instalar .btn{padding:8px 10px!important;border-radius:10px!important;background:linear-gradient(135deg,#ff2e3d,#b80e1d)!important;color:#fff!important;border:0!important;box-shadow:0 7px 18px rgba(255,35,51,.18)!important}
+.admin-conteudo{background:transparent!important;padding:18px 18px 42px!important;scrollbar-color:#3a3d43 transparent;overscroll-behavior:contain}
+.admin-conteudo-inner{max-width:1380px!important;margin:0 auto!important}
+.admin-abas-grade{gap:9px!important;margin:2px 0 18px!important;padding:3px!important}
+.admin-abas-grade button{
+  flex:0 1 auto!important;min-width:118px!important;padding:11px 14px!important;border-radius:13px!important;
+  border:1px solid rgba(255,255,255,.09)!important;background:linear-gradient(180deg,#17191d,#111317)!important;
+  color:#b9bec8!important;box-shadow:0 7px 18px rgba(0,0,0,.18)!important;font-size:13px!important;
+}
+.admin-abas-grade button.ativo{background:linear-gradient(135deg,#ff3141,#b50e1c)!important;color:#fff!important;border-color:#ff4b58!important;box-shadow:0 8px 22px rgba(255,33,50,.25)!important}
+.admin-cartao,.admin-resumo-card,.cf-nota{
+  background:linear-gradient(155deg,rgba(25,27,31,.98),rgba(13,15,18,.98))!important;
+  border:1px solid rgba(255,255,255,.095)!important;border-radius:18px!important;
+  box-shadow:0 14px 34px rgba(0,0,0,.26),inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+.admin-cartao{padding:16px!important}.admin-cartao:hover{border-color:rgba(255,65,76,.24)!important}
+.admin-resumo-card[open]{border-color:rgba(255,57,69,.34)!important}
+.admin-resumo-card>summary{padding:14px 15px!important;min-height:60px!important}
+.admin-grade-cartoes{gap:12px!important}
+.admin-filtros-grade button{border-color:rgba(255,255,255,.1)!important;background:#101216!important;color:#abb1bb!important}
+.admin-filtros-grade button.ativo{background:rgba(255,48,61,.13)!important;color:#ff626d!important;border-color:rgba(255,72,84,.38)!important}
+.modal-admin input,.modal-admin select,.modal-admin textarea{background:#0d0f12!important;border:1px solid rgba(255,255,255,.10)!important;color:#fff!important;border-radius:12px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.02)!important}
+.modal-admin input:focus,.modal-admin select:focus,.modal-admin textarea:focus{border-color:#ff3e4c!important;box-shadow:0 0 0 3px rgba(255,48,61,.10)!important;outline:none!important}
+.modal-admin .btn-primario,.modal-admin .btn-verde{background:linear-gradient(135deg,#ff3241,#ba0e1d)!important;color:#fff!important;border:0!important;box-shadow:0 8px 20px rgba(255,33,50,.19)!important}
+.modal-admin .btn-secundario{background:#15171b!important;border-color:rgba(255,255,255,.10)!important;color:#e9ebef!important}
+.modal-admin .selo{background:#15171b!important;border:1px solid rgba(255,255,255,.09)!important;color:#d9dde4!important}
+.modal-admin .selo-andamento{color:#ffb44a!important}.modal-admin .selo-entregue{color:#50df8d!important}
+.modal-admin .am-linha{border-color:rgba(255,255,255,.07)!important}
+.modal-admin .mapa-admin-geral{border:1px solid rgba(255,255,255,.10)!important;box-shadow:0 16px 36px rgba(0,0,0,.24)!important}
+.modal-admin .ponto-pulsante{box-shadow:0 0 0 0 rgba(255,49,65,.45);animation:efAdminPulse 1.8s infinite!important}
+@keyframes efAdminPulse{0%{box-shadow:0 0 0 0 rgba(255,49,65,.42)}70%{box-shadow:0 0 0 9px rgba(255,49,65,0)}100%{box-shadow:0 0 0 0 rgba(255,49,65,0)}}
+/* nomes de cidades completos: não corta com reticências */
+.modal-admin .admin-cartao b[style*="white-space:nowrap"]{white-space:normal!important;overflow:visible!important;text-overflow:clip!important;line-height:1.15!important;overflow-wrap:anywhere!important}
+/* remove azul antigo mesmo dos estilos inline com variáveis */
+.modal-admin [style*="var(--painel-alt)"],.modal-admin [style*="var(--painel)"]{--painel:#111317;--painel-alt:#181a1f}
+.modal-admin [style*="var(--mango)"]{--mango:#ff3847}
+.admin-login-shell{background:radial-gradient(circle at 50% -10%,rgba(255,39,54,.20),transparent 35%),linear-gradient(160deg,#07080a,#101217 55%,#07080a)!important}
+.admin-login-card{background:linear-gradient(160deg,rgba(25,27,31,.96),rgba(11,12,15,.98))!important;border-color:rgba(255,67,79,.18)!important;box-shadow:0 28px 70px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.06)!important}
+.admin-login-eyebrow,.admin-login-label span:last-child{color:#ff4e5a!important}.admin-login-btn{background:linear-gradient(135deg,#ff3141,#b70d1c)!important;box-shadow:0 16px 36px rgba(255,30,48,.24)!important}
+@media(min-width:760px){.admin-grade-cartoes{grid-template-columns:repeat(2,minmax(0,1fr))!important}.admin-grade-cartoes.colunas-3{grid-template-columns:repeat(3,minmax(0,1fr))!important}}
+@media(min-width:1180px){.admin-grade-cartoes{grid-template-columns:repeat(3,minmax(0,1fr))!important}.admin-conteudo{padding:24px 32px 56px!important}}
+@media(max-width:680px){
+  .modal-admin .chat-topo{min-height:76px!important;padding:10px 12px!important}.ef-admin-head-logo{width:48px;height:48px}.ef-admin-head-title{font-size:18px}.ef-admin-head-kicker{font-size:8px;letter-spacing:1.15px}.ef-admin-action{padding:8px 9px;font-size:11px}.ef-admin-action.refresh{display:none}.admin-conteudo{padding:13px 12px 34px!important}.admin-abas-grade{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important}.admin-abas-grade button{min-width:0!important;width:100%!important;padding:10px 8px!important;font-size:12px!important}.admin-cartao{padding:14px!important}
+}
+@media(max-width:410px){.ef-admin-head-copy{max-width:150px}.ef-admin-head-kicker{display:none}.ef-admin-action.install{font-size:0}.ef-admin-action.install:after{content:'📲';font-size:16px}.ef-admin-action.exit{font-size:0}.ef-admin-action.exit:after{content:'↪';font-size:16px}}
+</style>
+
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -1243,15 +1382,11 @@ function agendarPopupInstalarSeNecessario(){
 }
 
 async function registrarServiceWorker(){
-  // O administrativo fica isolado do PWA principal. Nenhum Service Worker
-  // do domínio deve controlar /admin.html, evitando retorno involuntário ao index.
+  // PWA Admin isolado em /admin/: não interfere no app principal.
   if(!('serviceWorker' in navigator)) return;
   try{
-    const regs = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(regs.map(reg => reg.unregister()));
-    const nomes = await caches.keys();
-    await Promise.all(nomes.filter(n => /entrega-flash/i.test(n)).map(n => caches.delete(n)));
-  }catch(e){ console.warn('Isolamento do admin: limpeza indisponível', e); }
+    await navigator.serviceWorker.register('./sw-admin.js', { scope:'./' });
+  }catch(e){ console.warn('Service Worker do Admin indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
@@ -1296,7 +1431,7 @@ async function notificar(titulo, corpo, tag){
   try{
     if('serviceWorker' in navigator){
       const reg = await navigator.serviceWorker.ready;
-      reg.showNotification(titulo, { body:corpo, icon:'icon-192.png', badge:'icon-192.png', tag: tag||undefined, renotify:!!tag, vibrate:[120,60,120] });
+      reg.showNotification(titulo, { body:corpo, icon:'icon-admin-192.png', badge:'icon-admin-192.png', tag: tag||undefined, renotify:!!tag, vibrate:[120,60,120] });
     } else {
       new Notification(titulo, { body:corpo, icon:'icon-192.png' });
     }
@@ -5587,7 +5722,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL NOVO • CIDADES • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div class="ef-admin-head"><img class="ef-admin-head-logo" src="icon-admin-192.png" alt="Entrega Flash Admin"><div class="ef-admin-head-copy"><div class="ef-admin-head-title">Entrega Flash Admin</div><div class="ef-admin-head-kicker">CENTRAL DE OPERAÇÕES • TEMPO REAL</div></div></div><div class="ef-admin-actions">${!estado.appInstalado?`<button class="ef-admin-action install" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}">📲 Instalar</button>`:''}${estado.admin.logado?`<button class="ef-admin-action refresh" onclick="atualizarPainelAdmin()">↻ Atualizar</button><button class="ef-admin-action exit" onclick="sairAdmin()">Sair</button>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -5671,7 +5806,32 @@ function render(){
     document.getElementById('app-header').innerHTML = headerHTML;
     _ultimoHeaderHTML = headerHTML;
   }
-  document.getElementById('app-resto').innerHTML = restoHTML;
+  const _restoDestino = document.getElementById('app-resto');
+  const _adminModalExistente = estado.admin.aberto ? _restoDestino.querySelector('.modal-fundo-admin') : null;
+  const _adminInnerExistente = _adminModalExistente ? _adminModalExistente.querySelector('.admin-conteudo-inner') : null;
+  const _adminScrollExistente = _adminModalExistente ? _adminModalExistente.querySelector('.admin-conteudo') : null;
+  if(_adminModalExistente && _adminInnerExistente){
+    // Admin já aberto: atualiza somente o miolo do painel. Antes, qualquer evento Realtime
+    // reescrevia #app-resto inteiro (mais de 1 MB de HTML), fazendo a tela piscar e saltar.
+    const _adminScrollTop = _adminScrollExistente ? _adminScrollExistente.scrollTop : 0;
+    const _adminFocoId = document.activeElement && document.activeElement.id ? document.activeElement.id : null;
+    const _adminSelStart = document.activeElement && typeof document.activeElement.selectionStart==='number' ? document.activeElement.selectionStart : null;
+    const _adminSelEnd = document.activeElement && typeof document.activeElement.selectionEnd==='number' ? document.activeElement.selectionEnd : null;
+    _adminInnerExistente.innerHTML = adminCorpoHTML();
+    // Cabeçalho do Admin muda apenas quando login/instalação muda; atualizar isoladamente não pisca o painel.
+    const _adminTopo = _adminModalExistente.querySelector('.chat-topo');
+    if(_adminTopo){
+      _adminTopo.innerHTML = `<div class="ef-admin-head"><img class="ef-admin-head-logo" src="icon-admin-192.png" alt="Entrega Flash Admin"><div class="ef-admin-head-copy"><div class="ef-admin-head-title">Entrega Flash Admin</div><div class="ef-admin-head-kicker">CENTRAL DE OPERAÇÕES • TEMPO REAL</div></div></div><div class="ef-admin-actions">${!estado.appInstalado?`<button class="ef-admin-action install" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}">📲 Instalar</button>`:''}${estado.admin.logado?`<button class="ef-admin-action refresh" onclick="atualizarPainelAdmin()">↻ Atualizar</button><button class="ef-admin-action exit" onclick="sairAdmin()">Sair</button>`:''}</div>`;
+    }
+    // Mantém a posição visual durante atualizações automáticas.
+    if(_adminScrollExistente) _adminScrollExistente.scrollTop = _adminScrollTop;
+    if(_adminFocoId){
+      const _f = document.getElementById(_adminFocoId);
+      if(_f){ try{ _f.focus({preventScroll:true}); if(_adminSelStart!==null && _f.setSelectionRange) _f.setSelectionRange(_adminSelStart,_adminSelEnd); }catch(e){} }
+    }
+  } else {
+    _restoDestino.innerHTML = restoHTML;
+  }
   const bind=(id,path)=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',(e)=>setDeep(path,e.target.value)); };
   bind('c-nome','form.nome'); bind('c-telefone','form.telefone'); bind('c-origem','form.origem');
   bind('c-destino','form.destino'); bind('c-descricao','form.descricao');
@@ -6716,9 +6876,25 @@ function adminCorpoHTML(){
   const a = estado.admin;
   if(!a.logado){
     return `
-    <label>Senha do painel</label>
-    <input type="text" id="admin-senha" oninput="digitarSenhaAdmin(this.value)" onkeydown="if(event.key==='Enter') entrarAdmin()" style="-webkit-text-security:disc;text-security:disc;">
-    <button class="btn btn-primario" onclick="entrarAdmin()">Entrar</button>`;
+    <section class="admin-login-shell">
+      <div class="admin-login-card">
+        <div class="admin-login-brand">
+          <img class="admin-login-logo" src="entregaflash-logo-premium.png" alt="Entrega Flash">
+          <div class="admin-login-eyebrow">◆ Acesso administrativo</div>
+          <div class="admin-login-title">Bem-vindo ao comando</div>
+          <div class="admin-login-subtitle">Entre no painel exclusivo da Entrega Flash para acompanhar toda a operação em tempo real.</div>
+        </div>
+        <label class="admin-login-label" for="admin-senha"><span>Senha de acesso</span><span>● Protegido</span></label>
+        <div class="admin-login-input-wrap">
+          <span class="admin-login-lock" aria-hidden="true">▣</span>
+          <input type="password" id="admin-senha" autocomplete="current-password" placeholder="Digite sua senha" oninput="digitarSenhaAdmin(this.value)" onkeydown="if(event.key==='Enter') entrarAdmin()">
+          <button class="admin-login-eye" type="button" aria-label="Mostrar ou ocultar senha" onclick="alternarSenhaAdmin()">◉</button>
+        </div>
+        <button class="admin-login-btn" onclick="entrarAdmin()">Entrar no painel &nbsp;→</button>
+        <div class="admin-login-security"><span class="dot"></span><span>Área restrita • conexão segura</span></div>
+        <div class="admin-login-version">Entrega Flash Admin</div>
+      </div>
+    </section>`;
   }
   const suporteAbertos = (a.suporteConversas||[]).filter(c=>c.status!=='resolvido');
   const saquesPendentes = (a.saques||[]).filter(s=>s.status==='pendente');
@@ -6782,7 +6958,7 @@ function resumoMotoristasPorCidadeHTML(){
       ${cidades.map(([cidade,d])=>`
         <div style="background:var(--painel-alt);border:1px solid var(--linha);border-radius:10px;padding:11px 12px;min-width:0">
           <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
-            <b style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🏙️ ${cidade}</b>
+            <b style="white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.15">🏙️ ${cidade}</b>
             <b style="font-family:'Rajdhani';font-size:22px;color:var(--mango)">${d.total}</b>
           </div>
           <div style="font-size:11.5px;color:var(--poeira);margin-top:5px;display:flex;gap:9px;flex-wrap:wrap">
@@ -7561,6 +7737,12 @@ function abrirAdmin(){
 }
 function fecharAdmin(){ estado.admin.aberto=true; salvarLocal('ef_admin_aberto','true'); render(); }
 function digitarSenhaAdmin(v){ estado.admin.senhaDigitada=v; }
+function alternarSenhaAdmin(){
+  const el=document.getElementById('admin-senha');
+  if(!el) return;
+  el.type = el.type==='password' ? 'text' : 'password';
+  el.focus();
+}
 async function entrarAdmin(){
   const senha = estado.admin.senhaDigitada;
   if(!senha){ mostrarToast('Digite a senha.'); return; }
