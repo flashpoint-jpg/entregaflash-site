@@ -921,6 +921,19 @@ label,.subtitulo,.texto-ajuda,.hint,.ajuda{color:#c7cad0!important}
 .btn-sitio-roca{display:inline-flex!important;align-items:center!important;gap:7px!important}
 .btn-sitio-roca::before{content:"";width:16px;height:16px;display:inline-block;background:center/contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff9f0a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z'/%3E%3Ccircle cx='12' cy='10' r='2.5'/%3E%3C/svg%3E")}
 </style>
+
+<style id="ef-admin-premium-fix">
+/* Painel Admin Premium — edição estável e leitura mais clara */
+.admin-resumo-card{border-radius:18px!important;border:1px solid rgba(255,255,255,.09)!important;background:linear-gradient(145deg,#15181d,#0e1013)!important;box-shadow:0 16px 40px rgba(0,0,0,.30)!important;margin-bottom:12px!important}
+.admin-resumo-card[open]{border-color:rgba(255,151,45,.48)!important;box-shadow:0 18px 48px rgba(0,0,0,.38),0 0 0 1px rgba(255,151,45,.08)!important}
+.admin-resumo-card>summary{padding:15px 16px!important;min-height:68px!important}
+.admin-resumo-card .admin-detalhes{padding:14px 16px 16px!important;background:linear-gradient(180deg,rgba(255,255,255,.025),transparent)!important}
+.admin-resumo-card input,.admin-resumo-card select{min-height:46px!important;border-radius:12px!important;background:#0b0d10!important;border:1px solid #343840!important;color:#fff!important;padding:10px 12px!important}
+.admin-resumo-card input:focus,.admin-resumo-card select:focus{outline:none!important;border-color:#ff982f!important;box-shadow:0 0 0 3px rgba(255,152,47,.13)!important}
+.admin-resumo-card .btn{border-radius:12px!important;min-height:42px!important;font-weight:800!important}
+.admin-lista-secao{padding:12px 14px!important;border-radius:14px!important;background:linear-gradient(90deg,rgba(255,152,47,.12),rgba(255,255,255,.025))!important;border:1px solid rgba(255,152,47,.15)!important;margin-bottom:10px!important}
+@media(max-width:640px){.admin-resumo-card>summary{padding:13px!important}.admin-resumo-card .admin-detalhes{padding:12px!important}}
+</style>
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -6471,7 +6484,11 @@ async function cadastrarCliente(){
       console.error('Cadastro cliente RPC:', error);
       const msg = String(error.message||'');
       if(msg.includes('telefone_ja_cadastrado') || msg.includes('conta completa') || msg.includes('já tem uma conta')){
-        c.erro='Este telefone já tem uma conta. Entre com sua senha.';
+        c.erro='Este telefone já tem uma conta. Volte e entre com sua senha.';
+      }else if(msg.includes('telefone_invalido')){
+        c.erro='Telefone inválido. Digite DDD + número, somente os números.';
+      }else if(msg.includes('senha_invalida')){
+        c.erro='A senha não foi aceita. Use pelo menos 4 caracteres.';
       }else{
         c.erro='Não consegui concluir o cadastro agora. Tente novamente.';
       }
@@ -6570,7 +6587,12 @@ async function loginCliente(){
   }
 
   if(!data){
-    pc.loginErro='Telefone ou senha incorretos. Se ainda não tem conta, faça seu cadastro.';
+    // Distingue telefone inexistente de senha incorreta sem travar o cadastro.
+    const { data: perfilRaw } = await sb.rpc('entrega_cliente_meu_perfil', { p_telefone: telefone });
+    const perfil = Array.isArray(perfilRaw) ? perfilRaw[0] : perfilRaw;
+    pc.loginErro = perfil
+      ? 'Senha incorreta. Confira a senha ou use “Esqueci minha senha”.'
+      : 'Telefone não encontrado. Confira o DDD e o número ou faça seu cadastro.';
     render();
     return;
   }
@@ -7000,7 +7022,7 @@ function motoristaCardHTML(m, emRota){
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" style="${emRota?'border-color:var(--mango)':m.disponivel?'border-color:var(--verde)':''}">
+    <details class="admin-resumo-card" ${estado.admin.motoristaEditando===m.id?'open':''} style="${emRota?'border-color:var(--mango)':m.disponivel?'border-color:var(--verde)':''}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px"></div>`}
@@ -7623,7 +7645,7 @@ function clienteCardAdminHTML(c){
   const idc = String(c.telefone).replace(/\D/g,'');
   const validado = !!c.facial_ativa;
   return `
-    <details class="admin-resumo-card" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
+    <details class="admin-resumo-card" ${estado.admin.clienteEditando===c.telefone?'open':''} style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px"></div>
@@ -7677,8 +7699,9 @@ function alternarEdicaoClienteAdmin(telefone){
 async function salvarEdicaoClienteAdmin(telefoneAtual){
   const idc = String(telefoneAtual).replace(/\D/g,'');
   const nome = document.getElementById('edit-nome-cliente-'+idc)?.value.trim();
-  const telefone = document.getElementById('edit-telefone-cliente-'+idc)?.value.trim();
+  const telefone = (document.getElementById('edit-telefone-cliente-'+idc)?.value || '').replace(/\D/g,'');
   if(!nome || !telefone){ mostrarToast('Preenche nome e telefone.'); return; }
+  if(telefone.length < 10 || telefone.length > 13){ mostrarToast('Telefone inválido. Confira o DDD e o número.', 'erro'); return; }
   const { error } = await sb.rpc('entrega_admin_editar_cliente', { p_senha: estado.admin.senhaDigitada, p_telefone_atual: telefoneAtual, p_nome: nome, p_telefone_novo: telefone });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar: '+(error.message||''), 'erro'); return; }
   mostrarToast('Cadastro atualizado!', 'sucesso');
