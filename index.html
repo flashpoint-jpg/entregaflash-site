@@ -5758,16 +5758,55 @@ function telaMotorista(){
     })()}
   </div>`;
 
+  const blocoMapaMotorista = `<div class="cartao" style="overflow:hidden;padding:0">
+    <div style="padding:16px 16px 10px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><h2 style="margin:0">Mapa ao vivo</h2><div class="subtitulo" style="margin:3px 0 0">Sua posição e suas corridas aparecem aqui em tempo real.</div></div><span style="font-size:26px">⌖</span></div></div>
+    <div id="mapa-motorista-home" style="width:100%;height:min(58vh,460px);background:#0d1014"></div>
+    <div style="padding:12px 16px 16px"><button class="btn ${m.disponivel?'btn-secundario':'btn-verde'}" onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${m.disponivel?'Parar rota':'Iniciar rota e atualizar GPS'}</button><div class="cf-ajuda" style="text-align:center;margin-top:7px">${m.status==='aprovado'?'Você está apto a receber corridas compatíveis com seu veículo.':'Modo de apresentação: você pode conhecer o mapa agora; aceitar corridas é liberado após documentos e aprovação.'}</div></div>
+  </div>`;
+
+  const blocoCarteiraMotorista = `<div class="cartao saldo-card" style="padding:20px;border:1px solid var(--mango);background:radial-gradient(circle at 85% 0,rgba(255,176,0,.16),transparent 42%),linear-gradient(180deg,#17191d,#0e1013)">
+    <div style="font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--poeira);font-weight:800">Carteira Entrega Flash</div>
+    <div style="font-family:'Rajdhani';font-weight:900;font-size:42px;line-height:1;margin-top:9px;color:var(--osso)">R$ ${Number(m.saldo||0).toFixed(2)}</div>
+    <div style="font-size:13px;color:var(--poeira);margin-top:8px">Saldo disponível para saque</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px"><div style="padding:13px;border-radius:12px;background:var(--painel-alt);border:1px solid var(--linha)"><small style="color:var(--poeira)">Hoje</small><b style="display:block;margin-top:3px">R$ ${ganhosHoje.toFixed(2)}</b></div><div style="padding:13px;border-radius:12px;background:var(--painel-alt);border:1px solid var(--linha)"><small style="color:var(--poeira)">Entregas hoje</small><b style="display:block;margin-top:3px">${entreguesHojeArr.length}</b></div></div>
+    <button class="btn btn-primario" style="margin-top:16px${m.status!=='aprovado'?';opacity:.62':''}" ${m.status!=='aprovado'?'disabled':''} onclick="solicitarSaque()">Solicitar saque</button>
+    ${m.status!=='aprovado'?`<div style="margin-top:10px;padding:11px 12px;border-radius:10px;background:rgba(255,196,0,.08);border:1px solid rgba(255,196,0,.28);font-size:13px;color:var(--poeira)">🔒 A carteira já fica visível para você conhecer. O saque real é liberado depois do envio dos documentos e aprovação.</div>`:''}
+  </div>`;
+
   return `
   <div class="conteudo-motorista">
-    ${aba==='pedidos' ? blocoPedidos : aba==='historico' ? blocoHistorico : blocoPerfil}
+    ${aba==='pedidos' ? blocoPedidos : aba==='mapa' ? blocoMapaMotorista : aba==='carteira' ? blocoCarteiraMotorista : aba==='historico' ? blocoHistorico : blocoPerfil}
   </div>
   <div class="abas-motorista">
-    <button class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')"><span class="icone-aba"></span>Pedidos</button>
-    <button class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')"><span class="icone-aba"></span>Histórico</button>
-    <button class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')"><span class="icone-aba"></span>Perfil</button>
+    <button class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')"><span class="icone-aba">⚡</span>Pedidos</button>
+    <button class="${aba==='mapa'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('mapa')"><span class="icone-aba">⌖</span>Mapa</button>
+    <button class="${aba==='carteira'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('carteira')"><span class="icone-aba">◈</span>Carteira</button>
+    <button class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')"><span class="icone-aba">↺</span>Histórico</button>
+    <button class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')"><span class="icone-aba">●</span>Perfil</button>
   </div>
   ${estado.chamadoAmigoModal.aberto ? modalChamadoAmigoHTML() : ''}`;
+}
+
+let mapaMotoristaHome=null;
+function montarMapaMotoristaHome(){
+  const slot=document.getElementById('mapa-motorista-home');
+  if(!slot || typeof L==='undefined') return;
+  const fallback=[-21.3758,-46.5253];
+  const pos=ultimaPosicaoMotorista ? [Number(ultimaPosicaoMotorista.lat),Number(ultimaPosicaoMotorista.lon)] : fallback;
+  try{
+    if(mapaMotoristaHome && mapaMotoristaHome.slot!==slot){ try{mapaMotoristaHome.map.remove()}catch(e){} mapaMotoristaHome=null; }
+    if(!mapaMotoristaHome){
+      const map=L.map(slot,{zoomControl:true}).setView(pos,15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+      const marker=L.marker(pos).addTo(map).bindPopup('Você está aqui');
+      const circle=L.circle(pos,{radius:650,weight:1,fillOpacity:.07}).addTo(map);
+      mapaMotoristaHome={slot,map,marker,circle};
+      setTimeout(()=>{ try{map.invalidateSize()}catch(e){} },120);
+    }else{
+      mapaMotoristaHome.marker.setLatLng(pos); mapaMotoristaHome.circle.setLatLng(pos); mapaMotoristaHome.map.panTo(pos,{animate:true,duration:.45});
+      setTimeout(()=>{ try{mapaMotoristaHome.map.invalidateSize()}catch(e){} },50);
+    }
+  }catch(e){ console.warn('Mapa motorista:',e); }
 }
 
 function raioAtendimentoHTML(m){
@@ -6278,8 +6317,10 @@ function render(){
     if(estado.modo==='entregador' && estado.motorista.ativo && p.motoristaTelefone===estado.motorista.telefone && p.status!=='buscando' && p.status!=='entregue' && p.status!=='cancelado' && p.origemCoord && p.destinoCoord){
       idsMapasAtivos.add('mapa-m-'+p.id);
       montarMapa('mapa-m-'+p.id, p);
-    }
+
+      if(document.getElementById('mapa-motorista-home')) setTimeout(montarMapaMotoristaHome,0);    }
   });
+  if(document.getElementById('mapa-motorista-home')) setTimeout(montarMapaMotoristaHome,0);
   limparMapasInativos(idsMapasAtivos);
   if(estado.admin.aberto && estado.admin.logado && estado.admin.aba==='resumo') montarMapaAdminGeral();
   if(estado.chatAberto) renderChat();
@@ -7016,10 +7057,30 @@ async function avancarEtapa1(){
     c.id = salvo.id;
     c.criadoEm = salvo.criado_em || Date.now();
     c.enviando=false;
-    estado.painelMotorista.tela='basico';
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista_basico'}); }catch(e){}
     registrarAlertaAdmin('novo_motorista_basico', `Novo motorista em cadastro básico: ${c.nome||''} (${c.telefone||''}).`);
-    render();
+
+    // Fluxo direto combinado: nada de parar na tela "Cadastro recebido".
+    // Mostra uma transição curta Ultra Premium e abre o painel completo imediatamente.
+    estado.painelMotorista.tela='entrar';
+    await mostrarEntradaUltraPremiumMotorista();
+    await entrarNoPainelMotorista({
+      id:c.id,
+      nome:c.nome,
+      telefone:c.telefone,
+      cidade:c.cidade,
+      status:'basico',
+      plano:'free',
+      veiculo_tipo:c.veiculo||'moto',
+      veiculo_marca:'',
+      veiculo_placa:'',
+      veiculo_cor:'',
+      foto_motorista_url:null,
+      foto_veiculo_url:null,
+      nota_media:5,
+      total_avaliacoes:0,
+      criado_em:c.criadoEm
+    });
   }catch(e){
     console.error('Cadastro básico motorista:',e);
     c.enviando=false;
@@ -7031,6 +7092,28 @@ async function avancarEtapa1(){
     render();
   }
 }
+
+function mostrarEntradaUltraPremiumMotorista(){
+  return new Promise(resolve=>{
+    document.getElementById('ef-ultra-entrada')?.remove();
+    const el=document.createElement('div');
+    el.id='ef-ultra-entrada';
+    el.innerHTML=`<div class="ef-ultra-flare"></div><div class="ef-ultra-core"><div class="ef-ultra-mark">EF</div><div class="ef-ultra-title">ENTREGA <b>FLASH</b></div><div class="ef-ultra-sub">PAINEL DO MOTORISTA</div><div class="ef-ultra-line"><i></i></div><div class="ef-ultra-ok">✓ ACESSO LIBERADO</div></div>`;
+    if(!document.getElementById('ef-ultra-entrada-css')){
+      const st=document.createElement('style'); st.id='ef-ultra-entrada-css'; st.textContent=`
+#ef-ultra-entrada{position:fixed;inset:0;z-index:2147483646;display:grid;place-items:center;overflow:hidden;background:radial-gradient(circle at 50% 38%,#24180a 0,#0d0f12 34%,#050608 72%);color:#fff;animation:efUltraOut .32s ease 1.48s forwards}
+#ef-ultra-entrada:before,#ef-ultra-entrada:after{content:"";position:absolute;inset:-30%;background:conic-gradient(from 90deg,transparent 0 42%,rgba(255,166,0,.14) 48%,transparent 54% 100%);animation:efUltraSpin 1.2s linear infinite}
+#ef-ultra-entrada:after{animation-direction:reverse;filter:blur(18px);opacity:.75}.ef-ultra-flare{position:absolute;width:70vw;height:70vw;max-width:520px;max-height:520px;border-radius:50%;border:1px solid rgba(255,183,0,.18);box-shadow:0 0 80px rgba(255,136,0,.18),inset 0 0 80px rgba(255,136,0,.08);animation:efUltraPulse .9s ease-in-out infinite alternate}
+.ef-ultra-core{position:relative;z-index:2;text-align:center;transform:translateY(8px);animation:efUltraRise .55s cubic-bezier(.2,.9,.2,1) both}.ef-ultra-mark{width:84px;height:84px;margin:0 auto 14px;border-radius:24px;display:grid;place-items:center;font-family:'Rajdhani',sans-serif;font-weight:900;font-size:38px;font-style:italic;background:linear-gradient(145deg,#fff 0 35%,#ffb000 42%,#ff5a00 100%);color:#07090b;box-shadow:0 12px 38px rgba(255,111,0,.35),inset 0 1px 0 rgba(255,255,255,.8);transform:skewX(-7deg)}
+.ef-ultra-title{font-family:'Rajdhani',sans-serif;font-weight:900;font-size:clamp(30px,8vw,48px);letter-spacing:1px;font-style:italic}.ef-ultra-title b{color:#ff9800}.ef-ultra-sub{margin-top:3px;font-size:12px;letter-spacing:4px;color:#aeb3bc;font-weight:800}.ef-ultra-line{width:min(72vw,330px);height:4px;border-radius:99px;background:#20242a;margin:22px auto 13px;overflow:hidden}.ef-ultra-line i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff6a00,#ffc400,#fff);box-shadow:0 0 18px #ff9800;animation:efUltraLoad 1.05s .18s cubic-bezier(.2,.8,.2,1) forwards}.ef-ultra-ok{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:900;letter-spacing:2px;color:#ffc400;opacity:0;animation:efUltraOk .25s 1.05s forwards}
+@keyframes efUltraSpin{to{transform:rotate(360deg)}}@keyframes efUltraPulse{to{transform:scale(1.08);opacity:.8}}@keyframes efUltraRise{from{opacity:0;transform:translateY(35px) scale(.9)}to{opacity:1;transform:translateY(0) scale(1)}}@keyframes efUltraLoad{to{width:100%}}@keyframes efUltraOk{to{opacity:1}}@keyframes efUltraOut{to{opacity:0;visibility:hidden;transform:scale(1.025)}}`;
+      document.head.appendChild(st);
+    }
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.remove(); resolve(); },1820);
+  });
+}
+
 function mudarVeiculoCadastro(k){ estado.painelMotorista.cadastro.veiculo=k; render(); }
 async function avancarEtapa2(){
   const c = estado.painelMotorista.cadastro;
