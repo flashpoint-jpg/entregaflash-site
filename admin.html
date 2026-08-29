@@ -1134,8 +1134,15 @@ function agendarPopupInstalarSeNecessario(){
 }
 
 async function registrarServiceWorker(){
+  // O administrativo fica isolado do PWA principal. Nenhum Service Worker
+  // do domínio deve controlar /admin.html, evitando retorno involuntário ao index.
   if(!('serviceWorker' in navigator)) return;
-  try{ const regs=await navigator.serviceWorker.getRegistrations(); for(const reg of regs){ if(reg.active && /entregaflash-sw\.js/.test(reg.active.scriptURL)) await reg.unregister(); } }catch(e){ console.warn('Service worker: limpeza do admin indisponível', e); }
+  try{
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(regs.map(reg => reg.unregister()));
+    const nomes = await caches.keys();
+    await Promise.all(nomes.filter(n => /entrega-flash/i.test(n)).map(n => caches.delete(n)));
+  }catch(e){ console.warn('Isolamento do admin: limpeza indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
