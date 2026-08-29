@@ -5633,6 +5633,14 @@ function treinamentoMotoristaHTML(){
 
 function telaMotorista(){
   const m = estado.motorista;
+  const pm = estado.painelMotorista;
+  // Abre a documentação dentro do painel mesmo com o motorista já logado.
+  if(m.ativo && pm && pm.tela==='cadastro'){
+    return telaCadastroMotorista();
+  }
+  if(m.ativo && pm && pm.tela==='reenviar'){
+    return telaReenviarDocumentosMotorista();
+  }
   if(!m.ativo){
     if(estado.sessaoCarregando) return `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>`;
     return telaAcessoMotorista();

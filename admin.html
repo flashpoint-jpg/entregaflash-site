@@ -7146,11 +7146,14 @@ async function salvarEdicaoClienteAdmin(telefoneAtual){
   const nome = document.getElementById('edit-nome-cliente-'+idc)?.value.trim();
   const telefone = document.getElementById('edit-telefone-cliente-'+idc)?.value.trim();
   if(!nome || !telefone){ mostrarToast('Preenche nome e telefone.'); return; }
-  const { error } = await sb.rpc('entrega_admin_editar_cliente', { p_senha: estado.admin.senhaDigitada, p_telefone_atual: telefoneAtual, p_nome: nome, p_telefone_novo: telefone });
-  if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar: '+(error.message||''), 'erro'); return; }
-  mostrarToast('Cadastro atualizado!', 'sucesso');
-  estado.admin.clienteEditando = null;
-  await carregarClientesAdmin();
+  adminOperacaoClienteEmAndamento = true;
+  try{
+    const { error } = await sb.rpc('entrega_admin_editar_cliente', { p_senha: estado.admin.senhaDigitada, p_telefone_atual: telefoneAtual, p_nome: nome, p_telefone_novo: telefone });
+    if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar: '+(error.message||''), 'erro'); return; }
+    estado.admin.clienteEditando = null;
+    await carregarClientesAdmin();
+    mostrarToast('Cadastro atualizado!', 'sucesso');
+  } finally { adminOperacaoClienteEmAndamento = false; }
 }
 async function alterarSenhaClienteAdmin(telefone, novaSenha){
   const idc = String(telefone).replace(/\D/g,'');
@@ -7176,11 +7179,15 @@ async function desbloquearClienteAdmin(telefone){
   await carregarClientesAdmin();
 }
 async function excluirClienteAdmin(telefone, nome){
-  if(!(await confirmarAcao(`Excluir definitivamente a conta de ${nome}? Essa ação apaga o cliente do sistema e não pode ser desfeita.`, 'Excluir'))) return;
-  const { error } = await sb.rpc('entrega_admin_deletar_cliente', { p_senha: estado.admin.senhaDigitada, p_telefone: telefone });
-  if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao excluir: '+(error.message||''), 'erro'); return; }
-  mostrarToast('Cliente excluído.', 'sucesso');
-  await carregarClientesAdmin();
+  if(!(await confirmarAcao(`Excluir definitivamente a conta de ${nome}? Essa ação zera o cadastro e permite cadastrar novamente como se fosse a primeira vez.`, 'Excluir'))) return;
+  adminOperacaoClienteEmAndamento = true;
+  try{
+    const { error } = await sb.rpc('entrega_admin_deletar_cliente', { p_senha: estado.admin.senhaDigitada, p_telefone: telefone });
+    if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao excluir: '+(error.message||''), 'erro'); return; }
+    estado.admin.clienteEditando = null;
+    await carregarClientesAdmin();
+    mostrarToast('Cliente excluído e cadastro zerado.', 'sucesso');
+  } finally { adminOperacaoClienteEmAndamento = false; }
 }
 
 function adminAbaMotoristasHTML(){
@@ -7373,6 +7380,7 @@ function saqueCardHTML(s){
 // =================== PAINEL ADMINISTRATIVO ===================
 let canalAdminRealtime = null;
 let intervaloAdminMotoristasClientesPoll = null;
+let adminOperacaoClienteEmAndamento = false;
 function assinarAdminRealtime(){
   if(canalAdminRealtime) return;
   canalAdminRealtime = sb.channel('admin-realtime')
@@ -7383,7 +7391,7 @@ function assinarAdminRealtime(){
       debounce('admin-pedidos', ()=>{ carregarTodosPedidosAdmin(); carregarPedidosEntreguesAdmin(); });
     })
     .on('postgres_changes', {event:'*', schema:'public', table:'entrega_clientes'}, ()=>{
-      debounce('admin-clientes', carregarClientesAdmin);
+      if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) debounce('admin-clientes', carregarClientesAdmin);
     })
     .on('postgres_changes', {event:'*', schema:'public', table:'entrega_saques'}, ()=>{
       debounce('admin-saques', carregarSaquesAdmin);
@@ -7405,7 +7413,7 @@ function assinarAdminRealtime(){
       debounce('admin-suporte', carregarSuporteAdmin);
     })
     .on('postgres_changes', {event:'*', schema:'public', table:'entrega_clientes_saldos'}, ()=>{
-      debounce('admin-clientes', carregarClientesAdmin);
+      if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) debounce('admin-clientes', carregarClientesAdmin);
     })
     .on('postgres_changes', {event:'*', schema:'public', table:'entrega_saldos'}, ()=>{
       debounce('admin-motoristas', carregarMotoristasAdmin);
@@ -7417,7 +7425,7 @@ function assinarAdminRealtime(){
   // continue vendo cadastros novos/alterados mesmo assim.
   if(intervaloAdminMotoristasClientesPoll) clearInterval(intervaloAdminMotoristasClientesPoll);
   intervaloAdminMotoristasClientesPoll = setInterval(() => {
-    if(estado.admin.logado) { carregarMotoristasAdmin(); carregarClientesAdmin(); }
+    if(estado.admin.logado) { carregarMotoristasAdmin(); if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) carregarClientesAdmin(); }
   }, 20000);
 }
 function encerrarAdminRealtime(){
