@@ -934,6 +934,35 @@ label,.subtitulo,.texto-ajuda,.hint,.ajuda{color:#c7cad0!important}
 .admin-lista-secao{padding:12px 14px!important;border-radius:14px!important;background:linear-gradient(90deg,rgba(255,152,47,.12),rgba(255,255,255,.025))!important;border:1px solid rgba(255,152,47,.15)!important;margin-bottom:10px!important}
 @media(max-width:640px){.admin-resumo-card>summary{padding:13px!important}.admin-resumo-card .admin-detalhes{padding:12px!important}}
 </style>
+
+<style id="ef-busca-premium-v2">
+#pedido-buscando-tela.busca-premium{position:relative;overflow:hidden;background:radial-gradient(circle at 50% 8%,rgba(255,145,0,.10),transparent 32%),linear-gradient(180deg,rgba(18,20,24,.98),rgba(11,12,15,.99));box-shadow:0 24px 70px rgba(0,0,0,.34),inset 0 1px 0 rgba(255,255,255,.03)}
+.busca-premium::before{content:"";position:absolute;inset:-2px;pointer-events:none;background:linear-gradient(110deg,transparent 10%,rgba(255,164,32,.08) 45%,transparent 70%);transform:translateX(-120%);animation:efBuscaBrilho 4.6s ease-in-out infinite}
+@keyframes efBuscaBrilho{0%,58%{transform:translateX(-120%)}78%,100%{transform:translateX(120%)}}
+.ef-radar{width:170px;height:170px;margin:2px auto 10px;position:relative;border-radius:50%;background:radial-gradient(circle,rgba(255,153,0,.08) 0 3%,transparent 4% 100%)}
+.ef-radar-ring{position:absolute;left:50%;top:50%;border:1px solid rgba(255,151,18,.36);border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 20px rgba(255,128,0,.04)}
+.ef-radar-ring.r1{width:48px;height:48px}.ef-radar-ring.r2{width:92px;height:92px}.ef-radar-ring.r3{width:138px;height:138px}
+.ef-radar-pulse{position:absolute;left:50%;top:50%;width:26px;height:26px;border-radius:50%;transform:translate(-50%,-50%);background:linear-gradient(135deg,#ffb12b,#ff7200);box-shadow:0 0 0 0 rgba(255,133,0,.45),0 0 26px rgba(255,121,0,.48);animation:efPulse 1.75s ease-out infinite}
+.ef-radar-pulse::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#fff;opacity:.94}
+@keyframes efPulse{0%{box-shadow:0 0 0 0 rgba(255,133,0,.42),0 0 24px rgba(255,121,0,.46)}70%{box-shadow:0 0 0 58px rgba(255,133,0,0),0 0 30px rgba(255,121,0,.30)}100%{box-shadow:0 0 0 58px rgba(255,133,0,0),0 0 24px rgba(255,121,0,.16)}}
+.ef-radar-scan{position:absolute;left:50%;top:50%;width:72px;height:72px;transform-origin:0 0;overflow:hidden;animation:efScan 2.6s linear infinite}
+.ef-radar-scan::before{content:"";position:absolute;left:0;top:-72px;width:144px;height:144px;background:conic-gradient(from 0deg,rgba(255,145,0,.28),rgba(255,145,0,.05) 28deg,transparent 54deg);border-radius:50%}
+@keyframes efScan{to{transform:rotate(360deg)}}
+.ef-radar-dot{position:absolute;width:8px;height:8px;border-radius:50%;background:#ff9b16;box-shadow:0 0 12px rgba(255,155,22,.95);animation:efDot 2.2s ease-in-out infinite}
+.ef-radar-dot.d1{left:27px;top:56px;animation-delay:.2s}.ef-radar-dot.d2{right:34px;top:39px;animation-delay:.9s}.ef-radar-dot.d3{right:23px;bottom:46px;animation-delay:1.45s}
+@keyframes efDot{0%,100%{opacity:.22;transform:scale(.72)}50%{opacity:1;transform:scale(1.18)}}
+.ef-busca-status{height:28px;position:relative;margin:7px auto 2px;max-width:410px}
+.ef-busca-status span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;font-size:13.5px;font-weight:800;letter-spacing:.1px;color:#f3f4f6;opacity:0;transform:translateY(6px);animation:efStatus 9s infinite}
+.ef-busca-status span:nth-child(2){animation-delay:3s}.ef-busca-status span:nth-child(3){animation-delay:6s}
+.ef-busca-status i{width:7px;height:7px;border-radius:50%;background:#ff9516;box-shadow:0 0 12px rgba(255,149,22,.8);display:inline-block}
+@keyframes efStatus{0%{opacity:0;transform:translateY(6px)}7%,28%{opacity:1;transform:translateY(0)}34%,100%{opacity:0;transform:translateY(-5px)}}
+.ef-busca-progresso{height:3px;max-width:350px;margin:11px auto 3px;background:rgba(255,255,255,.07);border-radius:999px;overflow:hidden}
+.ef-busca-progresso::after{content:"";display:block;width:42%;height:100%;background:linear-gradient(90deg,transparent,#ff9d17,#ffd071,transparent);border-radius:999px;animation:efLinha 2.2s ease-in-out infinite}
+@keyframes efLinha{0%{transform:translateX(-120%)}100%{transform:translateX(340%)}}
+@media(max-width:480px){.ef-radar{width:146px;height:146px}.ef-radar-ring.r1{width:42px;height:42px}.ef-radar-ring.r2{width:80px;height:80px}.ef-radar-ring.r3{width:120px;height:120px}.ef-radar-scan{width:62px;height:62px}.ef-radar-scan::before{left:0;top:-62px;width:124px;height:124px}}
+@media(prefers-reduced-motion:reduce){.ef-radar-pulse,.ef-radar-scan,.ef-radar-dot,.ef-busca-status span,.ef-busca-progresso::after,.busca-premium::before{animation:none!important}.ef-busca-status span:first-child{opacity:1;transform:none}}
+</style>
+
 </head>
 <body>
 <div id="splash" style="display:none">
@@ -4854,10 +4883,20 @@ function telaCliente(){
   const f = estado.form;
   const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
-    return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
-      <div style="font-size:54px"><span class="girando-emoji"></span></div>
-      <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
-      <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
+    return `<div class="cartao busca-premium" id="pedido-buscando-tela" style="text-align:center;padding:28px 18px 32px;border:2px solid var(--mango)">
+      <div class="ef-radar" aria-hidden="true">
+        <span class="ef-radar-ring r1"></span><span class="ef-radar-ring r2"></span><span class="ef-radar-ring r3"></span>
+        <span class="ef-radar-scan"></span><span class="ef-radar-pulse"></span>
+        <span class="ef-radar-dot d1"></span><span class="ef-radar-dot d2"></span><span class="ef-radar-dot d3"></span>
+      </div>
+      <h2 style="font-size:27px;margin:4px 0 5px">Buscando motorista...</h2>
+      <div class="ef-busca-status" aria-live="polite">
+        <span><i></i>Localizando motoristas próximos...</span>
+        <span><i></i>Conectando com entregadores disponíveis...</span>
+        <span><i></i>Enviando sua corrida em tempo real...</span>
+      </div>
+      <div class="ef-busca-progresso" aria-hidden="true"></div>
+      <div class="subtitulo" style="font-size:15px;line-height:1.5;margin-top:8px">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
       <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
       <div style="margin-top:15px;font-size:14px;color:var(--poeira)"> ${estado.motoristasOnline||0} motorista${estado.motoristasOnline===1?'':'s'} online agora</div>
       <button class="btn btn-secundario btn-pequeno" style="margin-top:18px" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
