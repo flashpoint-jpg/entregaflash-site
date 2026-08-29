@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="pt-BR">
 <head>
-<meta name="ef-app-version" content="20260829-6">
+<meta name="ef-app-version" content="20260829-7">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega</title>
-<link rel="manifest" href="entregaflash-manifest.json?v=20260829-6">
+<link rel="manifest" href="entregaflash-manifest.json?v=20260829-7">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -1776,7 +1776,7 @@ function agendarPopupInstalarSeNecessario(){
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
   try{
-    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-6', {
+    const reg = await navigator.serviceWorker.register('entregaflash-sw.js?v=20260829-7', {
       scope: './',
       updateViaCache: 'none'
     });
@@ -7066,17 +7066,40 @@ async function continuarParaDocumentos(){
 async function salvarEtapaCadastro(campos){
   const c = estado.painelMotorista.cadastro;
   const agora = Date.now();
-  if(!c.id){ c.id = 'mot'+agora+Math.floor(Math.random()*1000); }
-  const base = { id:c.id, criado_em: c.criadoEm||agora, atualizado_em: agora };
+  if(!c.telefone || !c.senhaHash){
+    mostrarToast('Sessão do cadastro inválida. Entre novamente.', 'erro');
+    return false;
+  }
+  const base = { atualizado_em: agora };
+  if(c.id) base.id = c.id;
+  if(c.criadoEm) base.criado_em = c.criadoEm;
   if(c.nome) base.nome = c.nome;
   if(c.cpf) base.cpf = c.cpf;
   if(c.telefone) base.telefone = c.telefone;
   if(c.cidade) base.cidade = c.cidade;
-  if(c.senhaHash) base.senha_hash = c.senhaHash;
   const linha = Object.assign(base, campos);
-  const { error } = await sb.from('entrega_motoristas').upsert(linha);
-  if(error){ console.error(error); mostrarToast('Erro ao gravar o cadastro: '+(error.message||''), 'erro'); return false; }
-  c.criadoEm = c.criadoEm || agora;
+  // Salva somente pelos campos permitidos no RPC seguro do motorista.
+  delete linha.status;
+  delete linha.termos_aceitos;
+  delete linha.plano;
+  delete linha.taxa_valor;
+  delete linha.taxa_status;
+  const { data, error } = await sb.rpc('entrega_motorista_upsert_proprio', {
+    p_telefone: c.telefone,
+    p_senha_hash: c.senhaHash,
+    p_dados: linha
+  });
+  if(error){
+    console.error('Erro ao salvar etapa do cadastro:', error);
+    mostrarToast('Erro ao gravar o cadastro. Tenta novamente.', 'erro');
+    return false;
+  }
+  const salvo = Array.isArray(data) ? (data[0]||null) : data;
+  if(salvo){
+    c.id = salvo.id || c.id;
+    c.telefone = salvo.telefone || c.telefone;
+    c.criadoEm = salvo.criado_em || c.criadoEm || agora;
+  }
   return true;
 }
 
@@ -7113,24 +7136,41 @@ async function avancarEtapa1(){
   c.telefone = document.getElementById('cm-telefone').value.trim();
   c.cidade = document.getElementById('cm-cidade').value.trim();
   c.senha = document.getElementById('cm-senha').value;
-  // cadastro básico: só o essencial pra reduzir fricção logo na entrada pelo anúncio —
-  // CPF e dados do veículo (marca/placa/cor) ficam pra depois, quando o admin liberar
+  const telDigitos = c.telefone.replace(/\D/g,'');
   if(!c.nome||!c.telefone||!c.cidade||!c.senha){ c.erroEtapa='Preenche todos os campos.'; render(); return; }
+  if(telDigitos.length<10 || telDigitos.length>13){ c.erroEtapa='Digite um telefone/WhatsApp válido com DDD.'; render(); return; }
   if(c.senha.length<4){ c.erroEtapa='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   c.erroEtapa=''; c.enviando=true; render();
-  const { data: existente } = await sb.from('entrega_motoristas').select('id,status').eq('telefone', c.telefone).maybeSingle();
-  if(existente && existente.status!=='incompleto'){
-    c.enviando=false; c.erroEtapa='Já existe cadastro com este telefone. Use "Já sou cadastrado" para entrar.';
+  c.senhaHash = await hashSenha(c.senha);
+  const { data, error } = await sb.rpc('entrega_motorista_cadastrar_basico', {
+    p_nome: c.nome,
+    p_telefone: c.telefone,
+    p_cidade: c.cidade,
+    p_senha_hash: c.senhaHash,
+    p_veiculo_tipo: c.veiculo
+  });
+  c.enviando=false;
+  if(error){
+    console.error('Pré-cadastro motorista:', error);
+    const msg = String(error.message||'');
+    if(msg.includes('telefone_ja_cadastrado')) c.erroEtapa='Já existe cadastro com este telefone. Use "Já sou cadastrado" para entrar.';
+    else if(msg.includes('telefone_invalido')) c.erroEtapa='Digite um telefone/WhatsApp válido com DDD.';
+    else c.erroEtapa='Não consegui concluir o pré-cadastro agora. Tenta novamente.';
     render(); return;
   }
-  if(existente) c.id = existente.id;
-  c.senhaHash = await hashSenha(c.senha);
-  // este é o fim do cadastro "básico" — para por aqui de propósito: o motorista já vê a tela
-  // do app (sem poder ligar a rota) e só é convidado a completar CPF/veículo/documentos depois
-  // que o admin analisa esses dados básicos e libera, reduzindo a fricção logo na entrada
-  const ok = await salvarEtapaCadastro({ nome:c.nome, telefone:c.telefone, cidade:c.cidade, senha_hash:c.senhaHash, veiculo_tipo:c.veiculo, status:'basico' });
-  c.enviando=false;
-  if(ok){ estado.painelMotorista.tela='basico'; } else { c.id=null; c.erroEtapa='Erro ao gravar. Tenta de novo.'; }
+  const salvo = Array.isArray(data) ? (data[0]||null) : data;
+  if(!salvo || !salvo.telefone){
+    c.erroEtapa='Cadastro não confirmado pelo servidor. Tenta novamente.';
+    render(); return;
+  }
+  c.id = salvo.id;
+  c.telefone = salvo.telefone;
+  c.criadoEm = salvo.criado_em;
+  estado.painelMotorista.tela='basico';
+
+  // Este é o ponto de conversão da campanha: o lead realmente entrou no banco.
+  try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista'}); }catch(e){}
+  registrarAlertaAdmin('novo_motorista_basico', `Novo pré-cadastro de motorista: ${c.nome||''} (${c.telefone||''}).`);
   render();
 }
 function mudarVeiculoCadastro(k){ estado.painelMotorista.cadastro.veiculo=k; render(); }
@@ -7233,8 +7273,20 @@ async function escolherPlano(chave){
   c.plano = chave;
   c.pix = { qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'' };
   if(pixPollTimer){ clearInterval(pixPollTimer); pixPollTimer=null; }
-  const p = PLANOS[chave];
-  await salvarEtapaCadastro({ plano:chave, taxa_valor:p.preco, taxa_status: p.preco>0 ? 'pendente' : 'pago' });
+
+  let erroPlano = null;
+  if(chave==='free'){
+    const { error } = await sb.rpc('entrega_motorista_voltar_free', { p_telefone:c.telefone });
+    erroPlano = error;
+  }else if(chave==='pro'){
+    const { error } = await sb.rpc('entrega_motorista_solicitar_upgrade_pro', { p_telefone:c.telefone });
+    erroPlano = error;
+  }
+  if(erroPlano){
+    console.error('Erro ao escolher plano:', erroPlano);
+    mostrarToast('Não consegui salvar o plano. Tenta novamente.', 'erro');
+    return;
+  }
   if(chave==='free'){ dispararAnimacaoPlano('free'); return; }
   render();
   if(chave==='pro'){ criarCobrancaPix(); }
@@ -7264,8 +7316,9 @@ function iniciarPollingPix(){
   pixPollTimer = setInterval(async ()=>{
     const c = estado.painelMotorista.cadastro;
     if(!c.id || c.pix.status==='pago'){ clearInterval(pixPollTimer); pixPollTimer=null; return; }
-    const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id', c.id).maybeSingle();
-    if(data && data.taxa_status==='pago'){
+    const { data, error } = await sb.rpc('entrega_motorista_confirmar_pro_se_pago', { p_telefone:c.telefone });
+    const retorno = Array.isArray(data) ? (data[0]||null) : data;
+    if(!error && retorno && retorno.taxa_status==='pago'){
       c.pix.status='pago'; clearInterval(pixPollTimer); pixPollTimer=null;
       dispararAnimacaoPlano('pro');
     }
@@ -7296,12 +7349,27 @@ async function finalizarCadastroMotorista(){
   const c = estado.painelMotorista.cadastro;
   if(!c.aceitouTermos){ c.erroEtapa='Aceite os termos de uso e a LGPD para continuar.'; render(); return; }
   c.erroEtapa=''; c.enviando=true; render();
-  const ok = await salvarEtapaCadastro({ termos_aceitos:true, status:'pendente' });
+  const { data, error } = await sb.rpc('entrega_motorista_finalizar_cadastro', {
+    p_telefone: c.telefone,
+    p_senha_hash: c.senhaHash
+  });
   c.enviando=false;
-  if(ok){
+  if(error){
+    console.error('Finalizar cadastro motorista:', error);
+    const msg=String(error.message||'');
+    c.erroEtapa = msg.includes('cadastro_ainda_nao_liberado')
+      ? 'Seu pré-cadastro ainda precisa ser liberado antes do envio final.'
+      : msg.includes('documentos_incompletos')
+        ? 'Ainda faltam documentos obrigatórios.'
+        : msg.includes('pagamento_pro_pendente')
+          ? 'A confirmação do plano Pro ainda está pendente.'
+          : 'Não consegui finalizar o cadastro. Confere os dados e tenta novamente.';
+    render(); return;
+  }
+  if(data){
     estado.painelMotorista.tela='pendente';
-    try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista'}); }catch(e){}
-    registrarAlertaAdmin('novo_motorista', `Novo motorista cadastrado, aguardando aprovação: ${c.nome||''} (${c.telefone||''}).`);
+    try{ if(typeof fbq!=='undefined') fbq('trackCustom','MotoristaDocumentosConcluidos'); }catch(e){}
+    registrarAlertaAdmin('novo_motorista', `Motorista concluiu documentos e aguarda aprovação: ${c.nome||''} (${c.telefone||''}).`);
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 800);
   }
   render();
