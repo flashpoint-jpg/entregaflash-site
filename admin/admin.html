@@ -531,7 +531,8 @@ fbq('track', 'PageView');
 }
 
   /* ---- painel administrativo: página inteira, sem barras de rolar horizontais ---- */
-  .modal-fundo-admin{align-items:stretch;justify-content:stretch;padding:0;}
+  .modal-fundo-admin{align-items:stretch;justify-content:stretch;padding:0;backface-visibility:hidden;transform:translateZ(0);contain:paint;}
+.modal-admin{backface-visibility:hidden;transform:translateZ(0);}
   .modal-admin{width:100%;max-width:100%;height:100vh;height:100dvh;max-height:100vh;max-height:100dvh;border-radius:0;margin:0;}
   .modal-admin .chat-topo{padding:16px 20px;flex-shrink:0;}
   .modal-admin .chat-topo h3{font-size:18.5px;}
@@ -2484,7 +2485,7 @@ async function carregarSuporteAdmin(){
     if(prioA!==prioB) return prioA-prioB;
     return b.ultimaEm - a.ultimaEm;
   });
-  render();
+  agendarRenderAdmin();
 }
 async function abrirSuporteAdmin(telefone){
   estado.admin.suporteAbertoTelefone = telefone;
@@ -6713,19 +6714,19 @@ async function carregarTodosPedidosAdmin(){
   // mesma lógica: só colapsa pro placeholder de "carregando" se ainda não havia pedidos
   // carregados. Numa atualização pós-edição, mantém a lista visível e evita o scroll pular.
   const jaTinhaPedidos = (estado.admin.todosPedidos||[]).length>0;
-  if(!jaTinhaPedidos){ estado.admin.carregando=true; render(); }
+  if(!jaTinhaPedidos){ estado.admin.carregando=true; agendarRenderAdmin(); }
   const { data, error } = await sb.from('entrega_pedidos').select('*').order('criado_em',{ascending:false}).limit(500);
   estado.admin.carregando=false;
   if(error){ console.error(error); mostrarToast('Erro ao carregar pedidos.', 'erro'); return; }
   estado.admin.todosPedidos = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function carregarClientesAdmin(){
   // só mostra a tela cheia de "carregando" no primeiro carregamento (lista ainda vazia).
   // Numa atualização depois de salvar uma edição, a lista já tem conteúdo — não colapsamos
   // ela pra um placeholder no meio do caminho, senão o scroll da pessoa "pula" pro topo.
   const jaTinhaClientes = estado.admin.clientes.length>0;
-  if(!jaTinhaClientes){ estado.admin.carregando=true; render(); }
+  if(!jaTinhaClientes){ estado.admin.carregando=true; agendarRenderAdmin(); }
   const { data, error } = await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada });
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar clientes.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_clientes_saldos').select('telefone,saldo');
@@ -6734,7 +6735,7 @@ async function carregarClientesAdmin(){
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
   estado.admin.clientes = (data||[]).map(c=>({ ...c, saldo: saldoPorTelefone[c.telefone]||0 }));
-  render();
+  agendarRenderAdmin();
 }
 function filtrarPedidosAdmin(){
   const a = estado.admin;
@@ -7509,7 +7510,7 @@ async function carregarSaquesAdmin(){
   const { data, error } = await sb.from('entrega_saques').select('*').order('criado_em',{ascending:false});
   if(error){ console.error(error); return; }
   estado.admin.saques = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function testarSaqueAutomatico(){
   if(!(await confirmarAcao('Isso vai rodar o robô de saque automático agora, processando qualquer saque pendente que já venceu o prazo. Continuar?'))) return;
@@ -7555,6 +7556,31 @@ function saqueCardHTML(s){
 let canalAdminRealtime = null;
 let intervaloAdminMotoristasClientesPoll = null;
 let adminOperacaoClienteEmAndamento = false;
+let _adminRenderTimer = null;
+function renderAdminParcial(){
+  if(estado.admin.aberto){
+    const area = document.querySelector('.admin-conteudo');
+    const inner = document.querySelector('.admin-conteudo-inner');
+    if(inner){
+      const scrollTop = area ? area.scrollTop : 0;
+      const foco = capturarFocoAtivo();
+      const valores = capturarValoresInputs();
+      inner.innerHTML = adminCorpoHTML();
+      restaurarValoresInputs(valores);
+      restaurarFocoAtivo(foco);
+      if(area) area.scrollTop = scrollTop;
+      if(estado.admin.logado && estado.admin.aba==='resumo'){
+        requestAnimationFrame(()=>{ try{ montarMapaAdminGeral(); }catch(e){ console.warn(e); } });
+      }
+      return;
+    }
+  }
+  render();
+}
+function agendarRenderAdmin(delay=90){
+  if(_adminRenderTimer) clearTimeout(_adminRenderTimer);
+  _adminRenderTimer = setTimeout(()=>{ _adminRenderTimer=null; renderAdminParcial(); }, delay);
+}
 function assinarAdminRealtime(){
   if(canalAdminRealtime) return;
   canalAdminRealtime = sb.channel('admin-realtime')
@@ -7646,7 +7672,7 @@ async function carregarAlertasAdmin(){
   const { data, error } = await sb.from('entrega_alertas_admin').select('*').order('criado_em',{ascending:false}).limit(200);
   if(error){ console.error(error); return; }
   estado.admin.alertas = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function marcarAlertaLido(id){
   const { error } = await sb.from('entrega_alertas_admin').update({ lido:true }).eq('id', id);
@@ -7679,7 +7705,7 @@ async function carregarMotoristasAdmin(){
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
-  if(!jaTinhaMotoristas){ estado.admin.carregando=true; render(); }
+  if(!jaTinhaMotoristas){ estado.admin.carregando=true; agendarRenderAdmin(); }
   const { data: dadosBrutos, error } = await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada });
   const data = (dadosBrutos||[]).filter(m => m.status !== 'incompleto');
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar cadastros.', 'erro'); return; }
@@ -7689,13 +7715,13 @@ async function carregarMotoristasAdmin(){
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
   estado.admin.motoristas = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  render();
+  agendarRenderAdmin();
 }
 async function carregarPedidosEntreguesAdmin(){
   const { data, error } = await sb.from('entrega_pedidos').select('preco,motorista_telefone').eq('status','entregue');
   if(error){ console.error(error); return; }
   estado.admin.pedidosEntregues = data||[];
-  render();
+  agendarRenderAdmin();
 }
 async function aprovarMotoristaAdmin(id){
   const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
