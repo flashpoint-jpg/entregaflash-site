@@ -1,7 +1,0 @@
-Correção de rotas - 2026-08-29
-- index.html permanece como entrada principal do aplicativo.
-- admin.html permanece como painel administrativo.
-- Service Worker não força mais janelas abertas para index.html durante ativação.
-- admin.html não registra mais o Service Worker principal do aplicativo e remove registro antigo dele ao abrir.
-- removido Index.html (I maiúsculo) do pacote para evitar duas entradas diferentes em hospedagem Linux/Vercel.
-- banco de dados, pedidos, valores e layout administrativo não foram alterados nesta correção.

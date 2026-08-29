@@ -1,8 +1,0 @@
-ENTREGA FLASH - AJUSTE 29/08/2026
-
-- Removida a parada na tela "Cadastro recebido" no fluxo novo de motorista.
-- Depois do pre-cadastro: efeito Ultra Premium curto e abertura direta do painel do motorista.
-- Adicionada aba MAPA ao painel do motorista, com GPS/posicao ao vivo e centro de fallback em Muzambinho.
-- Adicionada aba CARTEIRA ao painel do motorista, com saldo, ganhos do dia, entregas e saque.
-- Motorista ainda nao aprovado pode conhecer mapa e carteira, mas aceitar corrida/saque continuam bloqueados ate documentos + aprovacao.
-- Service Worker/Manifest atualizados para versao 20260829-8 para evitar cache antigo.
