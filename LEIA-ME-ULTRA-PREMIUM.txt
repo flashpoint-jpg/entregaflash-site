@@ -1,0 +1,15 @@
+ENTREGA FLASH — VERSÃO APP ULTRA PREMIUM
+
+Esta versão mantém a lógica e o banco de dados existentes e adiciona acabamento específico para uso como aplicativo:
+- tela 100% adaptada ao celular e às áreas seguras (notch/barra inferior);
+- modo standalone com aparência de app;
+- cabeçalho glass premium e acabamento preto/dourado;
+- botões e campos com toque mais confortável;
+- splash refinada;
+- ícones maskable corretos no manifest;
+- versão do Service Worker atualizada para evitar cache antigo;
+- sem alterar as funções de cadastro, pedidos, GPS, mapas ou Supabase.
+
+Arquivo principal: index.html
+Manifest: entregaflash-manifest.json
+Service Worker: entregaflash-sw.js
