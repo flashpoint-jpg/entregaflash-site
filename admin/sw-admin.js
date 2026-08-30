@@ -1,6 +1,6 @@
-// build: grande-sp-final-20260829
-const CACHE='entrega-flash-admin-v5-20260829-mobilefix-spfinal';
-const APP_SHELL=['/admin/admin.html?v=20260829-mobilefix-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
+// build: sp-cep-controles-20260830
+const CACHE='entrega-flash-admin-v6-20260830-sp-controles';
+const APP_SHELL=['/admin/admin.html?v=20260830-sp-controles-2','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
 self.addEventListener('install',event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).catch(()=>{}));
