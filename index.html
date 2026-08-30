@@ -42,8 +42,8 @@ fbq('track', 'PageView');
 <!-- Fim Meta Pixel -->
 <style>
   :root{
-    --noite:#171d4a; --painel:#212a63; --painel-alt:#29337a; --linha:rgba(255,255,255,0.16);
-    --mango:#ffc93c; --mango-escuro:#d9a92c; --chama:#ff6b52; --escuro:#201d14;
+    --noite:#0d0f12; --painel:#15171c; --painel-alt:#1b1e24; --linha:rgba(255,255,255,0.10);
+    --mango:#ff9710; --mango-escuro:#d9a92c; --chama:#ff6b52; --escuro:#0a0b0d;
     --osso:#f5f6fb; --poeira:#b7bce3; --verde:#6fcf6a; --azul:#6fa8dc; --roxo:#9b8ee0;
     --radius:14px;
     --sombra-card:0 4px 16px rgba(8,10,32,0.28), 0 1px 2px rgba(8,10,32,0.35);
@@ -96,8 +96,8 @@ fbq('track', 'PageView');
   .bv-wrap{
     margin:0 0 -20px;padding:26px 20px 34px;min-height:100vh;color:#fff;
     background:
-      radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
-      linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
+      radial-gradient(circle at 12% -8%, rgba(255,151,16,0.25), transparent 45%),
+      linear-gradient(165deg, #0a0b0d 0%, #121317 45%, #16181d 78%, #1c1e24 100%);
   }
   .bv-cabecalho{display:flex;align-items:center;gap:12px;margin-bottom:26px;}
   .bv-logo-badge{background:transparent;border-radius:0;padding:0;display:inline-flex;align-items:center;box-shadow:none;flex-shrink:0;}
@@ -143,11 +143,11 @@ fbq('track', 'PageView');
   .bv-escolha-marcador{position:absolute;top:8px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
   .bv-escolha-col:first-child .bv-escolha-marcador{left:8px;}
   .bv-escolha-col:last-child .bv-escolha-marcador{right:8px;}
-  .bv-escolha-marcador.check{background:var(--mango);color:#171d4a;}
+  .bv-escolha-marcador.check{background:var(--mango);color:var(--escuro);}
   .bv-escolha-marcador.x{background:rgba(255,255,255,0.14);color:rgba(255,255,255,0.55);}
   .bv-escolha-titulo{font-family:'Rajdhani';font-weight:700;font-size:13.5px;text-transform:uppercase;color:var(--mango);letter-spacing:0.2px;line-height:1.3;margin:6px 0 10px;min-height:34px;}
   .bv-escolha-desc{background:rgba(255,255,255,0.06);border-radius:10px;padding:10px 8px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.4;}
-  .btn-comecar-agora{display:block;width:100%;text-align:center;background:var(--mango);color:#171d4a;font-family:'Rajdhani';font-weight:700;font-size:19px;text-transform:none;padding:16px;border:none;border-radius:16px;cursor:pointer;letter-spacing:0.2px;margin-bottom:14px;}
+  .btn-comecar-agora{display:block;width:100%;text-align:center;background:var(--mango);color:var(--escuro);font-family:'Rajdhani';font-weight:700;font-size:19px;text-transform:none;padding:16px;border:none;border-radius:16px;cursor:pointer;letter-spacing:0.2px;margin-bottom:14px;}
   .bv-cta-sub{text-align:center;font-size:13.5px;color:var(--poeira);text-transform:none;font-weight:600;letter-spacing:0.1px;margin:8px 0 4px;line-height:1.4;}
   .bv-planos-toggle{text-align:center;font-size:13.5px;color:rgba(255,255,255,0.75);margin:2px 0 16px;}
   .bv-planos-toggle a{color:var(--mango);font-weight:700;cursor:pointer;}
@@ -175,8 +175,8 @@ fbq('track', 'PageView');
     position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;
     overflow:hidden;
     background:
-      radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
-      linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
+      radial-gradient(circle at 12% -8%, rgba(255,151,16,0.25), transparent 45%),
+      linear-gradient(165deg, #0a0b0d 0%, #121317 45%, #16181d 78%, #1c1e24 100%);
     transition:opacity .6s ease, visibility .6s ease;
   }
   #splash.splash-esconder{opacity:0;visibility:hidden;pointer-events:none;}
@@ -630,8 +630,8 @@ fbq('track', 'PageView');
   #gate-localizacao{
     position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;
     background:
-      radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
-      linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
+      radial-gradient(circle at 12% -8%, rgba(255,151,16,0.25), transparent 45%),
+      linear-gradient(165deg, #0a0b0d 0%, #121317 45%, #16181d 78%, #1c1e24 100%);
     padding:24px;
   }
   .gl-corpo{max-width:380px;width:100%;text-align:center;color:#fff;background:rgba(255,255,255,0.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.16);border-radius:22px;padding:34px 26px;box-shadow:var(--sombra-flutuante);}
@@ -741,6 +741,22 @@ fbq('track', 'PageView');
   .faixa-instalar .sub{font-size:12.5px!important;line-height:1.35!important;white-space:normal!important;max-width:none!important}
   .faixa-instalar .btn{width:auto!important;min-width:118px!important;margin:0!important;padding:11px 15px!important}
   .btn-voltar-topo{display:none!important}
+}
+
+/* ===== Entrega Flash Admin Ultra Clean ===== */
+body.ef-admin-logado .admin-topo{position:sticky;top:0;z-index:30;backdrop-filter:blur(14px)}
+.admin-card,.cartao{border-radius:18px}
+.admin-lista-secao{padding:12px 14px;border-radius:14px;background:rgba(255,255,255,.035);margin-bottom:10px}
+.chat-modal{backdrop-filter:blur(18px);box-shadow:0 22px 70px rgba(0,0,0,.48);border-radius:22px 22px 0 0;overflow:hidden}
+.chat-topo{position:sticky;top:0;z-index:2;padding:16px 18px;background:rgba(22,31,80,.98)}
+.chat-fechar{width:42px!important;height:42px!important;min-width:42px;border-radius:12px!important;font-size:30px!important;display:grid!important;place-items:center;line-height:1!important}
+#suporte-admin-input{min-height:48px;border-radius:14px!important}
+@media(max-width:700px){
+  .admin-topo{padding:12px 14px!important}
+  .admin-topo h1{font-size:20px!important}
+  .chat-modal{height:min(76dvh,680px)!important;max-height:76dvh!important}
+  .chat-mensagens{overscroll-behavior:contain}
+  .admin-lista-secao{margin-left:2px;margin-right:2px}
 }
 </style>
 <style id="ef-premium-v2-fix">
@@ -1092,6 +1108,36 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
   .bv-wrap,.bv-section-real,.bv-hero-real{height:auto!important;max-height:none!important;overflow:visible!important;}
   .modal-fundo,.foto-fundo,#ef-face-modal,#ef-selfie-motorista{touch-action:pan-y!important;}
 }
+</style>
+
+<style id="ef-ultra-premium-clean-v1">
+/* Ajuste fino visual: Ultra Premium Clean */
+.ef-progresso-doc{margin:14px 0 2px;padding:11px 12px;border-radius:13px;background:rgba(0,0,0,.20);border:1px solid rgba(255,171,0,.20)}
+.ef-progresso-top{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--poeira);font-weight:800}.ef-progresso-top b{color:var(--mango)}
+.ef-progresso-trilho{height:7px;margin-top:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.ef-progresso-trilho i{display:block;width:75%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ffb000,#ff7600)}
+@media(max-width:700px){
+ body.ef-motorista-logado .topo{padding:6px 12px 5px!important;min-height:0!important}
+ body.ef-motorista-logado .topo .marca{min-height:0!important;margin:0!important}
+ body.ef-motorista-logado .topo .logo-img{width:min(190px,54vw)!important;max-width:190px!important;height:auto!important}
+ body.ef-motorista-logado .topo .tagline{font-size:10.5px!important;line-height:1.15!important;margin-top:0!important;padding-bottom:0!important}
+ body.ef-motorista-logado .aviso-app-novo{margin:7px 10px!important;padding:9px 11px!important;border-radius:14px!important;font-size:12px!important;line-height:1.32!important}
+ body.ef-motorista-logado .cartao{margin:9px 8px!important;padding:14px!important;border-radius:18px!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
+ body.ef-motorista-logado .abas-motorista button{font-size:10.5px!important;gap:3px!important;padding-top:8px!important}
+ body.ef-motorista-logado .abas-motorista button .icone-aba{font-size:22px!important;opacity:.68}
+ body.ef-motorista-logado .abas-motorista button.ativo .icone-aba{opacity:1;transform:none!important}
+ body.ef-motorista-logado .sos-flutuante{width:52px!important;height:52px!important;right:12px!important;bottom:calc(88px + env(safe-area-inset-bottom,0px))!important;font-size:10.5px!important;border-width:2px!important;animation:none!important}
+ body.ef-motorista-logado .sos-flutuante .emoji{font-size:16px!important}
+ body.ef-motorista-logado .btn,body.ef-motorista-logado button{transition:transform .16s ease,opacity .16s ease,background .16s ease!important}
+}
+</style>
+
+<style id="ef-app20">
+/* Entrega Flash Ultra Premium App 2.0 */
+.ef-app20-hero{padding:18px!important;background:radial-gradient(circle at 88% 5%,rgba(255,171,0,.16),transparent 38%),linear-gradient(180deg,#171a1f,#0d0f12)!important;border:1px solid rgba(255,171,0,.32)!important}
+.ef-app20-status{display:flex;align-items:center;justify-content:space-between;gap:12px}.ef-app20-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:7px;background:#7d838b}.ef-app20-dot.on{background:#43d17d;box-shadow:0 0 0 5px rgba(67,209,125,.12)}
+.ef-app20-money{font-family:'Rajdhani';font-size:34px;font-weight:900;line-height:1;color:var(--osso);margin-top:5px}.ef-app20-stats{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin:15px 0}.ef-app20-stat{padding:11px 12px;border-radius:13px;background:rgba(255,255,255,.035);border:1px solid var(--linha)}.ef-app20-stat small{display:block;color:var(--poeira);font-size:11px;text-transform:uppercase;letter-spacing:.5px}.ef-app20-stat b{display:block;margin-top:3px;font-size:16px}.ef-app20-mainbtn{min-height:58px!important;font-size:18px!important;font-weight:900!important;letter-spacing:.3px}.ef-app20-guide{border:1px solid rgba(67,209,125,.28)!important;background:linear-gradient(135deg,rgba(67,209,125,.08),rgba(255,171,0,.05))!important}.ef-app20-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:12px}.ef-app20-step{text-align:center;font-size:10px;color:var(--poeira)}.ef-app20-step i{display:flex;width:28px;height:28px;border-radius:50%;align-items:center;justify-content:center;margin:0 auto 5px;background:var(--painel-alt);border:1px solid var(--linha);font-style:normal;font-weight:900;color:var(--mango)}
+.abas-motorista{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(10,11,14,.94)!important;border-top:1px solid rgba(255,255,255,.08)!important}.abas-motorista button{transition:color .16s ease,transform .16s ease!important}.abas-motorista button:active{transform:scale(.96)}.abas-motorista .icone-aba{font-size:21px!important}.abas-motorista button.ativo{color:var(--mango)!important}
+@media(max-width:600px){.conteudo-motorista{padding-top:4px}.conteudo-motorista .cartao{border-radius:16px}.ef-app20-hero{margin-top:4px}.ef-app20-money{font-size:31px}.cabecalho{min-height:auto!important}.logo{transform:scale(.9);transform-origin:left center}}
 </style>
 </head>
 
@@ -1828,6 +1874,34 @@ async function restaurarSessao(){
       } else { removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); }
     }
 
+    // Se havia uma sessão salva, mas o cadastro foi excluído do banco, trate a próxima entrada como usuário 100% novo.
+    // Isso devolve a apresentação inicial e evita reaproveitar modo/rascunho/treinamento antigos.
+    if((clienteTel && !estado.cliente.logado) || (motoristaTel && !estado.motorista.ativo)){
+      removerLocal('ef_modo');
+      removerLocal('ef_onboarding_visto');
+      removerLocal('ef_cliente_rascunho');
+      removerLocal('ef_motorista_rascunho');
+      if(clienteTel) removerLocal('ef_cliente_telefone');
+      if(motoristaTel){
+        removerLocal('ef_motorista_telefone');
+        removerLocal('ef_motorista_disponivel');
+        try{ localStorage.removeItem('ef_treinamento_motorista_v2_'+String(motoristaTel).replace(/\D/g,'')); }catch(e){}
+      }
+      // Cadastro apagado no painel = próxima entrada realmente começa do zero.
+      // Abre a apresentação imediatamente, sem depender do timer de primeira visita.
+      estado.modo = null;
+      estado.telaBoasVindas = true;
+      estado.onboardingSlide = 0;
+      estado.onboardingAberto = true;
+      estado.painelMotorista.tela = 'entrar';
+      estado.painelMotorista.loginTelefone = '';
+      estado.painelMotorista.loginSenha = '';
+      estado.painelMotorista.loginErro = '';
+      estado.painelCliente.tela = 'entrar';
+      estado.painelCliente.loginTelefone = '';
+      estado.painelCliente.loginErro = '';
+    }
+
     if(estado.cliente.logado) assinarCarteiraClienteRealtime(estado.cliente.telefone);
 
     // IMPORTANTE: o painel administrativo agora vive exclusivamente em /admin/.
@@ -2513,9 +2587,15 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
+const PRESENCA_MOTORISTA_MS = 120000; // 2 min sem sinal = offline real
+function motoristaOnlineAgora(m, agora=Date.now()){
+  if(!m || !m.disponivel || !STATUS_ACESSO_PAINEL.includes(m.status)) return false;
+  const ultimo = Number(m.disponivel_atualizado_em||0);
+  return ultimo>0 && (agora-ultimo) <= PRESENCA_MOTORISTA_MS;
+}
 async function carregarMotoristasOnline(){
   try{
-    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).in('status', STATUS_ACESSO_PAINEL);
+    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).gte('disponivel_atualizado_em', Date.now()-PRESENCA_MOTORISTA_MS).in('status', STATUS_ACESSO_PAINEL);
     if(error){ console.error(error); return; }
     if(count!==estado.motoristasOnline){ estado.motoristasOnline = count||0; if(!estaDigitandoEndereco()) render(); }
   }catch(e){ console.error(e); }
@@ -2987,6 +3067,7 @@ function assinarSuporteAdmin(telefone){
 function fecharSuporteAdmin(){
   if(estado.admin.canalSuporte){ sb.removeChannel(estado.admin.canalSuporte); estado.admin.canalSuporte=null; }
   estado.admin.suporteAbertoTelefone=null; estado.admin.suporteMensagensAdmin=[];
+  render();
   carregarSuporteAdmin();
 }
 function assinarSuporteAdminGlobal(){
@@ -3020,7 +3101,7 @@ async function marcarSuporteResolvido(telefone){
   const { error } = await sb.from('entrega_suporte_status').upsert({ motorista_telefone:telefone, status:'resolvido', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
   if(error){ console.error(error); mostrarErro('Não consegui marcar como resolvida. Tenta de novo.'); return; }
   mostrarToast('Conversa marcada como resolvida.', 'sucesso');
-  await carregarSuporteAdmin();
+  fecharSuporteAdmin();
 }
 function renderSuporteAdminChat(){
   const caixa = document.getElementById('suporte-admin-mensagens');
@@ -3765,7 +3846,7 @@ async function confirmarValorCarteira(){
   }catch(e){
     console.error(e);
     w.pix.gerando=false;
-    w.pix.erro = 'Não consegui gerar a cobrança PIX. Tenta novamente em instantes.';
+    w.pix.erro = (e && e.message) ? e.message : 'Não consegui gerar a cobrança PIX. Tente novamente em instantes.';
     render();
   }
 }
@@ -4353,7 +4434,7 @@ function montarMapaAdminGeral(){
     const agora = Date.now();
     // motoristas online com acesso ao painel, com posição conhecida e recente, e que não estejam já contados como "em corrida"
     const disponiveis = (estado.admin.motoristas||[]).filter(m=>
-      m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status) && m.lat_atual!=null && m.lng_atual!=null &&
+      motoristaOnlineAgora(m) && m.lat_atual!=null && m.lng_atual!=null &&
       !telefonesEmCorrida.has(m.telefone) && (agora - Number(m.lat_atualizado_em||0)) < POSICAO_MOTORISTA_MAX_IDADE_MS
     );
     // clientes aguardando: pedidos ainda buscando motorista, com endereço de origem já geolocalizado
@@ -5901,19 +5982,23 @@ function telaMotorista(){
   const fundadorUsadas = fundador ? Math.min(MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA, MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA-fundadorRestantes) : 0;
   const aba = estado.abaPrincipalMotorista || 'pedidos';
 
-  const blocoAvisoAnalise = m.status!=='aprovado' ? `<div class="cartao" style="border:1px solid var(--sol,#e8b23d);background:rgba(232,178,61,0.08)">
-    <div style="display:flex;align-items:flex-start;gap:10px">
-      <span style="font-size:20px">⏳</span>
-      <div style="font-size:13.5px;color:var(--osso);line-height:1.5">
-        <b>Cadastro ainda em análise.</b> Já podes conhecer o app e ficar online, mas só vais poder <b>aceitar corridas</b> e <b>fazer saque</b> depois de enviares os documentos e o administrador aprovar o teu cadastro.
-      </div>
-    </div>
+  const blocoAvisoAnalise = m.status!=='aprovado' ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,171,0,.13),rgba(255,107,0,.07));text-align:center;padding:22px 18px">
+    <div style="font-size:30px;margin-bottom:8px">🎉</div>
+    <div style="font-family:'Rajdhani';font-weight:900;font-size:22px;color:var(--osso);text-transform:uppercase">Treinamento concluído!</div>
+    <div style="font-family:'Rajdhani';font-weight:800;font-size:18px;color:var(--mango);margin-top:3px">FALTA SÓ 1 ETAPA</div>
+    <div class="ef-progresso-doc"><div class="ef-progresso-top"><span>Cadastro 75% concluído</span><b>3/4</b></div><div class="ef-progresso-trilho"><i></i></div></div>
+    <div style="font-size:14px;color:var(--poeira);line-height:1.55;margin-top:10px">Envie seus documentos agora. É <b style="color:var(--osso)">rápido e fácil</b>. Após a aprovação, você já pode começar a receber entregas e ganhar dinheiro.</div>
+    ${m.status==='basico' ? `<button class="btn btn-primario" style="margin-top:16px;width:100%;font-size:17px" onclick="iniciarDocumentosDoPainel()">📄 ENVIAR DOCUMENTOS AGORA</button>` : `<div style="margin-top:14px;font-weight:800;color:var(--mango)">⏳ Documentos enviados — aguardando aprovação</div>`}
   </div>` : '';
 
-  const blocoOnline = `<div class="cartao">
-    <button class="btn btn-ficar-online ${m.disponivel?'btn-secundario':'btn-verde'}" ${atributoDesabilitado('alternarDisponibilidade')} onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${carregando('alternarDisponibilidade') ? '<span class="girando"></span>Atualizando...' : (m.disponivel?' Parar / ficar indisponível':' Iniciar rota')}</button>
-    ${!m.disponivel ? `<div class="cf-ajuda" style="text-align:center;margin-top:6px"> Toque aqui para começar a receber pedidos</div>` : `<div style="display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--poeira)"><span>Hoje: <b style="color:var(--osso)">R$ ${ganhosHoje.toFixed(2)}</b> · ${entreguesHojeArr.length} entregas</span></div>`}
-  </div>`;
+  const blocoOnline = m.status==='aprovado' ? `<div class="cartao ef-app20-hero">
+    <div class="ef-app20-status"><div><div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--poeira);font-weight:800"><span class="ef-app20-dot ${m.disponivel?'on':''}"></span>${m.disponivel?'ONLINE · RECEBENDO PEDIDOS':'OFFLINE'}</div><div class="ef-app20-money">R$ ${ganhosHoje.toFixed(2)}</div><div style="font-size:12px;color:var(--poeira);margin-top:4px">Ganhos de hoje</div></div><div style="font-size:28px">${m.disponivel?'⚡':'◉'}</div></div>
+    <div class="ef-app20-stats"><div class="ef-app20-stat"><small>Entregas hoje</small><b>${entreguesHojeArr.length}</b></div><div class="ef-app20-stat"><small>Saldo disponível</small><b>R$ ${Number(m.saldo||0).toFixed(2)}</b></div></div>
+    <button class="btn ef-app20-mainbtn ${m.disponivel?'btn-secundario':'btn-verde'}" ${atributoDesabilitado('alternarDisponibilidade')} onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${carregando('alternarDisponibilidade') ? '<span class="girando"></span>Atualizando...' : (m.disponivel?'PARAR · FICAR OFFLINE':'⚡ FICAR ONLINE')}</button>
+    <div class="cf-ajuda" style="text-align:center;margin-top:8px">${m.disponivel?'Mantenha o app aberto para receber novas entregas.':'Toque para começar a receber pedidos compatíveis com seu veículo.'}</div>
+  </div>` : `<div class="cartao" style="opacity:.78;text-align:center"><button class="btn btn-secundario" disabled style="width:100%">🔒 FICAR ONLINE</button><div class="cf-ajuda" style="margin-top:8px">Liberado automaticamente após a aprovação dos documentos.</div></div>`;
+
+  const blocoPrimeiroDia = (m.status==='aprovado' && entregasMes===0) ? `<div class="cartao ef-app20-guide"><div style="font-family:'Rajdhani';font-size:19px;font-weight:900">🚀 SEU PRIMEIRO DIA</div><div class="subtitulo" style="margin-top:3px">É simples: fique online e siga o fluxo da primeira entrega.</div><div class="ef-app20-steps"><div class="ef-app20-step"><i>1</i>Online</div><div class="ef-app20-step"><i>2</i>Receba</div><div class="ef-app20-step"><i>3</i>Aceite</div><div class="ef-app20-step"><i>4</i>Receba</div></div></div>` : '';
 
   const blocoFundador = fundador ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.14),rgba(111,207,106,.08))">
     <div style="display:flex;gap:12px;align-items:flex-start">
@@ -5934,6 +6019,7 @@ function telaMotorista(){
   ${blocoFundador}
   ${blocoAvisoAnalise}
   ${treinamentoMotoristaHTML()}
+  ${blocoPrimeiroDia}
   ${blocoOnline}
   ${chamadosParaMim.length>0 ? `<div class="cartao" style="border:2px solid var(--chama)">
     <h2 style="color:var(--chama)"> Motorista amigo precisa de ajuda urgente</h2>
@@ -6125,7 +6211,7 @@ function direitosPlanoHTML(planoAtual, chave){
 }
 
 // ---------- Como funciona ----------
-function abrirComoFunciona(aba){ estado.comoFunciona.aberto=true; if(aba) estado.comoFunciona.aba=aba; render(); }
+async function abrirComoFunciona(aba){ await carregarConfigGeral(); estado.comoFunciona.aberto=true; if(aba) estado.comoFunciona.aba=aba; render(); }
 function fecharComoFunciona(){ estado.comoFunciona.aberto=false; render(); }
 function mudarAbaComoFunciona(aba){ estado.comoFunciona.aba=aba; render(); }
 function abrirComoInstalar(){ estado.comoInstalarAberto=true; render(); }
@@ -6359,6 +6445,10 @@ function voltarFluxoAtual(){
 }
 
 function render(){
+  // Evita que atualizações automáticas recriem o chat enquanto ele está aberto.
+  if(estado.admin && estado.admin.suporteAbertoTelefone && document.getElementById('suporte-admin-input')){
+    return;
+  }
   const app = document.getElementById('app');
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
@@ -6452,7 +6542,7 @@ function render(){
       <span>·</span>
       <span onclick="carregarPedidos()">↻ atualizar</span>
     </div>
-    <div class="admin-link" onclick="abrirAdmin()">painel administrativo</div>
+
     ${estado.modo==='entregador' && estado.motorista.ativo ? `
     <div class="sos-flutuante" title="SOS — veículo quebrado / pedir ajuda" onclick="abrirSOSFlutuante()"><span class="emoji"></span>SOS</div>` : ''}
     ${false && estado.sosClienteAtivo ? `<div class="sos-cliente-tela"><div class="sos-cliente-caixa"><div class="sos-cliente-icone"></div><div class="sos-cliente-titulo">SOS ACIONADO</div><div class="sos-cliente-msg">Seu alerta de emergência foi enviado para a central e para os motoristas disponíveis. Mantenha o telefone acessível.</div><button class="btn" onclick="fecharSOSCliente()">Entendi / fechar alerta</button></div></div>` : ''}
@@ -6701,6 +6791,31 @@ async function atualizarDisponibilidadeDB(telefone, disponivel){
   const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
   return !error;
 }
+
+let intervaloHeartbeatMotoristaPresenca = null;
+async function heartbeatMotoristaPresenca(){
+  const m=estado.motorista;
+  if(!m?.ativo || !m.telefone || !m.disponivel || m.status!=='aprovado') return;
+  const agora=Date.now();
+  const payload={ disponivel_atualizado_em: agora };
+  if(ultimaPosicaoMotorista){
+    payload.lat_atual=ultimaPosicaoMotorista.lat;
+    payload.lng_atual=ultimaPosicaoMotorista.lon;
+    payload.lat_atualizado_em=agora;
+  }
+  try{
+    const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone',m.telefone).eq('disponivel',true);
+    if(!error) m.disponivel_atualizado_em=agora;
+  }catch(e){ console.warn('heartbeat motorista',e); }
+}
+function iniciarHeartbeatMotoristaPresenca(){
+  if(intervaloHeartbeatMotoristaPresenca) return;
+  intervaloHeartbeatMotoristaPresenca=setInterval(heartbeatMotoristaPresenca,45000);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') heartbeatMotoristaPresenca(); });
+  window.addEventListener('focus',()=>heartbeatMotoristaPresenca());
+}
+iniciarHeartbeatMotoristaPresenca();
+
 async function alternarDisponibilidade(){
   const m = estado.motorista;
   const temAtivos = estado.pedidos.some(p=>!['buscando','entregue','cancelado'].includes(p.status) && p.motoristaTelefone===m.telefone);
@@ -7240,6 +7355,12 @@ async function loginMotorista(){
   if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); return; }
 }
 
+async function iniciarDocumentosDoPainel(){
+  const m=estado.painelMotorista?.motorista;
+  if(!m?.telefone){ mostrarToast('Não foi possível abrir os documentos. Entre novamente.', 'erro'); return; }
+  estado.painelMotorista.telefoneLiberado=m.telefone;
+  await continuarParaDocumentos();
+}
 async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
@@ -7510,7 +7631,7 @@ async function criarCobrancaPix(){
     iniciarPollingPix();
   }catch(e){
     console.error(e);
-    c.pix.gerando=false; c.pix.erro = 'Não consegui gerar a cobrança PIX. Verifique se a chave MP_ACCESS_TOKEN está configurada nas secrets do Supabase e tente novamente.';
+    c.pix.gerando=false; c.pix.erro = (e && e.message) ? e.message : 'Não consegui gerar a cobrança PIX. Tente novamente em instantes.';
     render();
   }
 }
@@ -7571,6 +7692,7 @@ function resumoAdminHTML(){
   const total = motoristas.length;
   const freeCount = motoristas.filter(m=>m.plano==='free').length;
   const proCount = motoristas.filter(m=>m.plano==='pro').length;
+  const docsVencidos = motoristas.filter(m=>m.status==='basico' && diasDesdeCadastroMotorista(m)>=5).length;
   const adesaoPro = motoristas.filter(m=>m.taxa_valor>0 && m.taxa_status==='pago').reduce((s,m)=>s+Number(m.taxa_valor||0),0);
 
   const planoPorTelefone = {};
@@ -7595,6 +7717,11 @@ function resumoAdminHTML(){
     <div class="am-linha"><span> Clientes</span><b>${presenca.clientes}</b></div>
     <div class="am-linha"><span> Motoristas</span><b>${presenca.motoristas}</b></div>
   </div>
+  ${docsVencidos>0 ? `<div class="admin-cartao" style="border-color:rgba(255,82,82,.65);background:rgba(255,82,82,.07)">
+    <b style="font-family:'Rajdhani';font-weight:800;font-size:14px;text-transform:uppercase;color:#ff7474">⚠️ Documentação atrasada</b>
+    <div class="am-linha"><span>Cadastros básicos há 5 dias ou mais</span><b style="color:#ff7474">${docsVencidos}</b></div>
+    <div class="subtitulo" style="margin:7px 0 0">Abra Motoristas e envie o lembrete pelo WhatsApp. Depois do prazo, revise o cadastro para exclusão.</div>
+  </div>` : ''}
   <div class="admin-cartao">
     <b style="font-family:'Rajdhani';font-weight:700;font-size:14px;text-transform:uppercase"> Motoristas cadastrados</b>
     <div class="am-linha"><span>Total</span><b>${total}</b></div>
@@ -7621,17 +7748,18 @@ function resumoAdminHTML(){
 }
 
 function motoristaCardHTML(m, emRota){
+  const onlineAgora = motoristaOnlineAgora(m);
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span> Em rota</span>`
-    : m.disponivel
+    : onlineAgora
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" style="${emRota?'border-color:var(--mango)':m.disponivel?'border-color:var(--verde)':''}">
+    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" style="${emRota?'border-color:var(--mango)':onlineAgora?'border-color:var(--verde)':''}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px"></div>`}
-          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${m.disponivel?' Online':' Offline'}${emRota?' ·  Em rota':''}</span></div>
+          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${onlineAgora?' Online':' Offline'}${emRota?' ·  Em rota':''}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <button type="button" class="btn btn-secundario btn-pequeno botao-chat"
@@ -7688,12 +7816,18 @@ function motoristaCardHTML(m, emRota){
         `}
       </div>` : ''}
       ${m.status==='basico' ? `
-      <div class="subtitulo" style="margin-top:8px"> Cadastro básico (nome + veículo) — ainda sem documentos. Confere os dados acima e libera se fizer sentido pra região/veículo.</div>
+      <div class="subtitulo" style="margin-top:8px"> Cadastro básico — aguardando o motorista concluir e enviar os documentos. Não precisa de liberação manual.</div>
       <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="liberarDocumentosMotoristaAdmin('${m.id}')"> Liberar envio de documentos</button>
+        
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')"> Recusar</button>
       </div>
-      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')"> Lembrar de enviar os documentos</button>` : ''}
+      ${(()=>{ const dias=diasDesdeCadastroMotorista(m); const vencido=dias>=5; const faltam=Math.max(0,5-dias); return `
+      <div style="margin-top:9px;padding:10px 12px;border-radius:12px;border:1px solid ${vencido?'rgba(255,82,82,.55)':'rgba(37,211,102,.30)'};background:${vencido?'rgba(255,82,82,.09)':'rgba(37,211,102,.06)'}">
+        <div style="font-size:12.5px;font-weight:800;color:${vencido?'#ff7474':'var(--osso)'}">${vencido?'⚠️ PRAZO DE 5 DIAS ULTRAPASSADO':`⏳ Documentos pendentes · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`}</div>
+        <div style="font-size:12px;color:var(--poeira);margin-top:4px;line-height:1.45">${vencido?'Este motorista ainda não enviou a documentação. Você já pode revisar e excluir o cadastro, se desejar.':'Envie um lembrete pelo WhatsApp antes do prazo terminar.'}</div>
+      </div>
+      <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>
+      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Enviar lembrete pelo app</button>`; })()}` : ''}
       ${m.status==='pendente' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')"> Aprovar</button>
@@ -7917,7 +8051,7 @@ function adminAbaResumoHTML(){
   const agoraTs = Date.now();
   const telefonesEmEntregaAgora = new Set(pedidosEmAndamento.map(p=>p.motorista_telefone).filter(Boolean));
   const motoristasSemLocalizacao = (a.motoristas||[]).filter(m=>
-    m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status) && !telefonesEmEntregaAgora.has(m.telefone) &&
+    motoristaOnlineAgora(m) && !telefonesEmEntregaAgora.has(m.telefone) &&
     (m.lat_atual==null || m.lng_atual==null || (agoraTs - Number(m.lat_atualizado_em||0)) >= POSICAO_MOTORISTA_MAX_IDADE_MS)
   );
   return `
@@ -8342,7 +8476,7 @@ async function excluirClienteAdmin(telefone, nome){
   if(!(await confirmarAcao(`Excluir definitivamente a conta de ${nome}? Essa ação apaga o cliente do sistema e não pode ser desfeita.`, 'Excluir'))) return;
   const { error } = await sb.rpc('entrega_admin_deletar_cliente', { p_senha: estado.admin.senhaDigitada, p_telefone: telefone });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao excluir: '+(error.message||''), 'erro'); return; }
-  mostrarToast('Cliente excluído.', 'sucesso');
+  mostrarToast('Cliente excluído por completo. No próximo acesso será tratado como usuário novo.', 'sucesso');
   await carregarClientesAdmin();
 }
 
@@ -8353,10 +8487,10 @@ function adminAbaMotoristasHTML(){
   const emRotaPorTelefone = {};
   (a.todosPedidos||[]).forEach(p=>{ if(p.motorista_telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status)) emRotaPorTelefone[p.motorista_telefone]=true; });
   const cardHTML=(m)=>motoristaCardHTML(m,!!emRotaPorTelefone[m.telefone]);
-  const online=a.motoristas.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
+  const online=a.motoristas.filter(m=>motoristaOnlineAgora(m));
   const aguardandoDocs=a.motoristas.filter(m=>['basico','liberado'].includes(m.status));
   const pendentes=a.motoristas.filter(m=>m.status==='pendente');
-  const ativos=a.motoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
+  const ativos=a.motoristas.filter(m=>m.status==='aprovado' && !motoristaOnlineAgora(m));
   const outros=a.motoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
   return `
     <div class="admin-lista-secao"><b> Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
@@ -8667,6 +8801,26 @@ async function liberarDocumentosMotoristaAdmin(id){
   mostrarToast('Liberado! O motorista já pode enviar os documentos.', 'sucesso');
   await carregarMotoristasAdmin();
 }
+function normalizarWhatsAppBR(telefone){
+  let n=String(telefone||'').replace(/\D/g,'');
+  if(!n) return '';
+  if(n.startsWith('55') && (n.length===12 || n.length===13)) return n;
+  if(n.length===10 || n.length===11) return '55'+n;
+  return n;
+}
+function diasDesdeCadastroMotorista(m){
+  const bruto = Number(m?.criado_em||0);
+  if(!bruto) return 0;
+  const ms = bruto < 100000000000 ? bruto*1000 : bruto;
+  return Math.max(0, Math.floor((Date.now()-ms)/86400000));
+}
+function abrirWhatsAppDocumentosAdmin(telefone, nome){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(/\s+/)[0] || 'Olá';
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar o cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+}
 async function lembrarEnviarDocumentosAdmin(telefone, nome){
   await enviarPushServidor('motorista', telefone, ' Falta enviar seus documentos!', `${nome?nome+', c':'C'}ontinue seu cadastro no Entrega Flash — envie seus documentos agora e comece a receber corridas hoje mesmo.`);
   mostrarToast('Lembrete enviado! (só toca com som se o motorista já tiver ativado as notificações dele)', 'sucesso');
@@ -8718,7 +8872,7 @@ async function excluirMotoristaAdmin(id, nome){
   if(!(await confirmarAcao(`Excluir definitivamente o cadastro de ${nome}? Essa ação apaga o motorista do sistema e não pode ser desfeita.`, 'Excluir'))) return;
   const { error } = await sb.rpc('entrega_admin_deletar_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao excluir: '+(error.message||''), 'erro'); return; }
-  mostrarToast('Motorista excluído.', 'sucesso');
+  mostrarToast('Motorista excluído por completo. No próximo acesso verá a apresentação e fará um novo cadastro.', 'sucesso');
   await carregarMotoristasAdmin();
 }
 
@@ -8748,7 +8902,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin;
+window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
@@ -8776,7 +8930,7 @@ window.abrirComoFunciona=abrirComoFunciona; window.fecharComoFunciona=fecharComo
 
 function iniciarAppReal(){
 if(typeof window.supabase==='undefined' || !window.supabase.createClient){
-  document.getElementById('app').innerHTML = `<div style="padding:40px 24px;text-align:center;color:#f5f6fb;background:#171d4a;min-height:100vh;font-family:'Karla',sans-serif"><div style="font-size:37px;margin-bottom:12px"></div><div style="font-family:'Rajdhani';font-weight:700;font-size:18.5px;margin-bottom:8px">Não consegui carregar a ligação à base de dados</div><div style="font-size:15px;color:#b7bce3;line-height:1.6">Verifique sua conexão com a internet e recarregue a página.</div></div>`;
+  document.getElementById('app').innerHTML = `<div style="padding:40px 24px;text-align:center;color:#f5f6fb;background:#0d0f12;min-height:100vh;font-family:'Karla',sans-serif"><div style="font-size:37px;margin-bottom:12px"></div><div style="font-family:'Rajdhani';font-weight:700;font-size:18.5px;margin-bottom:8px">Não consegui carregar a ligação à base de dados</div><div style="font-size:15px;color:#b7bce3;line-height:1.6">Verifique sua conexão com a internet e recarregue a página.</div></div>`;
   esconderSplash();
 } else {
   aplicarEstadoInicialSincrono();
@@ -8814,6 +8968,15 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
     if(estado.motorista.ativo){ carregarSaldoMotorista(); carregarCancelamentosMotorista(); }
     if(estado.admin.logado){ await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin()]); await carregarSuporteAdmin(); render(); }
     if(estado.notificacoesStatus==='granted') inscreverPushReal();
+
+    // Só decide a apresentação DEPOIS de confirmar no banco se a sessão ainda existe.
+    // Assim, se o admin excluiu cliente/motorista, o localStorage é limpo antes desta decisão.
+    if(!estado.onboardingAberto && !estado.viaAnuncio){
+      let onboardingVisto=false;
+      try{ onboardingVisto = !!localStorage.getItem('ef_onboarding_visto'); }catch(e){}
+      if(!onboardingVisto){ setTimeout(()=>{ if(!estado.onboardingAberto) abrirOnboarding(); }, 250); }
+      else agendarPopupInstalarSeNecessario();
+    }
   });
   carregarPedidos();
   setInterval(carregarPedidos, 15000);
@@ -8822,16 +8985,6 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   iniciarTickRelogioCancelamento();
   iniciarTickRadarBusca();
   setTimeout(esconderSplash, 8000);
-  (function agendarOnboardingOuInstalar(){
-    if(estado.viaAnuncio) return; // quem veio de anúncio já sabe o que quer: sem onboarding nem popup de instalar
-    let onboardingVisto=false;
-    try{ onboardingVisto = !!localStorage.getItem('ef_onboarding_visto'); }catch(e){}
-    if(!onboardingVisto){
-      setTimeout(()=>{ if(!estado.onboardingAberto) abrirOnboarding(); }, 1200);
-    } else {
-      agendarPopupInstalarSeNecessario();
-    }
-  })();
 }
 } // fim de iniciarAppReal()
 
