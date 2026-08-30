@@ -3341,7 +3341,7 @@ async function confirmarValorCarteira(){
   }catch(e){
     console.error(e);
     w.pix.gerando=false;
-    w.pix.erro = 'Não consegui gerar a cobrança PIX. Tenta novamente em instantes.';
+    w.pix.erro = (e && e.message) ? e.message : 'Não consegui gerar a cobrança PIX. Tente novamente em instantes.';
     render();
   }
 }
@@ -5682,7 +5682,7 @@ function render(){
       <span>·</span>
       <span onclick="carregarPedidos()">↻ atualizar</span>
     </div>
-    <div class="admin-link" onclick="abrirAdmin()">painel administrativo</div>
+
     ${estado.modo==='entregador' && estado.motorista.ativo && (PLANOS[estado.motorista.plano]||PLANOS.free).label==='Pro' ? `
     <div class="sos-flutuante" title="SOS — chamar motorista amigo" onclick="abrirSOSFlutuante()"><span class="emoji">🆘</span>SOS</div>` : ''}
     ${estado.toast ? `<div class="toast toast-${estado.toastTipo||'info'}"><span class="toast-icone">${estado.toastTipo==='sucesso'?'✅':estado.toastTipo==='erro'?'⚠️':'ℹ️'}</span><span>${estado.toast}</span></div>` : ''}
@@ -6470,7 +6470,7 @@ async function criarCobrancaPix(){
     iniciarPollingPix();
   }catch(e){
     console.error(e);
-    c.pix.gerando=false; c.pix.erro = 'Não consegui gerar a cobrança PIX. Verifique se a chave MP_ACCESS_TOKEN está configurada nas secrets do Supabase e tente novamente.';
+    c.pix.gerando=false; c.pix.erro = (e && e.message) ? e.message : 'Não consegui gerar a cobrança PIX. Tente novamente em instantes.';
     render();
   }
 }
@@ -6652,9 +6652,8 @@ function motoristaCardHTML(m, emRota){
         `}
       </div>` : ''}
       ${m.status==='basico' ? `
-      <div class="subtitulo" style="margin-top:8px">📝 Cadastro básico (nome + veículo) — ainda sem documentos. Confere os dados acima e libera se fizer sentido pra região/veículo.</div>
+      <div class="subtitulo" style="margin-top:8px">📄 Cadastro básico — aguardando o próprio motorista concluir e enviar os documentos. Não precisa mais de liberação manual pelo painel.</div>
       <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="liberarDocumentosMotoristaAdmin('${m.id}')">🔓 Liberar envio de documentos</button>
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
       </div>
       <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Lembrar de enviar os documentos</button>` : ''}
@@ -6951,6 +6950,11 @@ function adminAbaResumoHTML(){
     (m.lat_atual==null || m.lng_atual==null || (agoraTs - Number(m.lat_atualizado_em||0)) >= POSICAO_MOTORISTA_MAX_IDADE_MS)
   );
   return `
+    <div class="admin-filtros-grade" style="margin-bottom:12px">
+      <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
+      <button class="${a.filtroRegiaoMotoristas==='sp'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='sp';render()">📍 Grande São Paulo</button>
+      <button class="${a.filtroRegiaoMotoristas==='mg'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='mg';render()">📍 Sul de Minas</button>
+    </div>
     ${resumoSituacaoMotoristasHTML()}
     ${resumoMotoristasPorCidadeHTML()}
     <div class="admin-cartao" style="background:linear-gradient(135deg, var(--painel-alt), var(--painel));border:2px solid var(--mango);margin-bottom:14px">
@@ -7449,17 +7453,28 @@ async function excluirClienteAdmin(telefone, nome){
 
 function adminAbaMotoristasHTML(){
   const a = estado.admin;
+  if(!a.filtroRegiaoMotoristas) a.filtroRegiaoMotoristas='todos';
   if(a.carregando) return skeletonLista(4);
   if(a.motoristas.length===0) return `<div class="vazio"><span class="emoji-grande">🛵</span>Nenhum cadastro de entregador ainda.</div>`;
   const emRotaPorTelefone = {};
   (a.todosPedidos||[]).forEach(p=>{ if(p.motorista_telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status)) emRotaPorTelefone[p.motorista_telefone]=true; });
   const cardHTML=(m)=>motoristaCardHTML(m,!!emRotaPorTelefone[m.telefone]);
-  const online=a.motoristas.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
-  const aguardandoDocs=a.motoristas.filter(m=>['basico','liberado'].includes(m.status));
-  const pendentes=a.motoristas.filter(m=>m.status==='pendente');
-  const ativos=a.motoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
-  const outros=a.motoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
+  const baseMotoristas=a.motoristas.filter(m=>{
+    if(a.filtroRegiaoMotoristas==='sp') return cidadeEhGrandeSP(m.cidade);
+    if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
+    return true;
+  });
+  const online=baseMotoristas.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
+  const aguardandoDocs=baseMotoristas.filter(m=>['basico','liberado'].includes(m.status));
+  const pendentes=baseMotoristas.filter(m=>m.status==='pendente');
+  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
+  const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
   return `
+    <div class="admin-filtros-grade" style="margin-bottom:12px">
+      <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
+      <button class="${a.filtroRegiaoMotoristas==='sp'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='sp';render()">📍 Grande São Paulo</button>
+      <button class="${a.filtroRegiaoMotoristas==='mg'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='mg';render()">📍 Sul de Minas</button>
+    </div>
     ${resumoSituacaoMotoristasHTML()}
     ${resumoMotoristasPorCidadeHTML()}
     <div class="admin-lista-secao"><b>🟢 Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
