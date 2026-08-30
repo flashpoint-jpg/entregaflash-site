@@ -1,7 +1,7 @@
-// build: config-live-20260830-v4
+// build: mobile-fast-20260830-v3
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260830-docs-whatsapp-fix1
-const EF_VERSION = '20260830-docs-whatsapp-fix1';
+// Versão: 20260830-fast3
+const EF_VERSION = '20260830-fast3';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {

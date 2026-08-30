@@ -80,7 +80,7 @@ fbq('track', 'PageView');
   #app-resto{display:contents;}
 
   header.topo{padding:calc(20px + env(safe-area-inset-top,0px)) 20px 16px;position:sticky;top:0;z-index:60;text-align:center;background:rgba(23,29,74,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06);}
-  .btn-instalar-topo{position:absolute;top:14px;left:14px;right:auto;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,201,60,0.35);background:rgba(255,201,60,0.12);color:var(--mango,#ffc93c);font-size:19.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
+  .btn-instalar-topo{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,201,60,0.35);background:rgba(255,201,60,0.12);color:var(--mango,#ffc93c);font-size:19.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
   .btn-instalar-topo:active{transform:scale(0.94);}
   .marca{display:flex;flex-direction:column;align-items:center;gap:0;}
   .marca .bv-logo-badge{margin:0 auto;}
@@ -1110,40 +1110,6 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 }
 </style>
 
-<style id="ef-cliente-mobile-ultra-v5">
-/* Cliente mobile: mais conteúdo útil na primeira tela, sem travar rolagem */
-@media (max-width:700px){
-  body.ef-cliente-logado .topo{position:relative!important;padding:8px 12px 6px!important;min-height:0!important;}
-  body.ef-cliente-logado .topo .marca{min-height:0!important;margin:0!important;}
-  body.ef-cliente-logado .topo .logo-img{width:min(205px,58vw)!important;max-width:205px!important;height:auto!important;}
-  body.ef-cliente-logado .topo .tagline{font-size:11px!important;line-height:1.2!important;margin-top:2px!important;padding-bottom:1px!important;letter-spacing:.4px!important;}
-  body.ef-cliente-logado .aviso-app-novo{margin:8px 10px!important;padding:10px 12px!important;border-radius:16px!important;font-size:12.5px!important;line-height:1.35!important;}
-  body.ef-cliente-logado main{padding-top:0!important;}
-  body.ef-cliente-logado .cartao{margin:10px 8px!important;padding:14px!important;border-radius:18px!important;}
-  body.ef-cliente-logado .cliente-carteira-card{padding:12px 14px!important;}
-  body.ef-cliente-logado .cliente-carteira-card .link-taxas-topo{margin-top:10px!important;padding:10px 12px!important;font-size:12.5px!important;line-height:1.25!important;}
-  body.ef-cliente-logado .cliente-carteira-card > div[style*="background:var(--painel-alt)"]{margin-top:10px!important;padding:10px 12px!important;min-height:64px!important;}
-  body.ef-cliente-logado .cliente-carteira-card .btn-pequeno{min-height:42px!important;padding:9px 13px!important;font-size:13px!important;}
-  body.ef-cliente-logado .pix-box{padding:10px!important;margin-top:8px!important;}
-  body.ef-cliente-logado .pix-erro-compacto{margin:0!important;padding:8px 10px!important;font-size:12.5px!important;line-height:1.3!important;}
-  body.ef-cliente-logado .pix-tentar-novamente{width:auto!important;min-width:150px!important;margin:8px auto 0!important;display:block!important;}
-  body.ef-cliente-logado .cliente-pedido-card{padding-top:13px!important;}
-  body.ef-cliente-logado .cliente-pedido-card h2{font-size:21px!important;}
-  body.ef-cliente-logado .passos{margin-top:10px!important;}
-  body.ef-cliente-logado .etapa-conteudo{margin-top:10px!important;}
-  body.ef-cliente-logado .acoes-etapa-pedido{position:sticky!important;bottom:max(8px,env(safe-area-inset-bottom,0px))!important;z-index:25!important;background:rgba(13,15,18,.96)!important;border:1px solid rgba(255,145,0,.24)!important;border-radius:14px!important;padding:8px!important;box-shadow:0 6px 20px rgba(0,0,0,.28)!important;}
-  body.ef-cliente-logado .acoes-etapa-pedido .btn{min-height:44px!important;font-size:14px!important;}
-  body.ef-cliente-logado .resumo-pedido-end{padding:10px 12px!important;line-height:1.3!important;}
-  body.ef-cliente-logado .resumo-pedido-valor{margin-top:10px!important;padding:11px 12px!important;}
-  body.ef-cliente-logado .cancelamento-motorista-box{font-size:11.5px!important;line-height:1.35!important;padding:9px 10px!important;margin-top:8px!important;}
-}
-@media (max-width:390px){
-  body.ef-cliente-logado .topo .logo-img{width:min(185px,55vw)!important;}
-  body.ef-cliente-logado .cartao{margin-left:6px!important;margin-right:6px!important;padding-left:12px!important;padding-right:12px!important;}
-  body.ef-cliente-logado .acoes-etapa-pedido{gap:6px!important;}
-}
-</style>
-
 <style id="ef-ultra-premium-clean-v1">
 /* Ajuste fino visual: Ultra Premium Clean */
 .ef-progresso-doc{margin:14px 0 2px;padding:11px 12px;border-radius:13px;background:rgba(0,0,0,.20);border:1px solid rgba(255,171,0,.20)}
@@ -1173,14 +1139,6 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 .abas-motorista{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(10,11,14,.94)!important;border-top:1px solid rgba(255,255,255,.08)!important}.abas-motorista button{transition:color .16s ease,transform .16s ease!important}.abas-motorista button:active{transform:scale(.96)}.abas-motorista .icone-aba{font-size:21px!important}.abas-motorista button.ativo{color:var(--mango)!important}
 @media(max-width:600px){.conteudo-motorista{padding-top:4px}.conteudo-motorista .cartao{border-radius:16px}.ef-app20-hero{margin-top:4px}.ef-app20-money{font-size:31px}.cabecalho{min-height:auto!important}.logo{transform:scale(.9);transform-origin:left center}}
 </style>
-
-<style id="ef-instalar-topo-fix-3008">
-.btn-instalar-topo{display:inline-flex!important;position:absolute!important;top:calc(12px + env(safe-area-inset-top,0px))!important;left:12px!important;right:auto!important;width:auto!important;height:40px!important;padding:0 13px!important;border-radius:999px!important;border:1px solid rgba(255,151,16,.55)!important;background:linear-gradient(90deg,#ffad18,#ff6a00)!important;color:#0a0b0d!important;font:900 12.5px/1 'Karla',sans-serif!important;letter-spacing:.2px!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-shadow:0 8px 22px rgba(255,106,0,.22)!important;z-index:90!important;white-space:nowrap!important}
-.btn-instalar-topo .ef-install-ico{font-size:16px!important;line-height:1!important}
-.ef-instalar-bv-topo{position:absolute!important;top:calc(10px + env(safe-area-inset-top,0px))!important;left:10px!important;right:auto!important;z-index:30!important}
-@media(max-width:380px){.btn-instalar-topo{padding:0 10px!important;font-size:11.5px!important;height:38px!important}.btn-instalar-topo .ef-install-ico{font-size:15px!important}}
-</style>
-<meta name="ef-build" content="DOCS-FINAL-20260830-1557">
 </head>
 
 <style id="ef-parceiros-premium">
@@ -1620,11 +1578,8 @@ async function salvarConfigGeralAdmin(){
   for(const k in payload){ if(!CAMPOS_NAO_NUMERICOS.includes(k) && Number.isNaN(payload[k])){ mostrarToast('Preenche todos os campos com números válidos.'); return; } }
   const { error } = await sb.rpc('entrega_admin_salvar_config_geral', { p_senha: estado.admin.senhaDigitada, p_config: payload });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar as configurações: '+(error.message||'verifica a ligação e tenta de novo'), 'erro'); return; }
-  // O banco é a fonte oficial: só confirma depois de reler exatamente o que foi persistido.
-  const { data: salvo, error: erroLeitura } = await sb.from('entrega_config_geral').select('*').eq('id',1).maybeSingle();
-  if(erroLeitura || !salvo){ console.error(erroLeitura); mostrarToast('Salvou, mas não consegui confirmar no banco. Atualize e tente novamente.', 'erro'); return; }
-  aplicarConfigGeral(salvo);
-  mostrarToast('Configurações salvas no banco e atualizadas no site!', 'sucesso');
+  aplicarConfigGeral(payload);
+  mostrarToast('Configurações salvas e aplicadas imediatamente!', 'sucesso');
   render();
 }
 
@@ -1669,7 +1624,7 @@ let estado = {
     loginTelefone:'', loginErro:'',
     cadastro:{ nome:'', telefone:'', senha:'', erro:'' }
   },
-  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null, enviandoDocumentos:false },
+  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null },
   trocaPlanoMotorista:{ aberto:false, gerando:false, erro:'', motoristaId:null, cpf:'', qrCode:null, copiaCola:null, status:'pendente' },
   chamadosAmigo:[], // chamados de SOS "motorista amigo" em aberto (carregados quando motorista está disponível)
   chamadoAmigoModal:{ aberto:false, pedidoId:null, percentual:10, enviando:false },
@@ -1748,16 +1703,6 @@ function instalarApp(){
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   estado.mostrarDicaIOS = isIOS && !standalone;
 })();
-async function instalarOuOrientarApp(){
-  // Download direto e confiável do APK. Navegação direta funciona melhor no Android
-  // do que disparar um clique sintético em um elemento <a>.
-  const urlApk = '/entregaflash.apk?v=20260830-1458';
-  try {
-    window.location.assign(urlApk);
-  } catch (e) {
-    window.location.href = urlApk;
-  }
-}
 function abrirPopupInstalar(){ estado.popupInstalarAberto=true; render(); }
 function fecharPopupInstalar(){
   estado.popupInstalarAberto=false;
@@ -2489,9 +2434,7 @@ function paraCamposApp(row){
     taxaEsperaColeta: Number(row.taxa_espera_coleta)||0,
     taxaEsperaEntrega: Number(row.taxa_espera_entrega)||0,
     acrescimoValor: Number(row.acrescimo_valor)||0,
-    acrescimoMotivos: Array.isArray(row.acrescimo_motivos) ? row.acrescimo_motivos : (row.acrescimo_motivos ? JSON.parse(row.acrescimo_motivos) : []),
-    pinEntrega: row.pin_entrega || '', pinConfirmadoEm: row.pin_confirmado_em!=null ? Number(row.pin_confirmado_em) : null,
-    pinConfirmadoLat: row.pin_confirmado_lat!=null ? Number(row.pin_confirmado_lat) : null, pinConfirmadoLng: row.pin_confirmado_lng!=null ? Number(row.pin_confirmado_lng) : null
+    acrescimoMotivos: Array.isArray(row.acrescimo_motivos) ? row.acrescimo_motivos : (row.acrescimo_motivos ? JSON.parse(row.acrescimo_motivos) : [])
   };
 }
 function paraCamposDB(p){
@@ -2520,8 +2463,7 @@ function paraCamposDB(p){
     extra_urgente: !!(p.extras&&p.extras.urgente),
     chegada_coleta_em: p.chegadaColetaEm||null, chegada_entrega_em: p.chegadaEntregaEm||null,
     taxa_espera_coleta: p.taxaEsperaColeta||0, taxa_espera_entrega: p.taxaEsperaEntrega||0,
-    acrescimo_valor: p.acrescimoValor||0, acrescimo_motivos: JSON.stringify(p.acrescimoMotivos||[]),
-    pin_entrega: p.pinEntrega||null, pin_confirmado_em:p.pinConfirmadoEm||null, pin_confirmado_lat:p.pinConfirmadoLat||null, pin_confirmado_lng:p.pinConfirmadoLng||null
+    acrescimo_valor: p.acrescimoValor||0, acrescimo_motivos: JSON.stringify(p.acrescimoMotivos||[])
   };
 }
 
@@ -2688,21 +2630,11 @@ let canalConfigGeralRealtime = null;
 function assinarConfigGeralRealtime(){
   if(canalConfigGeralRealtime) return;
   canalConfigGeralRealtime = sb.channel('config-geral-realtime')
-    .on('postgres_changes', {event:'*', schema:'public', table:'entrega_config_geral'}, (payload)=>{
-      if(payload.new) aplicarConfigGeral(payload.new);
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_config_geral'}, (payload)=>{
+      aplicarConfigGeral(payload.new);
       render();
     })
     .subscribe();
-}
-
-// Sincronização de segurança: garante atualização mesmo se o realtime cair no celular/PWA.
-let efConfigSyncTimer = null;
-function sincronizarConfigGeralPeriodicamente(){
-  if(efConfigSyncTimer) return;
-  const sync = ()=>carregarConfigGeral().then(()=>{ try{ render(); }catch(e){} }).catch(()=>{});
-  efConfigSyncTimer = setInterval(sync, 15000);
-  window.addEventListener('focus', sync);
-  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) sync(); });
 }
 
 // ---------- presença em tempo real (quantas pessoas têm o app aberto agora) ----------
@@ -3135,9 +3067,8 @@ function assinarSuporteAdmin(telefone){
 function fecharSuporteAdmin(){
   if(estado.admin.canalSuporte){ sb.removeChannel(estado.admin.canalSuporte); estado.admin.canalSuporte=null; }
   estado.admin.suporteAbertoTelefone=null; estado.admin.suporteMensagensAdmin=[];
-  // Fecha imediatamente; a atualização da lista acontece depois, sem reabrir/piscar o chat.
   render();
-  carregarSuporteAdmin().catch(()=>{});
+  carregarSuporteAdmin();
 }
 function assinarSuporteAdminGlobal(){
   if(estado.admin.canalSuporteGlobal) return;
@@ -3170,7 +3101,7 @@ async function marcarSuporteResolvido(telefone){
   const { error } = await sb.from('entrega_suporte_status').upsert({ motorista_telefone:telefone, status:'resolvido', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
   if(error){ console.error(error); mostrarErro('Não consegui marcar como resolvida. Tenta de novo.'); return; }
   mostrarToast('Conversa marcada como resolvida.', 'sucesso');
-  await carregarSuporteAdmin();
+  fecharSuporteAdmin();
 }
 function renderSuporteAdminChat(){
   const caixa = document.getElementById('suporte-admin-mensagens');
@@ -3627,8 +3558,7 @@ async function criarPedido(){
     editado:false, canceladoEm:null, taxaCancelamento:0, prioridade:(f.prioridadeValor||0)>0, prioridadeValor:f.prioridadeValor||0,
     veiculo:f.veiculo, descricao:f.descricao, distancia:f.distancia, distanciaGPS:f.distanciaGPS, distanciaDivergente:!!f.distanciaDivergente, preco:preco,
     extras: {...f.extras},
-    status:'buscando', motoristaNome:'', motoristaTelefone:'', criadoEm:agora, atualizadoEm:agora,
-    pinEntrega:'', pinConfirmadoEm:null, pinConfirmadoLat:null, pinConfirmadoLng:null
+    status:'buscando', motoristaNome:'', motoristaTelefone:'', criadoEm:agora, atualizadoEm:agora
   };
   const { error: erroSalvar } = await sb.from('entrega_pedidos').upsert(paraCamposDB(pedido));
   if(erroSalvar){
@@ -3651,13 +3581,13 @@ async function criarPedido(){
   // mesma transição das outras etapas: o cliente confirma e cai direto na tela de
   // "buscando um entregador", sem ver o formulário vazio no meio do caminho.
   estado.transicaoPedido = { ativa:false, alvo:null };
-  estado.pedidoBuscandoId = null;
+  estado.pedidoBuscandoId = pedido.id;
   estado.abaPedidosCliente = 'ativos';
   estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', destinoFotoUrl:null, destinoReferencia:'', roca:false, extras:extrasVazios() };
-  // Vai direto para "Os meus pedidos > Em andamento", onde o próprio cartão mostra a busca.
+  // Mostra uma tela persistente de busca. Ela só sai quando o cliente escolher ver os pedidos
+  // ou quando o realtime informar que um motorista aceitou.
   estado.pedidos = [pedido, ...estado.pedidos.filter(x=>x.id!==pedido.id)];
   render();
-  setTimeout(()=>document.getElementById('meus-pedidos-cliente')?.scrollIntoView({behavior:'smooth',block:'start'}), 50);
   mostrarToast(f.tipoRetirada==='agendado' ? 'Pedido agendado com sucesso!' : 'Pedido criado! Buscando um motorista...', 'sucesso');
   await carregarPedidos();
 }
@@ -4090,10 +4020,8 @@ async function aceitarPedido(id){
   // .eq('status','buscando') garante que a aceitação só vale se NINGUÉM pegou o pedido antes —
   // se dois motoristas tocarem "aceitar" ao mesmo tempo, só o primeiro consegue: o banco resolve
   // isso sozinho, sem risco de dois motoristas ficarem com o mesmo pedido.
-  const pinEntregaAceite = String(Math.floor(1000 + Math.random()*9000));
   const { data, error } = await sb.from('entrega_pedidos').update({
     status:'indo_coletar', motorista_nome: mo.nome, motorista_telefone: mo.telefone, atualizado_em: Date.now(),
-    pin_entrega: pinEntregaAceite,
     motorista_foto_url: mo.fotoMotoristaUrl||null, motorista_veiculo_tipo: mo.veiculo||null,
     motorista_marca: mo.marca||null, motorista_cor: mo.cor||null, motorista_placa: mo.placa||null,
     motorista_nota_media: mo.notaMedia!=null?mo.notaMedia:5, motorista_total_avaliacoes: mo.totalAvaliacoes||0,
@@ -4209,7 +4137,7 @@ async function avancarStatus(id){
     const payloadAvanco = { status: novoStatus, atualizado_em: agora };
     if(campoTaxaEspera) payloadAvanco[campoTaxaEspera] = taxaEspera;
     const { error } = await sb.from('entrega_pedidos').update(payloadAvanco).eq('id', id);
-    if(error){ console.error(error); mostrarToast((novoStatus==='entregue' && String(error.message||'').includes('pin_entrega_nao_confirmado')) ? 'Confirme o PIN do cliente antes de concluir a entrega.' : 'Erro ao atualizar o pedido.', 'erro'); return; }
+    if(error){ console.error(error); mostrarToast('Erro ao atualizar o pedido.', 'erro'); return; }
     estado.ultimoPedidosJSON='';
     if(taxaEspera>0){
       // debita do cliente e credita 100% ao motorista, como compensação pelo tempo de espera
@@ -4277,36 +4205,6 @@ async function verificarNoEndereco(coordAlvo){
   const distanciaKmAtual = distanciaKm(posicao.lat, posicao.lon, coordAlvo.lat, coordAlvo.lon);
   return { dentro: distanciaKmAtual<=RAIO_GEOFENCE_KM, distanciaKm: distanciaKmAtual };
 }
-async function confirmarPinParaFinalizar(pedidoId){
-  const p = estado.pedidos.find(x=>x.id===pedidoId);
-  if(!p || p.motoristaTelefone!==estado.motorista.telefone || p.status!=='a_caminho') return;
-  const listaParadas = listaDestinosPedido(p);
-  const coordAlvo = listaParadas[listaParadas.length-1].coord;
-  mostrarToast('Verificando a sua localização...');
-  const resultado = await verificarNoEndereco(coordAlvo);
-  if(resultado.semGps){ mostrarToast('Não consegui confirmar a sua localização. Ative o GPS e tente novamente.', 'erro'); return; }
-  if(!resultado.dentro){
-    const faltam = resultado.distanciaKm!=null ? ` (faltam ~${resultado.distanciaKm.toFixed(2)} km)` : '';
-    mostrarToast(`Só pode confirmar o PIN quando estiver no endereço${faltam}.`, 'erro'); return;
-  }
-  const pin = window.prompt('Peça ao cliente o PIN de 4 dígitos e digite aqui:');
-  if(pin===null) return;
-  const codigo=String(pin).replace(/\D/g,'').slice(0,4);
-  if(codigo.length!==4){ mostrarToast('Digite os 4 números do PIN.', 'erro'); return; }
-  const pos = await obterPosicaoAtual();
-  const { data, error } = await sb.rpc('entrega_confirmar_pin_entrega', {
-    p_pedido_id: pedidoId, p_motorista_telefone: estado.motorista.telefone, p_pin: codigo,
-    p_lat: pos?pos.lat:null, p_lng: pos?pos.lon:null
-  });
-  if(error){ console.error(error); mostrarToast('Não consegui validar o PIN agora. Tente novamente.', 'erro'); return; }
-  if(!data){ vibrarLeve([80,40,80]); mostrarToast('PIN incorreto. Confira o código com o cliente.', 'erro'); return; }
-  p.pinConfirmadoEm=Date.now();
-  if(pos){ p.pinConfirmadoLat=pos.lat; p.pinConfirmadoLng=pos.lon; }
-  estado.ultimoPedidosJSON='';
-  mostrarToast('PIN confirmado! Agora tire a foto final para concluir.', 'sucesso');
-  setTimeout(()=>solicitarFoto(pedidoId,'depois'),250);
-}
-
 async function solicitarFoto(pedidoId, tipo){
   const p = estado.pedidos.find(x=>x.id===pedidoId);
   if(!p) return;
@@ -4888,7 +4786,6 @@ function cartaoPedidoCliente(p){
     ${agendaHTML(p)}
     ${seloHTML(p.status)}
     ${trilhaHTML(p.status)}
-    ${p.status!=='entregue' && p.pinEntrega ? `<div style="margin-top:12px;padding:14px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.04);text-align:center"><div style="font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--poeira);font-weight:800">PIN DE CONFIRMAÇÃO DA ENTREGA</div><div style="font-family:'Rajdhani';font-size:34px;letter-spacing:8px;font-weight:900;color:var(--osso);margin:4px 0">${p.pinEntrega}</div><div class="subtitulo">Informe este PIN ao motorista <b>somente quando receber a entrega</b>.</div></div>` : ''}
     ${p.acrescimoValor>0 ? `<div class="subtitulo" style="margin-top:6px"> Acréscimo noturno/pico cobrado: <b style="color:var(--osso)">R$ ${p.acrescimoValor.toFixed(2)}</b>${(p.acrescimoMotivos&&p.acrescimoMotivos.length)?` (${p.acrescimoMotivos.join(', ')})`:''}</div>` : ''}
     ${((p.taxaEsperaColeta||0)+(p.taxaEsperaEntrega||0))>0 ? `<div class="subtitulo" style="margin-top:6px">⏳ Taxa de espera cobrada: <b style="color:var(--osso)">R$ ${((p.taxaEsperaColeta||0)+(p.taxaEsperaEntrega||0)).toFixed(2)}</b> (entregador esperou mais que o tempo tolerado)</div>` : ''}
     ${p.motoristaNome ? `
@@ -4961,7 +4858,7 @@ function cartaoPedidoAtivo(p){
   } else if(p.status==='a_caminho' && temMaisParadas && !ultimaParada){
     botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="confirmarParadaIntermediaria('${p.id}')"> Confirmar chegada nesta parada (${paradaAtualIdx+1}/${listaParadas.length})</button>`;
   } else if(p.status==='a_caminho'){
-    botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="confirmarPinParaFinalizar('${p.id}')">🔐 ${temMaisParadas?`Confirmar PIN e finalizar última parada (${paradaAtualIdx+1}/${listaParadas.length})`:'Confirmar PIN e finalizar entrega'}</button>`;
+    botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="solicitarFoto('${p.id}','depois')"> ${temMaisParadas?`Tirar foto e finalizar a última parada (${paradaAtualIdx+1}/${listaParadas.length})`:'Tirar foto e marcar entregue'} (obrigatória — precisa estar no endereço)</button>`;
   }
   const plano = PLANOS[estado.motorista.plano] || PLANOS.free;
   const usados = estado.motorista.cancelamentosHoje||0;
@@ -5185,7 +5082,6 @@ function telaBoasVindas(){
   return `
   <div class="bv-wrap">
     <section class="bv-hero-real">
-      ${!estado.appInstalado ? `<div class="ef-instalar-bv-topo"><a class="btn-instalar-topo" href="/entregaflash.apk" download="Entrega-Flash.apk" title="Baixar app" rel="noopener"><span class="ef-install-ico">⬇</span> Baixar app</a></div>` : ''}
       <div class="bv-cabecalho">
         <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
       </div>
@@ -5294,7 +5190,7 @@ function telaBoasVindas(){
     </div>
 
     <div class="bv-regional-note"> <b>Entrega Flash é regional:</b> conectamos clientes e entregadores nas cidades atendidas e também na zona rural próxima, sem limitar a comunicação a uma única cidade.</div>
-    <div class="bv-install-area"><button type="button" class="btn-baixar-app" onclick="instalarOuOrientarApp()">Instalar Entrega Flash no celular</button><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Você também pode usar diretamente pelo site, sem instalar.</div></div>
+    <div class="bv-install-area"><a href="/entregaflash.apk" download class="btn-baixar-app"> Instalar Entrega Flash no celular</a><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Você também pode usar diretamente pelo site, sem instalar.</div></div>
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -5436,8 +5332,17 @@ function irEtapaPedido(alvo){
 
 function telaCliente(){
   const f = estado.form;
-  // A busca agora aparece diretamente no cartão em 'Os meus pedidos'.
-
+  const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
+  if(pedidoBuscando && pedidoBuscando.status==='buscando'){
+    return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
+      <div style="font-size:54px"><span class="girando-emoji"></span></div>
+      <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
+      <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
+      <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
+      <div style="margin-top:15px;font-size:14px;color:var(--poeira)"> ${estado.motoristasOnline||0} motorista${estado.motoristasOnline===1?'':'s'} online agora</div>
+      <button class="btn btn-secundario btn-pequeno" style="margin-top:18px" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
+    </div>`;
+  }
   const paradasValidasPreco = (f.paradas||[]).map(x=>x.trim()).filter(Boolean).length;
   const preco = f.distancia!=null ? precoDeDistancia(f.veiculo, f.distancia, f.roca) + (f.prioridadeValor||0) + valorExtras(f.extras) + (paradasValidasPreco * TAXA_PARADA_EXTRA_VALOR) : null;
   const todosMeusPedidos = estado.filtroTelefoneCliente ? estado.pedidos.filter(p=>p.clienteTelefone===estado.filtroTelefoneCliente) : [];
@@ -5446,8 +5351,8 @@ function telaCliente(){
   const listaExibida = estado.abaPedidosCliente==='ativos' ? pedidosAtivos : pedidosHistorico;
   const w = estado.cliente.carteira;
   return `
-  <div class="cartao cliente-carteira-card">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px" class="cliente-saudacao">
+  <div class="cartao">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div style="font-size:14px;color:var(--poeira)">Olá, <b style="color:var(--osso);font-size:16px">${estado.cliente.nome}</b></div>
       <a onclick="sairCliente()" style="font-size:14px;cursor:pointer;color:var(--poeira);text-decoration:underline">Sair</a>
     </div>
@@ -5467,7 +5372,7 @@ function telaCliente(){
       <button class="btn btn-primario" style="margin-top:0" onclick="confirmarValorCarteira()">Gerar Pix</button>
       ` : ''}
       ${w.pix.gerando ? `<div class="subtitulo" style="margin-top:10px"><span class="girando-emoji">⏳</span> Gerando cobrança Pix...</div>` : ''}
-      ${w.pix.erro ? `<div class="erro-campo pix-erro-compacto">${w.pix.erro}</div><button class="btn btn-secundario btn-pequeno pix-tentar-novamente" style="margin-top:10px" onclick="confirmarValorCarteira()">Tentar novamente</button>` : ''}
+      ${w.pix.erro ? `<div class="erro-campo">${w.pix.erro}</div><button class="btn btn-secundario btn-pequeno" style="margin-top:10px" onclick="confirmarValorCarteira()">Tentar novamente</button>` : ''}
       ${w.pix.qrCode ? `
       <img class="pix-qr" src="data:image/png;base64,${w.pix.qrCode}">
       <div class="pix-copia"><input type="text" readonly value="${w.pix.copiaCola}"><button class="btn btn-secundario btn-pequeno" onclick="copiarPixCarteira()">Copiar</button></div>
@@ -5476,7 +5381,7 @@ function telaCliente(){
     </div>` : ''}
   </div>
 
-  <div class="cartao cliente-pedido-card">
+  <div class="cartao">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <h2 style="margin:0">Pedir entrega</h2>
     </div>
@@ -5577,7 +5482,7 @@ function telaCliente(){
     ` : ''}
     ${f.etapaPedido===3 ? `
     <label style="margin-top:0">Resumo do pedido</label>
-    <div class="end resumo-pedido-end" style="margin-bottom:10px"><b>Recolha</b>${f.origem}<b style="margin-top:8px">Entrega</b>${f.destino}</div>
+    <div class="end" style="margin-bottom:10px"><b>Recolha</b>${f.origem}<b style="margin-top:8px">Entrega</b>${f.destino}</div>
     ${estado.calculando ? `<div class="subtitulo" style="margin-top:4px"><span class="girando girando-escuro"></span> Calculando o valor da corrida...</div>` : ''}
     ${estado.falhaCalculo ? `
     <div class="subtitulo" style="margin-top:10px">Não consegui calcular a distância sozinho. Me ajuda: mais ou menos quantos quilômetros tem entre os dois endereços? Se não souber, pode chutar um número (máx. ${KM_MANUAL_MAXIMO} km):</div>
@@ -5593,13 +5498,13 @@ function telaCliente(){
       <button class="btn btn-secundario btn-pequeno" onclick="usarDistanciaManual()">Usar</button>
     </div>`}` : ''}
     ${preco!=null ? `
-    <div class="estimativa resumo-pedido-valor" style="margin-top:16px">
+    <div class="estimativa" style="margin-top:16px">
       <div><div class="rotulo">Preço estimado</div><div class="sub">${f.distancia} km · ~${f.duracaoMin} min${valorExtras(f.extras)>0?` · +R$ ${valorExtras(f.extras).toFixed(2)} extras`:''}</div></div>
       <div class="valor">R$ ${preco.toFixed(2)}</div>
     </div>
     <div class="cancelamento-motorista-box"> Se um motorista aceitar a sua entrega e você cancelar depois de ${Math.round(JANELA_CANCELAMENTO_MS/60000)} minutos, será cobrada uma taxa de ${Math.round(TAXA_CANCELAMENTO_TARDIO*100)}% do valor da corrida (R$ ${(preco*TAXA_CANCELAMENTO_TARDIO).toFixed(2)}). Cancelar antes disso, ou antes de alguém aceitar, não tem custo.</div>
     <div class="cancelamento-motorista-box"> Se o entregador tiver que esperar mais de ${TAXA_ESPERA_TOLERANCIA_MIN} min na coleta ou na entrega, é cobrado R$ ${TAXA_ESPERA_VALOR_MIN.toFixed(2)}/min excedente. E se sua corrida for feita à noite, em feriado ou com chuva forte por um motorista Pro, pode haver um acréscimo de até ${Math.round(ACRESCIMO_NOTURNO_PCT*100)}% no valor.</div>` : ''}
-    <div class="acoes-etapa-pedido" style="display:flex;gap:8px;margin-top:16px">
+    <div style="display:flex;gap:8px;margin-top:16px">
       <button class="btn btn-secundario" style="margin-top:0" onclick="irEtapaPedido(2)">← Voltar</button>
       ${preco!=null ? `
       <button class="btn btn-primario" style="margin-top:0" ${atributoDesabilitado('criarPedido')} onclick="executarComCarregando('criarPedido', criarPedido)">${carregando('criarPedido') ? '<span class="girando"></span>'+(f.tipoRetirada==='agendado'?'Agendando...':'Confirmando...') : (f.tipoRetirada==='agendado'?' Agendar pedido':' Confirmar pedido')}</button>
@@ -5610,7 +5515,7 @@ function telaCliente(){
     </div>
   </div>
 
-  <div class="cartao" id="meus-pedidos-cliente">
+  <div class="cartao">
     <h2>Os meus pedidos</h2>
     <div class="aba-mini">
       <button class="${estado.abaPedidosCliente==='ativos'?'ativo':''}" onclick="estado.abaPedidosCliente='ativos';render()">Em andamento</button>
@@ -6050,11 +5955,6 @@ function telaMotorista(){
   if(!m.ativo){
     if(estado.sessaoCarregando) return `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>`;
     return telaAcessoMotorista();
-  }
-  if(m.enviandoDocumentos){
-    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
-      <button class="ef-flow-back" type="button" style="width:auto" onclick="voltarPainelDoEnvioDocumentos()"><span class="arr">‹</span><span>Voltar</span></button>
-    </div>` + telaCadastroMotorista();
   }
   const planoAtual = PLANOS[m.plano] || PLANOS.free;
   const agoraTs = Date.now();
@@ -6545,13 +6445,11 @@ function voltarFluxoAtual(){
 }
 
 function render(){
-  // Chat de suporte aberto é uma ilha estável: atualizações do painel não recriam o modal.
+  // Evita que atualizações automáticas recriem o chat enquanto ele está aberto.
   if(estado.admin && estado.admin.suporteAbertoTelefone && document.getElementById('suporte-admin-input')){
     return;
   }
   const app = document.getElementById('app');
-  document.body.classList.toggle('ef-cliente-logado', estado.modo==='cliente' && !!estado.cliente.logado);
-  document.body.classList.toggle('ef-motorista-logado', estado.modo==='entregador' && !!estado.motorista.ativo);
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
   const _valores = capturarValoresInputs();
@@ -6597,7 +6495,7 @@ function render(){
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
-      ${!estado.appInstalado ? `<a class="btn-instalar-topo" href="/entregaflash.apk" download="Entrega-Flash.apk" title="Baixar app" rel="noopener"><span class="ef-install-ico">⬇</span> Baixar app</a>` : ''}
+      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}"></button>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
   `;
@@ -7458,28 +7356,15 @@ async function loginMotorista(){
 }
 
 async function iniciarDocumentosDoPainel(){
-  const pm = estado.painelMotorista;
-  let telefone = estado.motorista?.telefone || pm.telefoneLiberado || pm.loginTelefone || pm.cadastro?.telefone || '';
-  try{ telefone = telefone || localStorage.getItem('ef_motorista_telefone') || ''; }catch(e){}
-  telefone = String(telefone||'').replace(/\D/g,'');
-  if(!telefone){ mostrarToast('Sessão do motorista não encontrada. Saia e entre novamente.', 'erro'); return; }
-  pm.telefoneLiberado = telefone;
-  pm.loginTelefone = telefone;
-  if(pm.cadastro) pm.cadastro.telefone = telefone;
-  estado.motorista.enviandoDocumentos = true;
+  const m=estado.painelMotorista?.motorista;
+  if(!m?.telefone){ mostrarToast('Não foi possível abrir os documentos. Entre novamente.', 'erro'); return; }
+  estado.painelMotorista.telefoneLiberado=m.telefone;
   await continuarParaDocumentos();
-}
-function voltarPainelDoEnvioDocumentos(){
-  estado.motorista.enviandoDocumentos = false;
-  render();
 }
 async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
-  let telefone = estado.motorista?.telefone || pm.telefoneLiberado || pm.loginTelefone || pm.cadastro?.telefone || '';
-  try{ telefone = telefone || localStorage.getItem('ef_motorista_telefone') || ''; }catch(e){}
-  telefone = String(telefone||'').replace(/\D/g,'');
-  if(!telefone){ pm.carregandoLiberado=false; mostrarToast('Sessão do motorista não encontrada. Saia e entre novamente.', 'erro'); render(); return; }
+  const telefone = pm.telefoneLiberado || pm.loginTelefone;
   const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
   const data = Array.isArray(dadosPerfil) ? (dadosPerfil[0] || null) : dadosPerfil;
   pm.carregandoLiberado = false;
@@ -7791,7 +7676,6 @@ async function finalizarCadastroMotorista(){
   c.enviando=false;
   if(ok){
     estado.painelMotorista.tela='pendente';
-    if(estado.motorista.ativo){ estado.motorista.enviandoDocumentos=false; estado.motorista.status='pendente'; }
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista'}); }catch(e){}
     registrarAlertaAdmin('novo_motorista', `Novo motorista cadastrado, aguardando aprovação: ${c.nome||''} (${c.telefone||''}).`);
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 800);
@@ -7943,7 +7827,7 @@ function motoristaCardHTML(m, emRota){
         <div style="font-size:12px;color:var(--poeira);margin-top:4px;line-height:1.45">${vencido?'Este motorista ainda não enviou a documentação. Você já pode revisar e excluir o cadastro, se desejar.':'Envie um lembrete pelo WhatsApp antes do prazo terminar.'}</div>
       </div>
       <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>
-      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>`; })()}` : ''}
+      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Enviar lembrete pelo app</button>`; })()}` : ''}
       ${m.status==='pendente' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')"> Aprovar</button>
@@ -8937,15 +8821,9 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome){
   const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar o cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
   window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
-function lembrarEnviarDocumentosAdmin(telefone, nome){
-  // WhatsApp comum: não depende de Push/API paga.
-  if(typeof abrirWhatsAppDocumentosAdmin === 'function'){ abrirWhatsAppDocumentosAdmin(telefone, nome); return; }
-  let numero=String(telefone||'').replace(/\D/g,'');
-  if(numero && !numero.startsWith('55') && (numero.length===10 || numero.length===11)) numero='55'+numero;
-  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
-  const primeiro=(nome||'').trim().split(/\s+/)[0] || 'Olá';
-  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Abra o Entrega Flash e toque em ENVIAR DOCUMENTOS AGORA. Se precisar de ajuda, fale com a gente por aqui.`;
-  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+async function lembrarEnviarDocumentosAdmin(telefone, nome){
+  await enviarPushServidor('motorista', telefone, ' Falta enviar seus documentos!', `${nome?nome+', c':'C'}ontinue seu cadastro no Entrega Flash — envie seus documentos agora e comece a receber corridas hoje mesmo.`);
+  mostrarToast('Lembrete enviado! (só toca com som se o motorista já tiver ativado as notificações dele)', 'sucesso');
 }
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
@@ -9065,7 +8943,6 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   assinarPresencaRealtime();
   assinarAvisosGeraisRealtime();
   assinarConfigGeralRealtime();
-  sincronizarConfigGeralPeriodicamente();
   carregarMotoristasOnline();
   setInterval(carregarMotoristasOnline, 20000);
   setInterval(atualizarPresencaTipo, 20000);
