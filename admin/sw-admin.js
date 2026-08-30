@@ -1,5 +1,5 @@
 // build: sp-cep-controles-20260830
-const CACHE='entrega-flash-admin-v6-20260830-whatsapp5-sem-piscar';
+const CACHE='entrega-flash-admin-v8-20260830-presenca-real';
 const APP_SHELL=['/admin/admin.html?v=20260830-presenca-real-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
 self.addEventListener('install',event=>{
   self.skipWaiting();
