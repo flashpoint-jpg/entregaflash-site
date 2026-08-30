@@ -1,11 +1,13 @@
-ENTREGA FLASH — APP MOBILE FAST PREMIUM v3
+ENTREGA FLASH — FAST PREMIUM + NAVEGAÇÃO MOBILE
 
-Versão otimizada para celular: prioridade em velocidade e resposta ao toque.
-- Redução de blur/backdrop-filter e sombras pesadas no mobile
-- Animações contínuas desligadas no celular
-- Transições reduzidas para resposta imediata
-- Rolagem/touch otimizados
-- Entrada Ultra do motorista reduzida de ~6s para ~1,35s
-- Service Worker atualizado para forçar a versão nova
+Ajustes desta versão:
+- toque rápido mantido
+- botão Voltar contextual em login e cadastro
+- botão Início para retornar à escolha Cliente/Entregador
+- no cadastro do entregador, Voltar retorna uma etapa de cada vez
+- cadastro de cliente volta para o login de cliente
+- instalação/notificações não atrapalham mais o início do fluxo de login
+- layout de instalação corrigido no celular
+- cabeçalho mais compacto no mobile
 
-A lógica de cadastro, pedidos, GPS, CEP, Supabase e banco não foi alterada.
+A lógica de banco, pedidos, GPS, CEP e Supabase não foi alterada.

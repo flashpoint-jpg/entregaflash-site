@@ -720,6 +720,28 @@ fbq('track', 'PageView');
     .veiculo-escolha-destaque .veiculos button .emoji{font-size:24px;}
     .abas-motorista{max-width:none;width:100%;}
   }
+
+
+/* ===== EF MOBILE FLOW NAV v1 ===== */
+.ef-flow-nav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 12px;padding:8px 10px;border:1px solid rgba(255,255,255,.08);border-radius:14px;background:#111318;position:sticky;top:max(6px,env(safe-area-inset-top,0px));z-index:65;box-shadow:0 5px 16px rgba(0,0,0,.18)}
+.ef-flow-back,.ef-flow-home{appearance:none;-webkit-appearance:none;border:0;background:transparent;color:#f5f5f3;min-height:42px;padding:8px 10px;border-radius:10px;font-family:'Karla';font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;touch-action:manipulation;cursor:pointer}
+.ef-flow-back:active,.ef-flow-home:active{background:rgba(255,255,255,.07);transform:none!important}
+.ef-flow-back .arr{font-size:23px;line-height:1;margin-top:-1px}.ef-flow-title{min-width:0;flex:1;text-align:center;color:#a8abb3;font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.ef-flow-home{color:var(--mango);justify-content:flex-end}
+@media(max-width:600px){
+  header.topo{padding-top:8px!important;padding-bottom:8px!important}
+  .topo .marca,.marca{margin-top:0!important;margin-bottom:0!important}
+  .logo-img{max-height:190px!important;object-fit:contain!important}
+  .tagline{margin-top:0!important;font-size:13px!important;line-height:1.25!important;padding:0 10px!important}
+  main{margin-top:0!important}
+  .campo-motorista{padding:16px!important;margin-bottom:12px!important}
+  .faixa-instalar{display:grid!important;grid-template-columns:1fr auto!important;gap:8px 12px!important;align-items:center!important;padding:14px!important}
+  .faixa-instalar>.icone{display:none!important}
+  .faixa-instalar>div[style*="flex:1"]{min-width:0!important}
+  .faixa-instalar .txt{font-size:15px!important;line-height:1.2!important;white-space:normal!important}
+  .faixa-instalar .sub{font-size:12.5px!important;line-height:1.35!important;white-space:normal!important;max-width:none!important}
+  .faixa-instalar .btn{width:auto!important;min-width:118px!important;margin:0!important;padding:11px 15px!important}
+  .btn-voltar-topo{display:none!important}
+}
 </style>
 <style id="ef-premium-v2-fix">
 /* V2 — corrige logo e leva o padrão premium para as telas internas */
@@ -6295,6 +6317,35 @@ function _efAssinaturaTela(){
     estado.abaPrincipalMotorista, estado.admin.aberto, estado.admin.aba
   ].join('|');
 }
+function barraNavegacaoFluxo(){
+  if(estado.cliente.logado || estado.motorista.ativo || estado.telaBoasVindas) return '';
+  let titulo = estado.modo==='cliente' ? 'Área do cliente' : 'Área do entregador';
+  if(estado.modo==='cliente' && estado.painelCliente?.tela==='cadastro') titulo='Cadastro de cliente';
+  if(estado.modo==='entregador' && estado.painelMotorista?.tela==='cadastro') titulo=`Cadastro de entregador · etapa ${estado.painelMotorista.cadastro?.etapa||1}`;
+  return `<nav class="ef-flow-nav" aria-label="Navegação do cadastro">
+    <button class="ef-flow-back" type="button" onclick="voltarFluxoAtual()"><span class="arr">‹</span><span>Voltar</span></button>
+    <div class="ef-flow-title">${titulo}</div>
+    <button class="ef-flow-home" type="button" onclick="voltarParaEscolhaModo()">Início</button>
+  </nav>`;
+}
+function voltarFluxoAtual(){
+  if(estado.modo==='cliente' && !estado.cliente.logado){
+    if(estado.painelCliente?.tela==='cadastro'){ irParaLoginCliente(); render(); return; }
+    voltarParaEscolhaModo(); return;
+  }
+  if(estado.modo==='entregador' && !estado.motorista.ativo){
+    const pm=estado.painelMotorista||{};
+    if(pm.tela==='cadastro'){
+      const etapa=Number(pm.cadastro?.etapa||1);
+      if(etapa>1){ voltarEtapa(etapa-1); return; }
+      irParaLogin(); render(); return;
+    }
+    if(pm.tela==='reenviar' || pm.tela==='reprovado' || pm.tela==='pendente' || pm.tela==='documentos'){ irParaLogin(); render(); return; }
+    voltarParaEscolhaModo(); return;
+  }
+  voltarParaEscolhaModo();
+}
+
 function render(){
   const app = document.getElementById('app');
   const _foco = capturarFocoAtivo();
@@ -6356,9 +6407,10 @@ function render(){
       <div style="margin-top:8px"><button class="btn btn-primario btn-pequeno" onclick="sairDoModoVisitante()">${estado.motorista.visitante ? ' Quero trabalhar — ativar conta' : ' Cadastrar agora'}</button></div>
     </div>` : ''}
     <div class="aviso-app-novo"> <b>Aplicativo novo em funcionamento — pedimos paciência!</b><br>Estamos melhorando a cada dia. Contamos com sua ajuda e divulgação para crescer com a gente! Obrigado pela confiança! </div>
+    ${barraNavegacaoFluxo()}
+    <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
     ${(estado.podeInstalar && !estado.appInstalado) ? `
     <div class="faixa-instalar">
-      <span class="icone"></span>
       <div style="flex:1">
         <div class="txt">Instale o app no seu celular</div>
         <div class="sub">Acesso mais rápido, funciona como um app normal.</div>
@@ -6367,24 +6419,21 @@ function render(){
     </div>` : ''}
     ${estado.mostrarDicaIOS ? `
     <div class="faixa-instalar">
-      <span class="icone"></span>
       <div style="flex:1">
         <div class="txt">Instale o app no iPhone</div>
         <div class="sub">Toque em Compartilhar <b>⬆</b> e depois em "Adicionar à Tela de Início".</div>
       </div>
       <button class="btn btn-secundario btn-pequeno" onclick="estado.mostrarDicaIOS=false;render()">Entendi</button>
     </div>` : ''}
-    ${(estado.notificacoesStatus==='default' && !estado.viaAnuncio) ? `
+    ${(estado.notificacoesStatus==='default' && !estado.viaAnuncio && (estado.cliente.logado || estado.motorista.ativo)) ? `
     <div class="faixa-instalar">
-      <span class="icone"></span>
       <div style="flex:1">
         <div class="txt">Ativa as notificações</div>
-        <div class="sub">Recebe avisos em tempo real de novos pedidos e do estado das suas entregas.</div>
+        <div class="sub">Receba avisos em tempo real de novos pedidos e das suas entregas.</div>
       </div>
       <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar</button>
     </div>` : ''}
-    ${!estado.viaAnuncio ? `<div class="link-instalar" onclick="abrirComoInstalar()"> Como instalar o app</div>` : ''}
-    <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
+    ${!estado.viaAnuncio ? `<div class="link-instalar" onclick="abrirComoInstalar()">Como instalar o app</div>` : ''}
     <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()"> Sugestões e Reclamações</button>
     <div class="rodape-discreto">
       <span onclick="abrirComoFunciona('${estado.modo==='cliente'?'cliente':'motorista'}')">como funciona o app</span>
