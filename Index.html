@@ -80,7 +80,7 @@ fbq('track', 'PageView');
   #app-resto{display:contents;}
 
   header.topo{padding:calc(20px + env(safe-area-inset-top,0px)) 20px 16px;position:sticky;top:0;z-index:60;text-align:center;background:rgba(23,29,74,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06);}
-  .btn-instalar-topo{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,201,60,0.35);background:rgba(255,201,60,0.12);color:var(--mango,#ffc93c);font-size:19.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
+  .btn-instalar-topo{position:absolute;top:14px;left:14px;right:auto;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,201,60,0.35);background:rgba(255,201,60,0.12);color:var(--mango,#ffc93c);font-size:19.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
   .btn-instalar-topo:active{transform:scale(0.94);}
   .marca{display:flex;flex-direction:column;align-items:center;gap:0;}
   .marca .bv-logo-badge{margin:0 auto;}
@@ -1173,6 +1173,13 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 .abas-motorista{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(10,11,14,.94)!important;border-top:1px solid rgba(255,255,255,.08)!important}.abas-motorista button{transition:color .16s ease,transform .16s ease!important}.abas-motorista button:active{transform:scale(.96)}.abas-motorista .icone-aba{font-size:21px!important}.abas-motorista button.ativo{color:var(--mango)!important}
 @media(max-width:600px){.conteudo-motorista{padding-top:4px}.conteudo-motorista .cartao{border-radius:16px}.ef-app20-hero{margin-top:4px}.ef-app20-money{font-size:31px}.cabecalho{min-height:auto!important}.logo{transform:scale(.9);transform-origin:left center}}
 </style>
+
+<style id="ef-instalar-topo-fix-3008">
+.btn-instalar-topo{display:inline-flex!important;position:absolute!important;top:calc(12px + env(safe-area-inset-top,0px))!important;left:12px!important;right:auto!important;width:auto!important;height:40px!important;padding:0 13px!important;border-radius:999px!important;border:1px solid rgba(255,151,16,.55)!important;background:linear-gradient(90deg,#ffad18,#ff6a00)!important;color:#0a0b0d!important;font:900 12.5px/1 'Karla',sans-serif!important;letter-spacing:.2px!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-shadow:0 8px 22px rgba(255,106,0,.22)!important;z-index:90!important;white-space:nowrap!important}
+.btn-instalar-topo .ef-install-ico{font-size:16px!important;line-height:1!important}
+.ef-instalar-bv-topo{position:absolute!important;top:calc(10px + env(safe-area-inset-top,0px))!important;left:10px!important;right:auto!important;z-index:30!important}
+@media(max-width:380px){.btn-instalar-topo{padding:0 10px!important;font-size:11.5px!important;height:38px!important}.btn-instalar-topo .ef-install-ico{font-size:15px!important}}
+</style>
 </head>
 
 <style id="ef-parceiros-premium">
@@ -1612,8 +1619,11 @@ async function salvarConfigGeralAdmin(){
   for(const k in payload){ if(!CAMPOS_NAO_NUMERICOS.includes(k) && Number.isNaN(payload[k])){ mostrarToast('Preenche todos os campos com números válidos.'); return; } }
   const { error } = await sb.rpc('entrega_admin_salvar_config_geral', { p_senha: estado.admin.senhaDigitada, p_config: payload });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar as configurações: '+(error.message||'verifica a ligação e tenta de novo'), 'erro'); return; }
-  aplicarConfigGeral(payload);
-  mostrarToast('Configurações salvas e aplicadas imediatamente!', 'sucesso');
+  // O banco é a fonte oficial: só confirma depois de reler exatamente o que foi persistido.
+  const { data: salvo, error: erroLeitura } = await sb.from('entrega_config_geral').select('*').eq('id',1).maybeSingle();
+  if(erroLeitura || !salvo){ console.error(erroLeitura); mostrarToast('Salvou, mas não consegui confirmar no banco. Atualize e tente novamente.', 'erro'); return; }
+  aplicarConfigGeral(salvo);
+  mostrarToast('Configurações salvas no banco e atualizadas no site!', 'sucesso');
   render();
 }
 
@@ -1737,6 +1747,17 @@ function instalarApp(){
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   estado.mostrarDicaIOS = isIOS && !standalone;
 })();
+async function instalarOuOrientarApp(){
+  // Android: download direto do APK oficial publicado junto com o site.
+  // Evita a janela de instruções "Adicionar à tela inicial".
+  const a = document.createElement('a');
+  a.href = '/entregaflash.apk?v=20260830-1444';
+  a.download = 'Entrega-Flash.apk';
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 function abrirPopupInstalar(){ estado.popupInstalarAberto=true; render(); }
 function fecharPopupInstalar(){
   estado.popupInstalarAberto=false;
@@ -2667,11 +2688,21 @@ let canalConfigGeralRealtime = null;
 function assinarConfigGeralRealtime(){
   if(canalConfigGeralRealtime) return;
   canalConfigGeralRealtime = sb.channel('config-geral-realtime')
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_config_geral'}, (payload)=>{
-      aplicarConfigGeral(payload.new);
+    .on('postgres_changes', {event:'*', schema:'public', table:'entrega_config_geral'}, (payload)=>{
+      if(payload.new) aplicarConfigGeral(payload.new);
       render();
     })
     .subscribe();
+}
+
+// Sincronização de segurança: garante atualização mesmo se o realtime cair no celular/PWA.
+let efConfigSyncTimer = null;
+function sincronizarConfigGeralPeriodicamente(){
+  if(efConfigSyncTimer) return;
+  const sync = ()=>carregarConfigGeral().then(()=>{ try{ render(); }catch(e){} }).catch(()=>{});
+  efConfigSyncTimer = setInterval(sync, 15000);
+  window.addEventListener('focus', sync);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) sync(); });
 }
 
 // ---------- presença em tempo real (quantas pessoas têm o app aberto agora) ----------
@@ -5154,6 +5185,7 @@ function telaBoasVindas(){
   return `
   <div class="bv-wrap">
     <section class="bv-hero-real">
+      ${!estado.appInstalado ? `<div class="ef-instalar-bv-topo"><button class="btn-instalar-topo" title="Instalar app" onclick="instalarOuOrientarApp()"><span class="ef-install-ico">⬇</span> Baixar app</button></div>` : ''}
       <div class="bv-cabecalho">
         <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
       </div>
@@ -5262,7 +5294,7 @@ function telaBoasVindas(){
     </div>
 
     <div class="bv-regional-note"> <b>Entrega Flash é regional:</b> conectamos clientes e entregadores nas cidades atendidas e também na zona rural próxima, sem limitar a comunicação a uma única cidade.</div>
-    <div class="bv-install-area"><a href="/entregaflash.apk" download class="btn-baixar-app"> Instalar Entrega Flash no celular</a><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Você também pode usar diretamente pelo site, sem instalar.</div></div>
+    <div class="bv-install-area"><button type="button" class="btn-baixar-app" onclick="instalarOuOrientarApp()">Instalar Entrega Flash no celular</button><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Você também pode usar diretamente pelo site, sem instalar.</div></div>
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -6560,7 +6592,7 @@ function render(){
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
-      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}"></button>` : ''}
+      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="instalarOuOrientarApp()"><span class="ef-install-ico">⬇</span> Baixar app</button>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
   `;
@@ -9008,6 +9040,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   assinarPresencaRealtime();
   assinarAvisosGeraisRealtime();
   assinarConfigGeralRealtime();
+  sincronizarConfigGeralPeriodicamente();
   carregarMotoristasOnline();
   setInterval(carregarMotoristasOnline, 20000);
   setInterval(atualizarPresencaTipo, 20000);
