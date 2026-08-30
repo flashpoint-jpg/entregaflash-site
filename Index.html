@@ -1748,15 +1748,14 @@ function instalarApp(){
   estado.mostrarDicaIOS = isIOS && !standalone;
 })();
 async function instalarOuOrientarApp(){
-  // Android: download direto do APK oficial publicado junto com o site.
-  // Evita a janela de instruções "Adicionar à tela inicial".
-  const a = document.createElement('a');
-  a.href = '/entregaflash.apk?v=20260830-1444';
-  a.download = 'Entrega-Flash.apk';
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  // Download direto e confiável do APK. Navegação direta funciona melhor no Android
+  // do que disparar um clique sintético em um elemento <a>.
+  const urlApk = '/entregaflash.apk?v=20260830-1458';
+  try {
+    window.location.assign(urlApk);
+  } catch (e) {
+    window.location.href = urlApk;
+  }
 }
 function abrirPopupInstalar(){ estado.popupInstalarAberto=true; render(); }
 function fecharPopupInstalar(){
