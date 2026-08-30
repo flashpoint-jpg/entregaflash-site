@@ -5184,7 +5184,7 @@ function telaBoasVindas(){
   return `
   <div class="bv-wrap">
     <section class="bv-hero-real">
-      ${!estado.appInstalado ? `<div class="ef-instalar-bv-topo"><button class="btn-instalar-topo" title="Instalar app" onclick="instalarOuOrientarApp()"><span class="ef-install-ico">⬇</span> Baixar app</button></div>` : ''}
+      ${!estado.appInstalado ? `<div class="ef-instalar-bv-topo"><a class="btn-instalar-topo" href="/entregaflash.apk" download="Entrega-Flash.apk" title="Baixar app" rel="noopener"><span class="ef-install-ico">⬇</span> Baixar app</a></div>` : ''}
       <div class="bv-cabecalho">
         <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
       </div>
@@ -6591,7 +6591,7 @@ function render(){
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
-      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="instalarOuOrientarApp()"><span class="ef-install-ico">⬇</span> Baixar app</button>` : ''}
+      ${!estado.appInstalado ? `<a class="btn-instalar-topo" href="/entregaflash.apk" download="Entrega-Flash.apk" title="Baixar app" rel="noopener"><span class="ef-install-ico">⬇</span> Baixar app</a>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
   `;
