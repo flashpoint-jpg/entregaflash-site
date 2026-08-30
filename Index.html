@@ -1715,19 +1715,13 @@ function dentroDaRegiao(lat,lon){
 }
 // Busca no Photon (bom para endereços incompletos/digitação parcial, tipo autocomplete de verdade)
 async function buscarPhoton(texto, limite){
-  const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&lat=${CENTRO_REGIAO.lat}&lon=${CENTRO_REGIAO.lon}&zoom=13&limit=${limite}&lang=pt`;
-  const resp = await fetch(url);
-  const dados = await resp.json();
-  const feats = (dados && dados.features) || [];
-  return feats.map(f=>{
-    const p = f.properties||{};
-    const coords = f.geometry && f.geometry.coordinates; // [lon,lat]
-    if(!coords) return null;
-    const lon = coords[0], lat = coords[1];
-    const cidade = p.city || p.town || p.village || p.county || '';
-    const partes = [p.name, p.street, p.housenumber, p.district, cidade, p.state].filter(Boolean);
-    return { lat, lon, cidade, nome: partes.join(', ') };
-  }).filter(Boolean);
+  const centros=[{lat:-23.55052,lon:-46.63331},{lat:-21.3757,lon:-46.5256}],todos=[];
+  for(const c of centros){try{const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&lat=${c.lat}&lon=${c.lon}&zoom=12&limit=${limite}&lang=pt`;const resp=await fetch(url);if(!resp.ok)continue;const dados=await resp.json();for(const f of ((dados&&dados.features)||[])){const pr=f.properties||{},coords=f.geometry&&f.geometry.coordinates;if(!coords)continue;const lon=coords[0],lat=coords[1],cidade=pr.city||pr.town||pr.village||pr.county||'',partes=[pr.name,pr.street,pr.housenumber,pr.district,cidade,pr.state,pr.postcode].filter(Boolean),chave=Number(lat).toFixed(6)+','+Number(lon).toFixed(6);if(!todos.some(x=>x.chave===chave))todos.push({lat,lon,cidade,nome:partes.join(', '),chave});}}catch(e){console.warn('Photon falhou',e);}}
+  return todos.map(({chave,...r})=>r);
+}
+async function resolverCEP(texto){
+  const digitos=(texto||'').replace(/\D/g,'');if(digitos.length!==8)return null;
+  try{const resp=await fetch(`https://viacep.com.br/ws/${digitos}/json/`);if(!resp.ok)return null;const d=await resp.json();if(!d||d.erro)return null;const cidade=d.localidade||'';if(!CIDADES_PERMITIDAS_NORM.includes(normalizarTexto(cidade)))return {fora:true,cidade,uf:d.uf||''};return {fora:false,cidade,uf:d.uf||'',endereco:[d.logradouro,d.bairro,cidade,d.uf,d.cep,'Brasil'].filter(Boolean).join(', ')};}catch(e){return null;}
 }
 // Busca no Nominatim (reforço/fallback; exige texto mais parecido com o endereço completo)
 async function buscarNominatim(texto, limite){
@@ -1759,17 +1753,10 @@ async function buscarNominatim(texto, limite){
 }
 // Junta os dois provedores e mantém só resultados nas cidades atendidas (Sul de Minas + Grande São Paulo)
 async function buscarEnderecos(texto, limite){
-  let resultados = [];
-  try{ resultados = await buscarPhoton(texto, limite*3); }catch(e){ console.error('Photon falhou', e); }
-  resultados = resultados.filter(r=>dentroDaRegiao(r.lat,r.lon));
-  const norm = t => normalizarTexto(t);
-  let permitidos = resultados.filter(r => r.cidade && CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));
-  if(permitidos.length===0){
-    try{
-      const viaNominatim = (await buscarNominatim(texto, limite*3)).filter(r=>dentroDaRegiao(r.lat,r.lon));
-      permitidos = viaNominatim.filter(r => r.cidade && CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));
-    }catch(e){ console.error('Nominatim falhou', e); }
-  }
+  texto=(texto||'').trim();if(!texto)return [];const norm=t=>normalizarTexto(t);
+  if(/^\s*\d{5}-?\d{3}\s*$/.test(texto)){const cep=await resolverCEP(texto);if(cep){if(cep.fora)return [];try{let via=await buscarNominatim(cep.endereco,limite*3);via=via.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(via.length)return via.slice(0,limite);}catch(e){}try{let ph=await buscarPhoton(cep.endereco,limite*3);ph=ph.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(ph.length)return ph.slice(0,limite);}catch(e){}}}
+  let permitidos=[];try{const via=(await buscarNominatim(texto,limite*3)).filter(r=>dentroDaRegiao(r.lat,r.lon));permitidos=via.filter(r=>r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));}catch(e){}
+  try{const ph=(await buscarPhoton(texto,limite*3)).filter(r=>dentroDaRegiao(r.lat,r.lon)).filter(r=>r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));for(const r of ph)if(!permitidos.some(x=>Math.abs(x.lat-r.lat)<.00001&&Math.abs(x.lon-r.lon)<.00001))permitidos.push(r);}catch(e){}
   return permitidos.slice(0,limite);
 }
 async function geocodificar(endereco){
