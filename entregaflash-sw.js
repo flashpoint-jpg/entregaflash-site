@@ -1,3 +1,4 @@
+// build: grande-sp-final-20260829
 // Entrega Flash - Service Worker com atualização forçada
 // Versão: 20260830-1
 const EF_VERSION = '20260830-1';
