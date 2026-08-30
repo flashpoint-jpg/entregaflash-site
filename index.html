@@ -1110,6 +1110,40 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 }
 </style>
 
+<style id="ef-cliente-mobile-ultra-v5">
+/* Cliente mobile: mais conteúdo útil na primeira tela, sem travar rolagem */
+@media (max-width:700px){
+  body.ef-cliente-logado .topo{position:relative!important;padding:8px 12px 6px!important;min-height:0!important;}
+  body.ef-cliente-logado .topo .marca{min-height:0!important;margin:0!important;}
+  body.ef-cliente-logado .topo .logo-img{width:min(205px,58vw)!important;max-width:205px!important;height:auto!important;}
+  body.ef-cliente-logado .topo .tagline{font-size:11px!important;line-height:1.2!important;margin-top:2px!important;padding-bottom:1px!important;letter-spacing:.4px!important;}
+  body.ef-cliente-logado .aviso-app-novo{margin:8px 10px!important;padding:10px 12px!important;border-radius:16px!important;font-size:12.5px!important;line-height:1.35!important;}
+  body.ef-cliente-logado main{padding-top:0!important;}
+  body.ef-cliente-logado .cartao{margin:10px 8px!important;padding:14px!important;border-radius:18px!important;}
+  body.ef-cliente-logado .cliente-carteira-card{padding:12px 14px!important;}
+  body.ef-cliente-logado .cliente-carteira-card .link-taxas-topo{margin-top:10px!important;padding:10px 12px!important;font-size:12.5px!important;line-height:1.25!important;}
+  body.ef-cliente-logado .cliente-carteira-card > div[style*="background:var(--painel-alt)"]{margin-top:10px!important;padding:10px 12px!important;min-height:64px!important;}
+  body.ef-cliente-logado .cliente-carteira-card .btn-pequeno{min-height:42px!important;padding:9px 13px!important;font-size:13px!important;}
+  body.ef-cliente-logado .pix-box{padding:10px!important;margin-top:8px!important;}
+  body.ef-cliente-logado .pix-erro-compacto{margin:0!important;padding:8px 10px!important;font-size:12.5px!important;line-height:1.3!important;}
+  body.ef-cliente-logado .pix-tentar-novamente{width:auto!important;min-width:150px!important;margin:8px auto 0!important;display:block!important;}
+  body.ef-cliente-logado .cliente-pedido-card{padding-top:13px!important;}
+  body.ef-cliente-logado .cliente-pedido-card h2{font-size:21px!important;}
+  body.ef-cliente-logado .passos{margin-top:10px!important;}
+  body.ef-cliente-logado .etapa-conteudo{margin-top:10px!important;}
+  body.ef-cliente-logado .acoes-etapa-pedido{position:sticky!important;bottom:max(8px,env(safe-area-inset-bottom,0px))!important;z-index:25!important;background:rgba(13,15,18,.96)!important;border:1px solid rgba(255,145,0,.24)!important;border-radius:14px!important;padding:8px!important;box-shadow:0 6px 20px rgba(0,0,0,.28)!important;}
+  body.ef-cliente-logado .acoes-etapa-pedido .btn{min-height:44px!important;font-size:14px!important;}
+  body.ef-cliente-logado .resumo-pedido-end{padding:10px 12px!important;line-height:1.3!important;}
+  body.ef-cliente-logado .resumo-pedido-valor{margin-top:10px!important;padding:11px 12px!important;}
+  body.ef-cliente-logado .cancelamento-motorista-box{font-size:11.5px!important;line-height:1.35!important;padding:9px 10px!important;margin-top:8px!important;}
+}
+@media (max-width:390px){
+  body.ef-cliente-logado .topo .logo-img{width:min(185px,55vw)!important;}
+  body.ef-cliente-logado .cartao{margin-left:6px!important;margin-right:6px!important;padding-left:12px!important;padding-right:12px!important;}
+  body.ef-cliente-logado .acoes-etapa-pedido{gap:6px!important;}
+}
+</style>
+
 <style id="ef-ultra-premium-clean-v1">
 /* Ajuste fino visual: Ultra Premium Clean */
 .ef-progresso-doc{margin:14px 0 2px;padding:11px 12px;border-radius:13px;background:rgba(0,0,0,.20);border:1px solid rgba(255,171,0,.20)}
@@ -1146,6 +1180,7 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 .ef-instalar-bv-topo{position:absolute!important;top:calc(10px + env(safe-area-inset-top,0px))!important;left:10px!important;right:auto!important;z-index:30!important}
 @media(max-width:380px){.btn-instalar-topo{padding:0 10px!important;font-size:11.5px!important;height:38px!important}.btn-instalar-topo .ef-install-ico{font-size:15px!important}}
 </style>
+<meta name="ef-build" content="DOCS-FINAL-20260830-1557">
 </head>
 
 <style id="ef-parceiros-premium">
@@ -1714,14 +1749,14 @@ function instalarApp(){
   estado.mostrarDicaIOS = isIOS && !standalone;
 })();
 async function instalarOuOrientarApp(){
-  // Instalação PWA oficial. No Chrome, usa o prompt nativo quando disponível.
-  if(promptInstalacao){ instalarApp(); return; }
-  // Dá ao Service Worker uma chance de ficar pronto antes do fallback.
-  try{ if('serviceWorker' in navigator) await navigator.serviceWorker.ready; }catch(e){}
-  if(promptInstalacao){ instalarApp(); return; }
-  // O Chrome não permite forçar o prompt quando beforeinstallprompt não foi liberado.
-  // Nesse caso o botão continua funcionando e mostra o caminho de instalação do navegador.
-  abrirComoInstalar();
+  // Download direto e confiável do APK. Navegação direta funciona melhor no Android
+  // do que disparar um clique sintético em um elemento <a>.
+  const urlApk = '/entregaflash.apk?v=20260830-1458';
+  try {
+    window.location.assign(urlApk);
+  } catch (e) {
+    window.location.href = urlApk;
+  }
 }
 function abrirPopupInstalar(){ estado.popupInstalarAberto=true; render(); }
 function fecharPopupInstalar(){
@@ -3100,8 +3135,9 @@ function assinarSuporteAdmin(telefone){
 function fecharSuporteAdmin(){
   if(estado.admin.canalSuporte){ sb.removeChannel(estado.admin.canalSuporte); estado.admin.canalSuporte=null; }
   estado.admin.suporteAbertoTelefone=null; estado.admin.suporteMensagensAdmin=[];
+  // Fecha imediatamente; a atualização da lista acontece depois, sem reabrir/piscar o chat.
   render();
-  carregarSuporteAdmin();
+  carregarSuporteAdmin().catch(()=>{});
 }
 function assinarSuporteAdminGlobal(){
   if(estado.admin.canalSuporteGlobal) return;
@@ -3134,7 +3170,7 @@ async function marcarSuporteResolvido(telefone){
   const { error } = await sb.from('entrega_suporte_status').upsert({ motorista_telefone:telefone, status:'resolvido', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
   if(error){ console.error(error); mostrarErro('Não consegui marcar como resolvida. Tenta de novo.'); return; }
   mostrarToast('Conversa marcada como resolvida.', 'sucesso');
-  fecharSuporteAdmin();
+  await carregarSuporteAdmin();
 }
 function renderSuporteAdminChat(){
   const caixa = document.getElementById('suporte-admin-mensagens');
@@ -5149,7 +5185,7 @@ function telaBoasVindas(){
   return `
   <div class="bv-wrap">
     <section class="bv-hero-real">
-      ${!estado.appInstalado ? `<div class="ef-instalar-bv-topo"><button class="btn-instalar-topo" title="Instalar app" onclick="instalarOuOrientarApp()"><span class="ef-install-ico">⬇</span> Instalar app</button></div>` : ''}
+      ${!estado.appInstalado ? `<div class="ef-instalar-bv-topo"><a class="btn-instalar-topo" href="/entregaflash.apk" download="Entrega-Flash.apk" title="Baixar app" rel="noopener"><span class="ef-install-ico">⬇</span> Baixar app</a></div>` : ''}
       <div class="bv-cabecalho">
         <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
       </div>
@@ -5410,8 +5446,8 @@ function telaCliente(){
   const listaExibida = estado.abaPedidosCliente==='ativos' ? pedidosAtivos : pedidosHistorico;
   const w = estado.cliente.carteira;
   return `
-  <div class="cartao">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+  <div class="cartao cliente-carteira-card">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px" class="cliente-saudacao">
       <div style="font-size:14px;color:var(--poeira)">Olá, <b style="color:var(--osso);font-size:16px">${estado.cliente.nome}</b></div>
       <a onclick="sairCliente()" style="font-size:14px;cursor:pointer;color:var(--poeira);text-decoration:underline">Sair</a>
     </div>
@@ -5431,7 +5467,7 @@ function telaCliente(){
       <button class="btn btn-primario" style="margin-top:0" onclick="confirmarValorCarteira()">Gerar Pix</button>
       ` : ''}
       ${w.pix.gerando ? `<div class="subtitulo" style="margin-top:10px"><span class="girando-emoji">⏳</span> Gerando cobrança Pix...</div>` : ''}
-      ${w.pix.erro ? `<div class="erro-campo">${w.pix.erro}</div><button class="btn btn-secundario btn-pequeno" style="margin-top:10px" onclick="confirmarValorCarteira()">Tentar novamente</button>` : ''}
+      ${w.pix.erro ? `<div class="erro-campo pix-erro-compacto">${w.pix.erro}</div><button class="btn btn-secundario btn-pequeno pix-tentar-novamente" style="margin-top:10px" onclick="confirmarValorCarteira()">Tentar novamente</button>` : ''}
       ${w.pix.qrCode ? `
       <img class="pix-qr" src="data:image/png;base64,${w.pix.qrCode}">
       <div class="pix-copia"><input type="text" readonly value="${w.pix.copiaCola}"><button class="btn btn-secundario btn-pequeno" onclick="copiarPixCarteira()">Copiar</button></div>
@@ -5440,7 +5476,7 @@ function telaCliente(){
     </div>` : ''}
   </div>
 
-  <div class="cartao">
+  <div class="cartao cliente-pedido-card">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <h2 style="margin:0">Pedir entrega</h2>
     </div>
@@ -5541,7 +5577,7 @@ function telaCliente(){
     ` : ''}
     ${f.etapaPedido===3 ? `
     <label style="margin-top:0">Resumo do pedido</label>
-    <div class="end" style="margin-bottom:10px"><b>Recolha</b>${f.origem}<b style="margin-top:8px">Entrega</b>${f.destino}</div>
+    <div class="end resumo-pedido-end" style="margin-bottom:10px"><b>Recolha</b>${f.origem}<b style="margin-top:8px">Entrega</b>${f.destino}</div>
     ${estado.calculando ? `<div class="subtitulo" style="margin-top:4px"><span class="girando girando-escuro"></span> Calculando o valor da corrida...</div>` : ''}
     ${estado.falhaCalculo ? `
     <div class="subtitulo" style="margin-top:10px">Não consegui calcular a distância sozinho. Me ajuda: mais ou menos quantos quilômetros tem entre os dois endereços? Se não souber, pode chutar um número (máx. ${KM_MANUAL_MAXIMO} km):</div>
@@ -5557,13 +5593,13 @@ function telaCliente(){
       <button class="btn btn-secundario btn-pequeno" onclick="usarDistanciaManual()">Usar</button>
     </div>`}` : ''}
     ${preco!=null ? `
-    <div class="estimativa" style="margin-top:16px">
+    <div class="estimativa resumo-pedido-valor" style="margin-top:16px">
       <div><div class="rotulo">Preço estimado</div><div class="sub">${f.distancia} km · ~${f.duracaoMin} min${valorExtras(f.extras)>0?` · +R$ ${valorExtras(f.extras).toFixed(2)} extras`:''}</div></div>
       <div class="valor">R$ ${preco.toFixed(2)}</div>
     </div>
     <div class="cancelamento-motorista-box"> Se um motorista aceitar a sua entrega e você cancelar depois de ${Math.round(JANELA_CANCELAMENTO_MS/60000)} minutos, será cobrada uma taxa de ${Math.round(TAXA_CANCELAMENTO_TARDIO*100)}% do valor da corrida (R$ ${(preco*TAXA_CANCELAMENTO_TARDIO).toFixed(2)}). Cancelar antes disso, ou antes de alguém aceitar, não tem custo.</div>
     <div class="cancelamento-motorista-box"> Se o entregador tiver que esperar mais de ${TAXA_ESPERA_TOLERANCIA_MIN} min na coleta ou na entrega, é cobrado R$ ${TAXA_ESPERA_VALOR_MIN.toFixed(2)}/min excedente. E se sua corrida for feita à noite, em feriado ou com chuva forte por um motorista Pro, pode haver um acréscimo de até ${Math.round(ACRESCIMO_NOTURNO_PCT*100)}% no valor.</div>` : ''}
-    <div style="display:flex;gap:8px;margin-top:16px">
+    <div class="acoes-etapa-pedido" style="display:flex;gap:8px;margin-top:16px">
       <button class="btn btn-secundario" style="margin-top:0" onclick="irEtapaPedido(2)">← Voltar</button>
       ${preco!=null ? `
       <button class="btn btn-primario" style="margin-top:0" ${atributoDesabilitado('criarPedido')} onclick="executarComCarregando('criarPedido', criarPedido)">${carregando('criarPedido') ? '<span class="girando"></span>'+(f.tipoRetirada==='agendado'?'Agendando...':'Confirmando...') : (f.tipoRetirada==='agendado'?' Agendar pedido':' Confirmar pedido')}</button>
@@ -6504,11 +6540,13 @@ function voltarFluxoAtual(){
 }
 
 function render(){
-  // Evita que atualizações automáticas recriem o chat enquanto ele está aberto.
+  // Chat de suporte aberto é uma ilha estável: atualizações do painel não recriam o modal.
   if(estado.admin && estado.admin.suporteAbertoTelefone && document.getElementById('suporte-admin-input')){
     return;
   }
   const app = document.getElementById('app');
+  document.body.classList.toggle('ef-cliente-logado', estado.modo==='cliente' && !!estado.cliente.logado);
+  document.body.classList.toggle('ef-motorista-logado', estado.modo==='entregador' && !!estado.motorista.ativo);
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
   const _valores = capturarValoresInputs();
@@ -6554,7 +6592,7 @@ function render(){
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
-      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="instalarOuOrientarApp()"><span class="ef-install-ico">⬇</span> Instalar app</button>` : ''}
+      ${!estado.appInstalado ? `<a class="btn-instalar-topo" href="/entregaflash.apk" download="Entrega-Flash.apk" title="Baixar app" rel="noopener"><span class="ef-install-ico">⬇</span> Baixar app</a>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
   `;
@@ -7415,15 +7453,23 @@ async function loginMotorista(){
 }
 
 async function iniciarDocumentosDoPainel(){
-  const m=estado.painelMotorista?.motorista;
-  if(!m?.telefone){ mostrarToast('Não foi possível abrir os documentos. Entre novamente.', 'erro'); return; }
-  estado.painelMotorista.telefoneLiberado=m.telefone;
+  const pm = estado.painelMotorista;
+  let telefone = estado.motorista?.telefone || pm.telefoneLiberado || pm.loginTelefone || pm.cadastro?.telefone || '';
+  try{ telefone = telefone || localStorage.getItem('ef_motorista_telefone') || ''; }catch(e){}
+  telefone = String(telefone||'').replace(/\D/g,'');
+  if(!telefone){ mostrarToast('Sessão do motorista não encontrada. Saia e entre novamente.', 'erro'); return; }
+  pm.telefoneLiberado = telefone;
+  pm.loginTelefone = telefone;
+  if(pm.cadastro) pm.cadastro.telefone = telefone;
   await continuarParaDocumentos();
 }
 async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
-  const telefone = pm.telefoneLiberado || pm.loginTelefone;
+  let telefone = estado.motorista?.telefone || pm.telefoneLiberado || pm.loginTelefone || pm.cadastro?.telefone || '';
+  try{ telefone = telefone || localStorage.getItem('ef_motorista_telefone') || ''; }catch(e){}
+  telefone = String(telefone||'').replace(/\D/g,'');
+  if(!telefone){ pm.carregandoLiberado=false; mostrarToast('Sessão do motorista não encontrada. Saia e entre novamente.', 'erro'); render(); return; }
   const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
   const data = Array.isArray(dadosPerfil) ? (dadosPerfil[0] || null) : dadosPerfil;
   pm.carregandoLiberado = false;
@@ -7886,7 +7932,7 @@ function motoristaCardHTML(m, emRota){
         <div style="font-size:12px;color:var(--poeira);margin-top:4px;line-height:1.45">${vencido?'Este motorista ainda não enviou a documentação. Você já pode revisar e excluir o cadastro, se desejar.':'Envie um lembrete pelo WhatsApp antes do prazo terminar.'}</div>
       </div>
       <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>
-      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Enviar lembrete pelo app</button>`; })()}` : ''}
+      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>`; })()}` : ''}
       ${m.status==='pendente' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')"> Aprovar</button>
@@ -8880,9 +8926,15 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome){
   const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar o cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
   window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
-async function lembrarEnviarDocumentosAdmin(telefone, nome){
-  await enviarPushServidor('motorista', telefone, ' Falta enviar seus documentos!', `${nome?nome+', c':'C'}ontinue seu cadastro no Entrega Flash — envie seus documentos agora e comece a receber corridas hoje mesmo.`);
-  mostrarToast('Lembrete enviado! (só toca com som se o motorista já tiver ativado as notificações dele)', 'sucesso');
+function lembrarEnviarDocumentosAdmin(telefone, nome){
+  // WhatsApp comum: não depende de Push/API paga.
+  if(typeof abrirWhatsAppDocumentosAdmin === 'function'){ abrirWhatsAppDocumentosAdmin(telefone, nome); return; }
+  let numero=String(telefone||'').replace(/\D/g,'');
+  if(numero && !numero.startsWith('55') && (numero.length===10 || numero.length===11)) numero='55'+numero;
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(/\s+/)[0] || 'Olá';
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Abra o Entrega Flash e toque em ENVIAR DOCUMENTOS AGORA. Se precisar de ajuda, fale com a gente por aqui.`;
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
