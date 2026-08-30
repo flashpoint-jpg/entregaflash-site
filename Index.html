@@ -1245,7 +1245,8 @@ const REGIAO = { minLat:-24.25, maxLat:-14.23, minLon:-51.60, maxLon:-39.86 };
 const REGIAO_GRANDE_SP = { minLat:-24.15, maxLat:-23.05, minLon:-47.25, maxLon:-45.65 };
 // Centro neutro entre as duas praças. A busca também usa o nome da cidade digitada pelo usuário.
 const CENTRO_REGIAO = { lat:-22.65, lon:-46.75 };
-const TAXA_PLATAFORMA_GRANDE_SP = 0.15; // 15% plataforma / 85% motorista
+let TAXA_PLATAFORMA_GRANDE_SP = 0.15; // padrão: 15% plataforma / 85% motorista
+let TAXA_AUTOMATICA_GRANDE_SP_ATIVA = true; // quando desligada, usa a taxa normal do plano
 
 const CIDADES_MG = [
   'Muzambinho','Juruaia','Monte Belo','Cabo Verde','Guaxupé','Caconde',
@@ -1275,12 +1276,12 @@ function pedidoEhGrandeSP(pedido){ return !!(pedido && coordEhGrandeSP(pedido.or
 function taxaPlataformaParaMotorista(motorista=null){
   const m = motorista || estado.motorista || {};
   const cidade = m.cidade || estado.painelMotorista?.cadastro?.cidade || '';
-  if(cidadeEhGrandeSP(cidade)) return TAXA_PLATAFORMA_GRANDE_SP;
+  if(cidadeEhGrandeSP(cidade) && TAXA_AUTOMATICA_GRANDE_SP_ATIVA) return TAXA_PLATAFORMA_GRANDE_SP;
   const plano = PLANOS[m.plano] || PLANOS.free;
   return plano.taxaPlataforma;
 }
 function taxaPlataformaParaPedido(pedido, motorista=estado.motorista){
-  if(pedidoEhGrandeSP(pedido)) return TAXA_PLATAFORMA_GRANDE_SP;
+  if(pedidoEhGrandeSP(pedido) && TAXA_AUTOMATICA_GRANDE_SP_ATIVA) return TAXA_PLATAFORMA_GRANDE_SP;
   return taxaPlataformaParaMotorista(motorista);
 }
 function cidadeEhPermitida(item){
@@ -1301,6 +1302,8 @@ function aplicarConfigGeral(c){
   PLANOS.free.taxaPlataforma = Number(c.free_taxa_plataforma_pct)/100;
   PLANOS.pro.taxaPlataforma = Number(c.pro_taxa_plataforma_pct)/100;
   PLANOS.pro.preco = Number(c.pro_preco_mensal);
+  if(c.grande_sp_taxa_automatica_ativa!=null) TAXA_AUTOMATICA_GRANDE_SP_ATIVA = !!c.grande_sp_taxa_automatica_ativa;
+  if(c.grande_sp_taxa_plataforma_pct!=null) TAXA_PLATAFORMA_GRANDE_SP = Number(c.grande_sp_taxa_plataforma_pct)/100;
   PLANOS.free.limiteMensal = c.free_limite_mensal!=null ? Number(c.free_limite_mensal) : null;
   PLANOS.pro.limiteMensal = c.pro_limite_mensal!=null ? Number(c.pro_limite_mensal) : null;
   PLANOS.free.limiteSimultaneo = Number(c.free_limite_simultaneo);
@@ -1340,6 +1343,7 @@ async function salvarConfigGeralAdmin(){
   const payload = {
     id:1,
     free_taxa_plataforma_pct: Number(ler('cfg-free-taxa')), pro_taxa_plataforma_pct: Number(ler('cfg-pro-taxa')),
+    grande_sp_taxa_automatica_ativa: !!document.getElementById('cfg-sp-taxa-auto')?.checked, grande_sp_taxa_plataforma_pct: Number(ler('cfg-sp-taxa-pct')||15),
     pro_preco_mensal: Number(ler('cfg-pro-preco')),
     free_limite_mensal: ler('cfg-free-limite-mensal')===''?null:Number(ler('cfg-free-limite-mensal')),
     pro_limite_mensal: ler('cfg-pro-limite-mensal')===''?null:Number(ler('cfg-pro-limite-mensal')),
@@ -1720,8 +1724,30 @@ async function buscarPhoton(texto, limite){
   return todos.map(({chave,...r})=>r);
 }
 async function resolverCEP(texto){
-  const digitos=(texto||'').replace(/\D/g,'');if(digitos.length!==8)return null;
-  try{const resp=await fetch(`https://viacep.com.br/ws/${digitos}/json/`);if(!resp.ok)return null;const d=await resp.json();if(!d||d.erro)return null;const cidade=d.localidade||'';if(!CIDADES_PERMITIDAS_NORM.includes(normalizarTexto(cidade)))return {fora:true,cidade,uf:d.uf||''};return {fora:false,cidade,uf:d.uf||'',endereco:[d.logradouro,d.bairro,cidade,d.uf,d.cep,'Brasil'].filter(Boolean).join(', ')};}catch(e){return null;}
+  const digitos=(texto||'').replace(/\D/g,'');
+  if(digitos.length!==8) return null;
+  // 1) BrasilAPI v2: além do endereço, costuma trazer latitude/longitude.
+  try{
+    const r=await fetch(`https://brasilapi.com.br/api/cep/v2/${digitos}`);
+    if(r.ok){
+      const d=await r.json();
+      const cidade=d.city||'', uf=d.state||'';
+      if(!CIDADES_PERMITIDAS_NORM.includes(normalizarTexto(cidade))) return {fora:true,cidade,uf};
+      const lat=parseFloat(d.location?.coordinates?.latitude), lon=parseFloat(d.location?.coordinates?.longitude);
+      const endereco=[d.street,d.neighborhood,cidade,uf,d.cep,'Brasil'].filter(Boolean).join(', ');
+      return {fora:false,cidade,uf,endereco,cep:d.cep||digitos,lat:Number.isFinite(lat)?lat:null,lon:Number.isFinite(lon)?lon:null};
+    }
+  }catch(e){ console.warn('BrasilAPI CEP falhou',e); }
+  // 2) ViaCEP como fallback de endereço.
+  try{
+    const resp=await fetch(`https://viacep.com.br/ws/${digitos}/json/`);
+    if(!resp.ok) return null;
+    const d=await resp.json();
+    if(!d||d.erro) return null;
+    const cidade=d.localidade||'', uf=d.uf||'';
+    if(!CIDADES_PERMITIDAS_NORM.includes(normalizarTexto(cidade))) return {fora:true,cidade,uf};
+    return {fora:false,cidade,uf,endereco:[d.logradouro,d.bairro,cidade,uf,d.cep,'Brasil'].filter(Boolean).join(', '),cep:d.cep||digitos,lat:null,lon:null};
+  }catch(e){ console.warn('ViaCEP falhou',e); return null; }
 }
 // Busca no Nominatim (reforço/fallback; exige texto mais parecido com o endereço completo)
 async function buscarNominatim(texto, limite){
@@ -1754,7 +1780,7 @@ async function buscarNominatim(texto, limite){
 // Junta os dois provedores e mantém só resultados nas cidades atendidas (Sul de Minas + Grande São Paulo)
 async function buscarEnderecos(texto, limite){
   texto=(texto||'').trim();if(!texto)return [];const norm=t=>normalizarTexto(t);
-  if(/^\s*\d{5}-?\d{3}\s*$/.test(texto)){const cep=await resolverCEP(texto);if(cep){if(cep.fora)return [];try{let via=await buscarNominatim(cep.endereco,limite*3);via=via.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(via.length)return via.slice(0,limite);}catch(e){}try{let ph=await buscarPhoton(cep.endereco,limite*3);ph=ph.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(ph.length)return ph.slice(0,limite);}catch(e){}}}
+  if(/^\s*\d{5}-?\d{3}\s*$/.test(texto)){const cep=await resolverCEP(texto);if(cep){if(cep.fora)return [];if(Number.isFinite(cep.lat)&&Number.isFinite(cep.lon)&&dentroDaRegiao(cep.lat,cep.lon))return [{lat:cep.lat,lon:cep.lon,cidade:cep.cidade,nome:cep.endereco}];try{let via=await buscarNominatim(cep.endereco,limite*3);via=via.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(via.length)return via.slice(0,limite);}catch(e){}try{let ph=await buscarPhoton(cep.endereco,limite*3);ph=ph.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(ph.length)return ph.slice(0,limite);}catch(e){}}}
   let permitidos=[];try{const via=(await buscarNominatim(texto,limite*3)).filter(r=>dentroDaRegiao(r.lat,r.lon));permitidos=via.filter(r=>r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));}catch(e){}
   try{const ph=(await buscarPhoton(texto,limite*3)).filter(r=>dentroDaRegiao(r.lat,r.lon)).filter(r=>r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));for(const r of ph)if(!permitidos.some(x=>Math.abs(x.lat-r.lat)<.00001&&Math.abs(x.lon-r.lon)<.00001))permitidos.push(r);}catch(e){}
   return permitidos.slice(0,limite);
@@ -4757,7 +4783,7 @@ function telaParceiros(){
       <label>Nome do estabelecimento *</label><input value="${parceiroEsc(f.estabelecimento)}" oninput="parceiroCampo('estabelecimento',this.value)" placeholder="Ex.: Farmácia Central">
       <label>Nome do responsável *</label><input value="${parceiroEsc(f.responsavel)}" oninput="parceiroCampo('responsavel',this.value)" placeholder="Quem fala pela empresa?">
       <label>WhatsApp *</label><input type="tel" value="${parceiroEsc(f.whatsapp)}" oninput="parceiroCampo('whatsapp',this.value)" placeholder="(35) 99999-9999">
-      <label>Cidade *</label><input value="${parceiroEsc(f.cidade)}" oninput="parceiroCampo('cidade',this.value)" placeholder="Ex.: São Paulo, Guarulhos, Muzambinho...">
+      <label>Cidade *</label><input value="${parceiroEsc(f.cidade)}" oninput="parceiroCampo('cidade',this.value)" placeholder="Ex.: São Paulo, Guarulhos, sua cidade...">
       <label>Endereço do estabelecimento</label><input value="${parceiroEsc(f.endereco)}" oninput="parceiroCampo('endereco',this.value)" placeholder="Rua, número e bairro">
       <label>Tipo de negócio *</label><select onchange="parceiroCampo('tipoNegocio',this.value)">
         <option value="farmacia" ${f.tipoNegocio==='farmacia'?'selected':''}>Farmácia</option><option value="mercado" ${f.tipoNegocio==='mercado'?'selected':''}>Mercado / Supermercado</option><option value="restaurante" ${f.tipoNegocio==='restaurante'?'selected':''}>Restaurante / Lanchonete</option><option value="loja" ${f.tipoNegocio==='loja'?'selected':''}>Loja / Comércio</option><option value="petshop" ${f.tipoNegocio==='petshop'?'selected':''}>Pet shop</option><option value="autopecas" ${f.tipoNegocio==='autopecas'?'selected':''}>Autopeças</option><option value="floricultura" ${f.tipoNegocio==='floricultura'?'selected':''}>Floricultura</option><option value="outro" ${f.tipoNegocio==='outro'?'selected':''}>Outro</option>
@@ -5996,7 +6022,7 @@ function taxasERegrasHTML(){
 
   <div class="cf-titulo-secao"> Taxas e regras para quem entrega (motorista)</div>
   <div class="cf-beneficios">
-    <div class="cf-beneficio"><span class="check"></span> <b>Comissão da plataforma:</b> na Grande São Paulo, o motorista fica com <b>85%</b> e a plataforma com <b>15%</b>. Nas demais praças, vale a taxa configurada no plano.</div>
+    <div class="cf-beneficio"><span class="check"></span> <b>Comissão da plataforma:</b> na Grande São Paulo, a taxa automática pode ser definida no painel (padrão 15% plataforma / 85% motorista). Se ela estiver desligada, vale a taxa normal do plano.</div>
     <div class="cf-beneficio"><span class="check"></span> <b>Taxa única do Pro:</b> R$ ${PLANOS.pro.preco.toFixed(2)}, paga uma única vez, sem mensalidade.</div>
     <div class="cf-beneficio"><span class="check"></span> <b>Limite de entregas por mês:</b> Free até ${PLANOS.free.limiteMensal||'—'} entregas · Pro ilimitado.</div>
     <div class="cf-beneficio"><span class="check"></span> <b>Corridas simultâneas:</b> Free até ${PLANOS.free.limiteSimultaneo} · Pro até ${PLANOS.pro.limiteSimultaneo}.</div>
