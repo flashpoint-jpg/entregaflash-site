@@ -73,8 +73,8 @@ fbq('track', 'PageView');
   @keyframes ef-skeleton-brilho{0%{background-position:100% 50%}100%{background-position:0% 50%}}
   .ef-skeleton-linha{height:14px;margin-bottom:10px;}
   .ef-skeleton-cartao{border:1px solid var(--linha);border-radius:18px;padding:15px;margin-bottom:12px;}
-  #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(circle at 15% 0%, rgba(255,201,60,0.06), transparent 40%),var(--noite);padding-bottom:20px;box-shadow:0 0 60px rgba(0,0,0,0.45);}
-  @media (min-width:481px){ body{ background:linear-gradient(180deg,#0d1030,#05061a); } #app{ min-height:100vh; } }
+  #app{max-width:480px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;background:radial-gradient(circle at 15% 0%, rgba(255,151,16,0.06), transparent 40%),var(--noite);padding-bottom:20px;box-shadow:0 0 60px rgba(0,0,0,0.45);}
+  @media (min-width:481px){ body{ background:var(--noite); } #app{ min-height:100vh; } }
   /* #app-resto só existe pra permitir atualizar o conteúdo sem recriar o cabeçalho/logo a cada render();
      display:contents faz esse wrapper "desaparecer" do layout, então os filhos dele continuam se
      comportando como itens diretos do flex #app, exatamente como antes. */
@@ -524,7 +524,7 @@ fbq('track', 'PageView');
 .admin-login-security .dot{width:6px;height:6px;border-radius:50%;background:var(--verde);box-shadow:0 0 0 4px rgba(46,204,113,.10)}
 .admin-login-version{text-align:center;color:rgba(255,255,255,.28);font-size:9px;margin-top:12px;letter-spacing:1px;text-transform:uppercase}
 @media(max-width:520px){
-  .admin-conteudo:has(.admin-login-shell){padding:0!important;background:#101117}
+  .admin-conteudo:has(.admin-login-shell){padding:0!important;background:#0d0f12}
   .admin-conteudo-inner:has(.admin-login-shell){max-width:none!important}
   .admin-login-shell{min-height:calc(100dvh - 70px);border-radius:0;padding:24px 16px 36px}
   .admin-login-card{padding:26px 19px 22px;border-radius:24px}
@@ -1143,12 +1143,15 @@ async function salvarConfigGeralAdmin(){
   for(const k in payload){ if(!CAMPOS_NAO_NUMERICOS.includes(k) && Number.isNaN(payload[k])){ mostrarToast('Preenche todos os campos com números válidos.'); return; } }
   const { error } = await sb.rpc('entrega_admin_salvar_config_geral', { p_senha: estado.admin.senhaDigitada, p_config: payload });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar as configurações: '+(error.message||'verifica a ligação e tenta de novo'), 'erro'); return; }
-  // O banco é a fonte oficial: só confirma depois de reler exatamente o que foi persistido.
-  const { data: salvo, error: erroLeitura } = await sb.from('entrega_config_geral').select('*').eq('id',1).maybeSingle();
-  if(erroLeitura || !salvo){ console.error(erroLeitura); mostrarToast('Salvou, mas não consegui confirmar no banco. Atualize e tente novamente.', 'erro'); return; }
-  aplicarConfigGeral(salvo);
-  mostrarToast('Configurações salvas no banco e atualizadas no site!', 'sucesso');
-  render();
+  const { data:configSalva, error:erroConfigSalva } = await sb.from('entrega_config_geral').select('*').eq('id',1).maybeSingle();
+  if(!erroConfigSalva && configSalva){
+    aplicarConfigGeral(configSalva);
+    estado.configGeral = configSalva;
+  } else {
+    aplicarConfigGeral(payload);
+  }
+  mostrarToast('Configurações salvas e confirmadas no banco!', 'sucesso');
+  renderAdminParcial();
 }
 
 let bvPapelSelecionado = 'cliente';
@@ -1226,7 +1229,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' }
@@ -2149,31 +2152,11 @@ let canalConfigGeralRealtime = null;
 function assinarConfigGeralRealtime(){
   if(canalConfigGeralRealtime) return;
   canalConfigGeralRealtime = sb.channel('config-geral-realtime')
-    .on('postgres_changes', {event:'*', schema:'public', table:'entrega_config_geral'}, (payload)=>{
-      if(payload.new) aplicarConfigGeral(payload.new);
-      // No painel administrativo, NÃO recria a tela inteira: isso fazia o painel piscar,
-      // perder o ponto do scroll e parecer que estava atualizando sozinho.
-      // Os valores já ficam atualizados em memória e o próprio botão Salvar confirma o banco.
-      if(!estado.admin?.aberto) render();
+    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_config_geral'}, (payload)=>{
+      aplicarConfigGeral(payload.new);
+      render();
     })
     .subscribe();
-}
-
-// Sincronização de segurança: garante atualização mesmo se o realtime cair no celular/PWA.
-let efConfigSyncTimer = null;
-function sincronizarConfigGeralPeriodicamente(){
-  if(efConfigSyncTimer) return;
-  const sync = async ()=>{
-    try{
-      await carregarConfigGeral();
-      // Em telas de cliente/motorista pode redesenhar para refletir preço/regra nova.
-      // No admin, sincroniza em silêncio para não ficar atualizando/piscando.
-      if(!estado.admin?.aberto) render();
-    }catch(e){}
-  };
-  efConfigSyncTimer = setInterval(sync, 15000);
-  window.addEventListener('focus', sync);
-  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) sync(); });
 }
 
 // ---------- presença em tempo real (quantas pessoas têm o app aberto agora) ----------
@@ -5748,7 +5731,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL NOVO • CIDADES • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL ULTRA • WHATSAPP 5 DIAS • SEM PISCAR • 30/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -6640,22 +6623,31 @@ function formatarTelefoneExibicao(t){
   if(d.length===10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`;
   return t||'—';
 }
+const ROTULO_STATUS_MOTORISTA = {
+  incompleto: { texto:'🆕 Cadastro incompleto', estilo:'background:rgba(255,151,16,0.16);color:var(--mango)', cor:'var(--mango)' },
+  basico: { texto:'🆕 Falta enviar documentos', estilo:'background:rgba(255,151,16,0.16);color:var(--mango)', cor:'var(--mango)' },
+  liberado: { texto:'🆕 Falta enviar documentos', estilo:'background:rgba(255,151,16,0.16);color:var(--mango)', cor:'var(--mango)' },
+  pendente: { texto:'📄 Aguardando aprovação', estilo:'background:rgba(111,168,220,0.18);color:var(--azul)', cor:'var(--azul)' },
+  aprovado: { texto:'✅ Aprovado', selo:'selo-entregue', cor:'var(--verde)' },
+  bloqueado: { texto:'🔒 Bloqueado', selo:'selo-cancelado', cor:'var(--chama)' }
+};
 function motoristaCardHTML(m, emRota){
   const onlineAgora = motoristaOnlineAgora(m);
+  const infoStatus = ROTULO_STATUS_MOTORISTA[m.status] || { texto:m.status, selo:'', cor:'' };
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span>🚚 Em rota</span>`
     : onlineAgora
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" style="${emRota?'border-color:var(--mango)':onlineAgora?'border-color:var(--verde)':''}">
+    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">🛵</div>`}
           <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${onlineAgora?'🟢 Online':'⚪ Offline'}${emRota?' · 🚚 Em rota':''}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span class="selo ${m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${m.status}</span>
+          <span class="selo ${infoStatus.selo||''}" ${infoStatus.estilo?`style="${infoStatus.estilo}"`:''}>${infoStatus.texto}</span>
         </div>
       </summary>
       <div class="admin-detalhes">
@@ -6672,6 +6664,17 @@ function motoristaCardHTML(m, emRota){
           Incluir aviso de bônus na mensagem
         </label>
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.telefone.replace(/\D/g,'')}')">💬 Enviar boas-vindas no WhatsApp</button>
+        ${['basico','liberado'].includes(m.status) ? (()=>{
+          const criado=Number(m.criado_em||0);
+          const dias=criado?Math.floor((Date.now()-criado)/(24*60*60*1000)):0;
+          const vencido=!!(criado && dias>=5);
+          const faltam=Math.max(0,5-dias);
+          return `<div style="margin-top:10px;padding:10px;border-radius:10px;border:1px solid ${vencido?'rgba(255,92,92,.55)':'rgba(37,211,102,.35)'};background:${vencido?'rgba(255,92,92,.08)':'rgba(37,211,102,.06)'}">
+            <div style="font-size:12.5px;font-weight:800;color:${vencido?'#ff7474':'var(--osso)'}">${vencido?'⚠️ PRAZO DE 5 DIAS ULTRAPASSADO':`⏳ Documentos pendentes · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`}</div>
+            <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar documentação pelo WhatsApp</button>
+          </div>`;
+        })() : ''}
+
       </div>
       <div style="display:flex;gap:8px;margin-top:6px">
         <select id="alt-plano-${m.id}" style="flex:1">
@@ -6710,7 +6713,7 @@ function motoristaCardHTML(m, emRota){
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
       </div>
-      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>` : ''}
+      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Lembrar de enviar os documentos</button>` : ''}
       ${m.status==='pendente' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')">✅ Aprovar</button>
@@ -6835,8 +6838,19 @@ async function carregarTodosPedidosAdmin(){
   const { data, error } = await sb.from('entrega_pedidos').select('*').order('criado_em',{ascending:false}).limit(500);
   estado.admin.carregando=false;
   if(error){ console.error(error); mostrarToast('Erro ao carregar pedidos.', 'erro'); return; }
-  estado.admin.todosPedidos = data||[];
-  agendarRenderAdmin();
+  const novos = data||[];
+  // assinatura só com o que aparece na lista/cards — de propósito NÃO inclui lat/lng/atualizado_em
+  // do motorista, que mudam a cada 8s enquanto ele está em rota. Sem isso, o painel inteiro
+  // refazia a tela a cada atualização de GPS, mesmo sem nada visível ter mudado (a "piscadeira").
+  const assinaturaPedidos=(lista)=>JSON.stringify((lista||[]).map(p=>[p.id,p.status,Number(p.preco||0),p.cliente_nome,p.cliente_telefone,p.motorista_nome,p.motorista_telefone,p.origem,p.destino,p.foto_antes_url,p.foto_depois_url,!!(p.cliente_confirmou||p.confirmado_cliente||p.recebimento_confirmado||p.confirmado_em||p.cliente_confirmou_em)]));
+  const mudouPedidos = assinaturaPedidos(estado.admin.todosPedidos)!==assinaturaPedidos(novos);
+  estado.admin.todosPedidos = novos;
+  if(mudouPedidos || !jaTinhaPedidos){
+    agendarRenderAdmin();
+  } else if(estado.admin.logado && estado.admin.aba==='resumo'){
+    // nada mudou pra tela, mas o mapa ao vivo ainda precisa mover os pontos com a posição nova
+    try{ montarMapaAdminGeral(); }catch(e){ console.warn(e); }
+  }
 }
 async function carregarClientesAdmin(){
   // só mostra a tela cheia de "carregando" no primeiro carregamento (lista ainda vazia).
@@ -6851,11 +6865,14 @@ async function carregarClientesAdmin(){
   if(erroSaldos) console.error(erroSaldos);
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
-  const novosClientes = (data||[]).map(c=>({ ...c, saldo: saldoPorTelefone[c.telefone]||0 }));
-  const mudouClientes = JSON.stringify(novosClientes) !== JSON.stringify(estado.admin.clientes||[]);
-  estado.admin.clientes = novosClientes;
-  if(mudouClientes) agendarRenderAdmin();
+  const novos = (data||[]).map(c=>({ ...c, saldo: saldoPorTelefone[c.telefone]||0 }));
+  // mesma lógica anti-piscada da lista de motoristas: só refaz a tela se algo realmente mudou.
+  const assinaturaClientes=(lista)=>JSON.stringify((lista||[]).map(c=>[c.telefone,c.nome,!!c.facial_ativa,!!c.bloqueado,Number(c.saldo||0)]));
+  const mudouClientes = assinaturaClientes(estado.admin.clientes)!==assinaturaClientes(novos);
+  estado.admin.clientes = novos;
+  if(mudouClientes || !jaTinhaClientes) agendarRenderAdmin();
 }
+
 function filtrarPedidosAdmin(){
   const a = estado.admin;
   const busca = (a.buscaPedidos||'').trim().toLowerCase();
@@ -6928,9 +6945,53 @@ function adminCorpoHTML(){
   else if(a.aba==='feedbacks') corpo = adminAbaFeedbacksHTML();
   else corpo = adminAbaSuporteHTML();
   return `
+    <div class="admin-cartao" style="margin-bottom:12px;padding:12px 14px">
+      <label style="margin:0 0 6px;font-size:12px;color:var(--poeira)">🔎 Buscar cliente ou motorista pelo celular (cola o número do WhatsApp aqui)</label>
+      <div style="display:flex;gap:8px">
+        <input type="tel" id="busca-rapida-admin" placeholder="Ex: (31) 99999-9999" value="${a.buscaRapida||''}" oninput="estado.admin.buscaRapida=this.value" onkeydown="if(event.key==='Enter'){ event.preventDefault(); executarComCarregando('buscaRapidaAdmin', ()=>buscarClienteOuMotoristaPorTelefoneAdmin(this.value)); }" style="flex:1">
+        <button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('buscaRapidaAdmin')} onclick="executarComCarregando('buscaRapidaAdmin', ()=>buscarClienteOuMotoristaPorTelefoneAdmin(document.getElementById('busca-rapida-admin').value))">${rotuloCarregando('buscaRapidaAdmin','Abrir cadastro','Buscando...')}</button>
+      </div>
+    </div>
     <div class="admin-abas-grade">${abas.map(x=>`<button class="${a.aba===x.id?'ativo':''}" onclick="mudarAbaAdmin('${x.id}')">${x.label}</button>`).join('')}</div>
     <div class="admin-aba-corpo">${corpo}</div>`;
 }
+async function buscarClienteOuMotoristaPorTelefoneAdmin(valorInput){
+  const alvo = String(valorInput||'').replace(/\D/g,'');
+  if(alvo.length<8){ mostrarToast('Cola pelo menos os 8 últimos números do celular.', 'erro'); return; }
+  const sufixo = alvo.slice(-8);
+  if(!estado.admin.clientes.length) await carregarClientesAdmin();
+  if(!estado.admin.motoristas.length) await carregarMotoristasAdmin();
+  const cliente = (estado.admin.clientes||[]).find(c=>String(c.telefone||'').replace(/\D/g,'').endsWith(sufixo));
+  if(cliente){
+    estado.admin.aba = 'clientes';
+    estado.admin.clienteEditando = cliente.telefone;
+    render();
+    focarCartaoBuscaRapidaAdmin('cliente', String(cliente.telefone).replace(/\D/g,''));
+    return;
+  }
+  const motorista = (estado.admin.motoristas||[]).find(m=>String(m.telefone||'').replace(/\D/g,'').endsWith(sufixo));
+  if(motorista){
+    estado.admin.aba = 'motoristas';
+    estado.admin.motoristaEditando = motorista.id;
+    render();
+    focarCartaoBuscaRapidaAdmin('motorista', String(motorista.telefone).replace(/\D/g,''));
+    return;
+  }
+  mostrarToast('Nenhum cliente ou motorista encontrado com esse número.', 'erro');
+}
+function focarCartaoBuscaRapidaAdmin(tipo, telefoneDigitos){
+  setTimeout(()=>{
+    const seletor = tipo==='cliente' ? `[data-cliente-telefone="${telefoneDigitos}"]` : `[data-motorista-telefone="${telefoneDigitos}"]`;
+    const el = document.querySelector(seletor);
+    if(!el) return;
+    el.open = true;
+    el.scrollIntoView({behavior:'smooth', block:'start'});
+    el.style.outline = '2px solid var(--mango)';
+    el.style.outlineOffset = '2px';
+    setTimeout(()=>{ el.style.outline=''; el.style.outlineOffset=''; }, 2200);
+  }, 60);
+}
+window.buscarClienteOuMotoristaPorTelefoneAdmin = buscarClienteOuMotoristaPorTelefoneAdmin;
 
 function normalizarCidadePainel(nome){
   return String(nome||'').trim().replace(/\s+/g,' ');
@@ -6975,11 +7036,17 @@ function resumoMotoristasPorCidadeHTML(){
 }
 function resumoSituacaoMotoristasHTML(){
   const ms=estado.admin.motoristas||[];
-  const online=ms.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status)).length;
+  const online=ms.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status)).length;
   const semDocs=ms.filter(m=>['basico','liberado'].includes(m.status)).length;
+  const docsVencidos=ms.filter(m=>{
+    if(!['basico','liberado'].includes(m.status)) return false;
+    const criado=Number(m.criado_em||0);
+    return criado>0 && (Date.now()-criado)>=5*24*60*60*1000;
+  }).length;
   const analise=ms.filter(m=>m.status==='pendente').length;
   const aprovados=ms.filter(m=>m.status==='aprovado').length;
   return `
+  ${docsVencidos?`<div class="admin-cartao" style="margin-bottom:12px;border-color:#ff5c5c;background:rgba(255,92,92,.08)"><b style="color:#ff7474">⚠️ Documentação atrasada</b><div class="am-linha"><span>Passaram de 5 dias sem enviar documentos</span><b style="color:#ff7474">${docsVencidos}</b></div><div class="subtitulo" style="margin:6px 0 0">Abra Motoristas e use o botão de WhatsApp para lembrar antes de excluir.</div></div>`:''}
   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px">
     <div class="admin-cartao" style="margin:0;text-align:center"><div data-admin-online-count style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--verde)">${online}</div><div style="font-size:12px">🟢 Online agora</div></div>
     <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--chama)">${semDocs}</div><div style="font-size:12px">📄 Sem documentos</div></div>
@@ -7407,13 +7474,13 @@ function clienteCardAdminHTML(c){
   const idc = String(c.telefone).replace(/\D/g,'');
   const validado = !!c.facial_ativa;
   return `
-    <details class="admin-resumo-card" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
+    <details class="admin-resumo-card" data-cliente-telefone="${idc}" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">👤</div>
-          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome}</b><span style="font-size:12px;color:var(--poeira)">${validado?'✅ Cliente ativo':'⏳ Validação pendente'}</span></div>
+          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.nome}</b><span style="font-size:12px;color:var(--poeira)">${validado?'✅ Cliente ativo':'🆕 Aguardando validação'}</span></div>
         </div>
-        ${c.bloqueado ? `<span class="selo selo-cancelado">bloqueado</span>` : validado?`<span class="selo selo-entregue">ativo</span>`:`<span class="selo selo-andamento">pendente</span>`}
+        ${c.bloqueado ? `<span class="selo selo-cancelado">🔒 bloqueado</span>` : validado?`<span class="selo selo-entregue">✅ ativo</span>`:`<span class="selo" style="background:rgba(255,151,16,0.16);color:var(--mango)">🆕 aguardando validação</span>`}
       </summary>
       <div class="admin-detalhes">
         <div class="am-linha"><span>Telefone</span><b>${c.telefone}</b></div>
@@ -7442,17 +7509,37 @@ function clienteCardAdminHTML(c){
 }
 function adminAbaClientesHTML(){
   const a = estado.admin;
+  if(!a.filtroStatusClientes) a.filtroStatusClientes='todos';
   if(a.carregando) return skeletonLista(4);
   if(a.clientes.length===0) return `<div class="vazio"><span class="emoji-grande">👤</span>Nenhum cliente cadastrado ainda.</div>`;
   const pendentes = a.clientes.filter(c=>!c.facial_ativa && !c.bloqueado);
   const ativos = a.clientes.filter(c=>!!c.facial_ativa && !c.bloqueado);
   const bloqueados = a.clientes.filter(c=>!!c.bloqueado);
-  return `
-    <div class="admin-lista-secao"><b>⏳ Clientes pendentes</b><span class="selo selo-andamento">${pendentes.length}</span></div>
+  const chips = [
+    {id:'todos', label:'Todos', n:a.clientes.length},
+    {id:'pendentes', label:'🆕 Aguardando validação', n:pendentes.length},
+    {id:'ativos', label:'✅ Ativos', n:ativos.length},
+    {id:'bloqueados', label:'🔒 Bloqueados', n:bloqueados.length}
+  ];
+  const grupoFiltrado = {
+    pendentes: {titulo:'🆕 Aguardando validação — acabou de se cadastrar', lista:pendentes},
+    ativos: {titulo:'✅ Clientes ativos', lista:ativos},
+    bloqueados: {titulo:'🔒 Bloqueados', lista:bloqueados}
+  }[a.filtroStatusClientes];
+  const corpoLista = grupoFiltrado
+    ? `<div class="admin-lista-secao"><b>${grupoFiltrado.titulo}</b><span class="selo">${grupoFiltrado.lista.length}</span></div>
+       ${grupoFiltrado.lista.length?grupoFiltrado.lista.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Ninguém nesse grupo agora.</div>`}`
+    : `
+    <div class="admin-lista-secao"><b>🆕 Aguardando validação</b><span class="selo selo-andamento">${pendentes.length}</span></div>
     ${pendentes.length?pendentes.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente aguardando validação.</div>`}
     <div class="admin-lista-secao" style="margin-top:20px"><b>✅ Clientes ativos</b><span class="selo selo-entregue">${ativos.length}</span></div>
     ${ativos.length?ativos.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente ativo ainda.</div>`}
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(clienteCardAdminHTML).join('')}`:''}`;
+  return `
+    <div class="admin-filtros-grade" style="margin-bottom:12px">
+      ${chips.map(c=>`<button class="${a.filtroStatusClientes===c.id?'ativo':''}" onclick="estado.admin.filtroStatusClientes='${c.id}';render()">${c.label} (${c.n})</button>`).join('')}
+    </div>
+    ${corpoLista}`;
 }
 function alternarEdicaoClienteAdmin(telefone){
   estado.admin.clienteEditando = estado.admin.clienteEditando===telefone ? null : telefone;
@@ -7510,6 +7597,7 @@ async function excluirClienteAdmin(telefone, nome){
 function adminAbaMotoristasHTML(){
   const a = estado.admin;
   if(!a.filtroRegiaoMotoristas) a.filtroRegiaoMotoristas='todos';
+  if(!a.filtroStatusMotoristas) a.filtroStatusMotoristas='todos';
   if(a.carregando) return skeletonLista(4);
   if(a.motoristas.length===0) return `<div class="vazio"><span class="emoji-grande">🛵</span>Nenhum cadastro de entregador ainda.</div>`;
   const emRotaPorTelefone = {};
@@ -7520,25 +7608,52 @@ function adminAbaMotoristasHTML(){
     if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
     return true;
   });
-  const online=baseMotoristas.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
+  const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
   const aguardandoDocs=baseMotoristas.filter(m=>['basico','liberado'].includes(m.status));
   const pendentes=baseMotoristas.filter(m=>m.status==='pendente');
-  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
-  const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
+  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !motoristaOnlineAgora(m));
+  const bloqueados=baseMotoristas.filter(m=>m.status==='bloqueado');
+  const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m));
+  const chips = [
+    {id:'todos', label:'Todos', n:baseMotoristas.length},
+    {id:'docs', label:'🆕 Falta documento', n:aguardandoDocs.length},
+    {id:'analise', label:'📄 Aguardando aprovação', n:pendentes.length},
+    {id:'online', label:'🟢 Online agora', n:online.length},
+    {id:'ativos', label:'✅ Aprovados', n:ativos.length},
+    {id:'bloqueados', label:'🔒 Bloqueados', n:bloqueados.length}
+  ];
+  const grupoFiltrado = {
+    docs: {titulo:'🆕 Falta documento — acabou de se cadastrar', lista:aguardandoDocs},
+    analise: {titulo:'📄 Documentos enviados, aguardando aprovação', lista:pendentes},
+    online: {titulo:'🟢 Online agora', lista:online},
+    ativos: {titulo:'✅ Aprovados (offline)', lista:ativos},
+    bloqueados: {titulo:'🔒 Bloqueados', lista:bloqueados}
+  }[a.filtroStatusMotoristas];
+  const corpoLista = grupoFiltrado
+    ? `<div class="admin-lista-secao"><b>${grupoFiltrado.titulo}</b><span class="selo">${grupoFiltrado.lista.length}</span></div>
+       ${grupoFiltrado.lista.length?grupoFiltrado.lista.map(cardHTML).join(''):`<div class="subtitulo">Ninguém nesse grupo agora.</div>`}`
+    : `
+    <div class="admin-lista-secao"><b>🟢 Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
+    ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista online agora.</div>`}
+    ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🆕 Acabou de se cadastrar — falta documento</b><span class="selo" style="background:rgba(255,151,16,0.16);color:var(--mango)">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
+    ${pendentes.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>📄 Documentos enviados, aguardando aprovação</b><span class="selo" style="background:rgba(111,168,220,0.18);color:var(--azul)">${pendentes.length}</span></div>${pendentes.map(cardHTML).join('')}`:''}
+    ${ativos.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>✅ Aprovados (offline)</b><span class="selo selo-entregue">${ativos.length}</span></div>${ativos.map(cardHTML).join('')}`:''}
+    ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
+    ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
   return `
-    <div class="admin-filtros-grade" style="margin-bottom:12px">
+    <div class="admin-filtros-grade" style="margin-bottom:10px">
       <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
       <button class="${a.filtroRegiaoMotoristas==='sp'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='sp';render()">📍 Grande São Paulo</button>
       <button class="${a.filtroRegiaoMotoristas==='mg'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='mg';render()">📍 Sul de Minas</button>
     </div>
-    ${resumoSituacaoMotoristasHTML()}
-    ${resumoMotoristasPorCidadeHTML()}
-    <div class="admin-lista-secao"><b>🟢 Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
-    ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista online agora.</div>`}
-    ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>📄 Ainda não enviaram documentos</b><span class="selo selo-aguardando">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
-    ${pendentes.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⏳ Documentos em análise</b><span class="selo selo-andamento">${pendentes.length}</span></div>${pendentes.map(cardHTML).join('')}`:''}
-    ${ativos.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>✅ Motoristas ativos offline</b><span class="selo">${ativos.length}</span></div>${ativos.map(cardHTML).join('')}`:''}
-    ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
+    <div class="admin-filtros-grade" style="margin-bottom:12px">
+      ${chips.map(c=>`<button class="${a.filtroStatusMotoristas===c.id?'ativo':''}" onclick="estado.admin.filtroStatusMotoristas='${c.id}';render()">${c.label} (${c.n})</button>`).join('')}
+    </div>
+    <details style="margin-bottom:14px">
+      <summary style="cursor:pointer;font-size:13px;color:var(--poeira);padding:8px 0">📊 Ver resumo geral e por cidade</summary>
+      <div style="margin-top:8px">${resumoSituacaoMotoristasHTML()}${resumoMotoristasPorCidadeHTML()}</div>
+    </details>
+    ${corpoLista}`;
 }
 function adminAbaSaquesHTML(){
   const saquesPendentes = (estado.admin.saques||[]).filter(s=>s.status==='pendente');
@@ -7576,6 +7691,19 @@ async function ajustarSaldoMotoristaAdmin(telefone){
   mostrarToast(`Saldo ajustado! Novo saldo: R$ ${Number(novoSaldo).toFixed(2)}`, 'sucesso');
   if(estado.motorista.telefone===telefone) estado.motorista.saldo = Number(novoSaldo);
   await carregarMotoristasAdmin();
+}
+function normalizarWhatsAppBR(telefone){
+  let n=String(telefone||'').replace(/\D/g,'');
+  if(n.startsWith('55') && (n.length===12 || n.length===13)) return n;
+  if(n.length===10 || n.length===11) return '55'+n;
+  return n;
+}
+function abrirWhatsAppDocumentosAdmin(telefone, nome){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg), '_blank');
 }
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
   const checkbox = document.getElementById('bonus-motorista-'+idm);
@@ -7707,6 +7835,7 @@ function saqueCardHTML(s){
 
 // =================== PAINEL ADMINISTRATIVO ===================
 let canalAdminRealtime = null;
+let canalAdminSinais = null;
 let intervaloAdminMotoristasClientesPoll = null;
 let adminOperacaoClienteEmAndamento = false;
 let _adminRenderTimer = null;
@@ -7734,6 +7863,19 @@ function agendarRenderAdmin(delay=90){
   if(_adminRenderTimer) clearTimeout(_adminRenderTimer);
   _adminRenderTimer = setTimeout(()=>{ _adminRenderTimer=null; renderAdminParcial(); }, delay);
 }
+function atualizarPresencaAdminDOM(){
+  if(!estado.admin?.aberto) return;
+  const online=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
+  document.querySelectorAll('[data-admin-online-count]').forEach(el=>{ el.textContent=String(online.length); });
+  document.querySelectorAll('[data-motorista-telefone]').forEach(card=>{
+    const tel=card.getAttribute('data-motorista-telefone');
+    const m=(estado.admin.motoristas||[]).find(x=>String(x.telefone||'').replace(/\D/g,'')===tel);
+    if(!m) return;
+    const on=motoristaOnlineAgora(m);
+    const span=card.querySelector('summary .avatar-linha span');
+    if(span && !span.textContent.includes('Em rota')) span.textContent=on?'🟢 Online':'⚪ Offline';
+  });
+}
 let assinaturaPresencaAdmin='';
 function verificarMudancaPresencaAdmin(){
   if(!estado.admin?.logado || !(estado.admin.motoristas||[]).length) return;
@@ -7742,7 +7884,7 @@ function verificarMudancaPresencaAdmin(){
   if(nova!==assinaturaPresencaAdmin){
     assinaturaPresencaAdmin=nova;
     carregarMotoristasOnline();
-    if(estado.admin.aba==='motoristas' || estado.admin.aba==='resumo') agendarRenderAdmin(0);
+    atualizarPresencaAdminDOM();
   }
 }
 setInterval(verificarMudancaPresencaAdmin,20000);
@@ -7794,17 +7936,31 @@ function assinarAdminRealtime(){
       debounce('admin-motoristas', carregarMotoristasAdmin);
     })
     .subscribe();
-  // Plano B: entrega_motoristas/entrega_clientes agora só são lidas via RPC
-  // protegida — o Realtime não recebe mais eventos dessas duas tabelas pra
-  // quem não tem policy de leitura aberta. Este polling garante que o painel
-  // continue vendo cadastros novos/alterados mesmo assim.
+  // Sinal instantâneo do banco (trigger em entrega_motoristas/entrega_clientes/entrega_clientes_saldos):
+  // manda só um aviso "mudou algo" pelo canal de broadcast — sem nenhum dado sensível nele — e a gente
+  // busca os dados de verdade pela mesma rota protegida de sempre (com a senha). Isso substitui a espera
+  // de até 20s do polling por uma atualização quase na hora, sem reabrir leitura direta dessas tabelas.
+  if(!canalAdminSinais){
+    canalAdminSinais = sb.channel('admin-sinais', { config:{ broadcast:{ self:false } } })
+      .on('broadcast', {event:'mudanca'}, (msg)=>{
+        const tabela = msg?.payload?.tabela;
+        if(tabela==='entrega_motoristas'){ debounce('admin-motoristas', carregarMotoristasAdmin); }
+        if(tabela==='entrega_clientes' || tabela==='entrega_clientes_saldos'){
+          if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) debounce('admin-clientes', carregarClientesAdmin);
+        }
+      })
+      .subscribe();
+  }
+  // Plano C: se o WebSocket do broadcast cair por algum motivo, esse polling — bem mais espaçado
+  // agora que o sinal instantâneo faz o trabalho pesado — garante que o painel não fique desatualizado pra sempre.
   if(intervaloAdminMotoristasClientesPoll) clearInterval(intervaloAdminMotoristasClientesPoll);
   intervaloAdminMotoristasClientesPoll = setInterval(() => {
     if(estado.admin.logado) { carregarMotoristasAdmin(); if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) carregarClientesAdmin(); }
-  }, 20000);
+  }, 120000);
 }
 function encerrarAdminRealtime(){
   if(canalAdminRealtime){ sb.removeChannel(canalAdminRealtime); canalAdminRealtime=null; }
+  if(canalAdminSinais){ sb.removeChannel(canalAdminSinais); canalAdminSinais=null; }
   if(intervaloAdminMotoristasClientesPoll){ clearInterval(intervaloAdminMotoristasClientesPoll); intervaloAdminMotoristasClientesPoll=null; }
 }
 function abrirAdmin(){
@@ -7889,20 +8045,18 @@ async function carregarMotoristasAdmin(){
   if(erroSaldos) console.error(erroSaldos);
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
-  const novosMotoristas = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  // Ignora campos de heartbeat/GPS ao decidir redesenhar o painel. Eles mudam o tempo todo.
-  const estrutural = arr => (arr||[]).map(m=>{ const x={...m}; delete x.disponivel_atualizado_em; delete x.lat_atual; delete x.lng_atual; delete x.lat_atualizado_em; return x; });
-  const mudouMotoristas = JSON.stringify(estrutural(novosMotoristas)) !== JSON.stringify(estrutural(estado.admin.motoristas||[]));
-  estado.admin.motoristas = novosMotoristas;
-  if(mudouMotoristas) agendarRenderAdmin();
+  const novos = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
+  const assinatura=(lista)=>JSON.stringify((lista||[]).map(m=>[m.id,m.nome,m.telefone,m.cidade,m.status,m.plano,m.veiculo_tipo,m.veiculo_marca,m.veiculo_placa,m.veiculo_cor,m.cnh_url,m.crlv_url,m.foto_motorista_url,m.foto_veiculo_url,m.foto_veiculo_tras_url,m.chave_pix,Number(m.saldo||0),!!motoristaOnlineAgora(m)]));
+  const mudou = assinatura(estado.admin.motoristas)!==assinatura(novos);
+  estado.admin.motoristas = novos;
+  if(mudou || !jaTinhaMotoristas) agendarRenderAdmin();
+  else atualizarPresencaAdminDOM();
 }
 async function carregarPedidosEntreguesAdmin(){
   const { data, error } = await sb.from('entrega_pedidos').select('preco,motorista_telefone').eq('status','entregue');
   if(error){ console.error(error); return; }
-  const novosEntregues = data||[];
-  const mudouEntregues = JSON.stringify(novosEntregues) !== JSON.stringify(estado.admin.pedidosEntregues||[]);
-  estado.admin.pedidosEntregues = novosEntregues;
-  if(mudouEntregues) agendarRenderAdmin();
+  estado.admin.pedidosEntregues = data||[];
+  agendarRenderAdmin();
 }
 async function aprovarMotoristaAdmin(id){
   const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
@@ -7916,15 +8070,9 @@ async function liberarDocumentosMotoristaAdmin(id){
   mostrarToast('Liberado! O motorista já pode enviar os documentos.', 'sucesso');
   await carregarMotoristasAdmin();
 }
-function lembrarEnviarDocumentosAdmin(telefone, nome){
-  // WhatsApp comum: não depende de Push/API paga.
-  if(typeof abrirWhatsAppDocumentosAdmin === 'function'){ abrirWhatsAppDocumentosAdmin(telefone, nome); return; }
-  let numero=String(telefone||'').replace(/\D/g,'');
-  if(numero && !numero.startsWith('55') && (numero.length===10 || numero.length===11)) numero='55'+numero;
-  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
-  const primeiro=(nome||'').trim().split(/\s+/)[0] || 'Olá';
-  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Abra o Entrega Flash e toque em ENVIAR DOCUMENTOS AGORA. Se precisar de ajuda, fale com a gente por aqui.`;
-  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
+async function lembrarEnviarDocumentosAdmin(telefone, nome){
+  await enviarPushServidor('motorista', telefone, '📄 Falta enviar seus documentos!', `${nome?nome+', c':'C'}ontinue seu cadastro no Entrega Flash — envie seus documentos agora e comece a receber corridas hoje mesmo.`);
+  mostrarToast('Lembrete enviado! (só toca com som se o motorista já tiver ativado as notificações dele)', 'sucesso');
 }
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
@@ -8003,7 +8151,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin;
+window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
@@ -8043,7 +8191,6 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   assinarPresencaRealtime();
   assinarAvisosGeraisRealtime();
   assinarConfigGeralRealtime();
-  sincronizarConfigGeralPeriodicamente();
   carregarMotoristasOnline();
   setInterval(carregarMotoristasOnline, 20000);
   setInterval(atualizarPresencaTipo, 20000);
