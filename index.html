@@ -80,7 +80,7 @@ fbq('track', 'PageView');
   #app-resto{display:contents;}
 
   header.topo{padding:calc(20px + env(safe-area-inset-top,0px)) 20px 16px;position:sticky;top:0;z-index:60;text-align:center;background:rgba(23,29,74,0.82);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid rgba(255,255,255,0.06);}
-  .btn-instalar-topo{position:absolute;top:14px;right:14px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,201,60,0.35);background:rgba(255,201,60,0.12);color:var(--mango,#ffc93c);font-size:19.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
+  .btn-instalar-topo{position:absolute;top:14px;left:14px;right:auto;width:38px;height:38px;border-radius:50%;border:1px solid rgba(255,201,60,0.35);background:rgba(255,201,60,0.12);color:var(--mango,#ffc93c);font-size:19.5px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.25);}
   .btn-instalar-topo:active{transform:scale(0.94);}
   .marca{display:flex;flex-direction:column;align-items:center;gap:0;}
   .marca .bv-logo-badge{margin:0 auto;}
@@ -1141,9 +1141,9 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 </style>
 
 <style id="ef-instalar-topo-fix-3008">
-.btn-instalar-topo{display:inline-flex!important;position:absolute!important;top:calc(12px + env(safe-area-inset-top,0px))!important;right:12px!important;width:auto!important;height:40px!important;padding:0 13px!important;border-radius:999px!important;border:1px solid rgba(255,151,16,.55)!important;background:linear-gradient(90deg,#ffad18,#ff6a00)!important;color:#0a0b0d!important;font:900 12.5px/1 'Karla',sans-serif!important;letter-spacing:.2px!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-shadow:0 8px 22px rgba(255,106,0,.22)!important;z-index:90!important;white-space:nowrap!important}
+.btn-instalar-topo{display:inline-flex!important;position:absolute!important;top:calc(12px + env(safe-area-inset-top,0px))!important;left:12px!important;right:auto!important;width:auto!important;height:40px!important;padding:0 13px!important;border-radius:999px!important;border:1px solid rgba(255,151,16,.55)!important;background:linear-gradient(90deg,#ffad18,#ff6a00)!important;color:#0a0b0d!important;font:900 12.5px/1 'Karla',sans-serif!important;letter-spacing:.2px!important;align-items:center!important;justify-content:center!important;gap:6px!important;box-shadow:0 8px 22px rgba(255,106,0,.22)!important;z-index:90!important;white-space:nowrap!important}
 .btn-instalar-topo .ef-install-ico{font-size:16px!important;line-height:1!important}
-.ef-instalar-bv-topo{position:absolute!important;top:calc(10px + env(safe-area-inset-top,0px))!important;right:10px!important;z-index:30!important}
+.ef-instalar-bv-topo{position:absolute!important;top:calc(10px + env(safe-area-inset-top,0px))!important;left:10px!important;right:auto!important;z-index:30!important}
 @media(max-width:380px){.btn-instalar-topo{padding:0 10px!important;font-size:11.5px!important;height:38px!important}.btn-instalar-topo .ef-install-ico{font-size:15px!important}}
 </style>
 </head>
@@ -1713,9 +1713,14 @@ function instalarApp(){
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   estado.mostrarDicaIOS = isIOS && !standalone;
 })();
-function instalarOuOrientarApp(){
-  // Preferir PWA oficial: evita APK antigo/desatualizado e instala sempre a versão publicada.
-  if(estado.podeInstalar && promptInstalacao){ instalarApp(); return; }
+async function instalarOuOrientarApp(){
+  // Instalação PWA oficial. No Chrome, usa o prompt nativo quando disponível.
+  if(promptInstalacao){ instalarApp(); return; }
+  // Dá ao Service Worker uma chance de ficar pronto antes do fallback.
+  try{ if('serviceWorker' in navigator) await navigator.serviceWorker.ready; }catch(e){}
+  if(promptInstalacao){ instalarApp(); return; }
+  // O Chrome não permite forçar o prompt quando beforeinstallprompt não foi liberado.
+  // Nesse caso o botão continua funcionando e mostra o caminho de instalação do navegador.
   abrirComoInstalar();
 }
 function abrirPopupInstalar(){ estado.popupInstalarAberto=true; render(); }
