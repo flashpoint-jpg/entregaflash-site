@@ -1146,6 +1146,7 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 .ef-instalar-bv-topo{position:absolute!important;top:calc(10px + env(safe-area-inset-top,0px))!important;left:10px!important;right:auto!important;z-index:30!important}
 @media(max-width:380px){.btn-instalar-topo{padding:0 10px!important;font-size:11.5px!important;height:38px!important}.btn-instalar-topo .ef-install-ico{font-size:15px!important}}
 </style>
+<meta name="ef-build" content="DOCS-FINAL-20260830-1557">
 </head>
 
 <style id="ef-parceiros-premium">
@@ -7416,18 +7417,22 @@ async function loginMotorista(){
 
 async function iniciarDocumentosDoPainel(){
   const pm = estado.painelMotorista;
-  // O motorista logado fica em estado.motorista (não em painelMotorista.motorista).
-  // Usa também a sessão persistida como segurança para não obrigar novo login após o treinamento.
-  const telefone = String(estado.motorista?.telefone || pm.telefoneLiberado || pm.loginTelefone || localStorage.getItem('ef_motorista_telefone') || '').replace(/\D/g,'');
-  if(!telefone){ mostrarToast('Não foi possível identificar seu cadastro. Entre novamente.', 'erro'); return; }
+  let telefone = estado.motorista?.telefone || pm.telefoneLiberado || pm.loginTelefone || pm.cadastro?.telefone || '';
+  try{ telefone = telefone || localStorage.getItem('ef_motorista_telefone') || ''; }catch(e){}
+  telefone = String(telefone||'').replace(/\D/g,'');
+  if(!telefone){ mostrarToast('Sessão do motorista não encontrada. Saia e entre novamente.', 'erro'); return; }
   pm.telefoneLiberado = telefone;
   pm.loginTelefone = telefone;
+  if(pm.cadastro) pm.cadastro.telefone = telefone;
   await continuarParaDocumentos();
 }
 async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
-  const telefone = pm.telefoneLiberado || pm.loginTelefone;
+  let telefone = estado.motorista?.telefone || pm.telefoneLiberado || pm.loginTelefone || pm.cadastro?.telefone || '';
+  try{ telefone = telefone || localStorage.getItem('ef_motorista_telefone') || ''; }catch(e){}
+  telefone = String(telefone||'').replace(/\D/g,'');
+  if(!telefone){ pm.carregandoLiberado=false; mostrarToast('Sessão do motorista não encontrada. Saia e entre novamente.', 'erro'); render(); return; }
   const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
   const data = Array.isArray(dadosPerfil) ? (dadosPerfil[0] || null) : dadosPerfil;
   pm.carregandoLiberado = false;
@@ -7890,7 +7895,7 @@ function motoristaCardHTML(m, emRota){
         <div style="font-size:12px;color:var(--poeira);margin-top:4px;line-height:1.45">${vencido?'Este motorista ainda não enviou a documentação. Você já pode revisar e excluir o cadastro, se desejar.':'Envie um lembrete pelo WhatsApp antes do prazo terminar.'}</div>
       </div>
       <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>
-      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Enviar lembrete pelo app</button>`; })()}` : ''}
+      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>`; })()}` : ''}
       ${m.status==='pendente' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')"> Aprovar</button>
@@ -8884,9 +8889,15 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome){
   const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar o cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
   window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
-async function lembrarEnviarDocumentosAdmin(telefone, nome){
-  await enviarPushServidor('motorista', telefone, ' Falta enviar seus documentos!', `${nome?nome+', c':'C'}ontinue seu cadastro no Entrega Flash — envie seus documentos agora e comece a receber corridas hoje mesmo.`);
-  mostrarToast('Lembrete enviado! (só toca com som se o motorista já tiver ativado as notificações dele)', 'sucesso');
+function lembrarEnviarDocumentosAdmin(telefone, nome){
+  // WhatsApp comum: não depende de Push/API paga.
+  if(typeof abrirWhatsAppDocumentosAdmin === 'function'){ abrirWhatsAppDocumentosAdmin(telefone, nome); return; }
+  let numero=String(telefone||'').replace(/\D/g,'');
+  if(numero && !numero.startsWith('55') && (numero.length===10 || numero.length===11)) numero='55'+numero;
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(/\s+/)[0] || 'Olá';
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Abra o Entrega Flash e toque em ENVIAR DOCUMENTOS AGORA. Se precisar de ajuda, fale com a gente por aqui.`;
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
