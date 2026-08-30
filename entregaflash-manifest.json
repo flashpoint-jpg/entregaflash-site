@@ -2,7 +2,7 @@
   "name": "Entrega Flash",
   "short_name": "Entrega Flash",
   "description": "Entregas rápidas e seguras no Sul de Minas e na Grande São Paulo.",
-  "start_url": "./index.html?v=20260830-ultra2",
+  "start_url": "./index.html?v=20260830-config-live4",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait-primary",
