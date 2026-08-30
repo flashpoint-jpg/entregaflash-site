@@ -994,23 +994,50 @@ let VEICULOS = {
   van:{label:'Van', emoji:'🚙', km:2.30, kmRoca:3.00, minimo:15.00, veloc:22, limitePeso:'1.000 kg', volume:'267 x 179 x 166 cm'},
   caminhao:{label:'Caminhão', emoji:'🚚', km:2.50, kmRoca:2.50, minimo:0, veloc:22, confereCarga:true, limitePeso:'1,5 t', volume:'300 x 180 x 200 cm'}
 };
-// Região de cobertura: Muzambinho/MG e cidades próximas
-const REGIAO = { minLat:-22.92, maxLat:-14.23, minLon:-51.28, maxLon:-39.86 };
-// Centro aproximado da região, usado para "puxar" os resultados de busca para perto daqui
-const CENTRO_REGIAO = { lat:-21.3775, lon:-46.5133 };
+// Regiões de cobertura: Sul de Minas + Grande São Paulo
+// O retângulo geral só limita a busca ao Sudeste próximo; a validação final continua pela lista de cidades atendidas.
+const REGIAO = { minLat:-24.25, maxLat:-14.23, minLon:-51.60, maxLon:-39.86 };
+const REGIAO_GRANDE_SP = { minLat:-24.15, maxLat:-23.05, minLon:-47.25, maxLon:-45.65 };
+// Centro neutro entre as duas praças. A busca também usa o nome da cidade digitada pelo usuário.
+const CENTRO_REGIAO = { lat:-22.65, lon:-46.75 };
+const TAXA_PLATAFORMA_GRANDE_SP = 0.15; // 15% plataforma / 85% motorista
 
-// Lista de cidades atendidas (apenas estas são aceita)
-const CIDADES_PERMITIDAS = [
+const CIDADES_MG = [
   'Muzambinho','Juruaia','Monte Belo','Cabo Verde','Guaxupé','Caconde',
   'Tapiratiba','São Pedro da União','Nova Resende','Guaranésia','Botelhos',
   'Divisa Nova','Areado','Bom Jesus da Penha','Divinolândia','Alterosa',
   'Bandeira do Sul','Arceburgo','Jacuí','São José do Rio Pardo',
   'Conceição da Aparecida','Poços de Caldas'
 ];
+const CIDADES_GRANDE_SP = [
+  'São Paulo','Guarulhos','Osasco','São Bernardo do Campo','Santo André','São Caetano do Sul',
+  'Diadema','Mauá','Ribeirão Pires','Rio Grande da Serra','Barueri','Carapicuíba','Itapevi',
+  'Jandira','Santana de Parnaíba','Pirapora do Bom Jesus','Cajamar','Caieiras','Franco da Rocha',
+  'Francisco Morato','Mairiporã','Arujá','Santa Isabel','Itaquaquecetuba','Poá','Ferraz de Vasconcelos',
+  'Suzano','Mogi das Cruzes','Biritiba Mirim','Guararema','Salesópolis','Embu das Artes','Taboão da Serra',
+  'Itapecerica da Serra','Embu-Guaçu','Cotia','Vargem Grande Paulista','Juquitiba','São Lourenço da Serra'
+];
+// Lista única usada pelo autocomplete e pela validação de cidades.
+const CIDADES_PERMITIDAS = [...CIDADES_MG, ...CIDADES_GRANDE_SP];
 function normalizarTexto(t){
   return (t||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
 const CIDADES_PERMITIDAS_NORM = CIDADES_PERMITIDAS.map(normalizarTexto);
+const CIDADES_GRANDE_SP_NORM = CIDADES_GRANDE_SP.map(normalizarTexto);
+function cidadeEhGrandeSP(cidade){ return CIDADES_GRANDE_SP_NORM.includes(normalizarTexto(cidade)); }
+function coordEhGrandeSP(coord){ return !!(coord && coord.lat>=REGIAO_GRANDE_SP.minLat && coord.lat<=REGIAO_GRANDE_SP.maxLat && coord.lon>=REGIAO_GRANDE_SP.minLon && coord.lon<=REGIAO_GRANDE_SP.maxLon); }
+function pedidoEhGrandeSP(pedido){ return !!(pedido && coordEhGrandeSP(pedido.origemCoord)); }
+function taxaPlataformaParaMotorista(motorista=null){
+  const m = motorista || estado.motorista || {};
+  const cidade = m.cidade || estado.painelMotorista?.cadastro?.cidade || '';
+  if(cidadeEhGrandeSP(cidade)) return TAXA_PLATAFORMA_GRANDE_SP;
+  const plano = PLANOS[m.plano] || PLANOS.free;
+  return plano.taxaPlataforma;
+}
+function taxaPlataformaParaPedido(pedido, motorista=estado.motorista){
+  if(pedidoEhGrandeSP(pedido)) return TAXA_PLATAFORMA_GRANDE_SP;
+  return taxaPlataformaParaMotorista(motorista);
+}
 function cidadeEhPermitida(item){
   const a = item && item.address ? item.address : {};
   const candidatos = [a.city, a.town, a.village, a.municipality, a.city_district, a.county];
@@ -6809,7 +6836,7 @@ function adminCorpoHTML(){
         </div>
         <button class="admin-login-btn" onclick="entrarAdmin()">Entrar no painel &nbsp;→</button>
         <div class="admin-login-security"><span class="dot"></span><span>Área restrita • conexão segura</span></div>
-        <div class="admin-login-version">Entrega Flash Admin</div>
+        <div class="admin-login-version">Entrega Flash Admin • MG + Grande SP</div>
       </div>
     </section>`;
   }
@@ -6997,6 +7024,17 @@ function adminAbaConfigHTML(){
   const v = VEICULOS;
   return `
   <div class="cf-nota" style="font-style:normal;margin-bottom:10px">Altera qualquer valor abaixo e toca em "Salvar configurações" — as mudanças valem na hora, para todo mundo (clientes e motoristas), sem precisar subir um novo arquivo.</div>
+
+  <div class="cf-titulo-secao" style="margin-top:6px">📍 Praças e cobertura</div>
+  <div style="padding:14px;border:1px solid var(--mango);border-radius:14px;background:rgba(255,201,60,.07);margin-bottom:14px">
+    <b style="color:var(--osso)">Grande São Paulo — ATIVA</b>
+    <div class="cf-ajuda" style="margin-top:5px">São Paulo, Guarulhos, Osasco, Santo André, São Bernardo, São Caetano, Diadema, Mauá, Barueri, Carapicuíba, Taboão da Serra, Embu das Artes, Cotia e Mogi das Cruzes.</div>
+    <div style="margin-top:8px;font-weight:800;color:var(--mango)">Plataforma 15% • Motorista 85%</div>
+  </div>
+  <div style="padding:14px;border:1px solid var(--linha);border-radius:14px;margin-bottom:16px">
+    <b style="color:var(--osso)">Sul de Minas — ATIVA</b>
+    <div class="cf-ajuda" style="margin-top:5px">Mantém os planos e regras atuais da operação de Minas.</div>
+  </div>
 
   <div class="cf-titulo-secao" style="margin-top:6px">🆓 Plano Free</div>
   <label>% que a plataforma fica por entrega</label>
