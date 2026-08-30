@@ -934,7 +934,7 @@ const BV_ILUSTRACAO_VEICULOS = 'data:image/webp;base64,UklGRlKHAgBXRUJQVlA4WAoAA
 // sobrescritos pelo que estiver salvo em entrega_config_geral (editável no
 // painel administrativo, aba Configurações) — ver aplicarConfigGeral().
 let PLANOS = {
-  free:{ label:'Free', preco:0, taxaPlataforma:0.42, limiteMensal:10, saqueDias:7, prioridade:false, limiteCancelamentosDia:3, limiteSimultaneo:3 },
+  free:{ label:'Free', preco:0, taxaPlataforma:0.42, limiteMensal:null, saqueDias:7, prioridade:false, limiteCancelamentosDia:3, limiteSimultaneo:3 },
   pro:{ label:'Pro', preco:19.99, taxaPlataforma:0.30, limiteMensal:null, saqueDias:0, prioridade:true, limiteCancelamentosDia:10, limiteSimultaneo:15 }
 };
 let ATRASO_PRIORIDADE_PRO_MS = 45000; // motoristas Free só veem o pedido 45s depois dos Pro
@@ -1075,7 +1075,8 @@ function aplicarConfigGeral(c){
   PLANOS.pro.preco = Number(c.pro_preco_mensal);
   if(c.grande_sp_taxa_automatica_ativa!=null) TAXA_AUTOMATICA_GRANDE_SP_ATIVA = !!c.grande_sp_taxa_automatica_ativa;
   if(c.grande_sp_taxa_plataforma_pct!=null) TAXA_PLATAFORMA_GRANDE_SP = Number(c.grande_sp_taxa_plataforma_pct)/100;
-  PLANOS.free.limiteMensal = c.free_limite_mensal!=null ? Number(c.free_limite_mensal) : null;
+  // Plano Free sem limite mensal de entregas.
+  PLANOS.free.limiteMensal = null;
   PLANOS.pro.limiteMensal = c.pro_limite_mensal!=null ? Number(c.pro_limite_mensal) : null;
   PLANOS.free.limiteSimultaneo = Number(c.free_limite_simultaneo);
   PLANOS.pro.limiteSimultaneo = Number(c.pro_limite_simultaneo);
@@ -3478,7 +3479,7 @@ function trocaPlanoMotoristaHTML(m){
   return `
     <div style="margin-top:14px;padding:16px;background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b style="font-family:'Rajdhani';font-size:18px">🔄 Trocar plano</b><button class="btn btn-secundario btn-pequeno" style="margin-top:0" onclick="fecharTrocaPlanoMotorista()">Fechar</button></div>
-      <div style="margin-top:12px;padding:12px;border:1px solid var(--linha);border-radius:10px"><b>🆓 Free</b><div class="subtitulo">${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% de cada entrega · limite de ${PLANOS.free.limiteMensal} entregas/mês</div>${m.plano==='pro'?`<button class="btn btn-secundario btn-pequeno" onclick="mudarMotoristaParaFree()">Mudar para Free</button>`:`<div class="pix-status pago" style="margin-top:8px">Plano atual</div>`}</div>
+      <div style="margin-top:12px;padding:12px;border:1px solid var(--linha);border-radius:10px"><b>🆓 Free</b><div class="subtitulo">${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% de cada entrega · sem limite de entregas</div>${m.plano==='pro'?`<button class="btn btn-secundario btn-pequeno" onclick="mudarMotoristaParaFree()">Mudar para Free</button>`:`<div class="pix-status pago" style="margin-top:8px">Plano atual</div>`}</div>
       <div style="margin-top:10px;padding:12px;border:1px solid var(--mango);border-radius:10px"><b>⭐ Pro — R$ ${PLANOS.pro.preco.toFixed(2)} pagamento único</b><div class="subtitulo">${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}% de cada entrega · prioridade · mais entregas simultâneas · saque mais rápido</div>
         ${m.plano==='pro'?`<div class="pix-status pago" style="margin-top:8px">✅ Plano atual</div>`:`
           ${!t.qrCode && !t.gerando ? `<button class="btn btn-primario" onclick="gerarPixUpgradeMotorista()">💠 Gerar Pix e ativar Pro</button>`:''}
@@ -5480,7 +5481,7 @@ function taxasERegrasHTML(){
   <div class="cf-beneficios">
     <div class="cf-beneficio"><span class="check">💰</span> <b>Comissão da plataforma:</b> Free fica com ${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% do valor de cada entrega · Pro fica com ${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}%.</div>
     <div class="cf-beneficio"><span class="check">⭐</span> <b>Taxa única do Pro:</b> R$ ${PLANOS.pro.preco.toFixed(2)}, paga uma única vez, sem mensalidade.</div>
-    <div class="cf-beneficio"><span class="check">📅</span> <b>Limite de entregas por mês:</b> Free até ${PLANOS.free.limiteMensal||'—'} entregas · Pro ilimitado.</div>
+    <div class="cf-beneficio"><span class="check">📅</span> <b>Limite de entregas por mês:</b> Free ilimitado · Pro ilimitado.</div>
     <div class="cf-beneficio"><span class="check">🔁</span> <b>Corridas simultâneas:</b> Free até ${PLANOS.free.limiteSimultaneo} · Pro até ${PLANOS.pro.limiteSimultaneo}.</div>
     <div class="cf-beneficio"><span class="check">🚫</span> <b>Cancelamentos por dia:</b> Free até ${PLANOS.free.limiteCancelamentosDia} · Pro até ${PLANOS.pro.limiteCancelamentosDia} — passar do limite bloqueia novos cancelamentos naquele dia.</div>
     <div class="cf-beneficio"><span class="check">💸</span> <b>Prazo de saque:</b> Free até ${PLANOS.free.saqueDias} dias · Pro ${PLANOS.pro.saqueDias>0?`até ${PLANOS.pro.saqueDias} dias`:'imediato'}.</div>
@@ -5539,7 +5540,7 @@ function comoFuncionaMotoristaHTML(){
     <tr><td>🌙 Acréscimo noturno/feriado/chuva</td><td>—</td><td class="destaque">+${Math.round(ACRESCIMO_NOTURNO_PCT*100)}% na corrida</td></tr>
     <tr><td>⏱️ Taxa de espera (coleta/entrega)</td><td class="destaque">após ${TAXA_ESPERA_TOLERANCIA_MIN} min, R$ ${TAXA_ESPERA_VALOR_MIN.toFixed(2)}/min</td><td class="destaque">após ${TAXA_ESPERA_TOLERANCIA_MIN} min, R$ ${TAXA_ESPERA_VALOR_MIN.toFixed(2)}/min</td></tr>
   </table>
-  <div class="cf-nota">Resumindo: no Free você experimentas o app sem custo fixo, mas com limites de entregas/mês, corridas simultâneas e um pequeno atraso para ver pedidos novos. No Pro, pagando a taxa única de entrada, você fica com mais dinheiro de cada corrida, sem limite de entregas, vês tudo primeiro e trabalha com mais corridas ao mesmo tempo.</div>
+  <div class="cf-nota">Resumindo: no Free você experimentas o app sem custo fixo, mas com limite de corridas simultâneas e um pequeno atraso para ver pedidos novos. No Pro, pagando a taxa única de entrada, você fica com mais dinheiro de cada corrida, sem limite de entregas, vês tudo primeiro e trabalha com mais corridas ao mesmo tempo.</div>
 
   <div class="cf-titulo-secao">Regras importantes</div>
   <div class="cf-beneficios">
