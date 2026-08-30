@@ -1,15 +1,11 @@
-ENTREGA FLASH — VERSÃO APP ULTRA PREMIUM
+ENTREGA FLASH — APP MOBILE FAST PREMIUM v3
 
-Esta versão mantém a lógica e o banco de dados existentes e adiciona acabamento específico para uso como aplicativo:
-- tela 100% adaptada ao celular e às áreas seguras (notch/barra inferior);
-- modo standalone com aparência de app;
-- cabeçalho glass premium e acabamento preto/dourado;
-- botões e campos com toque mais confortável;
-- splash refinada;
-- ícones maskable corretos no manifest;
-- versão do Service Worker atualizada para evitar cache antigo;
-- sem alterar as funções de cadastro, pedidos, GPS, mapas ou Supabase.
+Versão otimizada para celular: prioridade em velocidade e resposta ao toque.
+- Redução de blur/backdrop-filter e sombras pesadas no mobile
+- Animações contínuas desligadas no celular
+- Transições reduzidas para resposta imediata
+- Rolagem/touch otimizados
+- Entrada Ultra do motorista reduzida de ~6s para ~1,35s
+- Service Worker atualizado para forçar a versão nova
 
-Arquivo principal: index.html
-Manifest: entregaflash-manifest.json
-Service Worker: entregaflash-sw.js
+A lógica de cadastro, pedidos, GPS, CEP, Supabase e banco não foi alterada.

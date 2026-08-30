@@ -1,7 +1,7 @@
-// build: mobile-app-ultra-20260830-v2
+// build: mobile-fast-20260830-v3
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260830-ultra2
-const EF_VERSION = '20260830-ultra2';
+// Versão: 20260830-fast3
+const EF_VERSION = '20260830-fast3';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
