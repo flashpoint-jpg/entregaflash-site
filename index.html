@@ -1081,6 +1081,18 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
   .bv-hero-real:before,.bv-hero-real:after{will-change:auto!important;}
 }
 </style>
+
+<style id="ef-mobile-scroll-fix-v4">
+/* Correção crítica de rolagem mobile: mantém toque rápido sem travar a página */
+@media (max-width:700px){
+  html{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:auto!important;}
+  body{position:static!important;height:auto!important;min-height:100vh!important;min-height:100dvh!important;max-height:none!important;overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior-y:auto!important;touch-action:pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;}
+  #app,main,#conteudo,.conteudo,.pagina,.tela{height:auto!important;max-height:none!important;overflow:visible!important;touch-action:pan-y!important;}
+  #app{min-height:100dvh!important;}
+  .bv-wrap,.bv-section-real,.bv-hero-real{height:auto!important;max-height:none!important;overflow:visible!important;}
+  .modal-fundo,.foto-fundo,#ef-face-modal,#ef-selfie-motorista{touch-action:pan-y!important;}
+}
+</style>
 </head>
 
 <style id="ef-parceiros-premium">
