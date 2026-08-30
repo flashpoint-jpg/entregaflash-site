@@ -1127,6 +1127,27 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
   body.ef-cliente-logado .acoes-etapa-pedido{gap:6px!important;}
 }
 </style>
+
+<style id="ef-ultra-premium-clean-v1">
+/* Ajuste fino visual: Ultra Premium Clean */
+.ef-progresso-doc{margin:14px 0 2px;padding:11px 12px;border-radius:13px;background:rgba(0,0,0,.20);border:1px solid rgba(255,171,0,.20)}
+.ef-progresso-top{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--poeira);font-weight:800}.ef-progresso-top b{color:var(--mango)}
+.ef-progresso-trilho{height:7px;margin-top:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden}.ef-progresso-trilho i{display:block;width:75%;height:100%;border-radius:inherit;background:linear-gradient(90deg,#ffb000,#ff7600)}
+@media(max-width:700px){
+ body.ef-motorista-logado .topo{padding:6px 12px 5px!important;min-height:0!important}
+ body.ef-motorista-logado .topo .marca{min-height:0!important;margin:0!important}
+ body.ef-motorista-logado .topo .logo-img{width:min(190px,54vw)!important;max-width:190px!important;height:auto!important}
+ body.ef-motorista-logado .topo .tagline{font-size:10.5px!important;line-height:1.15!important;margin-top:0!important;padding-bottom:0!important}
+ body.ef-motorista-logado .aviso-app-novo{margin:7px 10px!important;padding:9px 11px!important;border-radius:14px!important;font-size:12px!important;line-height:1.32!important}
+ body.ef-motorista-logado .cartao{margin:9px 8px!important;padding:14px!important;border-radius:18px!important;box-shadow:0 8px 22px rgba(0,0,0,.18)!important}
+ body.ef-motorista-logado .abas-motorista button{font-size:10.5px!important;gap:3px!important;padding-top:8px!important}
+ body.ef-motorista-logado .abas-motorista button .icone-aba{font-size:22px!important;opacity:.68}
+ body.ef-motorista-logado .abas-motorista button.ativo .icone-aba{opacity:1;transform:none!important}
+ body.ef-motorista-logado .sos-flutuante{width:52px!important;height:52px!important;right:12px!important;bottom:calc(88px + env(safe-area-inset-bottom,0px))!important;font-size:10.5px!important;border-width:2px!important;animation:none!important}
+ body.ef-motorista-logado .sos-flutuante .emoji{font-size:16px!important}
+ body.ef-motorista-logado .btn,body.ef-motorista-logado button{transition:transform .16s ease,opacity .16s ease,background .16s ease!important}
+}
+</style>
 </head>
 
 <style id="ef-parceiros-premium">
@@ -3799,7 +3820,7 @@ async function confirmarValorCarteira(){
   }catch(e){
     console.error(e);
     w.pix.gerando=false;
-    w.pix.erro = 'Não consegui gerar a cobrança PIX. Tenta novamente em instantes.';
+    w.pix.erro = (e && e.message) ? e.message : 'Não consegui gerar a cobrança PIX. Tente novamente em instantes.';
     render();
   }
 }
@@ -5935,19 +5956,19 @@ function telaMotorista(){
   const fundadorUsadas = fundador ? Math.min(MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA, MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA-fundadorRestantes) : 0;
   const aba = estado.abaPrincipalMotorista || 'pedidos';
 
-  const blocoAvisoAnalise = m.status!=='aprovado' ? `<div class="cartao" style="border:1px solid var(--sol,#e8b23d);background:rgba(232,178,61,0.08)">
-    <div style="display:flex;align-items:flex-start;gap:10px">
-      <span style="font-size:20px">⏳</span>
-      <div style="font-size:13.5px;color:var(--osso);line-height:1.5">
-        <b>Cadastro ainda em análise.</b> Já podes conhecer o app e ficar online, mas só vais poder <b>aceitar corridas</b> e <b>fazer saque</b> depois de enviares os documentos e o administrador aprovar o teu cadastro.
-      </div>
-    </div>
+  const blocoAvisoAnalise = m.status!=='aprovado' ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,171,0,.13),rgba(255,107,0,.07));text-align:center;padding:22px 18px">
+    <div style="font-size:30px;margin-bottom:8px">🎉</div>
+    <div style="font-family:'Rajdhani';font-weight:900;font-size:22px;color:var(--osso);text-transform:uppercase">Treinamento concluído!</div>
+    <div style="font-family:'Rajdhani';font-weight:800;font-size:18px;color:var(--mango);margin-top:3px">FALTA SÓ 1 ETAPA</div>
+    <div class="ef-progresso-doc"><div class="ef-progresso-top"><span>Cadastro 75% concluído</span><b>3/4</b></div><div class="ef-progresso-trilho"><i></i></div></div>
+    <div style="font-size:14px;color:var(--poeira);line-height:1.55;margin-top:10px">Envie seus documentos agora. É <b style="color:var(--osso)">rápido e fácil</b>. Após a aprovação, você já pode começar a receber entregas e ganhar dinheiro.</div>
+    ${m.status==='basico' ? `<button class="btn btn-primario" style="margin-top:16px;width:100%;font-size:17px" onclick="iniciarDocumentosDoPainel()">📄 ENVIAR DOCUMENTOS AGORA</button>` : `<div style="margin-top:14px;font-weight:800;color:var(--mango)">⏳ Documentos enviados — aguardando aprovação</div>`}
   </div>` : '';
 
-  const blocoOnline = `<div class="cartao">
+  const blocoOnline = m.status==='aprovado' ? `<div class="cartao">
     <button class="btn btn-ficar-online ${m.disponivel?'btn-secundario':'btn-verde'}" ${atributoDesabilitado('alternarDisponibilidade')} onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${carregando('alternarDisponibilidade') ? '<span class="girando"></span>Atualizando...' : (m.disponivel?' Parar / ficar indisponível':' Iniciar rota')}</button>
-    ${!m.disponivel ? `<div class="cf-ajuda" style="text-align:center;margin-top:6px"> Toque aqui para começar a receber pedidos</div>` : `<div style="display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--poeira)"><span>Hoje: <b style="color:var(--osso)">R$ ${ganhosHoje.toFixed(2)}</b> · ${entreguesHojeArr.length} entregas</span></div>`}
-  </div>`;
+    ${!m.disponivel ? `<div class="cf-ajuda" style="text-align:center;margin-top:6px">Toque aqui para começar a receber pedidos</div>` : `<div style="display:flex;justify-content:space-between;gap:10px;margin-top:10px;font-size:13px;color:var(--poeira)"><span>Hoje: <b style="color:var(--osso)">R$ ${ganhosHoje.toFixed(2)}</b> · ${entreguesHojeArr.length} entregas</span></div>`}
+  </div>` : `<div class="cartao" style="opacity:.72;text-align:center"><button class="btn btn-secundario" disabled style="width:100%">🔒 INICIAR ROTA</button><div class="cf-ajuda" style="margin-top:8px">Liberado automaticamente após a aprovação dos documentos.</div></div>`;
 
   const blocoFundador = fundador ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.14),rgba(111,207,106,.08))">
     <div style="display:flex;gap:12px;align-items:flex-start">
@@ -6395,6 +6416,7 @@ function voltarFluxoAtual(){
 function render(){
   const app = document.getElementById('app');
   document.body.classList.toggle('ef-cliente-logado', estado.modo==='cliente' && !!estado.cliente.logado);
+  document.body.classList.toggle('ef-motorista-logado', estado.modo==='entregador' && !!estado.motorista.ativo);
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
   const _valores = capturarValoresInputs();
@@ -6487,7 +6509,7 @@ function render(){
       <span>·</span>
       <span onclick="carregarPedidos()">↻ atualizar</span>
     </div>
-    <div class="admin-link" onclick="abrirAdmin()">painel administrativo</div>
+
     ${estado.modo==='entregador' && estado.motorista.ativo ? `
     <div class="sos-flutuante" title="SOS — veículo quebrado / pedir ajuda" onclick="abrirSOSFlutuante()"><span class="emoji"></span>SOS</div>` : ''}
     ${false && estado.sosClienteAtivo ? `<div class="sos-cliente-tela"><div class="sos-cliente-caixa"><div class="sos-cliente-icone"></div><div class="sos-cliente-titulo">SOS ACIONADO</div><div class="sos-cliente-msg">Seu alerta de emergência foi enviado para a central e para os motoristas disponíveis. Mantenha o telefone acessível.</div><button class="btn" onclick="fecharSOSCliente()">Entendi / fechar alerta</button></div></div>` : ''}
@@ -7275,6 +7297,12 @@ async function loginMotorista(){
   if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); return; }
 }
 
+async function iniciarDocumentosDoPainel(){
+  const m=estado.painelMotorista?.motorista;
+  if(!m?.telefone){ mostrarToast('Não foi possível abrir os documentos. Entre novamente.', 'erro'); return; }
+  estado.painelMotorista.telefoneLiberado=m.telefone;
+  await continuarParaDocumentos();
+}
 async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
   pm.carregandoLiberado = true; render();
@@ -7545,7 +7573,7 @@ async function criarCobrancaPix(){
     iniciarPollingPix();
   }catch(e){
     console.error(e);
-    c.pix.gerando=false; c.pix.erro = 'Não consegui gerar a cobrança PIX. Verifique se a chave MP_ACCESS_TOKEN está configurada nas secrets do Supabase e tente novamente.';
+    c.pix.gerando=false; c.pix.erro = (e && e.message) ? e.message : 'Não consegui gerar a cobrança PIX. Tente novamente em instantes.';
     render();
   }
 }
@@ -7723,9 +7751,9 @@ function motoristaCardHTML(m, emRota){
         `}
       </div>` : ''}
       ${m.status==='basico' ? `
-      <div class="subtitulo" style="margin-top:8px"> Cadastro básico (nome + veículo) — ainda sem documentos. Confere os dados acima e libera se fizer sentido pra região/veículo.</div>
+      <div class="subtitulo" style="margin-top:8px"> Cadastro básico — aguardando o motorista concluir e enviar os documentos. Não precisa de liberação manual.</div>
       <div style="display:flex;gap:8px;margin-top:10px">
-        <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="liberarDocumentosMotoristaAdmin('${m.id}')"> Liberar envio de documentos</button>
+        
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')"> Recusar</button>
       </div>
       <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')"> Lembrar de enviar os documentos</button>` : ''}
