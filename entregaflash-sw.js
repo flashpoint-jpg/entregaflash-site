@@ -1,7 +1,7 @@
-// build: sp-cep-controles-20260830
+// build: mobile-app-20260830
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260830-1
-const EF_VERSION = '20260830-2';
+// Versão: 20260830-app1
+const EF_VERSION = '20260830-app1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
