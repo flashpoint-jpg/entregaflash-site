@@ -6710,7 +6710,7 @@ function motoristaCardHTML(m, emRota){
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
       </div>
-      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Lembrar de enviar os documentos</button>` : ''}
+      <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar pelo WhatsApp</button>` : ''}
       ${m.status==='pendente' ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')">✅ Aprovar</button>
@@ -7916,9 +7916,15 @@ async function liberarDocumentosMotoristaAdmin(id){
   mostrarToast('Liberado! O motorista já pode enviar os documentos.', 'sucesso');
   await carregarMotoristasAdmin();
 }
-async function lembrarEnviarDocumentosAdmin(telefone, nome){
-  await enviarPushServidor('motorista', telefone, '📄 Falta enviar seus documentos!', `${nome?nome+', c':'C'}ontinue seu cadastro no Entrega Flash — envie seus documentos agora e comece a receber corridas hoje mesmo.`);
-  mostrarToast('Lembrete enviado! (só toca com som se o motorista já tiver ativado as notificações dele)', 'sucesso');
+function lembrarEnviarDocumentosAdmin(telefone, nome){
+  // WhatsApp comum: não depende de Push/API paga.
+  if(typeof abrirWhatsAppDocumentosAdmin === 'function'){ abrirWhatsAppDocumentosAdmin(telefone, nome); return; }
+  let numero=String(telefone||'').replace(/\D/g,'');
+  if(numero && !numero.startsWith('55') && (numero.length===10 || numero.length===11)) numero='55'+numero;
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(/\s+/)[0] || 'Olá';
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Abra o Entrega Flash e toque em ENVIAR DOCUMENTOS AGORA. Se precisar de ajuda, fale com a gente por aqui.`;
+  window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
