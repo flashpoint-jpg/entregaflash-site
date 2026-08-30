@@ -1669,7 +1669,7 @@ let estado = {
     loginTelefone:'', loginErro:'',
     cadastro:{ nome:'', telefone:'', senha:'', erro:'' }
   },
-  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null },
+  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null, enviandoDocumentos:false },
   trocaPlanoMotorista:{ aberto:false, gerando:false, erro:'', motoristaId:null, cpf:'', qrCode:null, copiaCola:null, status:'pendente' },
   chamadosAmigo:[], // chamados de SOS "motorista amigo" em aberto (carregados quando motorista está disponível)
   chamadoAmigoModal:{ aberto:false, pedidoId:null, percentual:10, enviando:false },
@@ -6051,6 +6051,11 @@ function telaMotorista(){
     if(estado.sessaoCarregando) return `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>`;
     return telaAcessoMotorista();
   }
+  if(m.enviandoDocumentos){
+    return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <button class="ef-flow-back" type="button" style="width:auto" onclick="voltarPainelDoEnvioDocumentos()"><span class="arr">‹</span><span>Voltar</span></button>
+    </div>` + telaCadastroMotorista();
+  }
   const planoAtual = PLANOS[m.plano] || PLANOS.free;
   const agoraTs = Date.now();
   const disponiveis = m.disponivel ? estado.pedidos
@@ -7461,7 +7466,12 @@ async function iniciarDocumentosDoPainel(){
   pm.telefoneLiberado = telefone;
   pm.loginTelefone = telefone;
   if(pm.cadastro) pm.cadastro.telefone = telefone;
+  estado.motorista.enviandoDocumentos = true;
   await continuarParaDocumentos();
+}
+function voltarPainelDoEnvioDocumentos(){
+  estado.motorista.enviandoDocumentos = false;
+  render();
 }
 async function continuarParaDocumentos(){
   const pm = estado.painelMotorista;
@@ -7781,6 +7791,7 @@ async function finalizarCadastroMotorista(){
   c.enviando=false;
   if(ok){
     estado.painelMotorista.tela='pendente';
+    if(estado.motorista.ativo){ estado.motorista.enviandoDocumentos=false; estado.motorista.status='pendente'; }
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista'}); }catch(e){}
     registrarAlertaAdmin('novo_motorista', `Novo motorista cadastrado, aguardando aprovação: ${c.nome||''} (${c.telefone||''}).`);
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 800);
