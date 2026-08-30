@@ -12,7 +12,7 @@
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
 <link rel="preconnect" href="https://rgcclordmqjmwuzrrfbd.supabase.co" crossorigin>
-<meta name="theme-color" content="#171d4a">
+<meta name="theme-color" content="#0d0f12">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="application-name" content="Entrega Flash Admin">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -43,8 +43,8 @@ fbq('track', 'PageView');
 <!-- Fim Meta Pixel -->
 <style>
   :root{
-    --noite:#171d4a; --painel:#212a63; --painel-alt:#29337a; --linha:rgba(255,255,255,0.16);
-    --mango:#ffc93c; --mango-escuro:#d9a92c; --chama:#ff6b52; --escuro:#201d14;
+    --noite:#0d0f12; --painel:#15171c; --painel-alt:#1b1e24; --linha:rgba(255,255,255,0.10);
+    --mango:#ff9710; --mango-escuro:#d9a92c; --chama:#ff6b52; --escuro:#0a0b0d;
     --osso:#f5f6fb; --poeira:#b7bce3; --verde:#6fcf6a; --azul:#6fa8dc; --roxo:#9b8ee0;
     --radius:14px;
     --sombra-card:0 4px 16px rgba(8,10,32,0.28), 0 1px 2px rgba(8,10,32,0.35);
@@ -97,8 +97,8 @@ fbq('track', 'PageView');
   .bv-wrap{
     margin:0 0 -20px;padding:26px 20px 34px;min-height:100vh;color:#fff;
     background:
-      radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
-      linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
+      radial-gradient(circle at 12% -8%, rgba(255,151,16,0.25), transparent 45%),
+      linear-gradient(165deg, #0a0b0d 0%, #121317 45%, #16181d 78%, #1c1e24 100%);
   }
   .bv-cabecalho{display:flex;align-items:center;gap:12px;margin-bottom:26px;}
   .bv-logo-badge{background:transparent;border-radius:0;padding:0;display:inline-flex;align-items:center;box-shadow:none;flex-shrink:0;}
@@ -144,11 +144,11 @@ fbq('track', 'PageView');
   .bv-escolha-marcador{position:absolute;top:8px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
   .bv-escolha-col:first-child .bv-escolha-marcador{left:8px;}
   .bv-escolha-col:last-child .bv-escolha-marcador{right:8px;}
-  .bv-escolha-marcador.check{background:var(--mango);color:#171d4a;}
+  .bv-escolha-marcador.check{background:var(--mango);color:var(--escuro);}
   .bv-escolha-marcador.x{background:rgba(255,255,255,0.14);color:rgba(255,255,255,0.55);}
   .bv-escolha-titulo{font-family:'Rajdhani';font-weight:700;font-size:13.5px;text-transform:uppercase;color:var(--mango);letter-spacing:0.2px;line-height:1.3;margin:6px 0 10px;min-height:34px;}
   .bv-escolha-desc{background:rgba(255,255,255,0.06);border-radius:10px;padding:10px 8px;font-size:12px;color:rgba(255,255,255,0.85);line-height:1.4;}
-  .btn-comecar-agora{display:block;width:100%;text-align:center;background:var(--mango);color:#171d4a;font-family:'Rajdhani';font-weight:700;font-size:19px;text-transform:none;padding:16px;border:none;border-radius:16px;cursor:pointer;letter-spacing:0.2px;margin-bottom:14px;}
+  .btn-comecar-agora{display:block;width:100%;text-align:center;background:var(--mango);color:var(--escuro);font-family:'Rajdhani';font-weight:700;font-size:19px;text-transform:none;padding:16px;border:none;border-radius:16px;cursor:pointer;letter-spacing:0.2px;margin-bottom:14px;}
   .bv-cta-sub{text-align:center;font-size:13.5px;color:var(--poeira);text-transform:none;font-weight:600;letter-spacing:0.1px;margin:8px 0 4px;line-height:1.4;}
   .bv-planos-toggle{text-align:center;font-size:13.5px;color:rgba(255,255,255,0.75);margin:2px 0 16px;}
   .bv-planos-toggle a{color:var(--mango);font-weight:700;cursor:pointer;}
@@ -176,8 +176,8 @@ fbq('track', 'PageView');
     position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;
     overflow:hidden;
     background:
-      radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
-      linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
+      radial-gradient(circle at 12% -8%, rgba(255,151,16,0.25), transparent 45%),
+      linear-gradient(165deg, #0a0b0d 0%, #121317 45%, #16181d 78%, #1c1e24 100%);
     transition:opacity .6s ease, visibility .6s ease;
   }
   #splash.splash-esconder{opacity:0;visibility:hidden;pointer-events:none;}
@@ -671,8 +671,8 @@ fbq('track', 'PageView');
   #gate-localizacao{
     position:fixed;inset:0;z-index:99998;display:flex;align-items:center;justify-content:center;
     background:
-      radial-gradient(circle at 12% -8%, rgba(102,126,214,0.55), transparent 45%),
-      linear-gradient(165deg, #171d4a 0%, #232c72 45%, #3a49a6 78%, #4756c2 100%);
+      radial-gradient(circle at 12% -8%, rgba(255,151,16,0.25), transparent 45%),
+      linear-gradient(165deg, #0a0b0d 0%, #121317 45%, #16181d 78%, #1c1e24 100%);
     padding:24px;
   }
   .gl-corpo{max-width:380px;width:100%;text-align:center;color:#fff;background:rgba(255,255,255,0.06);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.16);border-radius:22px;padding:34px 26px;box-shadow:var(--sombra-flutuante);}
@@ -1143,9 +1143,15 @@ async function salvarConfigGeralAdmin(){
   for(const k in payload){ if(!CAMPOS_NAO_NUMERICOS.includes(k) && Number.isNaN(payload[k])){ mostrarToast('Preenche todos os campos com números válidos.'); return; } }
   const { error } = await sb.rpc('entrega_admin_salvar_config_geral', { p_senha: estado.admin.senhaDigitada, p_config: payload });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar as configurações: '+(error.message||'verifica a ligação e tenta de novo'), 'erro'); return; }
-  aplicarConfigGeral(payload);
-  mostrarToast('Configurações salvas e aplicadas imediatamente!', 'sucesso');
-  render();
+  const { data:configSalva, error:erroConfigSalva } = await sb.from('entrega_config_geral').select('*').eq('id',1).maybeSingle();
+  if(!erroConfigSalva && configSalva){
+    aplicarConfigGeral(configSalva);
+    estado.configGeral = configSalva;
+  } else {
+    aplicarConfigGeral(payload);
+  }
+  mostrarToast('Configurações salvas e confirmadas no banco!', 'sucesso');
+  renderAdminParcial();
 }
 
 let bvPapelSelecionado = 'cliente';
@@ -5725,7 +5731,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL NOVO • CIDADES • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL ULTRA • WHATSAPP 5 DIAS • SEM PISCAR • 30/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -6649,6 +6655,17 @@ function motoristaCardHTML(m, emRota){
           Incluir aviso de bônus na mensagem
         </label>
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.telefone.replace(/\D/g,'')}')">💬 Enviar boas-vindas no WhatsApp</button>
+        ${['basico','liberado'].includes(m.status) ? (()=>{
+          const criado=Number(m.criado_em||0);
+          const dias=criado?Math.floor((Date.now()-criado)/(24*60*60*1000)):0;
+          const vencido=!!(criado && dias>=5);
+          const faltam=Math.max(0,5-dias);
+          return `<div style="margin-top:10px;padding:10px;border-radius:10px;border:1px solid ${vencido?'rgba(255,92,92,.55)':'rgba(37,211,102,.35)'};background:${vencido?'rgba(255,92,92,.08)':'rgba(37,211,102,.06)'}">
+            <div style="font-size:12.5px;font-weight:800;color:${vencido?'#ff7474':'var(--osso)'}">${vencido?'⚠️ PRAZO DE 5 DIAS ULTRAPASSADO':`⏳ Documentos pendentes · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`}</div>
+            <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar documentação pelo WhatsApp</button>
+          </div>`;
+        })() : ''}
+
       </div>
       <div style="display:flex;gap:8px;margin-top:6px">
         <select id="alt-plano-${m.id}" style="flex:1">
@@ -6950,11 +6967,17 @@ function resumoMotoristasPorCidadeHTML(){
 }
 function resumoSituacaoMotoristasHTML(){
   const ms=estado.admin.motoristas||[];
-  const online=ms.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status)).length;
+  const online=ms.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status)).length;
   const semDocs=ms.filter(m=>['basico','liberado'].includes(m.status)).length;
+  const docsVencidos=ms.filter(m=>{
+    if(!['basico','liberado'].includes(m.status)) return false;
+    const criado=Number(m.criado_em||0);
+    return criado>0 && (Date.now()-criado)>=5*24*60*60*1000;
+  }).length;
   const analise=ms.filter(m=>m.status==='pendente').length;
   const aprovados=ms.filter(m=>m.status==='aprovado').length;
   return `
+  ${docsVencidos?`<div class="admin-cartao" style="margin-bottom:12px;border-color:#ff5c5c;background:rgba(255,92,92,.08)"><b style="color:#ff7474">⚠️ Documentação atrasada</b><div class="am-linha"><span>Passaram de 5 dias sem enviar documentos</span><b style="color:#ff7474">${docsVencidos}</b></div><div class="subtitulo" style="margin:6px 0 0">Abra Motoristas e use o botão de WhatsApp para lembrar antes de excluir.</div></div>`:''}
   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px">
     <div class="admin-cartao" style="margin:0;text-align:center"><div data-admin-online-count style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--verde)">${online}</div><div style="font-size:12px">🟢 Online agora</div></div>
     <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--chama)">${semDocs}</div><div style="font-size:12px">📄 Sem documentos</div></div>
@@ -7495,10 +7518,10 @@ function adminAbaMotoristasHTML(){
     if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
     return true;
   });
-  const online=baseMotoristas.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
+  const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
   const aguardandoDocs=baseMotoristas.filter(m=>['basico','liberado'].includes(m.status));
   const pendentes=baseMotoristas.filter(m=>m.status==='pendente');
-  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
+  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !motoristaOnlineAgora(m));
   const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
   return `
     <div class="admin-filtros-grade" style="margin-bottom:12px">
@@ -7551,6 +7574,19 @@ async function ajustarSaldoMotoristaAdmin(telefone){
   mostrarToast(`Saldo ajustado! Novo saldo: R$ ${Number(novoSaldo).toFixed(2)}`, 'sucesso');
   if(estado.motorista.telefone===telefone) estado.motorista.saldo = Number(novoSaldo);
   await carregarMotoristasAdmin();
+}
+function normalizarWhatsAppBR(telefone){
+  let n=String(telefone||'').replace(/\D/g,'');
+  if(n.startsWith('55') && (n.length===12 || n.length===13)) return n;
+  if(n.length===10 || n.length===11) return '55'+n;
+  return n;
+}
+function abrirWhatsAppDocumentosAdmin(telefone, nome){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg), '_blank');
 }
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
   const checkbox = document.getElementById('bonus-motorista-'+idm);
@@ -7709,6 +7745,19 @@ function agendarRenderAdmin(delay=90){
   if(_adminRenderTimer) clearTimeout(_adminRenderTimer);
   _adminRenderTimer = setTimeout(()=>{ _adminRenderTimer=null; renderAdminParcial(); }, delay);
 }
+function atualizarPresencaAdminDOM(){
+  if(!estado.admin?.aberto) return;
+  const online=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
+  document.querySelectorAll('[data-admin-online-count]').forEach(el=>{ el.textContent=String(online.length); });
+  document.querySelectorAll('[data-motorista-telefone]').forEach(card=>{
+    const tel=card.getAttribute('data-motorista-telefone');
+    const m=(estado.admin.motoristas||[]).find(x=>String(x.telefone||'').replace(/\D/g,'')===tel);
+    if(!m) return;
+    const on=motoristaOnlineAgora(m);
+    const span=card.querySelector('summary .avatar-linha span');
+    if(span && !span.textContent.includes('Em rota')) span.textContent=on?'🟢 Online':'⚪ Offline';
+  });
+}
 let assinaturaPresencaAdmin='';
 function verificarMudancaPresencaAdmin(){
   if(!estado.admin?.logado || !(estado.admin.motoristas||[]).length) return;
@@ -7717,7 +7766,7 @@ function verificarMudancaPresencaAdmin(){
   if(nova!==assinaturaPresencaAdmin){
     assinaturaPresencaAdmin=nova;
     carregarMotoristasOnline();
-    if(estado.admin.aba==='motoristas' || estado.admin.aba==='resumo') agendarRenderAdmin(0);
+    atualizarPresencaAdminDOM();
   }
 }
 setInterval(verificarMudancaPresencaAdmin,20000);
@@ -7864,8 +7913,12 @@ async function carregarMotoristasAdmin(){
   if(erroSaldos) console.error(erroSaldos);
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
-  estado.admin.motoristas = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  agendarRenderAdmin();
+  const novos = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
+  const assinatura=(lista)=>JSON.stringify((lista||[]).map(m=>[m.id,m.nome,m.telefone,m.cidade,m.status,m.plano,m.veiculo_tipo,m.veiculo_marca,m.veiculo_placa,m.veiculo_cor,m.cnh_url,m.crlv_url,m.foto_motorista_url,m.foto_veiculo_url,m.foto_veiculo_tras_url,m.chave_pix,Number(m.saldo||0),!!motoristaOnlineAgora(m)]));
+  const mudou = assinatura(estado.admin.motoristas)!==assinatura(novos);
+  estado.admin.motoristas = novos;
+  if(mudou || !jaTinhaMotoristas) agendarRenderAdmin();
+  else atualizarPresencaAdminDOM();
 }
 async function carregarPedidosEntreguesAdmin(){
   const { data, error } = await sb.from('entrega_pedidos').select('preco,motorista_telefone').eq('status','entregue');
@@ -7966,7 +8019,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin;
+window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
@@ -7993,7 +8046,7 @@ window.abrirComoFunciona=abrirComoFunciona; window.fecharComoFunciona=fecharComo
 
 function iniciarAppReal(){
 if(typeof window.supabase==='undefined' || !window.supabase.createClient){
-  document.getElementById('app').innerHTML = `<div style="padding:40px 24px;text-align:center;color:#f5f6fb;background:#171d4a;min-height:100vh;font-family:'Karla',sans-serif"><div style="font-size:37px;margin-bottom:12px">⚠️</div><div style="font-family:'Rajdhani';font-weight:700;font-size:18.5px;margin-bottom:8px">Não consegui carregar a ligação à base de dados</div><div style="font-size:15px;color:#b7bce3;line-height:1.6">Verifique sua conexão com a internet e recarregue a página.</div></div>`;
+  document.getElementById('app').innerHTML = `<div style="padding:40px 24px;text-align:center;color:#f5f6fb;background:#0d0f12;min-height:100vh;font-family:'Karla',sans-serif"><div style="font-size:37px;margin-bottom:12px">⚠️</div><div style="font-family:'Rajdhani';font-weight:700;font-size:18.5px;margin-bottom:8px">Não consegui carregar a ligação à base de dados</div><div style="font-size:15px;color:#b7bce3;line-height:1.6">Verifique sua conexão com a internet e recarregue a página.</div></div>`;
   esconderSplash();
 } else {
   aplicarEstadoInicialSincrono();
