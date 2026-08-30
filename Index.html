@@ -1239,23 +1239,50 @@ let VEICULOS = {
   van:{label:'Van', emoji:'', km:2.30, kmRoca:3.00, minimo:15.00, veloc:22, limitePeso:'1.000 kg', volume:'267 x 179 x 166 cm'},
   caminhao:{label:'Caminhão', emoji:'', km:2.50, kmRoca:2.50, minimo:0, veloc:22, confereCarga:true, limitePeso:'1,5 t', volume:'300 x 180 x 200 cm'}
 };
-// Região de cobertura: Muzambinho/MG e cidades próximas
-const REGIAO = { minLat:-22.92, maxLat:-14.23, minLon:-51.28, maxLon:-39.86 };
-// Centro aproximado da região, usado para "puxar" os resultados de busca para perto daqui
-const CENTRO_REGIAO = { lat:-21.3775, lon:-46.5133 };
+// Regiões de cobertura: Sul de Minas + Grande São Paulo
+// O retângulo geral só limita a busca ao Sudeste próximo; a validação final continua pela lista de cidades atendidas.
+const REGIAO = { minLat:-24.25, maxLat:-14.23, minLon:-51.60, maxLon:-39.86 };
+const REGIAO_GRANDE_SP = { minLat:-24.15, maxLat:-23.05, minLon:-47.25, maxLon:-45.65 };
+// Centro neutro entre as duas praças. A busca também usa o nome da cidade digitada pelo usuário.
+const CENTRO_REGIAO = { lat:-22.65, lon:-46.75 };
+const TAXA_PLATAFORMA_GRANDE_SP = 0.15; // 15% plataforma / 85% motorista
 
-// Lista de cidades atendidas (apenas estas são aceita)
-const CIDADES_PERMITIDAS = [
+const CIDADES_MG = [
   'Muzambinho','Juruaia','Monte Belo','Cabo Verde','Guaxupé','Caconde',
   'Tapiratiba','São Pedro da União','Nova Resende','Guaranésia','Botelhos',
   'Divisa Nova','Areado','Bom Jesus da Penha','Divinolândia','Alterosa',
   'Bandeira do Sul','Arceburgo','Jacuí','São José do Rio Pardo',
   'Conceição da Aparecida','Poços de Caldas'
 ];
+const CIDADES_GRANDE_SP = [
+  'São Paulo','Guarulhos','Osasco','São Bernardo do Campo','Santo André','São Caetano do Sul',
+  'Diadema','Mauá','Ribeirão Pires','Rio Grande da Serra','Barueri','Carapicuíba','Itapevi',
+  'Jandira','Santana de Parnaíba','Pirapora do Bom Jesus','Cajamar','Caieiras','Franco da Rocha',
+  'Francisco Morato','Mairiporã','Arujá','Santa Isabel','Itaquaquecetuba','Poá','Ferraz de Vasconcelos',
+  'Suzano','Mogi das Cruzes','Biritiba Mirim','Guararema','Salesópolis','Embu das Artes','Taboão da Serra',
+  'Itapecerica da Serra','Embu-Guaçu','Cotia','Vargem Grande Paulista','Juquitiba','São Lourenço da Serra'
+];
+// Lista única usada pelo autocomplete e pela validação de cidades.
+const CIDADES_PERMITIDAS = [...CIDADES_MG, ...CIDADES_GRANDE_SP];
 function normalizarTexto(t){
   return (t||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
 const CIDADES_PERMITIDAS_NORM = CIDADES_PERMITIDAS.map(normalizarTexto);
+const CIDADES_GRANDE_SP_NORM = CIDADES_GRANDE_SP.map(normalizarTexto);
+function cidadeEhGrandeSP(cidade){ return CIDADES_GRANDE_SP_NORM.includes(normalizarTexto(cidade)); }
+function coordEhGrandeSP(coord){ return !!(coord && coord.lat>=REGIAO_GRANDE_SP.minLat && coord.lat<=REGIAO_GRANDE_SP.maxLat && coord.lon>=REGIAO_GRANDE_SP.minLon && coord.lon<=REGIAO_GRANDE_SP.maxLon); }
+function pedidoEhGrandeSP(pedido){ return !!(pedido && coordEhGrandeSP(pedido.origemCoord)); }
+function taxaPlataformaParaMotorista(motorista=null){
+  const m = motorista || estado.motorista || {};
+  const cidade = m.cidade || estado.painelMotorista?.cadastro?.cidade || '';
+  if(cidadeEhGrandeSP(cidade)) return TAXA_PLATAFORMA_GRANDE_SP;
+  const plano = PLANOS[m.plano] || PLANOS.free;
+  return plano.taxaPlataforma;
+}
+function taxaPlataformaParaPedido(pedido, motorista=estado.motorista){
+  if(pedidoEhGrandeSP(pedido)) return TAXA_PLATAFORMA_GRANDE_SP;
+  return taxaPlataformaParaMotorista(motorista);
+}
 function cidadeEhPermitida(item){
   const a = item && item.address ? item.address : {};
   const candidatos = [a.city, a.town, a.village, a.municipality, a.city_district, a.county];
@@ -1493,7 +1520,7 @@ function popupInstalarHTML(){
 
 // ---------- Onboarding: slides explicando o funcionamento na primeira abertura ----------
 const ONBOARDING_SLIDES=[
-  { emoji:'', titulo:'Bem-vindo ao Entrega Flash', texto:'O app de entregas de Muzambinho e região. Em poucos toques você pede uma entrega ou começa a trabalhar entregando.' },
+  { emoji:'', titulo:'Bem-vindo ao Entrega Flash', texto:'O app de entregas da sua região. Em poucos toques você pede uma entrega ou começa a trabalhar entregando.' },
   { emoji:'', titulo:'Precisa de uma entrega?', texto:'Informe de onde e para onde, escolha o veículo (bicicleta, moto, carro, van ou caminhão) e o preço aparece na hora. Depois é só acompanhar tudo no mapa em tempo real.' },
   { emoji:'', titulo:'Quer trabalhar entregando?', texto:'Cadastre-se com seus dados e seu veículo, aguarde a aprovação e comece a aceitar corridas perto de você. O valor cai no seu saldo assim que você entrega.' },
   { emoji:'', titulo:'Simples, rápido e seguro', texto:'Fotos de coleta e entrega, chat direto com quem está do outro lado, e notificações em tempo real de cada passo. Vamos começar?' }
@@ -1704,7 +1731,7 @@ async function buscarPhoton(texto, limite){
 }
 // Busca no Nominatim (reforço/fallback; exige texto mais parecido com o endereço completo)
 async function buscarNominatim(texto, limite){
-  const q = texto.toLowerCase().includes('mg') ? texto : texto+', MG, Brasil';
+  const q = /\b(brasil|mg|sp|são paulo|sao paulo)\b/i.test(texto) ? texto : texto+', Brasil';
   const viewbox = `${REGIAO.minLon},${REGIAO.maxLat},${REGIAO.maxLon},${REGIAO.minLat}`;
   const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(q)}&viewbox=${viewbox}&bounded=1&countrycodes=br&limit=${limite}`;
   const resp = await fetch(url,{headers:{'Accept-Language':'pt-BR'}});
@@ -1716,7 +1743,7 @@ async function buscarNominatim(texto, limite){
     return { lat, lon, cidade, nome: item.display_name.split(',').slice(0,4).join(',').trim() };
   });
 }
-// Junta os dois provedores e mantém só resultados nas cidades atendidas (Muzambinho e região)
+// Junta os dois provedores e mantém só resultados nas cidades atendidas (Sul de Minas + Grande São Paulo)
 async function buscarEnderecos(texto, limite){
   let resultados = [];
   try{ resultados = await buscarPhoton(texto, limite*3); }catch(e){ console.error('Photon falhou', e); }
@@ -1744,10 +1771,10 @@ function precoDeDistancia(veiculo, km, roca){
   return Math.round(Math.max(v.minimo||0, taxaKm*km)*100)/100;
 }
 function ganhoMotorista(preco, pedido=null){
-  const plano = PLANOS[estado.motorista.plano] || PLANOS.free;
-  // Fundador recebe 100% nas 10 primeiras entregas; depois volta à comissão normal do plano.
+  // Fundador recebe 100% nas 10 primeiras entregas; depois volta à comissão normal da praça/plano.
   if(pedidoTemBeneficioFundador(pedido, estado.motorista)) return Math.round(Number(preco||0)*100)/100;
-  return Math.round(Number(preco||0)*(1-plano.taxaPlataforma)*100)/100;
+  const taxa = taxaPlataformaParaPedido(pedido, estado.motorista);
+  return Math.round(Number(preco||0)*(1-taxa)*100)/100;
 }
 
 // ---------- preenchimento automático de endereço ----------
@@ -2686,8 +2713,8 @@ function feedbackModalHTML(){
   const categorias = [ {id:'sugestao', label:' Sugestão'}, {id:'reclamacao', label:' Reclamação'}, {id:'outro', label:' Outro assunto'} ];
   const ehMotorista = estado.modo==='entregador';
   const textoIntro = ehMotorista
-    ? 'Obrigado por fazer parte do Entrega Flash! Se puder indicar a gente pra mais gente aqui em Muzambinho e região, ajuda bastante. E se tiver alguma sugestão, crítica ou ideia, escreve aí embaixo — sua opinião ajuda a melhorar o serviço pra todo mundo.'
-    : 'Obrigado por confiar no Entrega Flash! Se puder indicar a gente pra mais pessoas em Muzambinho e região, ajuda bastante. Sugestões, críticas ou ideias são sempre bem-vindas — é ouvindo você que a gente melhora.';
+    ? 'Obrigado por fazer parte do Entrega Flash! Se puder indicar a gente pra mais gente na sua região, ajuda bastante. E se tiver alguma sugestão, crítica ou ideia, escreve aí embaixo — sua opinião ajuda a melhorar o serviço pra todo mundo.'
+    : 'Obrigado por confiar no Entrega Flash! Se puder indicar a gente pra mais pessoas na sua região, ajuda bastante. Sugestões, críticas ou ideias são sempre bem-vindas — é ouvindo você que a gente melhora.';
   return `
   <div class="modal-fundo" onclick="if(event.target===this) fecharFeedback()">
     <div class="modal-chat" style="max-height:none">
@@ -4770,7 +4797,7 @@ function telaPlanoConfirmadoBV(chave){
     <div class="bv-prep-titulo">${titulo}</div>
     <div class="bv-prep-sub">${sub}</div>
     <div class="bv-prep-barra"><div class="bv-prep-barra-fill" style="animation-duration:4s"></div></div>
-    <div class="bv-prep-msg">Você fica com ${Math.round((1-p.taxaPlataforma)*100)}% de cada entrega</div>
+    <div class="bv-prep-msg">Você fica com ${Math.round((1-taxaPlataformaParaMotorista())*100)}% de cada entrega</div>
   </div>`;
 }
 function telaClienteBemVindoBV(nome){
@@ -4981,7 +5008,7 @@ function telaCadastroCliente(){
   <div class="campo-motorista" style="margin-bottom:14px">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 8px">Como funciona</h2>
     <div style="font-size:14.5px;color:var(--poeira);line-height:1.55">
-      O <b style="color:var(--osso)">Entrega Flash</b> é o app de entregas de Muzambinho e região — na cidade ou na <b style="color:var(--mango)">zona rural</b>.
+      O <b style="color:var(--osso)">Entrega Flash</b> é o app de entregas da sua região — na cidade ou na <b style="color:var(--mango)">zona rural</b>.
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;margin-top:12px">
       <div style="display:flex;gap:10px;align-items:flex-start"><span style="font-size:19px;line-height:1.3">1⃣</span><div style="font-size:14px;color:var(--poeira)"><b style="color:var(--osso)">Você pede a entrega</b> — informa de onde e pra onde, escolhe o veículo (moto, carro, bike ou caminhão) e vê o valor na hora.</div></div>
@@ -5039,22 +5066,12 @@ function telaCliente(){
   const f = estado.form;
   const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
-    const minutosBuscandoTela = (Date.now() - pedidoBuscando.criadoEm) / 60000;
-    const raioBuscaTela = Math.min(15, 2 + Math.floor(minutosBuscandoTela));
-    const ampliandoBuscaTela = minutosBuscandoTela >= 1;
-    return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:30px 18px;border:2px solid var(--mango);overflow:hidden;position:relative">
-      <div class="radar-busca-wrap" data-criado="${pedidoBuscando.criadoEm}">
-        <div class="radar-busca" style="margin-top:2px">
-          <span class="radar-anel"></span><span class="radar-anel"></span><span class="radar-anel"></span>
-          <span class="radar-centro">🏍️</span>
-        </div>
-        <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
-        <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado. Estamos procurando o motorista disponível mais próximo.</div>
-        <div class="radar-raio-texto" style="margin-top:12px">${ampliandoBuscaTela ? 'Ampliando a área de busca' : 'Buscando na área'} — ${raioBuscaTela} km</div>
-        <div class="radar-raio-sub">A busca continua automaticamente até um motorista aceitar.</div>
-      </div>
+    return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
+      <div style="font-size:54px"><span class="girando-emoji"></span></div>
+      <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
+      <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
       <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
-      <div style="margin-top:15px;font-size:14px;color:var(--poeira)">🟢 ${estado.motoristasOnline||0} motorista${estado.motoristasOnline===1?'':'s'} online agora</div>
+      <div style="margin-top:15px;font-size:14px;color:var(--poeira)"> ${estado.motoristasOnline||0} motorista${estado.motoristasOnline===1?'':'s'} online agora</div>
       <button class="btn btn-secundario btn-pequeno" style="margin-top:18px" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
     </div>`;
   }
@@ -5225,7 +5242,7 @@ function telaCliente(){
       <button class="btn btn-primario" style="margin-top:0" ${atributoDesabilitado('criarPedido')} onclick="executarComCarregando('criarPedido', criarPedido)">${carregando('criarPedido') ? '<span class="girando"></span>'+(f.tipoRetirada==='agendado'?'Agendando...':'Confirmando...') : (f.tipoRetirada==='agendado'?' Agendar pedido':' Confirmar pedido')}</button>
       ` : ''}
     </div>
-    ${preco==null && !estado.calculando && !estado.falhaCalculo ? `<div class="subtitulo" style="margin-top:12px">Cobrimos Muzambinho/MG e cidades próximas.</div>` : ''}
+    ${preco==null && !estado.calculando && !estado.falhaCalculo ? `<div class="subtitulo" style="margin-top:12px">Cobrimos cidades do Sul de Minas e da Grande São Paulo.</div>` : ''}
     ` : ''}
     </div>
   </div>
@@ -5345,7 +5362,7 @@ function telaCadastroMotorista(){
   <div class="campo-motorista" style="margin-bottom:14px">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 8px">Como funciona</h2>
     <div style="font-size:14.5px;color:var(--poeira);line-height:1.55">
-      O <b style="color:var(--osso)">Entrega Flash</b> conecta você a quem precisa de uma entrega em Muzambinho e região — você aceita as corridas que quiser, no seu tempo livre, com bicicleta, moto, carro ou caminhão.
+      O <b style="color:var(--osso)">Entrega Flash</b> conecta você a quem precisa de uma entrega na sua região — você aceita as corridas que quiser, no seu tempo livre, com bicicleta, moto, carro ou caminhão.
     </div>
     <div class="ef-founder-box" style="margin-top:12px">
       <div class="ef-founder-title">Seu benefício de fundador</div>
@@ -5524,7 +5541,7 @@ function planosHTML(c){
         ${p.limiteMensal!=null?` Limite de ${p.limiteMensal} entregas/mês`:' Sem limite de entregas'}<br>
         ${p.prioridade?' Entregas prioritárias':' Vê os pedidos depois dos motoristas Pro'}<br>
         ${p.saqueDias>0?` Saque em até ${p.saqueDias} dias úteis`:' Saque imediato em 24h'}<br>
-         Você fica com ${Math.round((1-p.taxaPlataforma)*100)}% de cada entrega
+         Você fica com ${Math.round((1-taxaPlataformaParaMotorista())*100)}% de cada entrega
       </div>
     </div>`;
   };
@@ -5978,7 +5995,7 @@ function taxasERegrasHTML(){
 
   <div class="cf-titulo-secao"> Taxas e regras para quem entrega (motorista)</div>
   <div class="cf-beneficios">
-    <div class="cf-beneficio"><span class="check"></span> <b>Comissão da plataforma:</b> Free fica com ${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% do valor de cada entrega · Pro fica com ${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}%.</div>
+    <div class="cf-beneficio"><span class="check"></span> <b>Comissão da plataforma:</b> na Grande São Paulo, o motorista fica com <b>85%</b> e a plataforma com <b>15%</b>. Nas demais praças, vale a taxa configurada no plano.</div>
     <div class="cf-beneficio"><span class="check"></span> <b>Taxa única do Pro:</b> R$ ${PLANOS.pro.preco.toFixed(2)}, paga uma única vez, sem mensalidade.</div>
     <div class="cf-beneficio"><span class="check"></span> <b>Limite de entregas por mês:</b> Free até ${PLANOS.free.limiteMensal||'—'} entregas · Pro ilimitado.</div>
     <div class="cf-beneficio"><span class="check"></span> <b>Corridas simultâneas:</b> Free até ${PLANOS.free.limiteSimultaneo} · Pro até ${PLANOS.pro.limiteSimultaneo}.</div>
@@ -6012,7 +6029,7 @@ function comoFuncionaClienteHTML(){
 
   <div class="cf-titulo-secao"> Entrega prioritária</div>
   <div class="subtitulo" style="margin:6px 0 0">Por um valor a mais (+R$ ${TAXA_PRIORIDADE_VALOR.toFixed(2)}) na hora de pedir, a sua entrega aparece primeiro para TODOS os entregadores da região (inclusive antes dos pedidos comuns) e é feita direto — sem paradas de outros clientes pelo caminho. Ideal para quando é urgente.</div>
-  <div class="cf-nota">Cobrimos Muzambinho/MG e cidades próximas. Todos os preços e regras podem ser ajustados pela equipe Entrega Flash.</div>`;
+  <div class="cf-nota">Cobrimos cidades do Sul de Minas e da Grande São Paulo. Todos os preços e regras podem ser ajustados pela equipe Entrega Flash.</div>`;
 }
 function comoFuncionaMotoristaHTML(){
   return `
@@ -6174,7 +6191,7 @@ function render(){
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
       ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}"></button>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
-      <div class="tagline">Rápido · Seguro · No Prazo — Muzambinho e região</div>
+      <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
   `;
   const _efAssinaturaAtual = _efAssinaturaTela();
   const _efClasseTransicao = _efAssinaturaAtual!==_efAssinaturaTelaAnterior ? ' ef-tela-entrando' : '';
