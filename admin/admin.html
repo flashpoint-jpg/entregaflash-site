@@ -1143,15 +1143,12 @@ async function salvarConfigGeralAdmin(){
   for(const k in payload){ if(!CAMPOS_NAO_NUMERICOS.includes(k) && Number.isNaN(payload[k])){ mostrarToast('Preenche todos os campos com números válidos.'); return; } }
   const { error } = await sb.rpc('entrega_admin_salvar_config_geral', { p_senha: estado.admin.senhaDigitada, p_config: payload });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar as configurações: '+(error.message||'verifica a ligação e tenta de novo'), 'erro'); return; }
-  const { data:configSalva, error:erroConfigSalva } = await sb.from('entrega_config_geral').select('*').eq('id',1).maybeSingle();
-  if(!erroConfigSalva && configSalva){
-    aplicarConfigGeral(configSalva);
-    estado.configGeral = configSalva;
-  } else {
-    aplicarConfigGeral(payload);
-  }
-  mostrarToast('Configurações salvas e confirmadas no banco!', 'sucesso');
-  renderAdminParcial();
+  // O banco é a fonte oficial: só confirma depois de reler exatamente o que foi persistido.
+  const { data: salvo, error: erroLeitura } = await sb.from('entrega_config_geral').select('*').eq('id',1).maybeSingle();
+  if(erroLeitura || !salvo){ console.error(erroLeitura); mostrarToast('Salvou, mas não consegui confirmar no banco. Atualize e tente novamente.', 'erro'); return; }
+  aplicarConfigGeral(salvo);
+  mostrarToast('Configurações salvas no banco e atualizadas no site!', 'sucesso');
+  render();
 }
 
 let bvPapelSelecionado = 'cliente';
@@ -2152,11 +2149,31 @@ let canalConfigGeralRealtime = null;
 function assinarConfigGeralRealtime(){
   if(canalConfigGeralRealtime) return;
   canalConfigGeralRealtime = sb.channel('config-geral-realtime')
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_config_geral'}, (payload)=>{
-      aplicarConfigGeral(payload.new);
-      render();
+    .on('postgres_changes', {event:'*', schema:'public', table:'entrega_config_geral'}, (payload)=>{
+      if(payload.new) aplicarConfigGeral(payload.new);
+      // No painel administrativo, NÃO recria a tela inteira: isso fazia o painel piscar,
+      // perder o ponto do scroll e parecer que estava atualizando sozinho.
+      // Os valores já ficam atualizados em memória e o próprio botão Salvar confirma o banco.
+      if(!estado.admin?.aberto) render();
     })
     .subscribe();
+}
+
+// Sincronização de segurança: garante atualização mesmo se o realtime cair no celular/PWA.
+let efConfigSyncTimer = null;
+function sincronizarConfigGeralPeriodicamente(){
+  if(efConfigSyncTimer) return;
+  const sync = async ()=>{
+    try{
+      await carregarConfigGeral();
+      // Em telas de cliente/motorista pode redesenhar para refletir preço/regra nova.
+      // No admin, sincroniza em silêncio para não ficar atualizando/piscando.
+      if(!estado.admin?.aberto) render();
+    }catch(e){}
+  };
+  efConfigSyncTimer = setInterval(sync, 15000);
+  window.addEventListener('focus', sync);
+  document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) sync(); });
 }
 
 // ---------- presença em tempo real (quantas pessoas têm o app aberto agora) ----------
@@ -5731,7 +5748,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL ULTRA • WHATSAPP 5 DIAS • SEM PISCAR • 30/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL NOVO • CIDADES • 28/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -6655,17 +6672,6 @@ function motoristaCardHTML(m, emRota){
           Incluir aviso de bônus na mensagem
         </label>
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.telefone.replace(/\D/g,'')}')">💬 Enviar boas-vindas no WhatsApp</button>
-        ${['basico','liberado'].includes(m.status) ? (()=>{
-          const criado=Number(m.criado_em||0);
-          const dias=criado?Math.floor((Date.now()-criado)/(24*60*60*1000)):0;
-          const vencido=!!(criado && dias>=5);
-          const faltam=Math.max(0,5-dias);
-          return `<div style="margin-top:10px;padding:10px;border-radius:10px;border:1px solid ${vencido?'rgba(255,92,92,.55)':'rgba(37,211,102,.35)'};background:${vencido?'rgba(255,92,92,.08)':'rgba(37,211,102,.06)'}">
-            <div style="font-size:12.5px;font-weight:800;color:${vencido?'#ff7474':'var(--osso)'}">${vencido?'⚠️ PRAZO DE 5 DIAS ULTRAPASSADO':`⏳ Documentos pendentes · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`}</div>
-            <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Lembrar documentação pelo WhatsApp</button>
-          </div>`;
-        })() : ''}
-
       </div>
       <div style="display:flex;gap:8px;margin-top:6px">
         <select id="alt-plano-${m.id}" style="flex:1">
@@ -6845,8 +6851,10 @@ async function carregarClientesAdmin(){
   if(erroSaldos) console.error(erroSaldos);
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
-  estado.admin.clientes = (data||[]).map(c=>({ ...c, saldo: saldoPorTelefone[c.telefone]||0 }));
-  agendarRenderAdmin();
+  const novosClientes = (data||[]).map(c=>({ ...c, saldo: saldoPorTelefone[c.telefone]||0 }));
+  const mudouClientes = JSON.stringify(novosClientes) !== JSON.stringify(estado.admin.clientes||[]);
+  estado.admin.clientes = novosClientes;
+  if(mudouClientes) agendarRenderAdmin();
 }
 function filtrarPedidosAdmin(){
   const a = estado.admin;
@@ -6967,17 +6975,11 @@ function resumoMotoristasPorCidadeHTML(){
 }
 function resumoSituacaoMotoristasHTML(){
   const ms=estado.admin.motoristas||[];
-  const online=ms.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status)).length;
+  const online=ms.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status)).length;
   const semDocs=ms.filter(m=>['basico','liberado'].includes(m.status)).length;
-  const docsVencidos=ms.filter(m=>{
-    if(!['basico','liberado'].includes(m.status)) return false;
-    const criado=Number(m.criado_em||0);
-    return criado>0 && (Date.now()-criado)>=5*24*60*60*1000;
-  }).length;
   const analise=ms.filter(m=>m.status==='pendente').length;
   const aprovados=ms.filter(m=>m.status==='aprovado').length;
   return `
-  ${docsVencidos?`<div class="admin-cartao" style="margin-bottom:12px;border-color:#ff5c5c;background:rgba(255,92,92,.08)"><b style="color:#ff7474">⚠️ Documentação atrasada</b><div class="am-linha"><span>Passaram de 5 dias sem enviar documentos</span><b style="color:#ff7474">${docsVencidos}</b></div><div class="subtitulo" style="margin:6px 0 0">Abra Motoristas e use o botão de WhatsApp para lembrar antes de excluir.</div></div>`:''}
   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px">
     <div class="admin-cartao" style="margin:0;text-align:center"><div data-admin-online-count style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--verde)">${online}</div><div style="font-size:12px">🟢 Online agora</div></div>
     <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--chama)">${semDocs}</div><div style="font-size:12px">📄 Sem documentos</div></div>
@@ -7518,10 +7520,10 @@ function adminAbaMotoristasHTML(){
     if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
     return true;
   });
-  const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
+  const online=baseMotoristas.filter(m=>m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
   const aguardandoDocs=baseMotoristas.filter(m=>['basico','liberado'].includes(m.status));
   const pendentes=baseMotoristas.filter(m=>m.status==='pendente');
-  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !motoristaOnlineAgora(m));
+  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !m.disponivel);
   const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
   return `
     <div class="admin-filtros-grade" style="margin-bottom:12px">
@@ -7574,19 +7576,6 @@ async function ajustarSaldoMotoristaAdmin(telefone){
   mostrarToast(`Saldo ajustado! Novo saldo: R$ ${Number(novoSaldo).toFixed(2)}`, 'sucesso');
   if(estado.motorista.telefone===telefone) estado.motorista.saldo = Number(novoSaldo);
   await carregarMotoristasAdmin();
-}
-function normalizarWhatsAppBR(telefone){
-  let n=String(telefone||'').replace(/\D/g,'');
-  if(n.startsWith('55') && (n.length===12 || n.length===13)) return n;
-  if(n.length===10 || n.length===11) return '55'+n;
-  return n;
-}
-function abrirWhatsAppDocumentosAdmin(telefone, nome){
-  const numero=normalizarWhatsAppBR(telefone);
-  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
-  const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
-  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
-  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg), '_blank');
 }
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
   const checkbox = document.getElementById('bonus-motorista-'+idm);
@@ -7745,19 +7734,6 @@ function agendarRenderAdmin(delay=90){
   if(_adminRenderTimer) clearTimeout(_adminRenderTimer);
   _adminRenderTimer = setTimeout(()=>{ _adminRenderTimer=null; renderAdminParcial(); }, delay);
 }
-function atualizarPresencaAdminDOM(){
-  if(!estado.admin?.aberto) return;
-  const online=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
-  document.querySelectorAll('[data-admin-online-count]').forEach(el=>{ el.textContent=String(online.length); });
-  document.querySelectorAll('[data-motorista-telefone]').forEach(card=>{
-    const tel=card.getAttribute('data-motorista-telefone');
-    const m=(estado.admin.motoristas||[]).find(x=>String(x.telefone||'').replace(/\D/g,'')===tel);
-    if(!m) return;
-    const on=motoristaOnlineAgora(m);
-    const span=card.querySelector('summary .avatar-linha span');
-    if(span && !span.textContent.includes('Em rota')) span.textContent=on?'🟢 Online':'⚪ Offline';
-  });
-}
 let assinaturaPresencaAdmin='';
 function verificarMudancaPresencaAdmin(){
   if(!estado.admin?.logado || !(estado.admin.motoristas||[]).length) return;
@@ -7766,7 +7742,7 @@ function verificarMudancaPresencaAdmin(){
   if(nova!==assinaturaPresencaAdmin){
     assinaturaPresencaAdmin=nova;
     carregarMotoristasOnline();
-    atualizarPresencaAdminDOM();
+    if(estado.admin.aba==='motoristas' || estado.admin.aba==='resumo') agendarRenderAdmin(0);
   }
 }
 setInterval(verificarMudancaPresencaAdmin,20000);
@@ -7913,18 +7889,20 @@ async function carregarMotoristasAdmin(){
   if(erroSaldos) console.error(erroSaldos);
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
-  const novos = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  const assinatura=(lista)=>JSON.stringify((lista||[]).map(m=>[m.id,m.nome,m.telefone,m.cidade,m.status,m.plano,m.veiculo_tipo,m.veiculo_marca,m.veiculo_placa,m.veiculo_cor,m.cnh_url,m.crlv_url,m.foto_motorista_url,m.foto_veiculo_url,m.foto_veiculo_tras_url,m.chave_pix,Number(m.saldo||0),!!motoristaOnlineAgora(m)]));
-  const mudou = assinatura(estado.admin.motoristas)!==assinatura(novos);
-  estado.admin.motoristas = novos;
-  if(mudou || !jaTinhaMotoristas) agendarRenderAdmin();
-  else atualizarPresencaAdminDOM();
+  const novosMotoristas = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
+  // Ignora campos de heartbeat/GPS ao decidir redesenhar o painel. Eles mudam o tempo todo.
+  const estrutural = arr => (arr||[]).map(m=>{ const x={...m}; delete x.disponivel_atualizado_em; delete x.lat_atual; delete x.lng_atual; delete x.lat_atualizado_em; return x; });
+  const mudouMotoristas = JSON.stringify(estrutural(novosMotoristas)) !== JSON.stringify(estrutural(estado.admin.motoristas||[]));
+  estado.admin.motoristas = novosMotoristas;
+  if(mudouMotoristas) agendarRenderAdmin();
 }
 async function carregarPedidosEntreguesAdmin(){
   const { data, error } = await sb.from('entrega_pedidos').select('preco,motorista_telefone').eq('status','entregue');
   if(error){ console.error(error); return; }
-  estado.admin.pedidosEntregues = data||[];
-  agendarRenderAdmin();
+  const novosEntregues = data||[];
+  const mudouEntregues = JSON.stringify(novosEntregues) !== JSON.stringify(estado.admin.pedidosEntregues||[]);
+  estado.admin.pedidosEntregues = novosEntregues;
+  if(mudouEntregues) agendarRenderAdmin();
 }
 async function aprovarMotoristaAdmin(id){
   const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
@@ -8019,7 +7997,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
+window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
@@ -8059,6 +8037,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   assinarPresencaRealtime();
   assinarAvisosGeraisRealtime();
   assinarConfigGeralRealtime();
+  sincronizarConfigGeralPeriodicamente();
   carregarMotoristasOnline();
   setInterval(carregarMotoristasOnline, 20000);
   setInterval(atualizarPresencaTipo, 20000);
