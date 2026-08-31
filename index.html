@@ -267,6 +267,29 @@ fbq('track', 'PageView');
   .extras-acordeao-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:8px;cursor:pointer;padding:4px 0;}
   .veiculos button.sel{border-color:var(--mango);color:var(--mango);background:rgba(255,201,60,0.08);}
   .veiculos button .emoji{display:block;font-size:20.5px;margin-bottom:9px;}
+  .busca-motorista-premium{position:relative;overflow:hidden;text-align:left;padding:22px 18px 18px;border:1.5px solid rgba(255,201,60,.62);background:linear-gradient(180deg,rgba(255,201,60,.07),rgba(255,255,255,.015));box-shadow:0 18px 45px rgba(0,0,0,.25)}
+  .busca-motorista-premium:before{content:"";position:absolute;inset:-120px auto auto -90px;width:220px;height:220px;border-radius:50%;background:radial-gradient(circle,rgba(255,201,60,.13),transparent 68%);pointer-events:none}
+  .busca-topo{display:flex;align-items:center;gap:12px;position:relative;z-index:1}
+  .busca-veiculo-icone{width:56px;height:56px;flex:0 0 56px;border-radius:17px;border:1px solid rgba(255,201,60,.45);background:rgba(255,201,60,.09);display:grid;place-items:center;font-size:31px;box-shadow:inset 0 0 20px rgba(255,201,60,.04);animation:buscaPulso 1.8s ease-in-out infinite}
+  .busca-topo h2{font-size:25px;line-height:1.05;margin:0 0 5px;text-transform:uppercase}
+  .busca-topo .subtitulo{font-size:14px;line-height:1.35;margin:0}
+  .busca-status-card{margin-top:18px;border:1px solid var(--linha);background:rgba(0,0,0,.16);border-radius:16px;padding:14px}
+  .busca-status-linha{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:13px;font-weight:800;letter-spacing:.2px;text-transform:uppercase;color:var(--osso)}
+  .busca-status-linha span:last-child{color:var(--mango);white-space:nowrap}
+  .busca-barra{height:12px;margin-top:10px;border-radius:999px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.08);overflow:hidden;position:relative}
+  .busca-barra-movel{position:absolute;top:0;bottom:0;width:34%;border-radius:999px;background:linear-gradient(90deg,rgba(255,201,60,.15),var(--mango),rgba(255,201,60,.32));box-shadow:0 0 18px rgba(255,201,60,.42);animation:buscaDesliza 1.75s ease-in-out infinite alternate}
+  .busca-fase{display:flex;align-items:center;gap:8px;margin-top:10px;color:var(--poeira);font-size:13.5px;line-height:1.35}
+  .busca-sinal{width:9px;height:9px;border-radius:50%;background:var(--mango);box-shadow:0 0 0 0 rgba(255,201,60,.5);animation:buscaSinal 1.6s infinite}
+  .busca-detalhes{display:grid;grid-template-columns:1fr;gap:9px;margin-top:14px}
+  .busca-endereco{position:relative;padding:11px 12px 11px 38px;border:1px solid var(--linha);border-radius:13px;background:var(--painel-alt);font-size:13.5px;line-height:1.35;color:var(--osso)}
+  .busca-endereco:before{position:absolute;left:13px;top:12px;font-size:17px}.busca-endereco.origem:before{content:"●";color:var(--mango)}.busca-endereco.destino:before{content:"◆";color:var(--mango)}
+  .busca-endereco b{display:block;color:var(--poeira);font-size:11px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px}
+  .busca-resumo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin-top:10px}
+  .busca-mini{border:1px solid var(--linha);border-radius:12px;padding:10px 7px;text-align:center;background:rgba(255,255,255,.02);min-width:0}
+  .busca-mini small{display:block;color:var(--poeira);font-size:10px;text-transform:uppercase;letter-spacing:.35px;margin-bottom:4px}.busca-mini strong{display:block;color:var(--osso);font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  @keyframes buscaDesliza{from{left:-3%}to{left:69%}} @keyframes buscaPulso{0%,100%{transform:scale(1)}50%{transform:scale(1.055)}} @keyframes buscaSinal{0%{box-shadow:0 0 0 0 rgba(255,201,60,.5)}70%{box-shadow:0 0 0 8px rgba(255,201,60,0)}100%{box-shadow:0 0 0 0 rgba(255,201,60,0)}}
+  @media(max-width:380px){.busca-resumo{grid-template-columns:1fr}.busca-mini strong{white-space:normal}.busca-topo h2{font-size:22px}}
+  @media(prefers-reduced-motion:reduce){.busca-veiculo-icone,.busca-barra-movel,.busca-sinal{animation:none}.busca-barra-movel{left:33%}}
   .veiculo-escolha-destaque{border:1.5px solid rgba(255,201,60,.72);background:linear-gradient(180deg,rgba(255,201,60,.12),rgba(255,201,60,.045));border-radius:16px;padding:13px 12px 12px;margin:0 0 14px;box-shadow:0 8px 24px rgba(0,0,0,.18);scroll-margin-top:18px;}
   .veiculo-escolha-destaque .veiculo-titulo{font-family:'Rajdhani';font-size:18px;font-weight:800;color:var(--osso);display:flex;align-items:center;gap:7px;margin-bottom:3px;}
   .veiculo-escolha-destaque .veiculo-ajuda{font-size:13px;color:var(--poeira);line-height:1.35;margin-bottom:10px;}
@@ -5364,13 +5387,34 @@ function telaCliente(){
   const f = estado.form;
   const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
-    return `<div class="cartao" id="pedido-buscando-tela" style="text-align:center;padding:32px 18px;border:2px solid var(--mango)">
-      <div style="font-size:54px"><span class="girando-emoji"></span></div>
-      <h2 style="font-size:27px;margin:8px 0 5px">Buscando motorista...</h2>
-      <div class="subtitulo" style="font-size:15px;line-height:1.5">Seu pedido foi confirmado e já está aparecendo para os motoristas disponíveis.</div>
-      <div class="end" style="text-align:left;margin-top:18px"><b>Recolha</b>${pedidoBuscando.origem}<b style="margin-top:8px">Entrega</b>${pedidoBuscando.destino}</div>
-      <div style="margin-top:15px;font-size:14px;color:var(--poeira)"> ${estado.motoristasOnline||0} motorista${estado.motoristasOnline===1?'':'s'} online agora</div>
-      <button class="btn btn-secundario btn-pequeno" style="margin-top:18px" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
+    const infoVeiculo = VEICULOS[pedidoBuscando.veiculo] || {label:'Veículo'};
+    const iconesBusca = { bicicleta:'🚲', moto:'🏍️', carro:'🚗', carroaberto:'🛻', fiorino:'🚐', van:'🚐', caminhao:'🚚' };
+    const iconeBusca = iconesBusca[pedidoBuscando.veiculo] || '🚘';
+    const onlineBusca = Number(estado.motoristasOnline)||0;
+    const distanciaBusca = Number(pedidoBuscando.distancia)||0;
+    return `<div class="cartao busca-motorista-premium" id="pedido-buscando-tela">
+      <div class="busca-topo">
+        <div class="busca-veiculo-icone" aria-hidden="true">${iconeBusca}</div>
+        <div>
+          <h2>Buscando motorista...</h2>
+          <div class="subtitulo">Pedido confirmado. Estamos procurando um motorista de <b style="color:var(--osso)">${infoVeiculo.label}</b> para sua entrega.</div>
+        </div>
+      </div>
+      <div class="busca-status-card">
+        <div class="busca-status-linha"><span>Localizando seu motorista</span><span>${iconeBusca} ${infoVeiculo.label}</span></div>
+        <div class="busca-barra" role="progressbar" aria-label="Buscando motorista" aria-valuetext="Busca em andamento"><div class="busca-barra-movel"></div></div>
+        <div class="busca-fase"><span class="busca-sinal"></span><span>${onlineBusca>0 ? `Verificando ${onlineBusca} motorista${onlineBusca===1?'':'s'} online e aguardando aceite do pedido...` : 'Procurando motoristas disponíveis na sua região...'}</span></div>
+      </div>
+      <div class="busca-detalhes">
+        <div class="busca-endereco origem"><b>Recolha</b>${pedidoBuscando.origem}</div>
+        <div class="busca-endereco destino"><b>Entrega</b>${pedidoBuscando.destino}</div>
+      </div>
+      <div class="busca-resumo">
+        <div class="busca-mini"><small>Veículo pedido</small><strong>${iconeBusca} ${infoVeiculo.label}</strong></div>
+        <div class="busca-mini"><small>Distância</small><strong>${distanciaBusca>0 ? distanciaBusca.toFixed(1).replace('.',',')+' km' : 'Calculando'}</strong></div>
+        <div class="busca-mini"><small>Disponíveis</small><strong>${onlineBusca} online</strong></div>
+      </div>
+      <button class="btn btn-secundario btn-pequeno" style="margin-top:16px;width:100%" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
     </div>`;
   }
   const paradasValidasPreco = (f.paradas||[]).map(x=>x.trim()).filter(Boolean).length;
