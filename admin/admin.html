@@ -1381,7 +1381,7 @@ async function registrarServiceWorker(){
         await r.unregister();
       }
     }
-    await navigator.serviceWorker.register('./sw-admin.js?v=20260829-mobilefix-1', { scope:'./' });
+    await navigator.serviceWorker.register('./sw-admin.js?v=20260831-contadores-unificados-1', { scope:'./' });
   }catch(e){ console.warn('Service Worker do Admin indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
@@ -2110,6 +2110,11 @@ function motoristaOnlineAgora(m, agora=Date.now()){
   const ultimo = Number(m.disponivel_atualizado_em||0);
   return ultimo>0 && (agora-ultimo) <= PRESENCA_MOTORISTA_MS;
 }
+// Regras únicas de situação do motorista usadas em TODO o painel.
+// Evita o resumo geral mostrar um número e o resumo por cidade mostrar outro.
+function motoristaSemDocumentos(m){ return !!m && ['basico','liberado'].includes(m.status); }
+function motoristaEmAnalise(m){ return !!m && m.status==='pendente'; }
+function motoristaAprovado(m){ return !!m && m.status==='aprovado'; }
 async function carregarMotoristasOnline(){
   try{
     // Usa a lista já carregada pelo RPC do admin e aplica presença real de 2 minutos.
@@ -7012,9 +7017,9 @@ function resumoMotoristasPorCidadeHTML(){
     const cidade = normalizarCidadePainel(m.cidade) || 'Cidade não informada';
     if(!mapa[cidade]) mapa[cidade]={total:0,online:0,aguardando:0,aprovados:0};
     mapa[cidade].total++;
-    if(m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status)) mapa[cidade].online++;
-    if(['basico','liberado','pendente'].includes(m.status)) mapa[cidade].aguardando++;
-    if(m.status==='aprovado') mapa[cidade].aprovados++;
+    if(motoristaOnlineAgora(m)) mapa[cidade].online++;
+    if(motoristaSemDocumentos(m) || motoristaEmAnalise(m)) mapa[cidade].aguardando++;
+    if(motoristaAprovado(m)) mapa[cidade].aprovados++;
   });
   const cidades = Object.entries(mapa).sort((a,b)=> b[1].total-a[1].total || a[0].localeCompare(b[0],'pt-BR'));
   if(!cidades.length) return '';
@@ -7036,7 +7041,7 @@ function resumoMotoristasPorCidadeHTML(){
           </div>
           <div style="font-size:11.5px;color:var(--poeira);margin-top:5px;display:flex;gap:9px;flex-wrap:wrap">
             <span style="color:var(--verde)">● ${d.online} online</span>
-            <span>✅ ${d.aprovados} ativos</span>
+            <span>✅ ${d.aprovados} aprovados</span>
             ${d.aguardando?`<span style="color:var(--chama)">⏳ ${d.aguardando} pend.</span>`:''}
           </div>
         </div>`).join('')}
@@ -7045,15 +7050,15 @@ function resumoMotoristasPorCidadeHTML(){
 }
 function resumoSituacaoMotoristasHTML(){
   const ms=estado.admin.motoristas||[];
-  const online=ms.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status)).length;
-  const semDocs=ms.filter(m=>['basico','liberado'].includes(m.status)).length;
+  const online=ms.filter(m=>motoristaOnlineAgora(m)).length;
+  const semDocs=ms.filter(m=>motoristaSemDocumentos(m)).length;
   const docsVencidos=ms.filter(m=>{
-    if(!['basico','liberado'].includes(m.status)) return false;
+    if(!motoristaSemDocumentos(m)) return false;
     const criado=Number(m.criado_em||0);
     return criado>0 && (Date.now()-criado)>=5*24*60*60*1000;
   }).length;
-  const analise=ms.filter(m=>m.status==='pendente').length;
-  const aprovados=ms.filter(m=>m.status==='aprovado').length;
+  const analise=ms.filter(m=>motoristaEmAnalise(m)).length;
+  const aprovados=ms.filter(m=>motoristaAprovado(m)).length;
   return `
   ${docsVencidos?`<div class="admin-cartao" style="margin-bottom:12px;border-color:#ff5c5c;background:rgba(255,92,92,.08)"><b style="color:#ff7474">⚠️ Documentação atrasada</b><div class="am-linha"><span>Passaram de 5 dias sem enviar documentos</span><b style="color:#ff7474">${docsVencidos}</b></div><div class="subtitulo" style="margin:6px 0 0">Abra Motoristas e use o botão de WhatsApp para lembrar antes de excluir.</div></div>`:''}
   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px">
@@ -7614,10 +7619,10 @@ function adminAbaMotoristasHTML(){
     if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
     return true;
   });
-  const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
-  const aguardandoDocs=baseMotoristas.filter(m=>['basico','liberado'].includes(m.status));
-  const pendentes=baseMotoristas.filter(m=>m.status==='pendente');
-  const ativos=baseMotoristas.filter(m=>m.status==='aprovado' && !motoristaOnlineAgora(m));
+  const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m));
+  const aguardandoDocs=baseMotoristas.filter(m=>motoristaSemDocumentos(m));
+  const pendentes=baseMotoristas.filter(m=>motoristaEmAnalise(m));
+  const ativos=baseMotoristas.filter(m=>motoristaAprovado(m) && !motoristaOnlineAgora(m));
   const bloqueados=baseMotoristas.filter(m=>m.status==='bloqueado');
   const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m));
   const chips = [
