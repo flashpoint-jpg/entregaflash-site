@@ -7847,7 +7847,8 @@ function motoristaCardHTML(m, emRota){
       <div class="am-linha"><span>Telefone</span><b>${m.telefone}</b></div>
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
-      <div class="am-linha"><span>Chave PIX</span><b>${m.chave_pix||'—'}</b></div>
+      <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
+      ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}
       <div class="am-linha"><span>Plano</span><b>${PLANOS[m.plano]?.label||m.plano}</b></div>
       <div class="am-linha"><span> Saldo a receber</span><b style="color:var(--mango)">R$ ${Number(m.saldo||0).toFixed(2)}</b></div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
@@ -8864,6 +8865,14 @@ async function carregarPedidosEntreguesAdmin(){
   render();
 }
 async function aprovarMotoristaAdmin(id){
+  const motorista=(estado.admin.motoristas||[]).find(m=>String(m.id)===String(id));
+  if(!String(motorista?.chave_pix||'').trim()){
+    estado.admin.motoristaEditando=id;
+    render();
+    mostrarToast('Informe a chave PIX antes de aprovar o motorista.', 'erro');
+    setTimeout(()=>{ try{ document.getElementById('edit-pix-'+id)?.focus(); }catch(e){} },120);
+    return;
+  }
   const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao aprovar.', 'erro'); return; }
   mostrarToast('Motorista aprovado!', 'sucesso');
