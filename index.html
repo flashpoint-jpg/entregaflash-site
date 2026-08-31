@@ -3479,7 +3479,7 @@ async function exigirLocalizacaoOperacional(tipo){
     if(navigator.permissions?.query){
       const permissao = await navigator.permissions.query({name:'geolocation'});
       if(permissao.state==='denied'){
-        mostrarToast('A localização está bloqueada para este site. Libere a permissão de localização e tente novamente.', 'erro');
+        mostrarToast('📍 Ative sua localização. Ligue o GPS/Localização do celular e permita o acesso para o Entrega Flash. Depois, toque em Confirmar pedido novamente.', 'erro');
         return false;
       }
     }
@@ -3502,10 +3502,10 @@ async function exigirLocalizacaoOperacional(tipo){
       },
       err=>{
         const msg = err && err.code===1
-          ? 'Não foi possível acessar sua localização. Libere a permissão de localização para o Entrega Flash e tente novamente.'
+          ? '📍 Ative sua localização. Ligue o GPS/Localização do celular e permita o acesso para o Entrega Flash. Depois, toque em Confirmar pedido novamente.'
           : err && err.code===3
-            ? 'O GPS demorou para responder. Aguarde alguns segundos e tente novamente.'
-            : 'Não consegui obter sua localização agora. Verifique o GPS e tente novamente.';
+            ? '📍 Ative sua localização. Verifique se o GPS/Localização do celular está ligado, aguarde alguns segundos e toque em Confirmar pedido novamente.'
+            : '📍 Ative sua localização. Ligue o GPS/Localização do celular e permita o acesso para o Entrega Flash. Depois, tente novamente.';
         mostrarToast(msg, 'erro');
         resolve(false);
       },
