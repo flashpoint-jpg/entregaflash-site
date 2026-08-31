@@ -6232,8 +6232,6 @@ async function cadastrarCliente(){
   const senhaHash = await hashSenha(c.senha);
   const { error } = await upsertProprioCliente(c.telefone, senhaHash, { nome:c.nome });
   if(error){ console.error(error); c.erro='Erro ao criar a conta. Tenta novamente.'; render(); return; }
-  const facialNovoCliente = await fluxoFacial({tipo:'cliente',telefone:c.telefone,modo:'cadastro'});
-  if(!facialNovoCliente.ok){ c.erro = facialNovoCliente.cancelado ? 'Para concluir o cadastro, faça a validação facial.' : (facialNovoCliente.erro||'Não foi possível validar seu rosto.'); render(); return; }
   try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'cliente'}); }catch(e){}
   registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
   estado.cliente = { nome:c.nome, telefone:c.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
@@ -7483,7 +7481,7 @@ function clienteCardAdminHTML(c){
   const entreguesCliente = pedidosCliente.filter(p=>p.status==='entregue');
   const gastoTotal = entreguesCliente.reduce((s,p)=>s+(Number(p.preco)||0),0);
   const idc = String(c.telefone).replace(/\D/g,'');
-  const validado = !!c.facial_ativa;
+  const validado = !c.bloqueado;
   return `
     <details class="admin-resumo-card" data-cliente-telefone="${idc}" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
@@ -7495,7 +7493,7 @@ function clienteCardAdminHTML(c){
       </summary>
       <div class="admin-detalhes">
         <div class="am-linha"><span>Telefone</span><b>${c.telefone}</b></div>
-        <div class="am-linha"><span>Validação facial</span><b>${validado?'✅ Concluída':'⏳ Não concluída'}</b></div>
+        <div class="am-linha"><span>Status do cadastro</span><b>${c.bloqueado?'🔒 Bloqueado':'✅ Ativo automaticamente'}</b></div>
         <div class="am-linha"><span>Cadastrado em</span><b>${c.criado_em?new Date(Number(c.criado_em)).toLocaleDateString('pt-BR'):'—'}</b></div>
         <div class="am-linha"><span>Pedidos feitos</span><b>${pedidosCliente.length}</b></div>
         <div class="am-linha"><span>Entregues</span><b>${entreguesCliente.length}</b></div>
@@ -7503,7 +7501,6 @@ function clienteCardAdminHTML(c){
         <div class="am-linha"><span>💰 Carteira</span><b style="color:var(--mango)">R$ ${Number(c.saldo||0).toFixed(2)}</b></div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsApp('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}','${idc}')">💬 WhatsApp</button>
-          ${!validado?`<button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="lembrarDocumentoWhatsApp('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}')">📄 Lembrar de concluir validação</button>`:''}
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <label style="margin:0 0 6px">Ajustar saldo (R$; negativo debita)</label>
@@ -7523,17 +7520,15 @@ function adminAbaClientesHTML(){
   if(!a.filtroStatusClientes) a.filtroStatusClientes='todos';
   if(a.carregando) return skeletonLista(4);
   if(a.clientes.length===0) return `<div class="vazio"><span class="emoji-grande">👤</span>Nenhum cliente cadastrado ainda.</div>`;
-  const pendentes = a.clientes.filter(c=>!c.facial_ativa && !c.bloqueado);
-  const ativos = a.clientes.filter(c=>!!c.facial_ativa && !c.bloqueado);
+  const pendentes = [];
+  const ativos = a.clientes.filter(c=>!c.bloqueado);
   const bloqueados = a.clientes.filter(c=>!!c.bloqueado);
   const chips = [
     {id:'todos', label:'Todos', n:a.clientes.length},
-    {id:'pendentes', label:'🆕 Aguardando validação', n:pendentes.length},
     {id:'ativos', label:'✅ Ativos', n:ativos.length},
     {id:'bloqueados', label:'🔒 Bloqueados', n:bloqueados.length}
   ];
   const grupoFiltrado = {
-    pendentes: {titulo:'🆕 Aguardando validação — acabou de se cadastrar', lista:pendentes},
     ativos: {titulo:'✅ Clientes ativos', lista:ativos},
     bloqueados: {titulo:'🔒 Bloqueados', lista:bloqueados}
   }[a.filtroStatusClientes];
@@ -7541,8 +7536,6 @@ function adminAbaClientesHTML(){
     ? `<div class="admin-lista-secao"><b>${grupoFiltrado.titulo}</b><span class="selo">${grupoFiltrado.lista.length}</span></div>
        ${grupoFiltrado.lista.length?grupoFiltrado.lista.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Ninguém nesse grupo agora.</div>`}`
     : `
-    <div class="admin-lista-secao"><b>🆕 Aguardando validação</b><span class="selo selo-andamento">${pendentes.length}</span></div>
-    ${pendentes.length?pendentes.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente aguardando validação.</div>`}
     <div class="admin-lista-secao" style="margin-top:20px"><b>✅ Clientes ativos</b><span class="selo selo-entregue">${ativos.length}</span></div>
     ${ativos.length?ativos.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente ativo ainda.</div>`}
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(clienteCardAdminHTML).join('')}`:''}`;
