@@ -6732,16 +6732,26 @@ function motoristaCardHTML(m, emRota){
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <b style="font-family:'Rajdhani';font-weight:700;font-size:12.5px;text-transform:uppercase">🔧 Gerenciar cadastro</b>
         ${estado.admin.motoristaEditando===m.id ? `
-        <div style="margin-top:8px;display:flex;flex-direction:column;gap:8px">
-          <div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-${m.id}" value="${(m.nome||'').replace(/"/g,'&quot;')}"></div>
-          <div><label style="margin:0 0 4px">Telefone (usuário de login)</label><input type="text" id="edit-telefone-${m.id}" value="${(m.telefone||'').replace(/"/g,'&quot;')}"></div>
-          ${m.veiculo_tipo!=='bicicleta' ? `<div><label style="margin:0 0 4px">Placa</label><input type="text" id="edit-placa-${m.id}" value="${(m.veiculo_placa||'').replace(/"/g,'&quot;')}" placeholder="Ex: ABC1D23"></div>` : ''}
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-verde btn-pequeno" style="flex:1" ${atributoDesabilitado('salvarMotorista_'+m.id)} onclick="executarComCarregando('salvarMotorista_${m.id}', ()=>salvarEdicaoMotoristaAdmin('${m.id}'))">${rotuloCarregando('salvarMotorista_'+m.id,'💾 Salvar','Salvando...')}</button>
+        <div style="margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div style="grid-column:1/-1"><label style="margin:0 0 4px">Nome completo</label><input type="text" id="edit-nome-${m.id}" value="${(m.nome||'').replace(/"/g,'&quot;')}"></div>
+          <div><label style="margin:0 0 4px">CPF</label><input type="text" id="edit-cpf-${m.id}" value="${(m.cpf||'').replace(/"/g,'&quot;')}"></div>
+          <div><label style="margin:0 0 4px">Telefone / login</label><input type="text" id="edit-telefone-${m.id}" value="${(m.telefone||'').replace(/"/g,'&quot;')}"></div>
+          <div style="grid-column:1/-1"><label style="margin:0 0 4px">E-mail</label><input type="email" id="edit-email-${m.id}" value="${(m.email||'').replace(/"/g,'&quot;')}"></div>
+          <div><label style="margin:0 0 4px">Nascimento</label><input type="text" id="edit-nascimento-${m.id}" value="${(m.data_nascimento||'').replace(/"/g,'&quot;')}" placeholder="DD/MM/AAAA"></div>
+          <div><label style="margin:0 0 4px">Cidade</label><input type="text" id="edit-cidade-${m.id}" value="${(m.cidade||'').replace(/"/g,'&quot;')}"></div>
+          <div><label style="margin:0 0 4px">Veículo</label><select id="edit-veiculo-${m.id}"><option value="bicicleta" ${m.veiculo_tipo==='bicicleta'?'selected':''}>🚲 Bicicleta</option><option value="moto" ${m.veiculo_tipo==='moto'?'selected':''}>🏍️ Moto</option><option value="carro" ${m.veiculo_tipo==='carro'?'selected':''}>🚗 Carro</option><option value="carroaberto" ${m.veiculo_tipo==='carroaberto'?'selected':''}>🛻 Utilitário</option><option value="fiorino" ${m.veiculo_tipo==='fiorino'?'selected':''}>🚐 Fiorino</option><option value="van" ${m.veiculo_tipo==='van'?'selected':''}>🚐 Van</option><option value="caminhao" ${m.veiculo_tipo==='caminhao'?'selected':''}>🚚 Caminhão</option></select></div>
+          <div><label style="margin:0 0 4px">Marca / modelo</label><input type="text" id="edit-marca-${m.id}" value="${(m.veiculo_marca||'').replace(/"/g,'&quot;')}"></div>
+          <div><label style="margin:0 0 4px">Placa</label><input type="text" id="edit-placa-${m.id}" value="${(m.veiculo_placa||'').replace(/"/g,'&quot;')}" placeholder="ABC1D23"></div>
+          <div><label style="margin:0 0 4px">Cor</label><input type="text" id="edit-cor-${m.id}" value="${(m.veiculo_cor||'').replace(/"/g,'&quot;')}"></div>
+          <div><label style="margin:0 0 4px">Tipo da chave PIX</label><select id="edit-pix-tipo-${m.id}"><option value="">—</option><option value="cpf" ${m.chave_pix_tipo==='cpf'?'selected':''}>CPF</option><option value="telefone" ${m.chave_pix_tipo==='telefone'?'selected':''}>Telefone</option><option value="email" ${m.chave_pix_tipo==='email'?'selected':''}>E-mail</option><option value="aleatoria" ${m.chave_pix_tipo==='aleatoria'?'selected':''}>Aleatória</option></select></div>
+          <div><label style="margin:0 0 4px">Chave PIX</label><input type="text" id="edit-pix-${m.id}" value="${(m.chave_pix||'').replace(/"/g,'&quot;')}"></div>
+          <div style="grid-column:1/-1"><label style="margin:0 0 4px">Raio de atendimento (km)</label><input type="number" min="1" max="200" id="edit-raio-${m.id}" value="${m.raio_atendimento_km||10}"></div>
+          <div style="grid-column:1/-1;display:flex;gap:8px">
+            <button class="btn btn-verde btn-pequeno" style="flex:1" ${atributoDesabilitado('salvarMotorista_'+m.id)} onclick="executarComCarregando('salvarMotorista_${m.id}', ()=>salvarEdicaoMotoristaAdmin('${m.id}'))">${rotuloCarregando('salvarMotorista_'+m.id,'💾 Salvar tudo','Salvando...')}</button>
             <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoMotoristaAdmin('${m.id}')">Cancelar</button>
           </div>
         </div>` : `
-        <button class="btn btn-secundario btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoMotoristaAdmin('${m.id}')">✏️ Editar nome / telefone${m.veiculo_tipo!=='bicicleta'?' / placa':''}</button>`}
+        <button class="btn btn-verde btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoMotoristaAdmin('${m.id}')">✏️ EDITAR TODOS OS DADOS</button>`}
         <div style="margin-top:8px;display:flex;gap:8px">
           <input type="password" id="nova-senha-${m.id}" placeholder="Nova senha (mín. 4 caracteres)" style="flex:1">
           <button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('senhaMotorista_'+m.id)} onclick="executarComCarregando('senhaMotorista_${m.id}', ()=>alterarSenhaMotoristaAdmin('${m.id}', document.getElementById('nova-senha-${m.id}').value))">${rotuloCarregando('senhaMotorista_'+m.id,'🔑 Trocar senha','Trocando...')}</button>
@@ -7501,7 +7511,7 @@ function clienteCardAdminHTML(c){
         </div>
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <b style="font-family:'Rajdhani';font-weight:700;font-size:12.5px;text-transform:uppercase">🔧 Gerenciar cadastro</b>
-          ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div style="display:flex;gap:8px"><button class="btn btn-verde btn-pequeno" style="flex:1" onclick="salvarEdicaoClienteAdmin('${c.telefone}')">💾 Salvar</button><button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">Cancelar</button></div></div>` : `<button class="btn btn-secundario btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">✏️ Editar dados</button>`}
+          ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone / login</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Observação administrativa</label><textarea id="edit-obs-cliente-${idc}" rows="3">${c.observacao_admin||''}</textarea></div><label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="edit-bloqueado-cliente-${idc}" ${c.bloqueado?'checked':''}> Cliente bloqueado</label><div style="display:flex;gap:8px"><button class="btn btn-verde btn-pequeno" style="flex:1" onclick="salvarEdicaoClienteAdmin('${c.telefone}')">💾 Salvar tudo</button><button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">Cancelar</button></div></div>` : `<button class="btn btn-verde btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">✏️ EDITAR TODOS OS DADOS</button>`}
           <div style="margin-top:8px;display:flex;gap:8px"><input type="password" id="nova-senha-cliente-${idc}" placeholder="Nova senha" style="flex:1"><button class="btn btn-secundario btn-pequeno" onclick="alterarSenhaClienteAdmin('${c.telefone}', document.getElementById('nova-senha-cliente-${idc}').value)">🔑 Trocar senha</button></div>
           <div style="display:flex;gap:8px;margin-top:8px">${c.bloqueado?`<button class="btn btn-verde btn-pequeno" style="flex:1" onclick="desbloquearClienteAdmin('${c.telefone}')">🔓 Desbloquear</button>`:`<button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="bloquearClienteAdmin('${c.telefone}')">🔒 Bloquear</button>`}<button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" onclick="excluirClienteAdmin('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}')">🗑️ Excluir</button></div>
         </div>
@@ -7547,18 +7557,20 @@ function alternarEdicaoClienteAdmin(telefone){
   render();
 }
 async function salvarEdicaoClienteAdmin(telefoneAtual){
-  const idc = String(telefoneAtual).replace(/\D/g,'');
-  const nome = document.getElementById('edit-nome-cliente-'+idc)?.value.trim();
-  const telefone = document.getElementById('edit-telefone-cliente-'+idc)?.value.trim();
+  const idc=String(telefoneAtual).replace(/\D/g,'');
+  const nome=document.getElementById('edit-nome-cliente-'+idc)?.value.trim();
+  const telefone=document.getElementById('edit-telefone-cliente-'+idc)?.value.trim();
+  const observacao=document.getElementById('edit-obs-cliente-'+idc)?.value.trim()||'';
+  const bloqueado=!!document.getElementById('edit-bloqueado-cliente-'+idc)?.checked;
   if(!nome || !telefone){ mostrarToast('Preenche nome e telefone.'); return; }
-  adminOperacaoClienteEmAndamento = true;
+  adminOperacaoClienteEmAndamento=true;
   try{
-    const { error } = await sb.rpc('entrega_admin_editar_cliente', { p_senha: estado.admin.senhaDigitada, p_telefone_atual: telefoneAtual, p_nome: nome, p_telefone_novo: telefone });
-    if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar: '+(error.message||''), 'erro'); return; }
-    estado.admin.clienteEditando = null;
+    const { error }=await sb.rpc('entrega_admin_editar_cliente_completo',{p_senha:estado.admin.senhaDigitada,p_telefone_atual:telefoneAtual,p_nome:nome,p_telefone_novo:telefone,p_observacao_admin:observacao,p_bloqueado:bloqueado});
+    if(error){ console.error(error); mostrarToast(error.message==='senha_invalida'?'Sessão de admin expirada. Sai e entra de novo.':'Erro ao salvar: '+(error.message||''),'erro'); return; }
+    estado.admin.clienteEditando=null;
     await carregarClientesAdmin();
-    mostrarToast('Cadastro atualizado!', 'sucesso');
-  } finally { adminOperacaoClienteEmAndamento = false; }
+    mostrarToast('Todos os dados do cliente foram atualizados!','sucesso');
+  } finally { adminOperacaoClienteEmAndamento=false; }
 }
 async function alterarSenhaClienteAdmin(telefone, novaSenha){
   const idc = String(telefone).replace(/\D/g,'');
@@ -8080,20 +8092,21 @@ function alternarEdicaoMotoristaAdmin(id){
   render();
 }
 async function salvarEdicaoMotoristaAdmin(id){
-  const nome = document.getElementById('edit-nome-'+id)?.value.trim();
-  const telefone = document.getElementById('edit-telefone-'+id)?.value.trim();
+  const ler=(suf)=>document.getElementById('edit-'+suf+'-'+id)?.value?.trim()||'';
+  const nome=ler('nome'), telefone=ler('telefone'), tipo=ler('veiculo');
   if(!nome || !telefone){ mostrarToast('Preenche nome e telefone.'); return; }
-  const campoPlaca = document.getElementById('edit-placa-'+id);
-  const placa = campoPlaca ? normalizarPlaca(campoPlaca.value.trim()) : null;
-  if(campoPlaca && !placaValida(placa)){ mostrarToast('Placa inválida — usa o formato ABC1234 ou ABC1D23.', 'erro'); return; }
-  const { error } = await sb.rpc('entrega_admin_editar_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_nome: nome, p_telefone: telefone });
+  const placa=normalizarPlaca(ler('placa'));
+  if(tipo!=='bicicleta' && placa && !placaValida(placa)){ mostrarToast('Placa inválida — usa ABC1234 ou ABC1D23.', 'erro'); return; }
+  const raio=parseInt(ler('raio')||'10',10);
+  const { error } = await sb.rpc('entrega_admin_editar_motorista_completo', {
+    p_senha: estado.admin.senhaDigitada, p_id:id, p_nome:nome, p_cpf:ler('cpf'), p_telefone:telefone,
+    p_email:ler('email'), p_data_nascimento:ler('nascimento'), p_cidade:ler('cidade'),
+    p_veiculo_tipo:tipo, p_veiculo_marca:ler('marca'), p_veiculo_placa:placa, p_veiculo_cor:ler('cor'),
+    p_chave_pix:ler('pix'), p_chave_pix_tipo:ler('pix-tipo'), p_raio_atendimento_km:Number.isFinite(raio)?raio:10
+  });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao salvar: '+(error.message||''), 'erro'); return; }
-  if(campoPlaca){
-    const { error: erroPlaca } = await sb.rpc('entrega_admin_editar_placa_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_placa: placa });
-    if(erroPlaca){ console.error(erroPlaca); mostrarToast('Nome/telefone salvos, mas a placa deu erro: '+(erroPlaca.message||''), 'erro'); return; }
-  }
-  mostrarToast('Cadastro atualizado!', 'sucesso');
-  estado.admin.motoristaEditando = null;
+  mostrarToast('Todos os dados do motorista foram atualizados!', 'sucesso');
+  estado.admin.motoristaEditando=null;
   await carregarMotoristasAdmin();
 }
 async function alterarSenhaMotoristaAdmin(id, novaSenha){
