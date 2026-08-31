@@ -3448,41 +3448,70 @@ async function exigirLocalizacaoOperacional(tipo){
     mostrarToast('Este navegador não tem suporte à localização.', 'erro');
     return false;
   }
-  mostrarToast(tipo==='motorista' ? 'Ative a localização para iniciar a rota.' : 'Ative a localização para confirmar o pedido.');
+
+  // Não manda mais o aviso "Ative a localização" quando o GPS já está liberado.
+  // Primeiro consultamos a permissão (quando o navegador suporta Permissions API) e
+  // só falamos em liberar localização se ela estiver realmente bloqueada.
+  try{
+    if(navigator.permissions?.query){
+      const permissao = await navigator.permissions.query({name:'geolocation'});
+      if(permissao.state==='denied'){
+        mostrarToast('A localização está bloqueada para este site. Libere a permissão de localização e tente novamente.', 'erro');
+        return false;
+      }
+    }
+  }catch(e){ /* alguns navegadores não expõem geolocation na Permissions API */ }
+
+  mostrarToast(tipo==='motorista' ? 'Confirmando sua localização para iniciar a rota...' : 'Confirmando sua localização para finalizar o pedido...', 'info');
   return await new Promise(resolve=>{
     navigator.geolocation.getCurrentPosition(
       pos=>{
         try{
           const lat = pos.coords.latitude, lon = pos.coords.longitude;
-          estado.ultimaLocalizacao = { lat, lng:lon };
+          estado.ultimaLocalizacao = { lat, lng:lon, atualizadoEm:Date.now() };
           // A mesma posição precisa alimentar o rastreio do motorista.
-          // Antes ela ficava só em estado.ultimaLocalizacao e o mapa do admin
-          // dependia de ultimaPosicaoMotorista, por isso o motorista podia ficar
-          // "online" com lat/lng vazios no banco.
           ultimaPosicaoMotorista = { lat, lon };
+          // remove imediatamente o aviso de processamento quando o GPS respondeu
+          estado.toast = null;
+          estado.toastSeq = (estado.toastSeq||0)+1;
         }catch(e){}
         resolve(true);
       },
       err=>{
         const msg = err && err.code===1
-          ? 'Localização bloqueada. Permita o acesso à localização e tente novamente.'
+          ? 'Não foi possível acessar sua localização. Libere a permissão de localização para o Entrega Flash e tente novamente.'
           : err && err.code===3
-            ? 'A localização demorou para responder. Verifique o GPS e tente novamente.'
-            : 'Não consegui obter sua localização. Verifique se o GPS está ligado e tente novamente.';
+            ? 'O GPS demorou para responder. Aguarde alguns segundos e tente novamente.'
+            : 'Não consegui obter sua localização agora. Verifique o GPS e tente novamente.';
         mostrarToast(msg, 'erro');
         resolve(false);
       },
-      { enableHighAccuracy:true, timeout:15000, maximumAge:30000 }
+      // aceita uma leitura recente do próprio aparelho e evita falso erro em celulares mais lentos
+      { enableHighAccuracy:true, timeout:20000, maximumAge:60000 }
     );
   });
 }
 
 async function criarPedido(){
-  if(estado.cliente.visitante){
-    mostrarToast('Seu orçamento está pronto. Faça o cadastro rápido para confirmar a corrida.', 'info');
-    estado.cliente = { nome:'', telefone:'', logado:false, visitante:false, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
-    irParaCadastroCliente();
-    render();
+  // Quem ainda não tem conta pode montar e calcular o pedido inteiro normalmente.
+  // Ao confirmar, NÃO apagamos nada: mostramos um aviso claro com botão para cadastrar.
+  if(estado.cliente.visitante || !estado.cliente.logado){
+    const querCadastrar = await confirmarAcao(
+      '<b>Você ainda não é cadastrado.</b><br><br>Seu pedido continua preenchido e não será apagado. Faça o cadastro rápido para poder confirmar a corrida.',
+      'CLIQUE AQUI PARA CADASTRAR'
+    );
+    if(querCadastrar){
+      estado.cliente = { nome:'', telefone:'', logado:false, visitante:false, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
+      // leva nome/telefone já digitados no pedido para o cadastro, sem perder origem/destino/valor.
+      estado.painelCliente.tela='cadastro';
+      estado.painelCliente.cadastro={
+        nome:estado.form.nome||'',
+        telefone:(estado.form.telefone||'').replace(/\D/g,''),
+        senha:'',
+        erro:''
+      };
+      render();
+    }
     return;
   }
   // Segurança no ponto certo do funil: cliente pode navegar, calcular e preencher sem câmera.
