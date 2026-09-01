@@ -5645,7 +5645,7 @@ function telaAcessoMotorista(){
       <button class="btn btn-primario" style="margin-top:16px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'A carregar...':' Enviar documentos'}</button></div>`;
   }
   if(pm.tela==='pendente'){
-    return `<div class="box-status"><span class="bs-emoji">⏳</span><div class="bs-titulo">Cadastro em análise</div><div class="bs-texto">Recebemos os seus dados e o pagamento da taxa. Vamos avisar-te por WhatsApp assim que o cadastro for aprovado.</div></div>`;
+    return `<div class="box-status"><span class="bs-emoji">⏳</span><div class="bs-titulo">Cadastro enviado com sucesso!</div><div class="bs-texto">Recebemos seu cadastro. Agora é só aguardar a análise dos documentos. Vamos avisar pelo app e WhatsApp quando estiver aprovado.</div></div>`;
   }
   if(pm.tela==='reprovado'){
     return `<div class="box-status"><span class="bs-emoji"></span><div class="bs-titulo">Cadastro reprovado</div><div class="bs-texto">${pm.motivoReprovacao||'Não foi indicado um motivo.'}</div>
@@ -5689,7 +5689,7 @@ function telaAcessoMotorista(){
 }
 
 function passosHTML(atual){
-  let html='<div class="passos">';
+  let html=`<div style="text-align:center;font-size:12.5px;font-weight:800;color:var(--mango);margin-bottom:7px">Etapa ${atual} de 6 · seu progresso fica salvo automaticamente</div><div class="passos">`;
   for(let i=1;i<=6;i++) html += `<div class="p ${i<atual?'feito':i===atual?'atual':''}"></div>`;
   html += '</div>';
   if(atual===1){
@@ -7482,6 +7482,7 @@ async function continuarParaDocumentos(){
   c.etapa = !dadosVeiculoOk ? 2 : (!c.chavePix ? 3 : (docsOk ? 5 : 4)); c.erroEtapa='';
   pm.tela = 'cadastro';
   render();
+  setTimeout(()=>mostrarToast(`Cadastro recuperado: você voltou para a etapa ${c.etapa} de 6. Nada do que já enviou foi perdido.`, 'sucesso'),150);
 }
 async function salvarEtapaCadastro(campos){
   const c = estado.painelMotorista.cadastro;
