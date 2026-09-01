@@ -1162,6 +1162,9 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 .abas-motorista{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(10,11,14,.94)!important;border-top:1px solid rgba(255,255,255,.08)!important}.abas-motorista button{transition:color .16s ease,transform .16s ease!important}.abas-motorista button:active{transform:scale(.96)}.abas-motorista .icone-aba{font-size:21px!important}.abas-motorista button.ativo{color:var(--mango)!important}
 @media(max-width:600px){.conteudo-motorista{padding-top:4px}.conteudo-motorista .cartao{border-radius:16px}.ef-app20-hero{margin-top:4px}.ef-app20-money{font-size:31px}.cabecalho{min-height:auto!important}.logo{transform:scale(.9);transform-origin:left center}}
 </style>
+<style id="ef-home-carro-menu-clicavel">
+.ef-home-simples{min-height:0!important;height:auto!important;padding:0 0 14px!important;background:#050607!important;display:block!important;overflow:hidden!important}.ef-home-simples:before,.ef-home-simples:after{display:none!important}.ef-carro-topo{width:100%;background:#050607;overflow:hidden}.ef-carro-topo img{display:block;width:100%;height:auto;max-height:520px;object-fit:cover;object-position:center 38%}.ef-menu-home{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;margin:0 14px;border-radius:22px;overflow:hidden;background:#dedede;box-shadow:0 12px 30px rgba(0,0,0,.35)}.ef-menu-card{appearance:none;border:0;background:#fff;color:#181818;min-width:0;padding:18px 14px;display:grid;grid-template-columns:48px minmax(0,1fr) 18px;align-items:center;gap:10px;text-align:left;cursor:pointer;min-height:112px;font-family:inherit}.ef-menu-card:active{transform:scale(.985)}.ef-menu-icon{width:46px;height:46px;border-radius:14px;background:#ff7200;color:#fff;display:grid;place-items:center;font-size:24px;font-weight:900}.ef-menu-card strong{display:block;font-size:19px;line-height:1.05;font-weight:900}.ef-menu-card strong em{font-style:normal;color:#ff6500}.ef-menu-card small{display:block;margin-top:8px;color:#777;font-size:12px;line-height:1.25}.ef-menu-card b{color:#ff6500;font-size:28px;line-height:1}@media(max-width:700px){.ef-home-simples{padding-top:0!important}.ef-carro-topo img{height:auto;max-height:none;object-fit:contain}.ef-menu-home{grid-template-columns:1fr;margin:0 12px;border-radius:18px}.ef-menu-card{min-height:86px;padding:12px 14px;grid-template-columns:46px minmax(0,1fr) 18px}.ef-menu-card strong{font-size:20px}.ef-menu-card small{font-size:13px;margin-top:5px}}
+</style>
 </head>
 
 <style id="ef-parceiros-premium">
@@ -5206,26 +5209,13 @@ function telaClienteBemVindoBV(nome){
 function telaBoasVindas(){
   return `
   <div class="bv-wrap">
-    <section class="bv-hero-real">
-      <div class="bv-cabecalho">
-        <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
-      </div>
-      <div class="bv-kicker"> Entregas rápidas e seguras</div>
-      <div class="bv-titulo-grande" data-text="Entregas na sua região">Entregas na sua <span class="destaque">região!</span></div>
-      <div class="bv-subtagline">Mercado, farmácia, documentos, encomendas e o que você precisar — na cidade, zona rural, sítios e fazendas da sua região.</div>
-      <div class="bv-chips">
-        <span class="bv-chip"> Atuação regional</span><span class="bv-chip"> Cidade + zona rural</span><span class="bv-chip"> Acompanhe pelo celular</span>
-      </div>
-      <div class="ef-live-proof">
-        <i class="ef-live-dot"></i>
-        <div><strong>Entrega Flash em funcionamento</strong><br><span>Peça pelo celular, acompanhe o atendimento e veja o motorista quando a corrida for aceita.</span></div>
-      </div>
-      <div class="bv-hero-actions">
-        <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')"> PEDIR ENTREGA AGORA</button>
-        <button class="btn btn-azul" onclick="escolherBoasVindas('entregador')" style="font-size:17px;font-weight:900;min-height:58px"> QUERO SER MOTORISTA — COMEÇAR CADASTRO</button>
-        <button class="btn btn-secundario" style="margin-top:8px;border-color:#ff8a00;color:#ff9b14" onclick="abrirParceiros()"> TENHO UMA EMPRESA — QUERO SER PARCEIRO</button>
-      </div>
-      <div class="ef-cta-note">Cliente: cadastro simples • Motorista: pré-cadastro grátis</div>
+    <section class="bv-hero-real ef-home-simples">
+      <div class="ef-carro-topo"><img src="assets/inline/carro-topo-entregaflash.png" alt="Carro Entrega Flash"></div>
+      <nav class="ef-menu-home" aria-label="Menu principal">
+        <button type="button" class="ef-menu-card" onclick="abrirParceiros()"><span class="ef-menu-icon">▦</span><span><strong>Para <em>empresas</em></strong><small>Soluções para seu negócio</small></span><b>›</b></button>
+        <button type="button" class="ef-menu-card" onclick="entrarComoVisitante('cliente')"><span class="ef-menu-icon">◎</span><span><strong>Para <em>você</em></strong><small>Peça uma entrega rápida</small></span><b>›</b></button>
+        <button type="button" class="ef-menu-card" onclick="escolherBoasVindas('entregador')"><span class="ef-menu-icon">⚡</span><span><strong>Seja <em>motorista</em></strong><small>Faça entregas e ganhe</small></span><b>›</b></button>
+      </nav>
     </section>
 
     <div class="bv-strip">
