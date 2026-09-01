@@ -1735,7 +1735,20 @@ function fecharPopupInstalar(){
 }
 function instalarPeloPopup(){
   fecharPopupInstalar();
-  if(estado.podeInstalar) instalarApp(); else abrirComoInstalar();
+  if(estado.podeInstalar) instalarApp();
+  else if(/Android/i.test(navigator.userAgent || '')) baixarAplicativoAndroid();
+  else abrirComoInstalar();
+}
+function baixarAplicativoAndroid(){
+  const urlApk = new URL('entregaflash.apk', document.baseURI).href;
+  const link = document.createElement('a');
+  link.href = urlApk;
+  link.download = 'Entrega-Flash.apk';
+  link.target = '_blank';
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
 }
 function popupInstalarHTML(){
   return `
@@ -5251,7 +5264,7 @@ function telaBoasVindas(){
     </div>
 
     <div class="bv-regional-note"> <b>Entrega Flash é regional:</b> conectamos clientes e entregadores nas cidades atendidas e também na zona rural próxima, sem limitar a comunicação a uma única cidade.</div>
-    <div class="bv-install-area"><a href="/entregaflash.apk" download class="btn-baixar-app"> Instalar Entrega Flash no celular</a><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Você também pode usar diretamente pelo site, sem instalar.</div></div>
+    <div class="bv-install-area"><a href="./entregaflash.apk" download="Entrega-Flash.apk" target="_blank" rel="noopener" class="btn-baixar-app"> BAIXAR APLICATIVO ANDROID</a><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">O download do APK começa diretamente. Você também pode usar pelo site sem instalar.</div></div>
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -6329,6 +6342,7 @@ function comoInstalarHTML(){
     <div class="modal-chat" style="max-height:88vh">
       <div class="chat-topo"><h3> Como instalar o app</h3><button class="chat-fechar" onclick="fecharComoInstalar()">&times;</button></div>
       <div class="cf-corpo" style="padding:16px">
+        <button class="btn btn-primario" style="width:100%;margin-bottom:12px" onclick="baixarAplicativoAndroid()">Baixar aplicativo Android (APK)</button>
         ${estado.podeInstalar ? `
         <button class="btn btn-primario" onclick="instalarApp()">Instalar agora</button>
         <div class="subtitulo" style="margin:14px 0 6px">Ou instala manualmente:</div>` : ''}
