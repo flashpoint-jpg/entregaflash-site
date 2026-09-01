@@ -2248,10 +2248,18 @@ function abrirModalReprovar(id){
   render();
 }
 function fecharModalReprovar(){ estado.modalReprovar = null; render(); }
-function selecionarMotivoPreset(texto){
+function selecionarMotivoPreset(texto, botao){
   if(!estado.modalReprovar) return;
   estado.modalReprovar.motivo = texto;
-  render();
+  const campo = document.getElementById('reprovar-motivo-texto');
+  if(campo){ campo.value=texto; }
+  document.querySelectorAll('[data-motivo-reprovacao]').forEach(el=>{
+    const ativo = el===botao;
+    el.setAttribute('aria-pressed', ativo?'true':'false');
+    el.style.borderColor = ativo ? 'var(--mango)' : '';
+    el.style.background = ativo ? 'rgba(255,151,16,.16)' : '';
+    el.style.color = ativo ? 'var(--osso)' : '';
+  });
 }
 async function confirmarReprovacao(){
   const m = estado.modalReprovar;
@@ -2281,7 +2289,7 @@ function modalReprovarHTML(){
       <div class="confirmar-texto" style="text-align:left;font-weight:700">Motivo da reprovação</div>
       <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Escolhe um motivo rápido ou escreve o teu. O motorista vai ver essa mensagem na tela dele e vai poder reenviar os documentos.</div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
-        ${presets.map(p=>`<button type="button" class="btn btn-secundario btn-pequeno" style="text-align:left;white-space:normal" onclick="selecionarMotivoPreset(${JSON.stringify(p)})">${p}</button>`).join('')}
+        ${presets.map(p=>`<button type="button" data-motivo-reprovacao aria-pressed="false" class="btn btn-secundario btn-pequeno" style="text-align:left;white-space:normal" onclick="selecionarMotivoPreset(${JSON.stringify(p)},this)">${p}</button>`).join('')}
       </div>
       <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve o motivo..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
       <div class="confirmar-botoes" style="margin-top:12px">
@@ -2551,7 +2559,7 @@ async function carregarPedidos(){
     // em que a pessoa ia tocar numa delas, fazendo a tela "piscar" e perder a sequência.
     // Os dados já foram atualizados em estado.pedidos acima; o próximo render (ao trocar
     // de campo, avançar de etapa, etc.) já vem com tudo em dia.
-    if(estaDigitandoEndereco()) return;
+    if(estaDigitandoEndereco() || (typeof adminTemInteracaoAberta==='function' && adminTemInteracaoAberta())) return;
     render();
   }catch(e){
     console.error(e);
