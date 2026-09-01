@@ -3888,7 +3888,7 @@ async function confirmarValorCarteira(){
   w.gerando = true; w.pix.erro=''; render();
   try{
     const resp = await fetch(`${FUNCOES_URL}/criar-cobranca-pix-carteira`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
       body: JSON.stringify({ telefone:estado.cliente.telefone, nome:estado.cliente.nome, valor })
     });
     const dados = await resp.json();
@@ -3952,7 +3952,7 @@ async function gerarPixUpgradeMotorista(){
     const { error: erroPend } = await sb.from('entrega_motoristas').update({ taxa_valor:PLANOS.pro.preco, taxa_status:'pendente' }).eq('id', dadosMotorista.id);
     if(erroPend) throw erroPend;
     const resp = await fetch(`${FUNCOES_URL}/criar-cobranca-pix`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
       body: JSON.stringify({ motoristaId:dadosMotorista.id, valor:PLANOS.pro.preco, nome:m.nome, cpf:dadosMotorista.cpf||'' })
     });
     const dados = await resp.json();
@@ -7763,7 +7763,7 @@ async function criarCobrancaPix(){
   c.pix.gerando=true; c.pix.erro=''; render();
   try{
     const resp = await fetch(`${FUNCOES_URL}/criar-cobranca-pix`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
       body: JSON.stringify({ motoristaId:c.id, valor:PLANOS.pro.preco, nome:c.nome, cpf:c.cpf })
     });
     const dados = await resp.json();
