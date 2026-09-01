@@ -1684,7 +1684,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' },
@@ -1845,7 +1845,35 @@ async function inscreverPushReal(papelForcado){
     await sb.from('push_subscriptions').upsert({
       papel, referencia, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth, criado_em: new Date().toISOString()
     }, { onConflict:'endpoint' });
+    await registrarStatusAplicativo(papel, referencia, true);
   }catch(e){ console.warn('Falha ao inscrever push', e); }
+}
+
+function entregaFlashInstalado(){
+  return !!(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.startsWith('android-app://'));
+}
+function entregaFlashDispositivoId(){
+  let id=localStorage.getItem('ef_dispositivo_id');
+  if(!id){ id=(crypto.randomUUID?.() || ('ef-'+Date.now()+'-'+Math.random().toString(36).slice(2))); salvarLocal('ef_dispositivo_id',id); }
+  return id;
+}
+async function registrarStatusAplicativo(papel, referencia, temPush){
+  if(!referencia || papel==='admin') return;
+  try{
+    await sb.rpc('entrega_registrar_status_app', {
+      p_papel:papel, p_referencia:String(referencia).replace(/\D/g,''), p_dispositivo_id:entregaFlashDispositivoId(),
+      p_instalado:entregaFlashInstalado(), p_notificacoes:(typeof Notification==='undefined'?'nao_suportado':Notification.permission),
+      p_push_ativo:!!temPush, p_plataforma:navigator.userAgent||''
+    });
+  }catch(e){ console.warn('Não foi possível registrar o status do aplicativo',e); }
+}
+function mostrarLembreteDocumentosDiario(telefone,status){
+  if(!['basico','liberado'].includes(status) || !telefone) return;
+  const hoje=new Date().toISOString().slice(0,10), chave='ef_lembrete_docs_'+String(telefone).replace(/\D/g,'');
+  if(localStorage.getItem(chave)===hoje) return;
+  salvarLocal(chave,hoje);
+  setTimeout(()=>mostrarToast('📄 Seu cadastro está quase pronto. Envie os documentos que faltam para começar a receber corridas.','aviso'),500);
+  notificar('📄 Falta concluir seu cadastro','Abra o Entrega Flash e envie os documentos pendentes.','lembrete-documentos-diario');
 }
 // ---------- push real (via servidor), funciona mesmo com o app fechado ----------
 // papel: 'cliente' | 'motorista' | 'admin'. referencia omitida/null = todos do papel.
@@ -7452,6 +7480,8 @@ async function entrarNoPainelMotorista(data){
   carregarSaldoMotorista();
   assinarMotoristaLogadoRealtime(data.telefone);
   if(estado.notificacoesStatus==='granted') inscreverPushReal();
+  registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted');
+  mostrarLembreteDocumentosDiario(data.telefone,data.status);
 }
 
 async function loginFacialMotorista(){
@@ -7465,7 +7495,7 @@ async function loginFacialMotorista(){
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
-  if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
+  if(data.status==='liberado'){ registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted'); mostrarLembreteDocumentosDiario(data.telefone,data.status); pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:data.senha_hash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -7492,7 +7522,7 @@ async function loginMotorista(){
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Telefone ou senha incorretos.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
-  if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
+  if(data.status==='liberado'){ registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted'); mostrarLembreteDocumentosDiario(data.telefone,data.status); pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:senhaHash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -7501,6 +7531,8 @@ async function loginMotorista(){
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
   // Cadastro básico ainda não terminou: retoma exatamente do ponto em que parou.
   if(data.status==='basico'){
+    registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted');
+    mostrarLembreteDocumentosDiario(data.telefone,data.status);
     pm.telefoneLiberado=data.telefone;
     pm.loginTelefone=data.telefone;
     await continuarParaDocumentos();
@@ -7954,6 +7986,10 @@ function resumoAdminHTML(){
 
 function motoristaCardHTML(m, emRota){
   const onlineAgora = motoristaOnlineAgora(m);
+  const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
+  const appStatus=app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
+  const pushStatus=app?.notificacoes==='granted'&&app?.push_ativo?'🔔 Notificações ativas':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 Notificações não ativadas';
+  const ultimoApp=app?.ultimo_acesso?new Date(app.ultimo_acesso).toLocaleString('pt-BR'):'Nunca registrado';
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span> Em rota</span>`
     : onlineAgora
@@ -7976,6 +8012,7 @@ function motoristaCardHTML(m, emRota){
       <div class="admin-detalhes">
       <div class="am-linha"><span>CPF</span><b>${m.cpf}</b></div>
       <div class="am-linha"><span>Telefone</span><b>${m.telefone}</b></div>
+      <div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(111,168,220,.08);border:1px solid rgba(111,168,220,.35);font-size:12.5px"><b>📱 Status do aplicativo</b><div style="margin-top:6px">${appStatus}</div><div style="margin-top:3px">${pushStatus}</div><div style="margin-top:3px;color:var(--poeira)">Último acesso: ${ultimoApp}</div></div>
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
@@ -8971,6 +9008,10 @@ function sairAdmin(){
   render();
 }
 async function carregarMotoristasAdmin(){
+  try{
+    const {data:apps,error:erroApps}=await sb.rpc('entrega_admin_status_apps',{p_senha:estado.admin.senhaDigitada});
+    if(!erroApps) estado.admin.appDispositivos=apps||[];
+  }catch(e){ console.warn('Status dos aplicativos indisponível',e); }
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;

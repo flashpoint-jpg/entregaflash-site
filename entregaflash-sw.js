@@ -1,7 +1,7 @@
-// build: docs-conversao-20260901-v2
+// build: lembretes-app-status-20260901-v1
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260901-docs2
-const EF_VERSION = '20260901-docs2';
+// Versão: 20260901-lembretes1
+const EF_VERSION = '20260901-lembretes1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
