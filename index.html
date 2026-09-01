@@ -6053,8 +6053,15 @@ function telaMotorista(){
   const disponiveis = m.disponivel ? estado.pedidos
     .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
-    // raio de atendimento é um benefício do plano Pro — só filtra por distância quem tem plano Pro e configurou um raio
-    .filter(p=> !(m.plano==='pro' && m.raioAtendimentoKm && p.distanciaAteMim!=null) || p.distanciaAteMim<=m.raioAtendimentoKm)
+    // Despacho inteligente: começa perto e amplia automaticamente enquanto ninguém aceita.
+    // 0-2 min: 5 km | 2-4 min: 10 km | 4-7 min: 20 km | depois: 40 km.
+    .filter(p=>{
+      if(p.distanciaAteMim==null) return true; // sem coordenada: não bloqueia o pedido
+      const idadeMin=Math.max(0,(agoraTs-Number(p.criadoEm||agoraTs))/60000);
+      const raioAuto=idadeMin<2?5:idadeMin<4?10:idadeMin<7?20:40;
+      const limite=(m.plano==='pro' && m.raioAtendimentoKm)?Math.min(raioAuto,Number(m.raioAtendimentoKm)):raioAuto;
+      return p.distanciaAteMim<=limite;
+    })
     .sort((a,b)=> (b.prioridadeValor||0) - (a.prioridadeValor||0) || (a.distanciaAteMim!=null && b.distanciaAteMim!=null ? a.distanciaAteMim-b.distanciaAteMim : a.criadoEm-b.criadoEm)) : [];
   // pedidos de OUTROS tipos de veículo, só pra avisar o motorista que existem (ele não pode aceitá-los, pois o veículo é diferente do dele)
   const pedidosOutroVeiculo = m.disponivel ? estado.pedidos
