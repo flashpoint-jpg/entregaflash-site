@@ -5725,14 +5725,14 @@ function telaCadastroMotorista(){
     <div class="campo-icone"><span class="ic"></span><input type="tel" id="cm-telefone" value="${c.telefone}" placeholder="Telefone / WhatsApp"></div>
     <div class="campo-icone"><span class="ic"></span><input type="text" id="cm-cidade" value="${c.cidade}" placeholder="Cidade"></div>
     <div class="campo-icone"><span class="ic"></span><input type="text" id="cm-senha" value="${c.senha}" placeholder="Escolha uma senha fácil de lembrar" style="-webkit-text-security:disc;text-security:disc;"></div>
-    <div style="font-size:12.5px;color:var(--poeira);margin:0 0 10px"> Este é só o pré-cadastro. Você pode conhecer o sistema antes de enviar documentos.</div>
+    <div style="font-size:12.5px;color:var(--poeira);margin:0 0 10px"> Crie sua conta e continue direto para a ativação. Leva poucos minutos.</div>
     <label style="margin-top:10px">Como você entrega?</label>
     <div class="veiculos">
       ${Object.entries(VEICULOS).map(([k,v])=>`<button class="${c.veiculo===k?'sel':''}" onclick="mudarVeiculoCadastro('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
     </div>
-    <div style="font-size:12px;color:var(--poeira);margin-top:6px"> CPF, documentos e uma selfie simples ficam para a ativação da conta. Assim você conhece o app primeiro.</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:6px"> Depois deste passo você continua direto com os dados e fotos necessários para ativar sua conta.</div>
     ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
-    <button class="btn btn-primario" ${c.enviando?'disabled':''} onclick="avancarEtapa1()" style="border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">${c.enviando?'<span class="girando"></span>':' FAZER PRÉ-CADASTRO'}</button>
+    <button class="btn btn-primario" ${c.enviando?'disabled':''} onclick="avancarEtapa1()" style="border-radius:10px;display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px">${c.enviando?'<span class="girando"></span>':' CRIAR CONTA E CONTINUAR →'}</button>
     <div style="text-align:center;font-size:12px;color:var(--poeira);margin-top:8px"> Cadastro gratuito • Sem mensalidade<br>Sem pegadinha — comece quando quiser!</div>
     <div class="link-alt">Já é cadastrado? <a onclick="irParaLogin()">Entrar</a></div>`;
   } else if(c.etapa===2){
@@ -5763,9 +5763,7 @@ function telaCadastroMotorista(){
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 2. Fotos da bicicleta — 2 fotos</div>
       ${uploadSlotHTML('fotoVeiculoFrente', 'Frente da bicicleta', c.fotoVeiculoFrenteUrl)}
       ${uploadSlotHTML('fotoVeiculoTras', 'Lado da bicicleta', c.fotoVeiculoTrasUrl)}
-      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 3. Documento pessoal</div>
-      ${uploadSlotHTML('cnh', 'RG ou CNH', c.cnhUrl)}
-      <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Confere: nome, rosto igual da foto, válido</div>
+      <div style="font-size:12px;color:var(--poeira);margin-top:10px"> Para bicicleta não pedimos CNH, CRLV nem placa.</div>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:14px;color:var(--osso);margin-top:16px" onclick="alternarResponsabilidadeBike()">
         <input type="checkbox" ${c.aceitaResponsabilidadeBike?'checked':''} style="width:auto;accent-color:var(--mango)"> Confirmo que a bicicleta é minha e sou responsável por ela
       </label>
@@ -7525,31 +7523,15 @@ async function avancarEtapa1(){
     c.id = salvo.id;
     c.criadoEm = salvo.criado_em || Date.now();
     c.enviando=false;
-    await registrarConclusaoFunilAnuncio('motorista');
-    try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista_basico'}); }catch(e){}
-    registrarAlertaAdmin('novo_motorista_basico', `Novo motorista em cadastro básico: ${c.nome||''} (${c.telefone||''}).`);
+    // Pré-cadastro é apenas um lead. A conversão CompleteRegistration fica reservada
+    // para quem realmente termina documentos, PIX e termos.
+    try{ if(typeof fbq!=='undefined') fbq('track','Lead',{content_name:'motorista_basico'}); }catch(e){}
+    registrarAlertaAdmin('novo_motorista_basico', `Novo motorista iniciou o cadastro: ${c.nome||''} (${c.telefone||''}).`);
 
-    // Fluxo direto combinado: nada de parar na tela "Cadastro recebido".
-    // Mostra uma transição curta Ultra Premium e abre o painel completo imediatamente.
-    estado.painelMotorista.tela='entrar';
-    await mostrarEntradaUltraPremiumMotorista();
-    await entrarNoPainelMotorista({
-      id:c.id,
-      nome:c.nome,
-      telefone:c.telefone,
-      cidade:c.cidade,
-      status:'basico',
-      plano:'free',
-      veiculo_tipo:c.veiculo||'moto',
-      veiculo_marca:'',
-      veiculo_placa:'',
-      veiculo_cor:'',
-      foto_motorista_url:null,
-      foto_veiculo_url:null,
-      nota_media:5,
-      total_avaliacoes:0,
-      criado_em:c.criadoEm
-    });
+    // Não abre mais o painel no meio do cadastro: segue direto para os dados/documentos.
+    c.etapa=2;
+    estado.painelMotorista.tela='cadastro';
+    render();
   }catch(e){
     console.error('Cadastro básico motorista:',e);
     c.enviando=false;
@@ -7666,7 +7648,7 @@ async function processarDocumentoSelecionado(input){
 async function avancarEtapa3(){
   const c = estado.painelMotorista.cadastro;
   if(c.veiculo==='bicicleta'){
-    if(!c.fotoMotoristaUrl||!c.fotoVeiculoFrenteUrl||!c.fotoVeiculoTrasUrl||!c.cnhUrl){ c.erroEtapa='Envia a selfie, as 2 fotos da bicicleta e o RG ou CNH para continuar.'; render(); return; }
+    if(!c.fotoMotoristaUrl||!c.fotoVeiculoFrenteUrl||!c.fotoVeiculoTrasUrl){ c.erroEtapa='Envia a selfie e as 2 fotos da bicicleta para continuar.'; render(); return; }
     if(!c.aceitaResponsabilidadeBike){ c.erroEtapa='Confirma que a bicicleta é sua e que você é responsável por ela.'; render(); return; }
     c.erroEtapa=''; c.enviando=true; render();
     await salvarEtapaCadastro({ aceita_responsabilidade_bike:true });
@@ -7750,6 +7732,7 @@ async function finalizarCadastroMotorista(){
   c.enviando=false;
   if(ok){
     estado.painelMotorista.tela='pendente';
+    await registrarConclusaoFunilAnuncio('motorista');
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista'}); }catch(e){}
     registrarAlertaAdmin('novo_motorista', `Novo motorista cadastrado, aguardando aprovação: ${c.nome||''} (${c.telefone||''}).`);
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 800);
