@@ -5901,7 +5901,7 @@ function planosHTML(c){
         ${p.limiteMensal!=null?` Limite de ${p.limiteMensal} entregas/mês`:' Sem limite de entregas'}<br>
         ${p.prioridade?' Entregas prioritárias':' Vê os pedidos depois dos motoristas Pro'}<br>
         ${p.saqueDias>0?` Saque em até ${p.saqueDias} dias úteis`:' Saque imediato em 24h'}<br>
-         Você fica com ${Math.round((1-taxaPlataformaParaMotorista())*100)}% de cada entrega
+         Você fica com ${Math.round((1-taxaPlataformaParaMotorista({plano:chave, cidade:c.cidade||''}))*100)}% de cada entrega
       </div>
     </div>`;
   };
