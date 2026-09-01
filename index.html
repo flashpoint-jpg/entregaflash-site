@@ -9311,3 +9311,44 @@ iniciarAppReal();
 
 </body>
 </html>
+
+<!-- ENTREGA FLASH — identidade visual aprovada 2026-09-01 -->
+<style id="ef-identidade-aprovada-final">
+/* Página inicial: usa a composição aprovada como hero real e mantém o CTA funcional. */
+body,#app,.bv-wrap{width:100%!important;max-width:none!important;margin:0!important;background:#070809!important}
+.ef-mock-hero{position:relative!important;width:100%!important;max-width:none!important;min-height:0!important;height:auto!important;aspect-ratio:746/610!important;padding:0!important;margin:0!important;background:url('assets/inline/hero-entrega-flash-aprovado.webp') center top/cover no-repeat!important;border-radius:0!important;overflow:hidden!important}
+.ef-mock-hero:before,.ef-mock-hero:after,.ef-mock-top,.ef-mock-copy,.ef-mock-road{display:none!important}
+.ef-mock-hero::selection{background:transparent}
+.ef-hero-click{position:absolute;left:4.3%;top:85.5%;width:36%;height:10%;z-index:20;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
+.ef-mock-choices{width:min(1180px,calc(100% - 28px))!important;max-width:1180px!important;margin:-2px auto 20px!important;grid-template-columns:repeat(3,1fr)!important;background:#fff!important}
+.ef-mock-driver,.bv-strip,.bv-section-real,.bv-business-card,.bv-vehicle-zone,.bv-partner-real,.bv-trust-line{width:min(1180px,calc(100% - 28px))!important;max-width:1180px!important;margin-left:auto!important;margin-right:auto!important}
+/* Todas as telas reais deixam de ficar presas em uma coluna de celular no desktop. */
+.conteudo,.pagina,.tela,.conteudo-motorista{width:100%!important;max-width:1280px!important;margin-left:auto!important;margin-right:auto!important}
+@media(min-width:900px){
+ .ef-mock-hero{aspect-ratio:auto!important;height:min(78vw,790px)!important;background-size:cover!important;background-position:center top!important}
+ .ef-mock-choices{margin-top:-36px!important}
+ .form-card,.campo-motorista,.pedido,.cartao,.painel{max-width:1180px}
+}
+@media(max-width:700px){
+ .ef-mock-hero{width:100vw!important;aspect-ratio:746/610!important;background-size:100% auto!important;background-position:center top!important}
+ .ef-hero-click{left:4%;top:85%;width:38%;height:11%}
+ .ef-mock-choices{width:calc(100% - 24px)!important;margin:-1px 12px 14px!important;grid-template-columns:repeat(3,1fr)!important;border-radius:18px!important}
+ .ef-mock-choices button{min-height:150px!important;padding:14px 9px!important}.ef-mock-choices b{width:46px!important;height:46px!important;margin-bottom:10px!important}.ef-mock-choices strong{font-size:16px!important}.ef-mock-choices small{font-size:10.5px!important}
+ .ef-mock-driver,.bv-strip,.bv-section-real,.bv-business-card,.bv-vehicle-zone,.bv-partner-real,.bv-trust-line{width:100%!important;max-width:none!important;margin-left:0!important;margin-right:0!important;border-radius:0!important}
+ .conteudo,.pagina,.tela,.conteudo-motorista{max-width:none!important;width:100%!important}
+}
+</style>
+<script>
+(function(){
+ function instalarHeroCTA(){
+   const hero=document.querySelector('.ef-mock-hero');
+   if(!hero || hero.querySelector('.ef-hero-click')) return;
+   const b=document.createElement('button');
+   b.type='button'; b.className='ef-hero-click'; b.setAttribute('aria-label','Fazer um pedido');
+   b.onclick=function(){ if(typeof entrarComoVisitante==='function') entrarComoVisitante('cliente'); };
+   hero.appendChild(b);
+ }
+ instalarHeroCTA();
+ const ob=new MutationObserver(instalarHeroCTA); ob.observe(document.body,{childList:true,subtree:true});
+})();
+</script>
