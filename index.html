@@ -5637,8 +5637,8 @@ function modalEdicaoPedidoHTML(){
 function telaAcessoMotorista(){
   const pm = estado.painelMotorista;
   if(pm.tela==='basico'){
-    return `<div class="box-status"><span class="bs-emoji"></span><div class="bs-titulo">Cadastro recebido!</div><div class="bs-texto">Já dá pra conhecer o app — falta só enviar os documentos. Estamos a analisar os teus dados e assim que for liberado, avisamos aqui e por WhatsApp pra enviares tudo e começares a receber corridas.</div>
-      <button class="btn btn-secundario" style="margin-top:16px" onclick="irParaLogin()">Voltar</button></div>`;
+    return `<div class="box-status"><span class="bs-emoji">📸</span><div class="bs-titulo">Seu cadastro já começou</div><div class="bs-texto">Não precisa esperar liberação. Continue agora de onde parou: informe a chave PIX e envie as fotos/documentos. Normalmente leva cerca de 1 minuto.</div>
+      <button class="btn btn-primario" style="margin-top:16px" onclick="iniciarDocumentosDoPainel()">CONTINUAR CADASTRO →</button></div>`;
   }
   if(pm.tela==='liberado'){
     return `<div class="box-status"><span class="bs-emoji"></span><div class="bs-titulo">Cadastro liberado!</div><div class="bs-texto">Envia os teus documentos agora pra começares a receber corridas ainda hoje.</div>
@@ -5698,6 +5698,23 @@ function passosHTML(atual){
   return html;
 }
 
+function progressoDocumentosCadastro(c){
+  const itens = c.veiculo==='bicicleta'
+    ? [!!c.fotoMotoristaUrl, !!c.fotoVeiculoFrenteUrl, !!c.fotoVeiculoTrasUrl]
+    : [!!c.fotoMotoristaUrl, !!c.fotoVeiculoFrenteUrl, !!c.fotoVeiculoTrasUrl, !!c.crlvUrl, !!c.cnhUrl];
+  const feitos = itens.filter(Boolean).length;
+  return { feitos, total:itens.length, pct:Math.round((feitos/itens.length)*100) };
+}
+function progressoDocumentosHTML(c){
+  const p=progressoDocumentosCadastro(c);
+  const msg = p.feitos===p.total ? 'Tudo enviado! Só falta continuar.' : (p.feitos===0 ? 'Comece pela selfie. Cada foto é salva na hora.' : `Muito bem — faltam só ${p.total-p.feitos}.`);
+  return `<div style="margin:10px 0 16px;padding:13px;border-radius:12px;background:rgba(255,201,60,.08);border:1px solid rgba(255,201,60,.35)">
+    <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:800;color:var(--osso)"><span>Ativação do cadastro</span><span>${p.feitos} de ${p.total} enviados</span></div>
+    <div style="height:8px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;margin-top:8px"><div style="height:100%;width:${p.pct}%;background:var(--mango);transition:width .25s ease"></div></div>
+    <div style="font-size:12.5px;color:var(--poeira);margin-top:7px">${msg}</div>
+  </div>`;
+}
+
 function telaCadastroMotorista(){
   const c = estado.painelMotorista.cadastro;
   const introEtapa1 = c.etapa===1 ? `
@@ -5715,7 +5732,7 @@ function telaCadastroMotorista(){
       <div style="font-weight:700;color:var(--osso);font-size:15px"> Plano Free — sem mensalidade</div>
       <div style="font-size:14px;color:var(--poeira);margin-top:4px">Você pode começar pelo Free. O Pro é opcional e oferece vantagens adicionais conforme as configurações atuais do app.</div>
     </div>
-    <div class="ef-steps-mini"><div class="ef-step-mini"><b>1. Pré-cadastro</b>Nome, WhatsApp, cidade e veículo.</div><div class="ef-step-mini"><b>2. Ativação</b>Complete os dados e envie os documentos.</div><div class="ef-step-mini"><b>3. Fique online</b>Depois de aprovado, escolha quando receber pedidos.</div></div>
+    <div class="ef-steps-mini"><div class="ef-step-mini"><b>1. Pré-cadastro</b>Nome, WhatsApp, cidade e veículo.</div><div class="ef-step-mini"><b>2. Recebimento</b>Informe sua chave PIX antes dos documentos.</div><div class="ef-step-mini"><b>3. Ativação</b>Envie os documentos e finalize o cadastro.</div></div>
   </div>` : '';
   let corpo='';
   if(c.etapa===1){
@@ -5753,13 +5770,26 @@ function telaCadastroMotorista(){
       <button class="btn btn-primario" style="margin-top:0;width:100%" ${c.enviando?'disabled':''} onclick="avancarEtapa2()">${c.enviando?'A gravar...':'Continuar'}</button>
     </div>`;
   } else if(c.etapa===3){
+    corpo = `
+    <div class="etapa-titulo">3. Chave PIX para recebimento</div>
+    <div class="etapa-sub">Informe agora a chave onde você quer receber seus ganhos. Ela fica salva antes da etapa de documentos.</div>
+    <label>Chave PIX</label>
+    <input type="text" id="cm-chavepix" value="${c.chavePix}" placeholder="CPF, e-mail, telefone ou chave aleatória">
+    <div style="font-size:12px;color:var(--poeira);margin-top:6px">Obrigatória para continuar. Você poderá corrigir depois pelo painel administrativo.</div>
+    ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="btn btn-secundario" style="margin-top:0" onclick="voltarEtapa(2)">Voltar</button>
+      <button class="btn btn-primario" style="margin-top:0" ${c.enviando?'disabled':''} onclick="avancarEtapa3()">${c.enviando?'A gravar...':'Salvar PIX e continuar'}</button>
+    </div>`;
+  } else if(c.etapa===4){
     if(c.veiculo==='bicicleta'){
       corpo = `
-      <div class="etapa-titulo">3. Documentos</div>
-      <div class="etapa-sub"> Bicicleta não tem documento? Tudo bem! Sem CRLV nem placa — porque não existe. Só o essencial.</div>
+      <div class="etapa-titulo">4. Falta só 1 minuto para ativar</div>
+      <div class="etapa-sub">Envie as fotos abaixo. Cada foto fica salva imediatamente, então você não perde o que já enviou.</div>
+      ${progressoDocumentosHTML(c)}
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:14px 0 6px"> 1. Foto do rosto — selfie</div>
       ${uploadSlotHTML('fotoMotorista', 'Foto de rosto (de frente)', c.fotoMotoristaUrl)}
-      <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Sem óculos escuro, sem chapéu, rosto visível<br> Confere com a foto do documento</div>
+      <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Sem óculos escuro, sem chapéu, rosto visível</div>
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 2. Fotos da bicicleta — 2 fotos</div>
       ${uploadSlotHTML('fotoVeiculoFrente', 'Frente da bicicleta', c.fotoVeiculoFrenteUrl)}
       ${uploadSlotHTML('fotoVeiculoTras', 'Lado da bicicleta', c.fotoVeiculoTrasUrl)}
@@ -5769,50 +5799,40 @@ function telaCadastroMotorista(){
       </label>
       ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
       <div style="display:flex;gap:8px;margin-top:14px">
-        <button class="btn btn-secundario" style="margin-top:0" onclick="voltarEtapa(2)">Voltar</button>
-        <button class="btn btn-primario" style="margin-top:0" onclick="avancarEtapa3()">Enviar tudo →</button>
+        <button class="btn btn-secundario" style="margin-top:0" onclick="voltarEtapa(3)">Voltar</button>
+        <button class="btn btn-primario" style="margin-top:0" onclick="avancarEtapa4()">CONTINUAR →</button>
       </div>`;
     } else {
-    corpo = `
-    <div class="etapa-titulo">3. Documentos</div>
-    <div class="etapa-sub">Obrigatório para todos — Free e Pro. Nada é liberado sem os 5 aprovados.</div>
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:14px 0 6px"> 1. Foto do rosto — selfie</div>
-    ${uploadSlotHTML('fotoMotorista', 'Foto de rosto (de frente)', c.fotoMotoristaUrl)}
-    <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Sem óculos escuro, sem chapéu, rosto visível<br> Confere com a foto da CNH</div>
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 2. Fotos do veículo — 2 fotos</div>
-    ${uploadSlotHTML('fotoVeiculoFrente', 'Frente — veículo parado, placa visível', c.fotoVeiculoFrenteUrl)}
-    ${uploadSlotHTML('fotoVeiculoTras', 'Trás — parte de trás, placa nítida', c.fotoVeiculoTrasUrl)}
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 3. Documentos — 2 arquivos</div>
-    ${uploadSlotHTML('crlv', 'Documento do veículo (CRLV)', c.crlvUrl)}
-    <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Confere: placa, marca, ano</div>
-    ${uploadSlotHTML('cnh', 'CNH (frente e verso)', c.cnhUrl)}
-    <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Confere: nome, rosto igual da foto, válida</div>
-    ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn btn-secundario" style="margin-top:0" onclick="voltarEtapa(2)">Voltar</button>
-      <button class="btn btn-primario" style="margin-top:0" onclick="avancarEtapa3()">Enviar tudo →</button>
-    </div>`;
+      corpo = `
+      <div class="etapa-titulo">4. Falta só 1 minuto para ativar</div>
+      <div class="etapa-sub">Sua chave PIX já está salva. Agora envie as fotos abaixo; cada uma é salva imediatamente.</div>
+      ${progressoDocumentosHTML(c)}
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:14px 0 6px"> 1. Foto do rosto — selfie</div>
+      ${uploadSlotHTML('fotoMotorista', 'Foto de rosto (de frente)', c.fotoMotoristaUrl)}
+      <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Sem óculos escuro, sem chapéu, rosto visível<br> Confere com a foto da CNH</div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 2. Fotos do veículo — 2 fotos</div>
+      ${uploadSlotHTML('fotoVeiculoFrente', 'Frente — veículo parado, placa visível', c.fotoVeiculoFrenteUrl)}
+      ${uploadSlotHTML('fotoVeiculoTras', 'Trás — parte de trás, placa nítida', c.fotoVeiculoTrasUrl)}
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 3. Documentos — 2 arquivos</div>
+      ${uploadSlotHTML('crlv', 'Documento do veículo (CRLV)', c.crlvUrl)}
+      <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Confere: placa, marca, ano</div>
+      ${uploadSlotHTML('cnh', 'CNH (frente e verso)', c.cnhUrl)}
+      <div style="font-size:12px;color:var(--poeira);margin-top:4px"> Confere: nome, rosto igual da foto, válida</div>
+      ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button class="btn btn-secundario" style="margin-top:0" onclick="voltarEtapa(3)">Voltar</button>
+        <button class="btn btn-primario" style="margin-top:0" onclick="avancarEtapa4()">CONTINUAR →</button>
+      </div>`;
     }
-  } else if(c.etapa===4){
+  } else if(c.etapa===5){
     corpo = `
-    <div class="etapa-titulo">4. Escolha o seu plano</div>
+    <div class="etapa-titulo">5. Escolha o seu plano</div>
     <div class="etapa-sub">Pode trocar de plano depois, falando com o suporte.</div>
     ${planosHTML(c)}
     ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
     <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn btn-secundario" style="margin-top:0" ${c.pix.status==='pago'?'disabled':''} onclick="voltarEtapa(3)">Voltar</button>
-      <button class="btn btn-primario" style="margin-top:0" ${(!c.plano || (c.plano==='pro' && c.pix.status!=='pago'))?'disabled':''} onclick="avancarEtapa4()">Continuar</button>
-    </div>`;
-  } else if(c.etapa===5){
-    corpo = `
-    <div class="etapa-titulo">5. Chave PIX para recebimento</div>
-    <div class="etapa-sub">É para esta chave que caem os seus ganhos de cada entrega.</div>
-    <label>Chave PIX</label>
-    <input type="text" id="cm-chavepix" value="${c.chavePix}" placeholder="CPF, e-mail, telefone ou chave aleatória">
-    ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
-    <div style="display:flex;gap:8px;margin-top:14px">
-      <button class="btn btn-secundario" style="margin-top:0" onclick="voltarEtapa(4)">Voltar</button>
-      <button class="btn btn-primario" style="margin-top:0" ${c.enviando?'disabled':''} onclick="avancarEtapa5()">${c.enviando?'A gravar...':'Continuar'}</button>
+      <button class="btn btn-secundario" style="margin-top:0" ${c.pix.status==='pago'?'disabled':''} onclick="voltarEtapa(4)">Voltar</button>
+      <button class="btn btn-primario" style="margin-top:0" ${(!c.plano || (c.plano==='pro' && c.pix.status!=='pago'))?'disabled':''} onclick="avancarEtapa5()">Continuar</button>
     </div>`;
   } else if(c.etapa===6){
     corpo = `
@@ -5837,7 +5857,7 @@ function telaCadastroMotorista(){
 function uploadSlotHTML(tipo, rotulo, url){
   return `
   <div class="upload-slot ${url?'feito':''}" onclick="solicitarUploadDocumento('${tipo}')">
-    ${url ? `<img src="${url}"><div class="up-texto"> ${rotulo} enviado — toque para trocar</div>` : `<span class="up-emoji"></span><div class="up-texto">Toque para enviar foto de: ${rotulo}</div>`}
+    ${url ? `<img src="${url}"><div class="up-texto">✅ ${rotulo} — salvo<br><span style="font-size:11.5px;font-weight:500">Toque somente se quiser trocar</span></div>` : `<span class="up-emoji">📷</span><div class="up-texto">Enviar agora: ${rotulo}</div>`}
   </div>`;
 }
 function uploadSlotHTMLReenvio(tipo, rotulo, url){
@@ -7422,8 +7442,14 @@ async function loginMotorista(){
     render(); return;
   }
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
-  // Senha e facial são duas formas independentes de entrada.
-  // basico, pendente ou aprovado — todos entram no painel; aceitar/saque ficam travados até 'aprovado'
+  // Cadastro básico ainda não terminou: retoma exatamente do ponto em que parou.
+  if(data.status==='basico'){
+    pm.telefoneLiberado=data.telefone;
+    pm.loginTelefone=data.telefone;
+    await continuarParaDocumentos();
+    return;
+  }
+  // pendente/aprovado entram no painel; ações financeiras continuam protegidas pelo status.
   if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); return; }
 }
 
@@ -7447,8 +7473,13 @@ async function continuarParaDocumentos(){
   c.veiculo = data.veiculo_tipo||'moto'; c.marca = data.veiculo_marca||''; c.placa = data.veiculo_placa||''; c.cor = data.veiculo_cor||'';
   c.fotoMotoristaUrl = data.foto_motorista_url||null; c.fotoVeiculoFrenteUrl = data.foto_veiculo_url||null; c.fotoVeiculoTrasUrl = data.foto_veiculo_tras_url||null;
   c.cnhUrl = data.cnh_url||null; c.crlvUrl = data.crlv_url||null; c.aceitaResponsabilidadeBike = !!data.aceita_responsabilidade_bike;
-  // se já tem CPF e marca gravados (reabriu depois de já ter completado), pula direto pros documentos
-  c.etapa = (data.cpf && data.veiculo_marca) ? 3 : 2; c.erroEtapa='';
+  c.chavePix = data.chave_pix||''; c.plano = data.plano||c.plano||null;
+  // Retoma exatamente do ponto certo: PIX vem antes dos documentos.
+  const dadosVeiculoOk = !!(data.cpf && data.veiculo_marca);
+  const docsOk = c.veiculo==='bicicleta'
+    ? !!(c.fotoMotoristaUrl && c.fotoVeiculoFrenteUrl && c.fotoVeiculoTrasUrl && c.aceitaResponsabilidadeBike)
+    : !!(c.fotoMotoristaUrl && c.cnhUrl && c.crlvUrl && c.fotoVeiculoFrenteUrl && c.fotoVeiculoTrasUrl);
+  c.etapa = !dadosVeiculoOk ? 2 : (!c.chavePix ? 3 : (docsOk ? 5 : 4)); c.erroEtapa='';
   pm.tela = 'cadastro';
   render();
 }
@@ -7626,38 +7657,85 @@ async function tirarSelfieMotorista(){
   fecharTelaSelfieMotorista(); mostrarToast('Selfie salva com sucesso!'); render();
 }
 function solicitarUploadDocumento(tipo){ if(tipo==='fotoMotorista'){ abrirTelaSelfieMotorista(); return; } uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
+async function prepararImagemDocumento(file){
+  // Fotos grandes de celular são reduzidas antes do upload para evitar travar/abandonar em internet móvel.
+  if(!file || !String(file.type||'').startsWith('image/')) return file;
+  if(file.size <= 1200*1024) return file;
+  try{
+    const bitmap = await createImageBitmap(file);
+    const max=1600, escala=Math.min(1,max/Math.max(bitmap.width,bitmap.height));
+    const w=Math.max(1,Math.round(bitmap.width*escala)), h=Math.max(1,Math.round(bitmap.height*escala));
+    const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+    canvas.getContext('2d',{alpha:false}).drawImage(bitmap,0,0,w,h);
+    if(bitmap.close) bitmap.close();
+    const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.82));
+    return blob || file;
+  }catch(e){ console.warn('compressao_documento_falhou',e); return file; }
+}
+
 async function processarDocumentoSelecionado(input){
   const file = input.files && input.files[0];
   input.value='';
   if(!file || !uploadPendente) return;
   const tipo = uploadPendente; uploadPendente = null;
   const c = estado.painelMotorista.cadastro;
-  mostrarToast('Enviando documento...');
+  if(!String(file.type||'').startsWith('image/')){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
+  mostrarToast('Salvando foto...');
+  const preparado = await prepararImagemDocumento(file);
   const nomeArquivo = `${c.id}/${tipo}-${Date.now()}.jpg`;
-  const { error: erroUp } = await sb.storage.from('motorista-documentos').upload(nomeArquivo, file, { upsert:true, contentType:file.type||'image/jpeg' });
-  if(erroUp){ console.error(erroUp); mostrarToast('Erro ao enviar o documento.', 'erro'); return; }
+  const { error: erroUp } = await sb.storage.from('motorista-documentos').upload(nomeArquivo, preparado, { upsert:true, contentType:'image/jpeg' });
+  if(erroUp){
+    console.error('upload_documento',erroUp);
+    mostrarToast('Não consegui salvar esta foto. Confira a internet e toque nela para tentar de novo.', 'erro');
+    return;
+  }
   const { data: pub } = sb.storage.from('motorista-documentos').getPublicUrl(nomeArquivo);
   if(tipo==='cnh') c.cnhUrl = pub.publicUrl;
   if(tipo==='crlv') c.crlvUrl = pub.publicUrl;
   if(tipo==='fotoVeiculoFrente') c.fotoVeiculoFrenteUrl = pub.publicUrl;
   if(tipo==='fotoVeiculoTras') c.fotoVeiculoTrasUrl = pub.publicUrl;
   if(tipo==='fotoMotorista') c.fotoMotoristaUrl = pub.publicUrl;
-  await salvarEtapaCadastro({ cnh_url:c.cnhUrl, crlv_url:c.crlvUrl, foto_veiculo_url:c.fotoVeiculoFrenteUrl, foto_veiculo_tras_url:c.fotoVeiculoTrasUrl, foto_motorista_url:c.fotoMotoristaUrl, aceita_responsabilidade_bike:c.aceitaResponsabilidadeBike });
+  const campos={ cnh_url:c.cnhUrl, crlv_url:c.crlvUrl, foto_veiculo_url:c.fotoVeiculoFrenteUrl, foto_veiculo_tras_url:c.fotoVeiculoTrasUrl, foto_motorista_url:c.fotoMotoristaUrl, aceita_responsabilidade_bike:c.aceitaResponsabilidadeBike };
+  const prog=progressoDocumentosCadastro(c);
+  if(prog.feitos===prog.total && c.veiculo!=='bicicleta') campos.documentos_enviados_em=Date.now();
+  const ok=await salvarEtapaCadastro(campos);
+  if(!ok){ mostrarToast('A foto subiu, mas não consegui registrar no cadastro. Tente novamente.', 'erro'); return; }
+  mostrarToast(`Foto salva! ${prog.feitos} de ${prog.total} enviados.`, 'sucesso');
   render();
 }
+
 async function avancarEtapa3(){
+  const c = estado.painelMotorista.cadastro;
+  c.chavePix = document.getElementById('cm-chavepix').value.trim();
+  if(!c.chavePix){ c.erroEtapa='Informa a chave PIX para receber pelas entregas.'; render(); return; }
+  c.erroEtapa=''; c.enviando=true; render();
+  const ok = await salvarEtapaCadastro({ chave_pix:c.chavePix });
+  c.enviando=false;
+  if(ok) c.etapa=4; else c.erroEtapa='Não foi possível salvar a chave PIX. Tenta novamente.';
+  render();
+}
+async function avancarEtapa4(){
   const c = estado.painelMotorista.cadastro;
   if(c.veiculo==='bicicleta'){
     if(!c.fotoMotoristaUrl||!c.fotoVeiculoFrenteUrl||!c.fotoVeiculoTrasUrl){ c.erroEtapa='Envia a selfie e as 2 fotos da bicicleta para continuar.'; render(); return; }
     if(!c.aceitaResponsabilidadeBike){ c.erroEtapa='Confirma que a bicicleta é sua e que você é responsável por ela.'; render(); return; }
     c.erroEtapa=''; c.enviando=true; render();
-    await salvarEtapaCadastro({ aceita_responsabilidade_bike:true });
-    c.enviando=false; c.etapa=4; render(); return;
+    const ok = await salvarEtapaCadastro({ aceita_responsabilidade_bike:true, documentos_enviados_em:Date.now() });
+    c.enviando=false;
+    if(ok) c.etapa=5; else c.erroEtapa='Erro ao gravar. Tenta de novo.';
+    render(); return;
   }
-  if(!c.fotoMotoristaUrl||!c.cnhUrl||!c.crlvUrl||!c.fotoVeiculoFrenteUrl||!c.fotoVeiculoTrasUrl){ c.erroEtapa='Envia os 5 documentos para continuar.'; render(); return; }
-  c.erroEtapa=''; c.etapa=4; render();
+  if(!c.fotoMotoristaUrl||!c.cnhUrl||!c.crlvUrl||!c.fotoVeiculoFrenteUrl||!c.fotoVeiculoTrasUrl){ c.erroEtapa='Envie todas as 5 fotos/documentos. O que já foi enviado está salvo.'; render(); return; }
+  c.erroEtapa=''; c.enviando=true; render();
+  await salvarEtapaCadastro({ documentos_enviados_em:Date.now() });
+  c.enviando=false; c.etapa=5; render();
 }
-function alternarResponsabilidadeBike(){ estado.painelMotorista.cadastro.aceitaResponsabilidadeBike = !estado.painelMotorista.cadastro.aceitaResponsabilidadeBike; render(); }
+async function alternarResponsabilidadeBike(){
+  const c=estado.painelMotorista.cadastro;
+  c.aceitaResponsabilidadeBike = !c.aceitaResponsabilidadeBike;
+  render();
+  await salvarEtapaCadastro({ aceita_responsabilidade_bike:c.aceitaResponsabilidadeBike });
+}
 
 async function escolherPlano(chave){
   const c = estado.painelMotorista.cadastro;
@@ -7708,24 +7786,15 @@ function copiarPix(){
   if(!c.pix.copiaCola) return;
   navigator.clipboard.writeText(c.pix.copiaCola).then(()=>mostrarToast('Código PIX copiado!', 'sucesso'));
 }
-function avancarEtapa4(){
+function avancarEtapa5(){
   const c = estado.painelMotorista.cadastro;
   if(!c.plano){ mostrarToast('Escolha um plano para continuar.'); return; }
   if(c.plano==='pro' && c.pix.status!=='pago'){ mostrarToast('Aguarda a confirmação do pagamento.'); return; }
-  c.etapa=5; render();
-}
-async function avancarEtapa5(){
-  const c = estado.painelMotorista.cadastro;
-  c.chavePix = document.getElementById('cm-chavepix').value.trim();
-  if(!c.chavePix){ c.erroEtapa='Informa a chave PIX para receberes pelas entregas.'; render(); return; }
-  c.erroEtapa=''; c.enviando=true; render();
-  const ok = await salvarEtapaCadastro({ chave_pix:c.chavePix });
-  c.enviando=false;
-  if(ok) c.etapa=6;
-  render();
+  c.etapa=6; render();
 }
 async function finalizarCadastroMotorista(){
   const c = estado.painelMotorista.cadastro;
+  if(!c.chavePix){ c.erroEtapa='A chave PIX é obrigatória. Volte e informe a chave para recebimento.'; c.etapa=3; render(); return; }
   if(!c.aceitouTermos){ c.erroEtapa='Aceite os termos de uso e a LGPD para continuar.'; render(); return; }
   c.erroEtapa=''; c.enviando=true; render();
   const ok = await salvarEtapaCadastro({ termos_aceitos:true, status:'pendente' });
