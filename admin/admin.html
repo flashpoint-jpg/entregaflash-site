@@ -6665,6 +6665,7 @@ function motoristaCardHTML(m, emRota){
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
       ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}
+      ${(()=>{const e=etapaFunilMotorista(m);return `<div style="margin:8px 0;padding:9px 10px;border-radius:10px;background:rgba(255,201,60,.07);border:1px solid rgba(255,201,60,.28);font-size:12.5px"><b>📍 Etapa do cadastro: ${e.label}</b><div style="height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${e.pct}%;background:var(--mango)"></div></div></div>`})()}
       <div class="am-linha"><span>Plano</span><b>${PLANOS[m.plano]?.label||m.plano}</b></div>
       <div class="am-linha"><span>💰 Saldo a receber</span><b style="color:var(--mango)">R$ ${Number(m.saldo||0).toFixed(2)}</b></div>
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
@@ -7610,6 +7611,28 @@ async function excluirClienteAdmin(telefone, nome){
   } finally { adminOperacaoClienteEmAndamento = false; }
 }
 
+function etapaFunilMotorista(m){
+  const temDados=!!(m.cpf && m.veiculo_tipo && m.veiculo_marca);
+  const temPix=!!m.chave_pix;
+  const docsBike=!!(m.foto_motorista_url && m.foto_veiculo_url && m.foto_veiculo_tras_url && m.aceita_responsabilidade_bike);
+  const docsVeiculo=!!(m.foto_motorista_url && m.foto_veiculo_url && m.foto_veiculo_tras_url && m.cnh_url && m.crlv_url);
+  const docsOk=m.veiculo_tipo==='bicicleta'?docsBike:docsVeiculo;
+  if(m.status==='aprovado') return {n:5,label:'Aprovado',pct:100};
+  if(docsOk || m.documentos_enviados_em) return {n:4,label:'Documentos concluídos',pct:85};
+  if(temPix) return {n:3,label:'Parou nos documentos',pct:60};
+  if(temDados) return {n:2,label:'Falta informar PIX',pct:40};
+  return {n:1,label:'Só iniciou o cadastro',pct:20};
+}
+function funilCadastroMotoristasHTML(lista){
+  const ms=lista||[];
+  const iniciaram=ms.length;
+  const pix=ms.filter(m=>!!m.chave_pix).length;
+  const chegaramDocs=ms.filter(m=>{const e=etapaFunilMotorista(m);return e.n>=3}).length;
+  const docs=ms.filter(m=>{const e=etapaFunilMotorista(m);return e.n>=4}).length;
+  const aprovados=ms.filter(m=>m.status==='aprovado').length;
+  const etapas=[['Iniciaram cadastro',iniciaram],['Informaram PIX',pix],['Chegaram aos documentos',chegaramDocs],['Concluíram documentos',docs],['Aprovados',aprovados]];
+  return `<div class="admin-cartao" style="margin-bottom:14px"><b>📊 Funil de cadastro dos motoristas</b><div style="font-size:12.5px;color:var(--poeira);margin:4px 0 10px">Mostra exatamente onde as pessoas estão desistindo.</div>${etapas.map((e,i)=>{const pct=iniciaram?Math.round(e[1]/iniciaram*100):0;return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${i+1}. ${e[0]}</span><b>${e[1]} · ${pct}%</b></div><div style="height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${pct}%;background:var(--mango)"></div></div></div>`}).join('')}</div>`;
+}
 function adminAbaMotoristasHTML(){
   const a = estado.admin;
   if(!a.filtroRegiaoMotoristas) a.filtroRegiaoMotoristas='todos';
@@ -7657,6 +7680,7 @@ function adminAbaMotoristasHTML(){
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
     ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
   return `
+    ${funilCadastroMotoristasHTML(baseMotoristas)}
     <div class="admin-filtros-grade" style="margin-bottom:10px">
       <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
       <button class="${a.filtroRegiaoMotoristas==='sp'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='sp';render()">📍 Grande São Paulo</button>
@@ -7720,8 +7744,8 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome, veiculoTipo){
   const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
   const ehBike=veiculoTipo==='bicicleta';
   const msg=ehBike
-    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: basta concluir a selfie, as fotos da bicicleta e enviar um documento pessoal (RG ou CNH). ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
-    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: entre novamente no app com seu WhatsApp e senha e continue exatamente de onde parou. Complete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
+    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Seu cadastro está quase pronto. Entre novamente no app com seu WhatsApp e senha: ele vai abrir exatamente de onde você parou. Complete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg), '_blank');
 }
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
