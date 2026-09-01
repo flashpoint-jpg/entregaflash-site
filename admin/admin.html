@@ -1763,10 +1763,18 @@ function abrirModalReprovar(id){
   render();
 }
 function fecharModalReprovar(){ estado.modalReprovar = null; render(); }
-function selecionarMotivoPreset(texto){
+function selecionarMotivoPreset(texto, botao){
   if(!estado.modalReprovar) return;
   estado.modalReprovar.motivo = texto;
-  render();
+  const campo = document.getElementById('reprovar-motivo-texto');
+  if(campo){ campo.value=texto; }
+  document.querySelectorAll('[data-motivo-reprovacao]').forEach(el=>{
+    const ativo = el===botao;
+    el.setAttribute('aria-pressed', ativo?'true':'false');
+    el.style.borderColor = ativo ? 'var(--mango)' : '';
+    el.style.background = ativo ? 'rgba(255,151,16,.16)' : '';
+    el.style.color = ativo ? 'var(--osso)' : '';
+  });
 }
 async function confirmarReprovacao(){
   const m = estado.modalReprovar;
@@ -1796,7 +1804,7 @@ function modalReprovarHTML(){
       <div class="confirmar-texto" style="text-align:left;font-weight:700">Motivo da reprovação</div>
       <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Escolhe um motivo rápido ou escreve o teu. O motorista vai ver essa mensagem na tela dele e vai poder reenviar os documentos.</div>
       <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
-        ${presets.map(p=>`<button type="button" class="btn btn-secundario btn-pequeno" style="text-align:left;white-space:normal" onclick="selecionarMotivoPreset(${JSON.stringify(p)})">${p}</button>`).join('')}
+        ${presets.map(p=>`<button type="button" data-motivo-reprovacao aria-pressed="false" class="btn btn-secundario btn-pequeno" style="text-align:left;white-space:normal" onclick="selecionarMotivoPreset(${JSON.stringify(p)},this)">${p}</button>`).join('')}
       </div>
       <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve o motivo..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
       <div class="confirmar-botoes" style="margin-top:12px">
@@ -2050,7 +2058,7 @@ async function carregarPedidos(){
     // em que a pessoa ia tocar numa delas, fazendo a tela "piscar" e perder a sequência.
     // Os dados já foram atualizados em estado.pedidos acima; o próximo render (ao trocar
     // de campo, avançar de etapa, etc.) já vem com tudo em dia.
-    if(estaDigitandoEndereco()) return;
+    if(estaDigitandoEndereco() || adminTemInteracaoAberta()) return;
     render();
   }catch(e){
     console.error(e);
@@ -8097,7 +8105,20 @@ let canalAdminSinais = null;
 let intervaloAdminMotoristasClientesPoll = null;
 let adminOperacaoClienteEmAndamento = false;
 let _adminRenderTimer = null;
+let _adminRenderPendente = false;
+function adminTemInteracaoAberta(){
+  if(!estado.admin?.aberto) return false;
+  if(estado.modalReprovar || estado.modalConfirmar || estado.admin.motoristaEditando || estado.admin.clienteEditando || estado.admin.pedidoEditando) return true;
+  if(document.querySelector('.admin-resumo-card[open], .modal-fundo, .foto-ampliada')) return true;
+  const ativo=document.activeElement;
+  return !!(ativo && ativo.closest && ativo.closest('.admin-conteudo') && /^(INPUT|TEXTAREA|SELECT)$/.test(ativo.tagName));
+}
 function renderAdminParcial(){
+  if(adminTemInteracaoAberta()){
+    _adminRenderPendente=true;
+    return;
+  }
+  _adminRenderPendente=false;
   if(estado.admin.aberto){
     const area = document.querySelector('.admin-conteudo');
     const inner = document.querySelector('.admin-conteudo-inner');
@@ -8119,8 +8140,16 @@ function renderAdminParcial(){
 }
 function agendarRenderAdmin(delay=90){
   if(_adminRenderTimer) clearTimeout(_adminRenderTimer);
-  _adminRenderTimer = setTimeout(()=>{ _adminRenderTimer=null; renderAdminParcial(); }, delay);
+  _adminRenderTimer = setTimeout(()=>{
+    _adminRenderTimer=null;
+    renderAdminParcial();
+  }, delay);
 }
+document.addEventListener('toggle', (event)=>{
+  if(_adminRenderPendente && event.target?.matches?.('.admin-resumo-card') && !event.target.open){
+    agendarRenderAdmin(180);
+  }
+}, true);
 function atualizarPresencaAdminDOM(){
   if(!estado.admin?.aberto) return;
   const online=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
