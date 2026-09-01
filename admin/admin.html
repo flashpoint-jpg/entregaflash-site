@@ -6636,6 +6636,27 @@ const ROTULO_STATUS_MOTORISTA = {
   aprovado: { texto:'✅ Aprovado', selo:'selo-entregue', cor:'var(--verde)' },
   bloqueado: { texto:'🔒 Bloqueado', selo:'selo-cancelado', cor:'var(--chama)' }
 };
+function pendenciasDocumentosMotorista(m){
+  const itens=[];
+  if(!String(m.chave_pix||'').trim()) itens.push('Chave PIX');
+  if(!m.foto_motorista_url) itens.push('Selfie');
+  if(!m.foto_veiculo_url) itens.push(m.veiculo_tipo==='bicicleta'?'Foto da bicicleta (frente)':'Foto do veículo (frente)');
+  if(!m.foto_veiculo_tras_url) itens.push(m.veiculo_tipo==='bicicleta'?'Foto da bicicleta (lado/trás)':'Foto do veículo (trás)');
+  if(m.veiculo_tipo==='bicicleta'){
+    if(!m.cnh_url) itens.push('RG ou CNH');
+  }else{
+    if(!m.cnh_url) itens.push('CNH');
+    if(!m.crlv_url) itens.push('CRLV');
+  }
+  return itens;
+}
+function abrirWhatsAppPendenciaEspecifica(telefone,nome,item){
+  const tel=String(telefone||'').replace(/\D/g,'');
+  const numero=tel.startsWith('55')?tel:'55'+tel;
+  const primeiro=String(nome||'').trim().split(' ')[0]||'Olá';
+  const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase pronto. Falta somente: ${item}. Entre novamente no app e envie/corrija esse item para concluir seu cadastro.`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
 function motoristaCardHTML(m, emRota){
   const onlineAgora = motoristaOnlineAgora(m);
   let infoStatus = ROTULO_STATUS_MOTORISTA[m.status] || { texto:m.status, selo:'', cor:'' };
@@ -6664,7 +6685,7 @@ function motoristaCardHTML(m, emRota){
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
-      ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}
+      ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}\n      ${(()=>{const ps=pendenciasDocumentosMotorista(m); if(!ps.length) return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.35);font-size:12.5px;font-weight:800">✅ Documentação completa</div>`; return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(255,151,16,.08);border:1px solid rgba(255,151,16,.35)"><b style="font-size:12.5px">⚠️ Pendências (${ps.length})</b>${ps.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px"><span>• ${x}</span><button class="btn btn-pequeno" style="padding:5px 8px;background:#25D366;color:#07140b;border-color:#25D366" onclick="abrirWhatsAppPendenciaEspecifica('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${x.replace(/'/g,"\\'")}')">WhatsApp</button></div>`).join('')}</div>`})()}
       ${(()=>{const e=etapaFunilMotorista(m);return `<div style="margin:8px 0;padding:9px 10px;border-radius:10px;background:rgba(255,201,60,.07);border:1px solid rgba(255,201,60,.28);font-size:12.5px"><b>📍 Etapa do cadastro: ${e.label}</b><div style="height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${e.pct}%;background:var(--mango)"></div></div></div>`})()}
       <div class="am-linha"><span>Plano</span><b>${PLANOS[m.plano]?.label||m.plano}</b></div>
       <div class="am-linha"><span>💰 Saldo a receber</span><b style="color:var(--mango)">R$ ${Number(m.saldo||0).toFixed(2)}</b></div>
@@ -6912,6 +6933,170 @@ function filtrarPedidosAdmin(){
 function definirFiltroPedidosAdmin(f){ estado.admin.filtroPedidos=f; render(); }
 function digitarBuscaPedidosAdmin(v){ estado.admin.buscaPedidos=v; render(); }
 
+
+function diagnosticoStatusInicial(){
+  return {
+    executando:false,
+    ultimaExecucao:null,
+    itens:[
+      {id:'banco',nome:'Banco de dados',icone:'🗄️',status:'aguardando',detalhe:'Ainda não verificado.'},
+      {id:'documentos',nome:'Envio de documentos',icone:'📸',status:'aguardando',detalhe:'Ainda não verificado.'},
+      {id:'localizacao',nome:'Localização / GPS',icone:'📍',status:'aguardando',detalhe:'Ainda não verificado.'},
+      {id:'pedidos',nome:'Pedidos',icone:'📦',status:'aguardando',detalhe:'Ainda não verificado.'},
+      {id:'pix',nome:'PIX',icone:'💠',status:'aguardando',detalhe:'Ainda não verificado.'},
+      {id:'notificacao',nome:'Notificações',icone:'🔔',status:'aguardando',detalhe:'Ainda não verificado.'},
+      {id:'pwa',nome:'Aplicativo / PWA',icone:'📲',status:'aguardando',detalhe:'Ainda não verificado.'}
+    ]
+  };
+}
+function obterDiagnosticoSistema(){
+  if(!estado.admin.diagnosticoSistema) estado.admin.diagnosticoSistema=diagnosticoStatusInicial();
+  return estado.admin.diagnosticoSistema;
+}
+function atualizarItemDiagnostico(id,status,detalhe){
+  const d=obterDiagnosticoSistema();
+  const item=d.itens.find(x=>x.id===id);
+  if(item){ item.status=status; item.detalhe=detalhe||''; }
+  render();
+}
+function rotuloStatusDiagnostico(status){
+  if(status==='ok') return 'OK';
+  if(status==='erro') return 'PROBLEMA';
+  if(status==='aviso') return 'ATENÇÃO';
+  if(status==='testando') return 'TESTANDO';
+  return 'AGUARDANDO';
+}
+function corStatusDiagnostico(status){
+  if(status==='ok') return '#3ad67d';
+  if(status==='erro') return '#ff6666';
+  if(status==='aviso') return '#ffb347';
+  if(status==='testando') return 'var(--azul)';
+  return 'var(--poeira)';
+}
+function adminAbaDiagnosticoHTML(){
+  const d=obterDiagnosticoSistema();
+  const ok=d.itens.filter(x=>x.status==='ok').length;
+  const problemas=d.itens.filter(x=>x.status==='erro').length;
+  const avisos=d.itens.filter(x=>x.status==='aviso').length;
+  const quando=d.ultimaExecucao ? new Date(d.ultimaExecucao).toLocaleString('pt-BR') : 'ainda não executado';
+  return `
+    <div class="admin-cartao" style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <b style="font-family:'Rajdhani';font-size:19px">🩺 Diagnóstico do Sistema</b>
+          <div style="font-size:12.5px;color:var(--poeira);margin-top:3px">Verifica as partes principais sem criar pedido, cobrança ou alterar cadastro.</div>
+        </div>
+        <button class="btn btn-primario" style="margin:0;width:auto;min-width:170px" onclick="executarDiagnosticoSistema()" ${d.executando?'disabled':''}>${d.executando?'⏳ Verificando...':'▶ Verificar sistema'}</button>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <span class="selo" style="background:rgba(58,214,125,.12);color:#3ad67d">✅ ${ok} OK</span>
+        <span class="selo" style="background:rgba(255,179,71,.12);color:#ffb347">⚠️ ${avisos} atenção</span>
+        <span class="selo" style="background:rgba(255,102,102,.12);color:#ff6666">❌ ${problemas} problema${problemas===1?'':'s'}</span>
+      </div>
+      <div style="font-size:11.5px;color:var(--poeira);margin-top:9px">Última verificação: ${quando}</div>
+    </div>
+    <div class="admin-grade-cartoes">
+      ${d.itens.map(i=>`<div class="admin-cartao" style="border-color:${corStatusDiagnostico(i.status)}55">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+          <b>${i.icone} ${i.nome}</b>
+          <span style="font-size:11px;font-weight:900;color:${corStatusDiagnostico(i.status)}">${i.status==='testando'?'⏳ ':i.status==='ok'?'● ':i.status==='erro'?'● ':i.status==='aviso'?'● ':''}${rotuloStatusDiagnostico(i.status)}</span>
+        </div>
+        <div style="font-size:12px;color:var(--poeira);margin-top:8px;line-height:1.45">${i.detalhe||''}</div>
+      </div>`).join('')}
+    </div>
+    <div class="admin-cartao" style="margin-top:14px;background:rgba(255,255,255,.025)">
+      <b>Como interpretar</b>
+      <div style="font-size:12px;color:var(--poeira);margin-top:6px;line-height:1.55">🟢 OK = funcionando. &nbsp; 🟠 Atenção = funciona, mas há algo para conferir. &nbsp; 🔴 Problema = precisa corrigir.</div>
+    </div>`;
+}
+async function executarDiagnosticoSistema(){
+  const d=obterDiagnosticoSistema();
+  if(d.executando) return;
+  d.executando=true;
+  d.itens.forEach(i=>{i.status='testando';i.detalhe='Verificando...';});
+  render();
+
+  // 1) Banco de dados / acesso administrativo
+  try{
+    const {data,error}=await sb.rpc('entrega_admin_listar_motoristas',{p_senha:estado.admin.senhaDigitada});
+    if(error) throw error;
+    atualizarItemDiagnostico('banco','ok',`Conexão com o Supabase funcionando. ${Array.isArray(data)?data.length:0} cadastro(s) de motorista lido(s) no teste.`);
+  }catch(e){
+    atualizarItemDiagnostico('banco','erro','Não consegui consultar o banco. '+(e?.message||'Falha de conexão ou sessão do administrador.'));
+  }
+
+  // 2) Storage: valida arquivo real já enviado; se não existir, testa acesso ao bucket sem gravar nada.
+  try{
+    const m=(estado.admin.motoristas||[]).find(x=>x.foto_motorista_url||x.foto_veiculo_url||x.cnh_url||x.crlv_url);
+    const url=m && (m.foto_motorista_url||m.foto_veiculo_url||m.cnh_url||m.crlv_url);
+    if(url){
+      const r=await fetch(url,{method:'GET',cache:'no-store'});
+      if(!r.ok) throw new Error('arquivo retornou HTTP '+r.status);
+      atualizarItemDiagnostico('documentos','ok','O armazenamento de documentos está acessível e uma foto real já enviada abriu corretamente.');
+    }else{
+      const {error}=await sb.storage.from('motorista-documentos').list('',{limit:1});
+      if(error) atualizarItemDiagnostico('documentos','aviso','Não há foto carregada no painel para testar. O bucket existe, mas a listagem pode estar protegida pelas regras do Storage.');
+      else atualizarItemDiagnostico('documentos','ok','Bucket motorista-documentos acessível. Nenhuma gravação de teste foi feita.');
+    }
+  }catch(e){
+    atualizarItemDiagnostico('documentos','erro','Não consegui abrir um documento do Storage. '+(e?.message||''));
+  }
+
+  // 3) GPS: não abre pedido de permissão no aparelho do administrador; checa ambiente + posições recentes dos motoristas.
+  try{
+    if(!window.isSecureContext) atualizarItemDiagnostico('localizacao','erro','A página não está em conexão segura (HTTPS). GPS do navegador pode ficar bloqueado.');
+    else if(!navigator.geolocation) atualizarItemDiagnostico('localizacao','erro','Este navegador não oferece API de localização.');
+    else {
+      const agora=Date.now();
+      const comPos=(estado.admin.motoristas||[]).filter(m=>Number.isFinite(Number(m.lat_atual))&&Number.isFinite(Number(m.lng_atual)));
+      const recentes=comPos.filter(m=>m.lat_atualizado_em && agora-Number(m.lat_atualizado_em)<5*60*1000);
+      if(recentes.length) atualizarItemDiagnostico('localizacao','ok',`GPS disponível no sistema. ${recentes.length} motorista(s) com posição atualizada nos últimos 5 minutos.`);
+      else atualizarItemDiagnostico('localizacao','aviso','GPS está disponível no navegador, mas não há motorista com posição atualizada nos últimos 5 minutos agora.');
+    }
+  }catch(e){ atualizarItemDiagnostico('localizacao','aviso','Não foi possível confirmar as posições atuais. '+(e?.message||'')); }
+
+  // 4) Pedidos: consulta somente leitura.
+  try{
+    const {data,error}=await sb.from('entrega_pedidos').select('id,status,criado_em').order('criado_em',{ascending:false}).limit(3);
+    if(error) throw error;
+    atualizarItemDiagnostico('pedidos','ok',`Leitura de pedidos funcionando. ${Array.isArray(data)?data.length:0} registro(s) recente(s) retornado(s) no teste.`);
+  }catch(e){ atualizarItemDiagnostico('pedidos','erro','A consulta de pedidos falhou. '+(e?.message||'')); }
+
+  // 5) PIX: só verifica se a função existe/responde. OPTIONS não cria cobrança.
+  try{
+    const r=await fetch(`${FUNCOES_URL}/criar-cobranca-pix`,{method:'OPTIONS',cache:'no-store'});
+    if(r.status===404) atualizarItemDiagnostico('pix','erro','A função de cobrança PIX não foi encontrada (404).');
+    else if(r.status>=500) atualizarItemDiagnostico('pix','erro','A função PIX respondeu com erro do servidor (HTTP '+r.status+').');
+    else atualizarItemDiagnostico('pix','ok','A função PIX está publicada e respondendo. O teste não gerou nenhuma cobrança.');
+  }catch(e){ atualizarItemDiagnostico('pix','erro','Não consegui alcançar a função PIX. '+(e?.message||'')); }
+
+  // 6) Notificações: informa o estado real da permissão deste aparelho.
+  try{
+    if(!('Notification' in window)) atualizarItemDiagnostico('notificacao','aviso','Este navegador não suporta notificações do site.');
+    else if(Notification.permission==='granted') atualizarItemDiagnostico('notificacao','ok','Notificações permitidas neste aparelho.');
+    else if(Notification.permission==='denied') atualizarItemDiagnostico('notificacao','aviso','Notificações estão bloqueadas neste aparelho. Libere nas permissões do navegador para receber alertas.');
+    else atualizarItemDiagnostico('notificacao','aviso','Notificações ainda não foram autorizadas neste aparelho.');
+  }catch(e){ atualizarItemDiagnostico('notificacao','aviso','Não consegui ler a permissão de notificações.'); }
+
+  // 7) PWA / service worker
+  try{
+    if(!('serviceWorker' in navigator)) atualizarItemDiagnostico('pwa','aviso','Este navegador não suporta Service Worker/PWA.');
+    else {
+      const reg=await navigator.serviceWorker.getRegistration();
+      if(reg) atualizarItemDiagnostico('pwa','ok','Service Worker registrado. A estrutura do aplicativo/PWA está ativa neste navegador.');
+      else atualizarItemDiagnostico('pwa','aviso','O navegador suporta PWA, mas não encontrei Service Worker ativo nesta página agora.');
+    }
+  }catch(e){ atualizarItemDiagnostico('pwa','aviso','Não consegui verificar o Service Worker. '+(e?.message||'')); }
+
+  d.executando=false;
+  d.ultimaExecucao=Date.now();
+  render();
+  const erros=d.itens.filter(x=>x.status==='erro').length;
+  if(erros) mostrarToast(`Diagnóstico concluído: ${erros} problema${erros===1?'':'s'} encontrado${erros===1?'':'s'}.`,'erro');
+  else mostrarToast('Diagnóstico concluído. Nenhum problema crítico encontrado.','sucesso');
+}
+window.executarDiagnosticoSistema=executarDiagnosticoSistema;
+
 function adminCorpoHTML(){
   const a = estado.admin;
   if(!a.logado){
@@ -6943,6 +7128,7 @@ function adminCorpoHTML(){
   const feedbacksNaoLidos = (a.feedbacks||[]).filter(x=>!x.lido);
   const abas = [
     {id:'resumo', label:'📊 Resumo'},
+    {id:'diagnostico', label:'🩺 Diagnóstico'},
     {id:'config', label:'⚙️ Config'},
     {id:'pedidos', label:'📦 Pedidos'},
     {id:'motoristas', label:`🛵 Motoristas${pendentesMotoristas.length?` (${pendentesMotoristas.length})`:''}`},
@@ -6955,6 +7141,7 @@ function adminCorpoHTML(){
   ];
   let corpo;
   if(a.aba==='resumo') corpo = adminAbaResumoHTML();
+  else if(a.aba==='diagnostico') corpo = adminAbaDiagnosticoHTML();
   else if(a.aba==='config') corpo = adminAbaConfigHTML();
   else if(a.aba==='pedidos') corpo = adminAbaPedidosHTML();
   else if(a.aba==='motoristas') corpo = adminAbaMotoristasHTML();
@@ -8205,7 +8392,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
+window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
