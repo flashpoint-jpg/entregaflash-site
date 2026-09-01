@@ -1230,7 +1230,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' }
@@ -1409,7 +1409,15 @@ async function inscreverPushReal(papelForcado){
     await sb.from('push_subscriptions').upsert({
       papel, referencia, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth, criado_em: new Date().toISOString()
     }, { onConflict:'endpoint' });
+    await registrarStatusAplicativo(papel, referencia, true);
   }catch(e){ console.warn('Falha ao inscrever push', e); }
+}
+function entregaFlashInstalado(){ return !!(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.startsWith('android-app://')); }
+function entregaFlashDispositivoId(){ let id=localStorage.getItem('ef_dispositivo_id'); if(!id){ id=(crypto.randomUUID?.()||('ef-'+Date.now()+'-'+Math.random().toString(36).slice(2))); salvarLocal('ef_dispositivo_id',id); } return id; }
+async function registrarStatusAplicativo(papel,referencia,temPush){
+  if(!referencia||papel==='admin') return;
+  try{ await sb.rpc('entrega_registrar_status_app',{p_papel:papel,p_referencia:String(referencia).replace(/\D/g,''),p_dispositivo_id:entregaFlashDispositivoId(),p_instalado:entregaFlashInstalado(),p_notificacoes:(typeof Notification==='undefined'?'nao_suportado':Notification.permission),p_push_ativo:!!temPush,p_plataforma:navigator.userAgent||''}); }
+  catch(e){ console.warn('Não foi possível registrar o status do aplicativo',e); }
 }
 // ---------- push real (via servidor), funciona mesmo com o app fechado ----------
 // papel: 'cliente' | 'motorista' | 'admin'. referencia omitida/null = todos do papel.
@@ -6667,6 +6675,10 @@ function abrirWhatsAppPendenciaEspecifica(telefone,nome,item){
 }
 function motoristaCardHTML(m, emRota){
   const onlineAgora = motoristaOnlineAgora(m);
+  const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
+  const appStatus=app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
+  const pushStatus=app?.notificacoes==='granted'&&app?.push_ativo?'🔔 Notificações ativas':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 Notificações não ativadas';
+  const ultimoApp=app?.ultimo_acesso?new Date(app.ultimo_acesso).toLocaleString('pt-BR'):'Nunca registrado';
   let infoStatus = ROTULO_STATUS_MOTORISTA[m.status] || { texto:m.status, selo:'', cor:'' };
   if(m.veiculo_tipo==='bicicleta' && ['basico','liberado'].includes(m.status)){
     infoStatus = { texto:'🚲 Falta concluir cadastro', estilo:'background:rgba(255,151,16,0.16);color:var(--mango)', cor:'var(--mango)' };
@@ -6690,6 +6702,7 @@ function motoristaCardHTML(m, emRota){
       <div class="admin-detalhes">
       <div class="am-linha"><span>CPF</span><b>${m.cpf||'—'}</b></div>
       <div class="am-linha"><span>Telefone</span><b>${formatarTelefoneExibicao ? formatarTelefoneExibicao(m.telefone) : m.telefone}</b></div>
+      <div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(111,168,220,.08);border:1px solid rgba(111,168,220,.35);font-size:12.5px"><b>📱 Status do aplicativo</b><div style="margin-top:6px">${appStatus}</div><div style="margin-top:3px">${pushStatus}</div><div style="margin-top:3px;color:var(--poeira)">Último acesso: ${ultimoApp}</div></div>
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
@@ -8320,6 +8333,10 @@ function sairAdmin(){
   render();
 }
 async function carregarMotoristasAdmin(){
+  try{
+    const {data:apps,error:erroApps}=await sb.rpc('entrega_admin_status_apps',{p_senha:estado.admin.senhaDigitada});
+    if(!erroApps) estado.admin.appDispositivos=apps||[];
+  }catch(e){ console.warn('Status dos aplicativos indisponível',e); }
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
