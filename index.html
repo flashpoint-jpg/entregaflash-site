@@ -6802,7 +6802,13 @@ function salvarRascunhosCadastro(){
       localStorage.setItem('ef_motorista_rascunho', JSON.stringify({
         tela: estado.painelMotorista.tela,
         etapa: c.etapa, id: c.id, nome: c.nome, telefone: c.telefone, cidade: c.cidade,
-        veiculo: c.veiculo, cpf: c.cpf, marca: c.marca, placa: c.placa, cor: c.cor
+        veiculo: c.veiculo, cpf: c.cpf, marca: c.marca, placa: c.placa, cor: c.cor,
+        chavePix: c.chavePix||'', plano: c.plano||null, criadoEm:c.criadoEm||null,
+        cnhUrl:c.cnhUrl||null, crlvUrl:c.crlvUrl||null,
+        fotoVeiculoFrenteUrl:c.fotoVeiculoFrenteUrl||null,
+        fotoVeiculoTrasUrl:c.fotoVeiculoTrasUrl||null,
+        fotoMotoristaUrl:c.fotoMotoristaUrl||null,
+        aceitaResponsabilidadeBike:!!c.aceitaResponsabilidadeBike
       }));
     } else if(!estado.motorista.ativo){
       localStorage.removeItem('ef_motorista_rascunho');
@@ -6824,7 +6830,13 @@ function restaurarRascunhosCadastro(){
         estado.painelMotorista.tela = r.tela||'entrar';
         Object.assign(estado.painelMotorista.cadastro, {
           etapa: r.etapa||1, id: r.id||null, nome: r.nome||'', telefone: r.telefone||'', cidade: r.cidade||'',
-          veiculo: r.veiculo||'moto', cpf: r.cpf||'', marca: r.marca||'', placa: r.placa||'', cor: r.cor||''
+          veiculo: r.veiculo||'moto', cpf: r.cpf||'', marca: r.marca||'', placa: r.placa||'', cor: r.cor||'',
+          chavePix:r.chavePix||'', plano:r.plano||null, criadoEm:r.criadoEm||null,
+          cnhUrl:r.cnhUrl||null, crlvUrl:r.crlvUrl||null,
+          fotoVeiculoFrenteUrl:r.fotoVeiculoFrenteUrl||null,
+          fotoVeiculoTrasUrl:r.fotoVeiculoTrasUrl||null,
+          fotoMotoristaUrl:r.fotoMotoristaUrl||null,
+          aceitaResponsabilidadeBike:!!r.aceitaResponsabilidadeBike
         });
       }
     }
@@ -7070,7 +7082,23 @@ async function hashSenha(txt){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(txt));
   return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
 }
-function irParaCadastro(){ estado.painelMotorista.tela='cadastro'; estado.painelMotorista.cadastro.etapa=1; estado.painelMotorista.cadastro.erroEtapa=''; render(); }
+function irParaCadastro(){
+  estado.modo='entregador';
+  estado.telaBoasVindas=false;
+  salvarLocal('ef_modo','entregador');
+  estado.painelMotorista.tela='cadastro';
+  const c=estado.painelMotorista.cadastro;
+  // Se o cadastro já começou, nunca devolve a pessoa para o início.
+  if(!c.id) c.etapa=1;
+  c.erroEtapa='';
+  // Mantém um endereço direto e permanente no navegador.
+  try{
+    const u=new URL(window.location.href);
+    u.searchParams.set('ir','cadastro-motorista');
+    history.replaceState(null,'',u.pathname+'?'+u.searchParams.toString());
+  }catch(e){}
+  render();
+}
 function irParaLogin(){ estado.painelMotorista.tela='entrar'; estado.painelMotorista.loginErro=''; render(); }
 function irParaReenviarDocumentos(){ estado.painelMotorista.tela='reenviar'; render(); }
 
@@ -7502,9 +7530,22 @@ async function salvarEtapaCadastro(campos){
   if(c.cidade) base.cidade = c.cidade;
   if(c.senhaHash) base.senha_hash = c.senhaHash;
   const linha = Object.assign(base, campos);
-  const { error } = await sb.from('entrega_motoristas').upsert(linha);
-  if(error){ console.error(error); mostrarToast('Erro ao gravar o cadastro: '+(error.message||''), 'erro'); return false; }
+  // O pré-cadastro já existe. UPDATE evita que o upsert tente um novo INSERT
+  // e seja bloqueado pela proteção do banco justamente na etapa da chave PIX.
+  const { data:confirmado, error } = await sb.from('entrega_motoristas').update(linha).eq('id', c.id).select('id');
+  if(error || !confirmado || !confirmado.length){
+    console.error('salvar_etapa_motorista', error);
+    const detalhe=String(error?.message||'').toLowerCase();
+    mostrarToast(
+      detalhe.includes('row-level security') || detalhe.includes('permission')
+        ? 'Não foi possível autorizar esta etapa. Atualize a página e toque em continuar cadastro.'
+        : 'Erro ao gravar o cadastro. Confira a internet e tente novamente.',
+      'erro'
+    );
+    return false;
+  }
   c.criadoEm = c.criadoEm || agora;
+  salvarRascunhosCadastro();
   return true;
 }
 
@@ -7719,7 +7760,10 @@ async function avancarEtapa3(){
   c.erroEtapa=''; c.enviando=true; render();
   const ok = await salvarEtapaCadastro({ chave_pix:c.chavePix });
   c.enviando=false;
-  if(ok) c.etapa=4; else c.erroEtapa='Não foi possível salvar a chave PIX. Tenta novamente.';
+  if(ok){
+    c.etapa=4;
+    mostrarToast('Chave PIX salva. Seu cadastro continua protegido.', 'sucesso');
+  }else c.erroEtapa='Não foi possível salvar a chave PIX. Confira a internet e toque novamente.';
   render();
 }
 async function avancarEtapa4(){
@@ -7735,8 +7779,10 @@ async function avancarEtapa4(){
   }
   if(!c.fotoMotoristaUrl||!c.cnhUrl||!c.crlvUrl||!c.fotoVeiculoFrenteUrl||!c.fotoVeiculoTrasUrl){ c.erroEtapa='Envie todas as 5 fotos/documentos. O que já foi enviado está salvo.'; render(); return; }
   c.erroEtapa=''; c.enviando=true; render();
-  await salvarEtapaCadastro({ documentos_enviados_em:Date.now() });
-  c.enviando=false; c.etapa=5; render();
+  const ok = await salvarEtapaCadastro({ documentos_enviados_em:Date.now() });
+  c.enviando=false;
+  if(ok) c.etapa=5; else c.erroEtapa='Não foi possível confirmar os documentos. O que já foi enviado continua salvo.';
+  render();
 }
 async function alternarResponsabilidadeBike(){
   const c=estado.painelMotorista.cadastro;
@@ -7813,6 +7859,9 @@ async function finalizarCadastroMotorista(){
     try{ if(typeof fbq!=='undefined') fbq('track','CompleteRegistration',{content_name:'motorista'}); }catch(e){}
     registrarAlertaAdmin('novo_motorista', `Novo motorista cadastrado, aguardando aprovação: ${c.nome||''} (${c.telefone||''}).`);
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 800);
+    removerLocal('ef_motorista_rascunho');
+  }else{
+    c.erroEtapa='Não foi possível finalizar agora. Seu progresso está salvo; confira a internet e tente novamente.';
   }
   render();
 }
