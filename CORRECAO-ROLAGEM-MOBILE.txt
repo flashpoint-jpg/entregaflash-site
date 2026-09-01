@@ -1,1 +1,0 @@
-Versão v4: correção crítica de rolagem no celular. Mantém a camada FAST e força rolagem vertical natural em html/body/#app sem alterar banco, Supabase, pedidos, GPS ou CEP.
