@@ -6934,6 +6934,32 @@ function definirFiltroPedidosAdmin(f){ estado.admin.filtroPedidos=f; render(); }
 function digitarBuscaPedidosAdmin(v){ estado.admin.buscaPedidos=v; render(); }
 
 
+
+function centroOperacoesHTML(){
+  const a=estado.admin, agora=Date.now();
+  const pedidos=a.todosPedidos||[], motors=a.motoristas||[];
+  const buscando=pedidos.filter(p=>p.status==='buscando');
+  const andamento=pedidos.filter(p=>!['buscando','entregue','cancelado'].includes(p.status));
+  const online=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)>=agora-120000);
+  const gpsParado=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)<agora-120000);
+  const demorando=buscando.filter(p=>agora-Number(p.criado_em||p.criadoEm||0)>240000);
+  const cards=[['📍','Motoristas online',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length],['📡','GPS desatualizado',gpsParado.length]];
+  const alertas=[];
+  demorando.slice(0,8).forEach(p=>alertas.push(`Pedido ${p.id||''} está há mais de 4 minutos procurando motorista.`));
+  gpsParado.slice(0,8).forEach(m=>alertas.push(`${m.nome||'Motorista'} aparece online, mas o GPS não atualiza há mais de 2 minutos.`));
+  return `<div class="admin-secao-titulo"><div><h2>🎛️ Centro de Operações</h2><p>Acompanhe a operação em tempo real e veja somente o que precisa da sua atenção.</p></div><button class="btn btn-secundario btn-pequeno" onclick="carregarTudoAdmin()">↻ Atualizar</button></div>
+    <div class="admin-grade-cartoes">${cards.map(c=>`<div class="admin-cartao"><div style="font-size:24px">${c[0]}</div><div class="subtitulo">${c[1]}</div><div style="font:800 32px 'Rajdhani';margin-top:4px">${c[2]}</div></div>`).join('')}</div>
+    <div class="admin-cartao" style="margin-top:14px"><b>🚨 Alertas operacionais</b>${alertas.length?`<div style="margin-top:10px">${alertas.map(x=>`<div class="am-linha"><span>${x}</span><b style="color:#ffb25b">ATENÇÃO</b></div>`).join('')}</div>`:`<div class="subtitulo" style="margin-top:8px">Nenhum alerta crítico agora.</div>`}</div>
+    <div class="admin-cartao" style="margin-top:14px"><b>📡 Despacho inteligente</b><div class="subtitulo" style="margin-top:7px;line-height:1.5">O pedido é mostrado somente para o mesmo tipo de veículo e começa pelos motoristas próximos. O raio aumenta automaticamente: <b>5 km → 10 km → 20 km → 40 km</b> conforme o tempo de busca.</div></div>
+    <div class="admin-cartao" style="margin-top:14px"><b>🧪 Simular entrega</b><div class="subtitulo" style="margin-top:7px">Teste visual do fluxo sem criar pedido real e sem cobrar ninguém.</div><button class="btn btn-primario" style="margin-top:10px;width:auto" onclick="iniciarSimulacaoEntrega()">▶ Iniciar simulação</button><div id="simulacaoEntregaBox" style="margin-top:10px"></div></div>`;
+}
+function iniciarSimulacaoEntrega(){
+  const box=document.getElementById('simulacaoEntregaBox'); if(!box)return;
+  const etapas=['Cliente confirmou o pedido','Buscando motorista compatível','Motorista encontrado','Motorista aceitou','PIN gerado para a entrega','Coleta confirmada','Entrega concluída'];
+  let i=0; box.innerHTML='';
+  const tick=()=>{ if(!document.getElementById('simulacaoEntregaBox'))return; box.innerHTML=etapas.map((e,n)=>`<div class="am-linha"><span>${n<i?'✅':n===i?'⏳':'○'} ${e}</span><b>${n<i?'OK':n===i?'TESTANDO':''}</b></div>`).join(''); if(i<etapas.length){i++;setTimeout(tick,650)}else{box.innerHTML+=`<div style="margin-top:10px;font-weight:800;color:#7ee787">✅ Fluxo visual concluído. Nenhum pedido real foi criado.</div>`}}; tick();
+}
+
 function diagnosticoStatusInicial(){
   return {
     executando:false,
@@ -7128,6 +7154,7 @@ function adminCorpoHTML(){
   const feedbacksNaoLidos = (a.feedbacks||[]).filter(x=>!x.lido);
   const abas = [
     {id:'resumo', label:'📊 Resumo'},
+    {id:'operacoes', label:'🎛️ Operações'},
     {id:'diagnostico', label:'🩺 Diagnóstico'},
     {id:'config', label:'⚙️ Config'},
     {id:'pedidos', label:'📦 Pedidos'},
@@ -7141,6 +7168,7 @@ function adminCorpoHTML(){
   ];
   let corpo;
   if(a.aba==='resumo') corpo = adminAbaResumoHTML();
+  else if(a.aba==='operacoes') corpo = centroOperacoesHTML();
   else if(a.aba==='diagnostico') corpo = adminAbaDiagnosticoHTML();
   else if(a.aba==='config') corpo = adminAbaConfigHTML();
   else if(a.aba==='pedidos') corpo = adminAbaPedidosHTML();
