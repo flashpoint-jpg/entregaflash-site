@@ -1186,6 +1186,25 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 @media(max-width:600px){.ef-mock-hero{min-height:650px!important;padding:20px 17px 48px!important}.ef-mock-top .bv-logo-badge{width:190px!important}.ef-mock-copy{margin-top:66px}.ef-mock-copy .bv-titulo-grande{font-size:46px!important;letter-spacing:-1.8px!important}.ef-mock-copy .bv-subtagline{font-size:18px!important}.ef-mock-trust{gap:12px;font-size:12px}.ef-mock-maincta{min-width:230px!important}.ef-mock-choices{margin:-34px 12px 16px}.ef-mock-choices button{padding:16px 10px;min-height:170px}.ef-mock-choices b{width:50px;height:50px;font-size:23px}.ef-mock-choices strong{font-size:18px}.ef-mock-choices small{font-size:11px}.ef-mock-driver{margin:18px 12px 24px;min-height:190px;padding:23px}.ef-mock-driver strong{font-size:27px}.ef-mock-how{font-size:27px}}
 @media(max-width:380px){.ef-mock-copy .bv-titulo-grande{font-size:40px!important}.ef-mock-choices strong{font-size:16px}.ef-mock-choices button{padding:14px 8px}.ef-mock-choices small{display:none}}
 </style>
+
+<style id="ef-app-mockup-real-v2">
+/* Tela inicial reconstruída para o visual APP preto/laranja */
+body{background:#050505!important}
+.bv-wrap{background:#050505!important;padding-bottom:88px!important}
+.ef-mock-hero{min-height:680px!important;background-image:linear-gradient(180deg,rgba(0,0,0,.12),rgba(0,0,0,.25) 40%,#050505 96%),url("assets/inline/2a2b89436d1b.jpg")!important;background-size:cover!important;background-position:center!important;border-radius:0!important}
+.ef-mock-hero:before{background:linear-gradient(90deg,rgba(0,0,0,.93) 0%,rgba(0,0,0,.67) 52%,rgba(0,0,0,.08) 100%)!important;inset:0!important;transform:none!important;opacity:1!important}
+.ef-mock-hero:after{display:none!important}
+.ef-mock-copy{margin-top:auto!important;margin-bottom:88px!important;max-width:520px!important}
+.ef-mock-copy .bv-titulo-grande{font-size:clamp(42px,12vw,68px)!important;line-height:.96!important;color:#fff!important}.ef-mock-copy .destaque{color:#ff6a00!important}
+.ef-mock-maincta{background:linear-gradient(135deg,#ff8a00,#ff5200)!important;border:0!important;color:#fff!important}
+.ef-mock-road{display:none!important}
+.ef-mock-choices{margin:-55px 14px 20px!important;border-radius:22px!important;box-shadow:0 20px 50px rgba(0,0,0,.55)!important}
+.ef-mock-driver{border:1px solid #2b2b2b!important;min-height:210px!important;background:radial-gradient(circle at 85% 50%,rgba(255,103,0,.34),transparent 35%),linear-gradient(120deg,#0b0b0b,#17100b)!important}
+.ef-mock-how{color:#fff!important}.bv-strip,.bv-section-real,.bv-business-card,.bv-vehicle-zone{background:#111214!important;border-color:#2a2a2a!important;color:#fff!important}
+.ef-app-bottom{position:fixed;left:0;right:0;bottom:0;z-index:9990;height:72px;padding-bottom:env(safe-area-inset-bottom,0);background:rgba(5,5,5,.96);border-top:1px solid #292929;display:grid;grid-template-columns:repeat(4,1fr);backdrop-filter:blur(14px)}
+.ef-app-bottom button{border:0;background:transparent;color:#bbb;font:700 11px Karla,Arial;padding:8px 2px}.ef-app-bottom button b{display:block;color:#ff6a00;font-size:23px;line-height:1.1;margin-bottom:3px}
+@media(max-width:600px){.ef-mock-hero{min-height:650px!important}.ef-mock-top .bv-logo-badge{width:210px!important}.ef-mock-copy{margin-bottom:72px!important}.ef-mock-choices button{min-height:178px!important}.ef-mock-choices strong{font-size:17px!important}.bv-strip{margin-left:12px!important;margin-right:12px!important}}
+</style>
 </head>
 
 <style id="ef-parceiros-premium">
@@ -5236,10 +5255,10 @@ function telaBoasVindas(){
         <button class="ef-mock-menu" type="button" aria-label="Menu" onclick="document.querySelector('.ef-mock-choices')?.scrollIntoView({behavior:'smooth'})">☰</button>
       </div>
       <div class="ef-mock-copy">
-        <div class="bv-titulo-grande">Solução rápida<br>em <span class="destaque">entregas</span></div>
-        <div class="bv-subtagline">Plataforma de entregas sob demanda para sua região.</div>
+        <div class="bv-titulo-grande">Sua entrega,<br><span class="destaque">na velocidade<br>que você precisa!</span></div>
+        <div class="bv-subtagline">Rápido, seguro e no prazo. Peça sua entrega direto pelo celular.</div>
         <div class="ef-mock-trust"><span>⚡ Rápido</span><span>🛡 Seguro</span><span>◷ No prazo</span></div>
-        <button class="btn btn-primario ef-mock-maincta" onclick="entrarComoVisitante('cliente')">→ &nbsp; Começar agora</button>
+        <button class="btn btn-primario ef-mock-maincta" onclick="entrarComoVisitante('cliente')">→ &nbsp; Fazer um pedido</button>
       </div>
       <div class="ef-mock-road" aria-hidden="true"><i></i><i></i><i></i></div>
     </section>
@@ -5342,6 +5361,7 @@ function telaBoasVindas(){
       <div><strong>Contato com a equipe</strong>Parceiros comerciais podem solicitar atendimento antes de começar.</div>
     </div>
 
+    <nav class="ef-app-bottom"><button onclick="window.scrollTo({top:0,behavior:'smooth'})"><b>⌂</b>Início</button><button onclick="entrarComoVisitante('cliente')"><b>▣</b>Pedidos</button><button onclick="entrarComoVisitante('cliente')"><b>＋</b>Novo pedido</button><button onclick="escolherBoasVindas('entregador')"><b>♙</b>Motorista</button></nav>
     <div class="bv-regional-note"> <b>Entrega Flash é regional:</b> conectamos clientes e entregadores nas cidades atendidas e também na zona rural próxima, sem limitar a comunicação a uma única cidade.</div>
     <div class="bv-install-area"><a href="./entregaflash.apk" download="Entrega-Flash.apk" target="_blank" rel="noopener" class="btn-baixar-app"> BAIXAR APLICATIVO ANDROID</a><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">O download do APK começa diretamente. Você também pode usar pelo site sem instalar.</div></div>
   </div>`;
@@ -9291,26 +9311,3 @@ iniciarAppReal();
 
 </body>
 </html>
-<!-- ENTREGA FLASH MOBILE APP THEME 2026-09-01 -->
-<style>
-:root{--mango:#ff6a00!important;--chama:#ff7a00!important;--escuro:#070707!important;--noite:#080808!important;--painel:#111214!important;--painel-alt:#17191c!important;--linha:rgba(255,255,255,.10)!important;--osso:#fff!important;--poeira:#b9bcc2!important;--verde:#28c840!important}
-html,body{background:#050505!important;color:#fff!important}body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
-#app{max-width:520px!important;margin:0 auto!important;background:#080808!important;min-height:100dvh!important;box-shadow:0 0 70px rgba(0,0,0,.65)!important;padding-bottom:86px!important}
-.topo{position:sticky!important;top:0!important;z-index:75!important;background:rgba(5,5,5,.93)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;border-bottom:1px solid rgba(255,255,255,.07)!important;padding:10px 16px 8px!important;min-height:76px!important;display:flex!important;align-items:center!important;justify-content:center!important}
-.topo .marca{margin:0 auto!important}.topo .bv-logo-badge{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}.topo .logo-img{max-height:54px!important;max-width:235px!important;object-fit:contain!important;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}.topo .tagline{display:none!important}
-.btn-voltar-topo,.btn-instalar-topo{z-index:2!important}.aviso-app-novo{margin:10px 14px 0!important;border-radius:14px!important;background:#141414!important;border-color:rgba(255,106,0,.3)!important;color:#c6c6c6!important}.aviso-app-novo b{color:#fff!important}
-main{padding:12px 14px 4px!important}.cartao,.pedido,.campo-motorista,.pix-box,.saldo-card{background:linear-gradient(155deg,#17191c,#0d0e10)!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:18px!important;box-shadow:0 14px 36px rgba(0,0,0,.26)!important;margin-bottom:12px!important}.cartao h2,.pedido h2{font-weight:850!important;letter-spacing:-.02em!important}.subtitulo{color:#aeb1b7!important}
-.btn,.btn-primario,.btn-verde,.btn-azul,.btn-baixar-app{border-radius:13px!important;font-weight:850!important;min-height:48px!important;background:linear-gradient(135deg,#ff5a00,#ff8500)!important;color:#fff!important;border:0!important;box-shadow:0 9px 22px rgba(255,106,0,.18)!important}.btn-secundario{background:#151515!important;border:1px solid rgba(255,255,255,.15)!important;color:#fff!important;box-shadow:none!important}.btn:active{transform:scale(.985)!important}
-input,select,textarea{background:#0b0c0e!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:13px!important;color:#fff!important;min-height:48px!important}.aba-mini{background:#0d0e10!important;border-radius:13px!important;padding:4px!important}.aba-mini button{border-radius:10px!important}.aba-mini button.ativo{background:#ff6a00!important;color:#fff!important}
-.link-taxas-topo{color:#ff7a00!important}.preco,.pedido .preco{color:#ff7a00!important}.pedido{padding:15px!important}.pedido-prioridade-alta{border-color:#ff6a00!important}.pedido .vital{background:#111!important;border-color:rgba(255,106,0,.22)!important}
-.abas-motorista{max-width:520px!important;background:rgba(5,5,5,.96)!important;border-top:1px solid rgba(255,255,255,.10)!important;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))!important}.abas-motorista button{color:#c8c8c8!important;font-size:10px!important}.abas-motorista button.ativo{color:#ff6a00!important}.abas-motorista button.ativo::before{background:#ff6a00!important;box-shadow:0 0 10px rgba(255,106,0,.7)!important}.abas-motorista button .icone-aba{font-size:22px!important}
-.conteudo-motorista{padding-bottom:84px!important}.ef-app20-hero{border-color:rgba(255,106,0,.35)!important;background:radial-gradient(circle at 85% 0,rgba(255,106,0,.18),transparent 42%),linear-gradient(155deg,#17191c,#0c0d0f)!important}.ef-app20-money{color:#ff6a00!important}.ef-app20-dot.on{background:#28c840!important;box-shadow:0 0 0 4px rgba(40,200,64,.13)!important}
-.busca-motorista-premium{border-color:rgba(255,106,0,.55)!important;background:radial-gradient(circle at 80% 0,rgba(255,106,0,.16),transparent 45%),#111214!important}.busca-barra-movel{background:linear-gradient(90deg,#ff4d00,#ff9b00)!important}.busca-sinal{background:#28c840!important}
-.faixa-instalar{background:#111!important;border:1px solid rgba(255,106,0,.28)!important;border-radius:16px!important;margin:10px 14px!important}.rodape-discreto,.link-instalar{color:#888!important}
-.modal-chat{background:#0d0e10!important;border:1px solid rgba(255,255,255,.12)!important}.chat-topo{background:#090909!important}.cf-abas button.ativo{color:#ff6a00!important;border-color:#ff6a00!important}
-@media(max-width:480px){#app{width:100%!important;max-width:100%!important}.topo{min-height:68px!important}.topo .logo-img{max-height:48px!important;max-width:205px!important}main{padding:10px 10px 4px!important}.cartao,.pedido,.campo-motorista{border-radius:16px!important}.aviso-app-novo{margin-left:10px!important;margin-right:10px!important}.pedido .vitais{gap:6px!important}.pedido .vital .vital-num{font-size:22px!important}}
-</style>
-<script>
-// Apenas acabamento visual: mantém todas as regras, banco, pedidos, GPS, Pix e cadastros existentes.
-document.documentElement.classList.add('ef-mobile-app-2026');
-</script>
