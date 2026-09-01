@@ -9316,7 +9316,7 @@ iniciarAppReal();
 <style id="ef-identidade-aprovada-final">
 /* Página inicial: usa a composição aprovada como hero real e mantém o CTA funcional. */
 body,#app,.bv-wrap{width:100%!important;max-width:none!important;margin:0!important;background:#070809!important}
-.ef-mock-hero{position:relative!important;width:100%!important;max-width:none!important;min-height:0!important;height:auto!important;aspect-ratio:746/610!important;padding:0!important;margin:0!important;background:url('assets/inline/hero-entrega-flash-aprovado.webp') center top/cover no-repeat!important;border-radius:0!important;overflow:hidden!important}
+.ef-mock-hero{position:relative!important;width:100%!important;max-width:none!important;min-height:0!important;height:auto!important;aspect-ratio:746/610!important;padding:0!important;margin:0!important;background:url('assets/inline/hero-veiculos-entrega-flash.png') center top/cover no-repeat!important;border-radius:0!important;overflow:hidden!important}
 .ef-mock-hero:before,.ef-mock-hero:after,.ef-mock-top,.ef-mock-copy,.ef-mock-road{display:none!important}
 .ef-mock-hero::selection{background:transparent}
 .ef-hero-click{position:absolute;left:4.3%;top:85.5%;width:36%;height:10%;z-index:20;border:0;background:transparent;cursor:pointer;font-size:0;color:transparent}
@@ -9352,3 +9352,27 @@ body,#app,.bv-wrap{width:100%!important;max-width:none!important;margin:0!import
  const ob=new MutationObserver(instalarHeroCTA); ob.observe(document.body,{childList:true,subtree:true});
 })();
 </script>
+
+<!-- ENTREGA FLASH — ajuste mobile 100% tela / safe-area 2026-09-01 -->
+<style id="ef-mobile-100-ajustado">
+html,body{width:100%;max-width:100%;overflow-x:hidden!important;margin:0!important;padding:0!important}
+*{box-sizing:border-box}
+#app,.bv-wrap{width:100%!important;max-width:100%!important;min-height:100dvh!important;margin:0!important;overflow-x:hidden!important}
+.bv-wrap{padding-bottom:calc(88px + env(safe-area-inset-bottom,0px))!important}
+.ef-app-bottom{width:100%!important;max-width:none!important;height:calc(72px + env(safe-area-inset-bottom,0px))!important;padding-bottom:env(safe-area-inset-bottom,0px)!important}
+@media(max-width:700px){
+ .ef-mock-hero{width:100%!important;max-width:100%!important;margin:0!important;height:auto!important;min-height:0!important;aspect-ratio:746/610!important;background-size:100% 100%!important;background-position:center top!important}
+ .ef-mock-choices{width:calc(100% - 20px)!important;max-width:none!important;margin:0 10px 14px!important;border-radius:18px!important}
+ .ef-mock-choices button{min-width:0!important;min-height:146px!important;padding:13px 8px!important}
+ .ef-mock-choices strong{font-size:15px!important;overflow-wrap:anywhere}
+ .ef-mock-choices small{font-size:10px!important}
+ .ef-mock-driver,.bv-strip,.bv-section-real,.bv-business-card,.bv-vehicle-zone,.bv-partner-real,.bv-trust-line{width:100%!important;max-width:100%!important;margin-left:0!important;margin-right:0!important}
+ .conteudo,.pagina,.tela,.conteudo-motorista{width:100%!important;max-width:100%!important;padding-left:max(12px,env(safe-area-inset-left,0px))!important;padding-right:max(12px,env(safe-area-inset-right,0px))!important}
+}
+@media(max-width:380px){
+ .ef-mock-choices{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+ .ef-mock-choices button{padding:11px 6px!important;min-height:136px!important}
+ .ef-mock-choices b{width:42px!important;height:42px!important}
+ .ef-mock-choices strong{font-size:14px!important}
+}
+</style>
