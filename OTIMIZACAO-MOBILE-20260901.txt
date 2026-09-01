@@ -1,0 +1,10 @@
+Entrega Flash - otimização mobile
+
+- Mantida a estrutura e o fluxo do site.
+- Logo principal convertido para WebP e reduzido para uso em tela.
+- Logo do painel convertido para WebP.
+- face-api agora carrega somente quando a biometria facial é usada.
+- Leaflet deixou de bloquear a leitura inicial do HTML.
+- Ajustes mobile para imagens, toque e renderização de conteúdo fora da tela.
+- Respeito ao modo “reduzir movimento” do aparelho.
+- Arquivos PNG originais foram mantidos por compatibilidade.

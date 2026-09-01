@@ -23,8 +23,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Meta Pixel -->
 <script>
 !function(f,b,e,v,n,t,s)
@@ -1162,6 +1161,31 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 .abas-motorista{backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);background:rgba(10,11,14,.94)!important;border-top:1px solid rgba(255,255,255,.08)!important}.abas-motorista button{transition:color .16s ease,transform .16s ease!important}.abas-motorista button:active{transform:scale(.96)}.abas-motorista .icone-aba{font-size:21px!important}.abas-motorista button.ativo{color:var(--mango)!important}
 @media(max-width:600px){.conteudo-motorista{padding-top:4px}.conteudo-motorista .cartao{border-radius:16px}.ef-app20-hero{margin-top:4px}.ef-app20-money{font-size:31px}.cabecalho{min-height:auto!important}.logo{transform:scale(.9);transform-origin:left center}}
 </style>
+
+<style id="ef-mobile-performance-20260901">
+@media (max-width: 768px){
+  html{scroll-behavior:auto!important}
+  body{-webkit-tap-highlight-color:transparent;text-rendering:optimizeSpeed}
+  img{max-width:100%;height:auto}
+  .card,.painel,.pedido,.secao{content-visibility:auto;contain-intrinsic-size:1px 420px}
+  .splash-particulas span:nth-child(n+5){display:none!important}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+
+<style id="ef-mockup-mobile-v1">
+.ef-mock-hero{position:relative!important;min-height:720px!important;padding:24px 18px 52px!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;overflow:hidden!important;background:radial-gradient(circle at 88% 25%,rgba(255,116,0,.50),transparent 30%),linear-gradient(155deg,#050607 0%,#101114 56%,#281204 100%)!important;border-radius:0 0 26px 26px!important}
+.ef-mock-hero:before{content:"";position:absolute;inset:42% -18% -18% 18%;background:repeating-linear-gradient(166deg,transparent 0 22px,rgba(255,111,0,.23) 23px 27px,transparent 28px 46px);transform:skewY(-5deg);opacity:.75;pointer-events:none}
+.ef-mock-hero:after{content:"";position:absolute;right:-18%;bottom:3%;width:72%;height:48%;border:2px solid rgba(255,126,15,.24);border-radius:42% 0 0 10%;transform:skew(-8deg);box-shadow:0 0 80px rgba(255,98,0,.12) inset;pointer-events:none}
+.ef-mock-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:3}.ef-mock-top .bv-logo-badge{width:205px!important;max-width:55vw!important;margin:0!important}.ef-mock-top .logo-img{width:100%!important;height:auto!important}.ef-mock-menu{border:0;background:transparent;color:#ff7410;font-size:34px;font-weight:900;padding:4px 6px}
+.ef-mock-copy{position:relative;z-index:3;margin-top:74px;max-width:620px}.ef-mock-copy .bv-titulo-grande{font-family:Inter,Arial,sans-serif!important;text-transform:none!important;font-size:58px!important;line-height:.98!important;letter-spacing:-2.4px!important;margin:0 0 20px!important;font-weight:950!important;text-shadow:0 5px 20px #000!important}.ef-mock-copy .destaque{color:#ff6d00!important}.ef-mock-copy .bv-subtagline{font-size:20px!important;line-height:1.35!important;max-width:520px!important;color:#f5f5f5!important;margin:0 0 22px!important}.ef-mock-trust{display:flex;gap:18px;flex-wrap:wrap;color:#eee;font-size:14px;font-weight:800;margin:0 0 24px}.ef-mock-trust span{display:flex;gap:5px;align-items:center}.ef-mock-maincta{width:auto!important;min-width:250px!important;min-height:62px!important;border-radius:13px!important;font-size:18px!important;box-shadow:0 12px 28px rgba(255,105,0,.28)!important}.ef-mock-road{position:absolute;left:5%;right:-10%;bottom:35px;height:170px;z-index:1;transform:skewY(-4deg);overflow:hidden}.ef-mock-road i{position:absolute;left:0;width:130%;height:5px;background:linear-gradient(90deg,transparent,#ff5b00,#ffb000,transparent);box-shadow:0 0 16px #ff6a00}.ef-mock-road i:nth-child(1){bottom:20px}.ef-mock-road i:nth-child(2){bottom:70px;left:15%}.ef-mock-road i:nth-child(3){bottom:120px;left:34%}
+.ef-mock-choices{position:relative;z-index:8;margin:-38px 16px 18px;background:#fff;border-radius:18px;box-shadow:0 16px 40px rgba(0,0,0,.18);display:grid;grid-template-columns:repeat(3,1fr);overflow:hidden}.ef-mock-choices button{appearance:none;border:0;border-right:1px solid #ececec;background:#fff;text-align:left;padding:22px 18px;color:#222;min-height:190px;position:relative}.ef-mock-choices button:last-child{border-right:0}.ef-mock-choices b{display:grid;place-items:center;width:58px;height:58px;border-radius:14px;background:#ff6c00;color:#fff;font-size:28px;margin-bottom:16px;box-shadow:0 7px 18px rgba(255,108,0,.25)}.ef-mock-choices strong{display:block;font-size:22px;line-height:1.05}.ef-mock-choices em,.ef-mock-driver em,.ef-mock-how em{font-style:normal;color:#ff6800}.ef-mock-choices small{display:block;font-size:13px;line-height:1.3;color:#666;margin-top:10px}.ef-mock-choices button>span{position:absolute;right:18px;bottom:14px;color:#ff6800;font-size:26px}
+.ef-mock-driver{margin:20px 16px 28px;min-height:220px;border-radius:18px;overflow:hidden;background:radial-gradient(circle at 86% 48%,rgba(255,111,0,.42),transparent 34%),linear-gradient(110deg,#050505,#111 58%,#2c1304);box-shadow:0 12px 28px rgba(0,0,0,.18);padding:28px;display:flex;align-items:center;cursor:pointer}.ef-mock-driver strong{font-size:32px;line-height:1.02;color:white}.ef-mock-driver p{color:#eee;font-size:15px;max-width:290px}.ef-mock-driver span{display:inline-block;border:2px solid #ff6c00;border-radius:10px;padding:11px 15px;color:#ff7a13;font-weight:900}.ef-mock-how{text-align:center;color:#111;font-size:31px;font-weight:950;margin:26px 0}.ef-mock-how span{display:block;width:120px;height:3px;background:#ff6c00;margin:12px auto;border-radius:9px}
+@media(max-width:600px){.ef-mock-hero{min-height:650px!important;padding:20px 17px 48px!important}.ef-mock-top .bv-logo-badge{width:190px!important}.ef-mock-copy{margin-top:66px}.ef-mock-copy .bv-titulo-grande{font-size:46px!important;letter-spacing:-1.8px!important}.ef-mock-copy .bv-subtagline{font-size:18px!important}.ef-mock-trust{gap:12px;font-size:12px}.ef-mock-maincta{min-width:230px!important}.ef-mock-choices{margin:-34px 12px 16px}.ef-mock-choices button{padding:16px 10px;min-height:170px}.ef-mock-choices b{width:50px;height:50px;font-size:23px}.ef-mock-choices strong{font-size:18px}.ef-mock-choices small{font-size:11px}.ef-mock-driver{margin:18px 12px 24px;min-height:190px;padding:23px}.ef-mock-driver strong{font-size:27px}.ef-mock-how{font-size:27px}}
+@media(max-width:380px){.ef-mock-copy .bv-titulo-grande{font-size:40px!important}.ef-mock-choices strong{font-size:16px}.ef-mock-choices button{padding:14px 8px}.ef-mock-choices small{display:none}}
+</style>
 </head>
 
 <style id="ef-parceiros-premium">
@@ -1374,7 +1398,7 @@ function urlBase64ToUint8Array(base64String){
 function bufferToBase64(buf){
   return btoa(String.fromCharCode(...new Uint8Array(buf)));
 }
-const LOGO_ENTREGA_FLASH = 'assets/inline/92664fcd6429.png';
+const LOGO_ENTREGA_FLASH = 'assets/inline/92664fcd6429.webp';
 const LOGO_ENTREGA_FLASH_INICIAL = LOGO_ENTREGA_FLASH;
 const LOGO_ENTREGA_FLASH_CLIENTE = LOGO_ENTREGA_FLASH;
 const LOGO_ENTREGA_FLASH_MOTORISTA = LOGO_ENTREGA_FLASH;
@@ -5206,27 +5230,31 @@ function telaClienteBemVindoBV(nome){
 function telaBoasVindas(){
   return `
   <div class="bv-wrap">
-    <section class="bv-hero-real">
-      <div class="bv-cabecalho">
+    <section class="bv-hero-real ef-mock-hero">
+      <div class="ef-mock-top">
         <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
+        <button class="ef-mock-menu" type="button" aria-label="Menu" onclick="document.querySelector('.ef-mock-choices')?.scrollIntoView({behavior:'smooth'})">☰</button>
       </div>
-      <div class="bv-kicker"> Entregas rápidas e seguras</div>
-      <div class="bv-titulo-grande" data-text="Entregas na sua região">Entregas na sua <span class="destaque">região!</span></div>
-      <div class="bv-subtagline">Mercado, farmácia, documentos, encomendas e o que você precisar — na cidade, zona rural, sítios e fazendas da sua região.</div>
-      <div class="bv-chips">
-        <span class="bv-chip"> Atuação regional</span><span class="bv-chip"> Cidade + zona rural</span><span class="bv-chip"> Acompanhe pelo celular</span>
+      <div class="ef-mock-copy">
+        <div class="bv-titulo-grande">Solução rápida<br>em <span class="destaque">entregas</span></div>
+        <div class="bv-subtagline">Plataforma de entregas sob demanda para sua região.</div>
+        <div class="ef-mock-trust"><span>⚡ Rápido</span><span>🛡 Seguro</span><span>◷ No prazo</span></div>
+        <button class="btn btn-primario ef-mock-maincta" onclick="entrarComoVisitante('cliente')">→ &nbsp; Começar agora</button>
       </div>
-      <div class="ef-live-proof">
-        <i class="ef-live-dot"></i>
-        <div><strong>Entrega Flash em funcionamento</strong><br><span>Peça pelo celular, acompanhe o atendimento e veja o motorista quando a corrida for aceita.</span></div>
-      </div>
-      <div class="bv-hero-actions">
-        <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')"> PEDIR ENTREGA AGORA</button>
-        <button class="btn btn-azul" onclick="escolherBoasVindas('entregador')" style="font-size:17px;font-weight:900;min-height:58px"> QUERO SER MOTORISTA — COMEÇAR CADASTRO</button>
-        <button class="btn btn-secundario" style="margin-top:8px;border-color:#ff8a00;color:#ff9b14" onclick="abrirParceiros()"> TENHO UMA EMPRESA — QUERO SER PARCEIRO</button>
-      </div>
-      <div class="ef-cta-note">Cliente: cadastro simples • Motorista: pré-cadastro grátis</div>
+      <div class="ef-mock-road" aria-hidden="true"><i></i><i></i><i></i></div>
     </section>
+
+    <section class="ef-mock-choices">
+      <button onclick="abrirParceiros()"><b>▦</b><strong>Para <em>empresas</em></strong><small>Soluções para seu negócio</small><span>›</span></button>
+      <button onclick="entrarComoVisitante('cliente')"><b>◎</b><strong>Para <em>você</em></strong><small>Peça uma entrega rápida</small><span>›</span></button>
+      <button onclick="escolherBoasVindas('entregador')"><b>♙</b><strong>Seja <em>motorista</em></strong><small>Faça entregas e ganhe</small><span>›</span></button>
+    </section>
+
+    <section class="ef-mock-driver" onclick="escolherBoasVindas('entregador')">
+      <div><strong>Seja um motorista<br><em>e ganhe mais!</em></strong><p>Mais entregas, mais ganhos, mais liberdade.</p><span>Cadastre-se agora →</span></div>
+    </section>
+
+    <div class="ef-mock-how"><b>Como <em>funciona</em></b><span></span></div>
 
     <div class="bv-strip">
       <div class="bv-strip-item"><div class="bv-strip-icon"></div><div class="bv-strip-title">Rápido</div><div class="bv-strip-sub">Peça quando precisar</div></div>
@@ -5372,7 +5400,7 @@ function telaAcessoCliente(){
   <div style="text-align:center;font-size:13px;color:var(--poeira);margin:-4px 0 14px">Quer entregar e ganhar dinheiro em vez de pedir? <span style="color:var(--mango);text-decoration:underline;cursor:pointer;font-weight:700" onclick="entrarBoasVindas('entregador')">Ir para o login de motorista</span></div>
   <div class="campo-motorista">
     <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 6px">Entrar como cliente</h2>
-    <div class="subtitulo">Entre com telefone e senha. A validação facial será solicitada somente ao confirmar uma corrida.</div>
+    <div class="subtitulo">Entre com telefone e senha.</div>
     <label>Telefone</label>
     <input type="tel" id="lc-telefone" value="${pc.loginTelefone}" placeholder="(35) 90000-0000">
     <label>Senha</label>
@@ -7217,117 +7245,7 @@ async function enviarReenvioDocumentos(){
 
 // =================== CONTA DE CLIENTE ===================
 
-// ================= BIOMETRIA FACIAL + PROVA DE MOVIMENTO =================
-const FACE_MODELS_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
-let faceModelsReady = false;
-let faceModelsLoading = null;
-
-function fecharModalFacial(){
-  const el=document.getElementById('ef-face-modal');
-  if(el) el.remove();
-}
-async function carregarModelosFaciais(){
-  if(faceModelsReady) return true;
-  if(faceModelsLoading) return faceModelsLoading;
-  faceModelsLoading=(async()=>{
-    const limite=Date.now()+12000;
-    while(typeof faceapi==='undefined' && Date.now()<limite) await new Promise(r=>setTimeout(r,150));
-    if(typeof faceapi==='undefined') throw new Error('Biblioteca facial não carregou. Verifique sua internet.');
-    await Promise.all([
-      faceapi.nets.tinyFaceDetector.loadFromUri(FACE_MODELS_URL),
-      faceapi.nets.faceLandmark68Net.loadFromUri(FACE_MODELS_URL),
-      faceapi.nets.faceRecognitionNet.loadFromUri(FACE_MODELS_URL)
-    ]);
-    faceModelsReady=true; return true;
-  })().catch(e=>{ faceModelsLoading=null; throw e; });
-  return faceModelsLoading;
-}
-function criarModalFacial(titulo,subtitulo){
-  fecharModalFacial();
-  const d=document.createElement('div'); d.id='ef-face-modal';
-  d.innerHTML=`<div class="ef-face-backdrop"><div class="ef-face-card">
-    <div class="ef-face-head"><div><b>${titulo}</b><small>${subtitulo}</small></div><span class="ef-face-lock"></span></div>
-    <div class="ef-face-stage"><video id="ef-face-video" autoplay playsinline muted></video><canvas id="ef-face-canvas"></canvas><div class="ef-face-ring"></div><div id="ef-face-arrow" class="ef-face-arrow"></div></div>
-    <div id="ef-face-instrucao" class="ef-face-instrucao">Preparando câmera…</div>
-    <div class="ef-face-progress"><i id="ef-face-progress"></i></div>
-    <div id="ef-face-status" class="ef-face-status">Mantenha o rosto bem iluminado e sem óculos escuros.</div>
-    <button type="button" id="ef-face-cancel" class="btn btn-secundario" style="margin-top:12px">Cancelar</button>
-  </div></div>`;
-  document.body.appendChild(d);
-  if(!document.getElementById('ef-face-css')){
-    const st=document.createElement('style'); st.id='ef-face-css'; st.textContent=`
-    #ef-face-modal{position:fixed;inset:0;z-index:999999;font-family:inherit}.ef-face-backdrop{position:absolute;inset:0;background:rgba(10,12,30,.86);display:flex;align-items:center;justify-content:center;padding:18px}.ef-face-card{width:min(420px,100%);background:#fff;color:#172033;border-radius:24px;padding:18px;box-shadow:0 24px 70px rgba(0,0,0,.35)}.ef-face-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}.ef-face-head b{font-size:20px;display:block}.ef-face-head small{display:block;color:#687086;margin-top:3px}.ef-face-lock{font-size:25px}.ef-face-stage{position:relative;width:min(310px,82vw);aspect-ratio:1/1;margin:0 auto 14px;border-radius:50%;overflow:hidden;background:#111}.ef-face-stage video,.ef-face-stage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.ef-face-ring{position:absolute;inset:8px;border:4px solid rgba(255,255,255,.8);border-radius:50%;pointer-events:none}.ef-face-arrow{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:52px;height:52px;border-radius:50%;display:grid;place-items:center;background:#1769df;color:#fff;font-size:28px;font-weight:900}.ef-face-instrucao{text-align:center;font-weight:900;font-size:22px;margin-top:6px}.ef-face-status{text-align:center;color:#687086;font-size:13px;line-height:1.4;margin-top:8px}.ef-face-progress{height:7px;background:#e8ebf0;border-radius:99px;overflow:hidden;margin:12px 8px 0}.ef-face-progress i{display:block;height:100%;width:0;background:#1769df;transition:width .25s}.ef-face-card .btn{width:100%}@media(max-width:380px){.ef-face-card{padding:14px;border-radius:18px}.ef-face-instrucao{font-size:19px}}`;
-    document.head.appendChild(st);
-  }
-  return d;
-}
-function mediaPonto(arr){ return {x:arr.reduce((a,p)=>a+p.x,0)/arr.length,y:arr.reduce((a,p)=>a+p.y,0)/arr.length}; }
-function metricasRosto(det){
-  const pts=det.landmarks.positions, box=det.detection.box;
-  const nariz=pts[30], olhos=mediaPonto(pts.slice(36,48));
-  return { nx:(nariz.x-box.x)/box.width, ny:(nariz.y-box.y)/box.height, eyeY:(olhos.y-box.y)/box.height, w:box.width, h:box.height };
-}
-function distanciaDescritores(a,b){
-  if(!Array.isArray(a)||!a.length||!b||a.length!==b.length) return 99;
-  let s=0; for(let i=0;i<a.length;i++){ const d=Number(a[i])-Number(b[i]); s+=d*d; } return Math.sqrt(s);
-}
-async function fluxoFacial({tipo,telefone,modo='cadastro',descriptorSalvo=null}){
-  const modal=criarModalFacial(modo==='cadastro'?'Cadastre seu rosto':'Confirme que é você', modo==='cadastro'?'Senha + biometria facial':'Faça os movimentos para liberar o acesso');
-  const video=modal.querySelector('#ef-face-video'), instr=modal.querySelector('#ef-face-instrucao'), status=modal.querySelector('#ef-face-status'), prog=modal.querySelector('#ef-face-progress'), arrow=modal.querySelector('#ef-face-arrow');
-  let stream=null, cancelado=false; modal.querySelector('#ef-face-cancel').onclick=()=>{cancelado=true; if(stream) stream.getTracks().forEach(t=>t.stop()); fecharModalFacial();};
-  try{
-    instr.textContent='Carregando validação facial…';
-    await carregarModelosFaciais(); if(cancelado) return {ok:false,cancelado:true};
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:720},height:{ideal:720}},audio:false});
-    video.srcObject=stream; await video.play();
-    const opts=new faceapi.TinyFaceDetectorOptions({inputSize:224,scoreThreshold:.55});
-    let base=null, ultimaDet=null;
-    const etapas=[
-      {txt:'Posicione o rosto',ico:'',ok:m=>!!m,tempo:900},
-      {txt:'Vire para a esquerda',ico:'←',ok:m=>base && Math.abs(m.nx-base.nx)>.055,tempo:650},
-      {txt:'Olhe para cima',ico:'↑',ok:m=>base && (m.ny-base.ny)<-.035,tempo:650},
-      {txt:'Volte ao centro',ico:'',ok:m=>base && Math.abs(m.nx-base.nx)<.055,tempo:700}
-    ];
-    for(let ei=0;ei<etapas.length;ei++){
-      const e=etapas[ei]; instr.textContent=e.txt; arrow.textContent=e.ico; prog.style.width=((ei/etapas.length)*100)+'%';
-      let iniciou=0, limite=Date.now()+15000;
-      while(Date.now()<limite){
-        if(cancelado) return {ok:false,cancelado:true};
-        const det=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceDescriptor();
-        if(det){ ultimaDet=det; const m=metricasRosto(det); if(ei===0 && !base) base=m;
-          if(e.ok(m)){ if(!iniciou) iniciou=Date.now(); if(Date.now()-iniciou>=e.tempo) break; } else iniciou=0;
-          status.textContent='Rosto detectado • siga o movimento mostrado.';
-        } else { iniciou=0; status.textContent='Não encontrei seu rosto. Centralize-o no círculo e melhore a iluminação.'; }
-        await new Promise(r=>setTimeout(r,130));
-      }
-      if(Date.now()>=limite) throw new Error('Não consegui confirmar o movimento. Tente novamente com o rosto centralizado.');
-    }
-    prog.style.width='100%'; instr.textContent='Validando rosto…'; arrow.textContent='';
-    const finalDet=await faceapi.detectSingleFace(video,opts).withFaceLandmarks().withFaceDescriptor();
-    if(!finalDet) throw new Error('Não consegui capturar o rosto no final. Tente novamente.');
-    const desc=Array.from(finalDet.descriptor).map(n=>Number(n.toFixed(7)));
-    if(modo==='login'){
-      const distancia=distanciaDescritores(descriptorSalvo,desc);
-      if(distancia>.58) throw new Error('O rosto não corresponde ao cadastro desta conta.');
-    } else {
-      const tabela=tipo==='motorista'?'entrega_motoristas':'entrega_clientes';
-      const {error}=await sb.from(tabela).update({face_descriptor:desc,facial_ativa:true,facial_cadastrada_em:Date.now()}).eq('telefone',telefone);
-      if(error) throw new Error('Não consegui salvar a biometria facial. '+(error.message||''));
-    }
-    status.textContent='Identidade confirmada com sucesso.'; await new Promise(r=>setTimeout(r,450));
-    return {ok:true,descriptor:desc};
-  }catch(e){
-    console.error('Biometria facial:',e); instr.textContent='Não foi possível validar'; status.textContent=e.message||'Tente novamente.'; arrow.textContent='!'; await new Promise(r=>setTimeout(r,1400)); return {ok:false,erro:e.message||'Falha na biometria facial'};
-  }finally{ if(stream) stream.getTracks().forEach(t=>t.stop()); fecharModalFacial(); }
-}
-async function exigirFacialDaConta(tipo,data){
-  if(!navigator.mediaDevices?.getUserMedia) throw new Error('Este aparelho/navegador não permite usar a câmera.');
-  if(data.facial_ativa && Array.isArray(data.face_descriptor) && data.face_descriptor.length){
-    return await fluxoFacial({tipo,telefone:data.telefone,modo:'login',descriptorSalvo:data.face_descriptor});
-  }
-  return await fluxoFacial({tipo,telefone:data.telefone,modo:'cadastro'});
-}
-// ================= FIM BIOMETRIA FACIAL =================
+// Biometria facial removida desta versão.
 
 function irParaCadastroCliente(){ estado.painelCliente.tela='cadastro'; estado.painelCliente.cadastro={nome:'',telefone:'',senha:'',erro:''}; render(); }
 function irParaLoginCliente(){ estado.painelCliente.tela='entrar'; estado.painelCliente.loginErro=''; render(); }
@@ -9373,3 +9291,26 @@ iniciarAppReal();
 
 </body>
 </html>
+<!-- ENTREGA FLASH MOBILE APP THEME 2026-09-01 -->
+<style>
+:root{--mango:#ff6a00!important;--chama:#ff7a00!important;--escuro:#070707!important;--noite:#080808!important;--painel:#111214!important;--painel-alt:#17191c!important;--linha:rgba(255,255,255,.10)!important;--osso:#fff!important;--poeira:#b9bcc2!important;--verde:#28c840!important}
+html,body{background:#050505!important;color:#fff!important}body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+#app{max-width:520px!important;margin:0 auto!important;background:#080808!important;min-height:100dvh!important;box-shadow:0 0 70px rgba(0,0,0,.65)!important;padding-bottom:86px!important}
+.topo{position:sticky!important;top:0!important;z-index:75!important;background:rgba(5,5,5,.93)!important;backdrop-filter:blur(18px)!important;-webkit-backdrop-filter:blur(18px)!important;border-bottom:1px solid rgba(255,255,255,.07)!important;padding:10px 16px 8px!important;min-height:76px!important;display:flex!important;align-items:center!important;justify-content:center!important}
+.topo .marca{margin:0 auto!important}.topo .bv-logo-badge{background:transparent!important;border:0!important;box-shadow:none!important;padding:0!important}.topo .logo-img{max-height:54px!important;max-width:235px!important;object-fit:contain!important;filter:drop-shadow(0 4px 12px rgba(0,0,0,.5))}.topo .tagline{display:none!important}
+.btn-voltar-topo,.btn-instalar-topo{z-index:2!important}.aviso-app-novo{margin:10px 14px 0!important;border-radius:14px!important;background:#141414!important;border-color:rgba(255,106,0,.3)!important;color:#c6c6c6!important}.aviso-app-novo b{color:#fff!important}
+main{padding:12px 14px 4px!important}.cartao,.pedido,.campo-motorista,.pix-box,.saldo-card{background:linear-gradient(155deg,#17191c,#0d0e10)!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:18px!important;box-shadow:0 14px 36px rgba(0,0,0,.26)!important;margin-bottom:12px!important}.cartao h2,.pedido h2{font-weight:850!important;letter-spacing:-.02em!important}.subtitulo{color:#aeb1b7!important}
+.btn,.btn-primario,.btn-verde,.btn-azul,.btn-baixar-app{border-radius:13px!important;font-weight:850!important;min-height:48px!important;background:linear-gradient(135deg,#ff5a00,#ff8500)!important;color:#fff!important;border:0!important;box-shadow:0 9px 22px rgba(255,106,0,.18)!important}.btn-secundario{background:#151515!important;border:1px solid rgba(255,255,255,.15)!important;color:#fff!important;box-shadow:none!important}.btn:active{transform:scale(.985)!important}
+input,select,textarea{background:#0b0c0e!important;border:1px solid rgba(255,255,255,.13)!important;border-radius:13px!important;color:#fff!important;min-height:48px!important}.aba-mini{background:#0d0e10!important;border-radius:13px!important;padding:4px!important}.aba-mini button{border-radius:10px!important}.aba-mini button.ativo{background:#ff6a00!important;color:#fff!important}
+.link-taxas-topo{color:#ff7a00!important}.preco,.pedido .preco{color:#ff7a00!important}.pedido{padding:15px!important}.pedido-prioridade-alta{border-color:#ff6a00!important}.pedido .vital{background:#111!important;border-color:rgba(255,106,0,.22)!important}
+.abas-motorista{max-width:520px!important;background:rgba(5,5,5,.96)!important;border-top:1px solid rgba(255,255,255,.10)!important;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px))!important}.abas-motorista button{color:#c8c8c8!important;font-size:10px!important}.abas-motorista button.ativo{color:#ff6a00!important}.abas-motorista button.ativo::before{background:#ff6a00!important;box-shadow:0 0 10px rgba(255,106,0,.7)!important}.abas-motorista button .icone-aba{font-size:22px!important}
+.conteudo-motorista{padding-bottom:84px!important}.ef-app20-hero{border-color:rgba(255,106,0,.35)!important;background:radial-gradient(circle at 85% 0,rgba(255,106,0,.18),transparent 42%),linear-gradient(155deg,#17191c,#0c0d0f)!important}.ef-app20-money{color:#ff6a00!important}.ef-app20-dot.on{background:#28c840!important;box-shadow:0 0 0 4px rgba(40,200,64,.13)!important}
+.busca-motorista-premium{border-color:rgba(255,106,0,.55)!important;background:radial-gradient(circle at 80% 0,rgba(255,106,0,.16),transparent 45%),#111214!important}.busca-barra-movel{background:linear-gradient(90deg,#ff4d00,#ff9b00)!important}.busca-sinal{background:#28c840!important}
+.faixa-instalar{background:#111!important;border:1px solid rgba(255,106,0,.28)!important;border-radius:16px!important;margin:10px 14px!important}.rodape-discreto,.link-instalar{color:#888!important}
+.modal-chat{background:#0d0e10!important;border:1px solid rgba(255,255,255,.12)!important}.chat-topo{background:#090909!important}.cf-abas button.ativo{color:#ff6a00!important;border-color:#ff6a00!important}
+@media(max-width:480px){#app{width:100%!important;max-width:100%!important}.topo{min-height:68px!important}.topo .logo-img{max-height:48px!important;max-width:205px!important}main{padding:10px 10px 4px!important}.cartao,.pedido,.campo-motorista{border-radius:16px!important}.aviso-app-novo{margin-left:10px!important;margin-right:10px!important}.pedido .vitais{gap:6px!important}.pedido .vital .vital-num{font-size:22px!important}}
+</style>
+<script>
+// Apenas acabamento visual: mantém todas as regras, banco, pedidos, GPS, Pix e cadastros existentes.
+document.documentElement.classList.add('ef-mobile-app-2026');
+</script>
