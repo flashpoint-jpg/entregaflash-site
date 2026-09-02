@@ -6673,6 +6673,19 @@ function abrirWhatsAppPendenciaEspecifica(telefone,nome,item){
   const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase pronto. Falta somente: ${item}. Entre novamente no app e envie/corrija esse item para concluir seu cadastro.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
+function abrirWhatsAppTodasPendencias(telefone,nome,itensTexto){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=String(nome||'').trim().split(' ')[0]||'tudo bem';
+  const itens=String(itensTexto||'').split('|||').filter(Boolean);
+  const lista=itens.map(x=>'• '+x).join('\n');
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Seu cadastro está quase pronto, mas ainda faltam estas pendências:
+
+${lista}
+
+Entre novamente no app com seu WhatsApp e senha e conclua tudo de uma vez para podermos analisar e ativar seu cadastro. Se precisar de ajuda, responda esta mensagem.`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
 function motoristaCardHTML(m, emRota){
   const onlineAgora = motoristaOnlineAgora(m);
   const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
@@ -6706,7 +6719,7 @@ function motoristaCardHTML(m, emRota){
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
-      ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}\n      ${(()=>{const ps=pendenciasDocumentosMotorista(m); if(!ps.length) return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.35);font-size:12.5px;font-weight:800">✅ Documentação completa</div>`; return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(255,151,16,.08);border:1px solid rgba(255,151,16,.35)"><b style="font-size:12.5px">⚠️ Pendências (${ps.length})</b>${ps.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px"><span>• ${x}</span><button class="btn btn-pequeno" style="padding:5px 8px;background:#25D366;color:#07140b;border-color:#25D366" onclick="abrirWhatsAppPendenciaEspecifica('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${x.replace(/'/g,"\\'")}')">WhatsApp</button></div>`).join('')}</div>`})()}
+      ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}\n      ${(()=>{const ps=pendenciasDocumentosMotorista(m); if(!ps.length) return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.35);font-size:12.5px;font-weight:800">✅ Documentação completa</div>`; return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(255,151,16,.08);border:1px solid rgba(255,151,16,.35)"><b style="font-size:12.5px">⚠️ Pendências (${ps.length})</b><div style="margin-top:8px;font-size:12px;line-height:1.65">${ps.map(x=>`<div>• ${x}</div>`).join('')}</div><button class="btn btn-pequeno" style="width:100%;margin-top:10px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppTodasPendencias('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${ps.join('|||').replace(/'/g,"\\'")}')">💬 COBRAR TODAS AS PENDÊNCIAS</button></div>`})()}
       ${(()=>{const e=etapaFunilMotorista(m);return `<div style="margin:8px 0;padding:9px 10px;border-radius:10px;background:rgba(255,201,60,.07);border:1px solid rgba(255,201,60,.28);font-size:12.5px"><b>📍 Etapa do cadastro: ${e.label}</b><div style="height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${e.pct}%;background:var(--mango)"></div></div></div>`})()}
       <div class="am-linha"><span>Plano</span><b>${PLANOS[m.plano]?.label||m.plano}</b></div>
       <div class="am-linha"><span>💰 Saldo a receber</span><b style="color:var(--mango)">R$ ${Number(m.saldo||0).toFixed(2)}</b></div>
@@ -6723,7 +6736,6 @@ function motoristaCardHTML(m, emRota){
           const faltam=Math.max(0,5-dias);
           return `<div style="margin-top:10px;padding:10px;border-radius:10px;border:1px solid ${vencido?'rgba(255,92,92,.55)':'rgba(37,211,102,.35)'};background:${vencido?'rgba(255,92,92,.08)':'rgba(37,211,102,.06)'}">
             <div style="font-size:12.5px;font-weight:800;color:${vencido?'#ff7474':'var(--osso)'}">${vencido?'⚠️ PRAZO DE 5 DIAS ULTRAPASSADO':(m.veiculo_tipo==='bicicleta'?`⏳ Cadastro incompleto · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`:`⏳ Documentos pendentes · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`)}</div>
-            <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.veiculo_tipo||''}')">💬 ${m.veiculo_tipo==='bicicleta'?'Lembrar de concluir cadastro':'Lembrar documentação'} pelo WhatsApp</button>
           </div>`;
         })() : ''}
 
@@ -8466,7 +8478,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
+window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;

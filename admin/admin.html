@@ -4953,6 +4953,19 @@ function telaAcessoMotorista(){
     return `<div class="box-status"><span class="bs-emoji">🎉</span><div class="bs-titulo">Cadastro liberado!</div><div class="bs-texto">${cadastroBike?'Conclua seu cadastro com a selfie, fotos da bicicleta e RG ou CNH. Bicicleta não precisa de CRLV, placa nem CNH obrigatória.':'Envia os teus documentos agora pra começares a receber corridas ainda hoje.'}</div>
       <button class="btn btn-primario" style="margin-top:16px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'A carregar...':(cadastroBike?'🚲 Concluir cadastro':'📄 Enviar documentos')}</button></div>`;
   }
+  if(pm.tela==='recuperar'){
+    return `<div class="box-status" style="padding:24px 16px">
+      <span class="bs-emoji">⚡</span>
+      <div class="bs-titulo" style="font-size:22px;color:var(--mango)">Seu cadastro está quase pronto</div>
+      <div class="bs-texto" style="font-size:15.5px">Você já se cadastrou na Entrega Flash, mas ainda falta concluir ${pm.recuperacaoBike?'as fotos e o documento pessoal':'o envio da documentação'}. <b style="color:var(--osso)">Sem concluir esta etapa você não pode receber corridas.</b></div>
+      <div style="margin:18px 0;padding:14px;border-radius:14px;background:rgba(255,201,60,.10);border:1px solid rgba(255,201,60,.35);text-align:left">
+        <div style="font-weight:800;color:var(--mango);margin-bottom:6px">✓ Seus dados já estão salvos</div>
+        <div style="font-size:13.5px;color:var(--poeira);line-height:1.5">Continue de onde parou. Você não precisa fazer outro cadastro.</div>
+      </div>
+      <button class="btn btn-primario" style="margin-top:4px;font-size:17px;padding:15px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'Carregando...':'📄 CONTINUAR E CONCLUIR AGORA'}</button>
+      <button class="btn btn-secundario" style="margin-top:9px" onclick="irParaLogin()">Voltar</button>
+    </div>`;
+  }
   if(pm.tela==='pendente'){
     return `<div class="box-status"><span class="bs-emoji">⏳</span><div class="bs-titulo">Cadastro em análise</div><div class="bs-texto">Recebemos os seus dados e o pagamento da taxa. Vamos avisar-te por WhatsApp assim que o cadastro for aprovado.</div></div>`;
   }
@@ -6339,8 +6352,19 @@ async function loginMotorista(){
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone. Cadastra-te abaixo.'; render(); return; }
   if(data.senha_hash !== senhaHash){ pm.loginErro='Senha incorreta.'; render(); return; }
-  if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
+  if(data.status==='incompleto'){ pm.tela='recuperar'; pm.telefoneLiberado=data.telefone; pm.recuperacaoBike=data.veiculo_tipo==='bicicleta'; render(); return; }
   if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
+  // Cadastro básico ainda sem documentação: não joga o motorista num painel bloqueado.
+  // Leva direto para concluir o que falta.
+  if(data.status==='basico'){ pm.tela='recuperar'; pm.telefoneLiberado=data.telefone; pm.recuperacaoBike=data.veiculo_tipo==='bicicleta'; render(); return; }
+  // Se está pendente mas faltam arquivos obrigatórios, também recupera o cadastro.
+  if(data.status==='pendente'){
+    const bike=data.veiculo_tipo==='bicicleta';
+    const docsOk = bike
+      ? !!(data.foto_motorista_url && data.foto_veiculo_url && data.cnh_url)
+      : !!(data.foto_motorista_url && data.foto_veiculo_url && data.cnh_url && data.crlv_url);
+    if(!docsOk){ pm.tela='recuperar'; pm.telefoneLiberado=data.telefone; pm.recuperacaoBike=bike; render(); return; }
+  }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:senhaHash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -6673,6 +6697,19 @@ function abrirWhatsAppPendenciaEspecifica(telefone,nome,item){
   const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase pronto. Falta somente: ${item}. Entre novamente no app e envie/corrija esse item para concluir seu cadastro.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
+function abrirWhatsAppTodasPendencias(telefone,nome,itensTexto){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=String(nome||'').trim().split(' ')[0]||'tudo bem';
+  const itens=String(itensTexto||'').split('|||').filter(Boolean);
+  const lista=itens.map(x=>'• '+x).join('\n');
+  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Seu cadastro está quase pronto, mas ainda faltam estas pendências:
+
+${lista}
+
+Entre novamente no app com seu WhatsApp e senha e conclua tudo de uma vez para podermos analisar e ativar seu cadastro. Se precisar de ajuda, responda esta mensagem.`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
 function motoristaCardHTML(m, emRota){
   const onlineAgora = motoristaOnlineAgora(m);
   const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
@@ -6706,7 +6743,7 @@ function motoristaCardHTML(m, emRota){
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
-      ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}\n      ${(()=>{const ps=pendenciasDocumentosMotorista(m); if(!ps.length) return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.35);font-size:12.5px;font-weight:800">✅ Documentação completa</div>`; return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(255,151,16,.08);border:1px solid rgba(255,151,16,.35)"><b style="font-size:12.5px">⚠️ Pendências (${ps.length})</b>${ps.map(x=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:7px;font-size:12px"><span>• ${x}</span><button class="btn btn-pequeno" style="padding:5px 8px;background:#25D366;color:#07140b;border-color:#25D366" onclick="abrirWhatsAppPendenciaEspecifica('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${x.replace(/'/g,"\\'")}')">WhatsApp</button></div>`).join('')}</div>`})()}
+      ${!m.chave_pix ? `<div style="margin:8px 0;padding:9px 10px;border:1px solid rgba(255,92,92,.45);border-radius:10px;background:rgba(255,92,92,.08);font-size:12.5px;font-weight:800">⚠️ Este cadastro está sem chave PIX. Abra “EDITAR TODOS OS DADOS”, informe a chave e salve antes de liberar pagamentos.</div>` : ''}\n      ${(()=>{const ps=pendenciasDocumentosMotorista(m); if(!ps.length) return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(37,211,102,.08);border:1px solid rgba(37,211,102,.35);font-size:12.5px;font-weight:800">✅ Documentação completa</div>`; return `<div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(255,151,16,.08);border:1px solid rgba(255,151,16,.35)"><b style="font-size:12.5px">⚠️ Pendências (${ps.length})</b><div style="margin-top:8px;font-size:12px;line-height:1.65">${ps.map(x=>`<div>• ${x}</div>`).join('')}</div><button class="btn btn-pequeno" style="width:100%;margin-top:10px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppTodasPendencias('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${ps.join('|||').replace(/'/g,"\\'")}')">💬 COBRAR TODAS AS PENDÊNCIAS</button></div>`})()}
       ${(()=>{const e=etapaFunilMotorista(m);return `<div style="margin:8px 0;padding:9px 10px;border-radius:10px;background:rgba(255,201,60,.07);border:1px solid rgba(255,201,60,.28);font-size:12.5px"><b>📍 Etapa do cadastro: ${e.label}</b><div style="height:6px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${e.pct}%;background:var(--mango)"></div></div></div>`})()}
       <div class="am-linha"><span>Plano</span><b>${PLANOS[m.plano]?.label||m.plano}</b></div>
       <div class="am-linha"><span>💰 Saldo a receber</span><b style="color:var(--mango)">R$ ${Number(m.saldo||0).toFixed(2)}</b></div>
@@ -6723,7 +6760,6 @@ function motoristaCardHTML(m, emRota){
           const faltam=Math.max(0,5-dias);
           return `<div style="margin-top:10px;padding:10px;border-radius:10px;border:1px solid ${vencido?'rgba(255,92,92,.55)':'rgba(37,211,102,.35)'};background:${vencido?'rgba(255,92,92,.08)':'rgba(37,211,102,.06)'}">
             <div style="font-size:12.5px;font-weight:800;color:${vencido?'#ff7474':'var(--osso)'}">${vencido?'⚠️ PRAZO DE 5 DIAS ULTRAPASSADO':(m.veiculo_tipo==='bicicleta'?`⏳ Cadastro incompleto · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`:`⏳ Documentos pendentes · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`)}</div>
-            <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.veiculo_tipo||''}')">💬 ${m.veiculo_tipo==='bicicleta'?'Lembrar de concluir cadastro':'Lembrar documentação'} pelo WhatsApp</button>
           </div>`;
         })() : ''}
 
@@ -7869,6 +7905,18 @@ function funilCadastroMotoristasHTML(lista){
   const etapas=[['Iniciaram cadastro',iniciaram],['Informaram PIX',pix],['Chegaram aos documentos',chegaramDocs],['Concluíram documentos',docs],['Aprovados',aprovados]];
   return `<div class="admin-cartao" style="margin-bottom:14px"><b>📊 Funil de cadastro dos motoristas</b><div style="font-size:12.5px;color:var(--poeira);margin:4px 0 10px">Mostra exatamente onde as pessoas estão desistindo.</div>${etapas.map((e,i)=>{const pct=iniciaram?Math.round(e[1]/iniciaram*100):0;return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${i+1}. ${e[0]}</span><b>${e[1]} · ${pct}%</b></div><div style="height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${pct}%;background:var(--mango)"></div></div></div>`}).join('')}</div>`;
 }
+function centralRecuperacaoMotoristasHTML(lista){
+  const ms=(lista||[]).filter(m=>motoristaSemDocumentos(m));
+  if(!ms.length) return '';
+  const ate2=ms.filter(m=>{const d=Number(m.criado_em||0);return d && (Date.now()-d)<2*86400000}).length;
+  const de2a5=ms.filter(m=>{const d=Number(m.criado_em||0);const x=d?(Date.now()-d)/86400000:0;return d&&x>=2&&x<5}).length;
+  const vencidos=ms.filter(m=>{const d=Number(m.criado_em||0);return d&&(Date.now()-d)>=5*86400000}).length;
+  return `<div class="admin-cartao" style="margin-bottom:14px;border:2px solid rgba(255,151,16,.65);background:linear-gradient(145deg,rgba(255,151,16,.10),var(--painel))">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><b style="font-family:'Rajdhani';font-size:18px;color:var(--mango)">🎯 CENTRAL DE RECUPERAÇÃO</b><div style="font-size:12.5px;color:var(--poeira);margin-top:3px">Esses cadastros ainda não são motoristas ativos. O objetivo é fazê-los concluir a documentação.</div></div><span class="selo" style="background:rgba(255,151,16,.16);color:var(--mango)">${ms.length} recuperar</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px;text-align:center"><div style="padding:8px;border:1px solid var(--linha);border-radius:10px"><b>${ate2}</b><div style="font-size:10.5px;color:var(--poeira)">até 2 dias</div></div><div style="padding:8px;border:1px solid var(--linha);border-radius:10px"><b>${de2a5}</b><div style="font-size:10.5px;color:var(--poeira)">2 a 5 dias</div></div><div style="padding:8px;border:1px solid rgba(255,92,92,.4);border-radius:10px"><b style="color:#ff7474">${vencidos}</b><div style="font-size:10.5px;color:var(--poeira)">+5 dias</div></div></div>
+    <button class="btn btn-primario btn-pequeno" style="width:100%;margin-top:10px" onclick="estado.admin.filtroStatusMotoristas='docs';render()">📄 Ver somente quem falta documento</button>
+  </div>`;
+}
 function adminAbaMotoristasHTML(){
   const a = estado.admin;
   if(!a.filtroRegiaoMotoristas) a.filtroRegiaoMotoristas='todos';
@@ -7916,6 +7964,7 @@ function adminAbaMotoristasHTML(){
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
     ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
   return `
+    ${centralRecuperacaoMotoristasHTML(baseMotoristas)}
     ${funilCadastroMotoristasHTML(baseMotoristas)}
     <div class="admin-filtros-grade" style="margin-bottom:10px">
       <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
@@ -8466,7 +8515,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
+window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
