@@ -6692,15 +6692,29 @@ ${lista}
 Entre novamente no app com seu WhatsApp e senha e conclua tudo de uma vez para podermos analisar e ativar seu cadastro. Se precisar de ajuda, responda esta mensagem.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
+function motoristaDocumentosCompletosAdmin(m){
+  if(!m) return false;
+  const pixOk=!!String(m.chave_pix||'').trim();
+  if(m.veiculo_tipo==='bicicleta'){
+    return pixOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.aceita_responsabilidade_bike;
+  }
+  return pixOk && !!m.foto_motorista_url && !!m.cnh_url && !!m.crlv_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url;
+}
+function motoristaAguardandoDocumentosAdmin(m){
+  return ['basico','liberado'].includes(m?.status) || (m?.status==='pendente' && !motoristaDocumentosCompletosAdmin(m));
+}
+
 function motoristaCardHTML(m, emRota){
+  const docsCompletos = motoristaDocumentosCompletosAdmin(m);
+  const aguardandoDocumentos = motoristaAguardandoDocumentosAdmin(m);
   const onlineAgora = motoristaOnlineAgora(m);
   const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
   const appStatus=app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
   const pushStatus=app?.notificacoes==='granted'&&app?.push_ativo?'🔔 Notificações ativas':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 Notificações não ativadas';
   const ultimoApp=app?.ultimo_acesso?new Date(app.ultimo_acesso).toLocaleString('pt-BR'):'Nunca registrado';
   let infoStatus = ROTULO_STATUS_MOTORISTA[m.status] || { texto:m.status, selo:'', cor:'' };
-  if(m.veiculo_tipo==='bicicleta' && ['basico','liberado'].includes(m.status)){
-    infoStatus = { texto:'🚲 Falta concluir cadastro', estilo:'background:rgba(255,151,16,0.16);color:var(--mango)', cor:'var(--mango)' };
+  if(aguardandoDocumentos){
+    infoStatus = { texto:m.veiculo_tipo==='bicicleta'?'🚲 Falta concluir cadastro':'📄 Falta enviar documentos', estilo:'background:rgba(255,151,16,0.16);color:var(--mango)', cor:'var(--mango)' };
   }
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span>🚚 Em rota</span>`
@@ -6762,7 +6776,7 @@ function motoristaCardHTML(m, emRota){
         ${m.crlv_url?`<img src="${m.crlv_url}" onclick="ampliarFoto('${m.crlv_url}')">`:''}
         ${m.cnh_url?`<img src="${m.cnh_url}" onclick="ampliarFoto('${m.cnh_url}')">`:''}
       </div>
-      ${m.status==='pendente' ? `
+      ${m.status==='pendente' && docsCompletos ? `
       <div class="subtitulo" style="margin-top:8px;line-height:1.7">
         ${m.veiculo_tipo==='bicicleta' ? `
         1️⃣ 📸 Foto do rosto → igual ao documento?<br>
@@ -6778,13 +6792,13 @@ function motoristaCardHTML(m, emRota){
         5️⃣ 🪪 CNH → nome igual cadastro, rosto igual, válida?
         `}
       </div>` : ''}
-      ${m.status==='basico' ? `
-      <div class="subtitulo" style="margin-top:8px">${m.veiculo_tipo==='bicicleta'?'🚲 Cadastro básico — aguardando o ciclista concluir selfie, fotos da bicicleta e documento pessoal (RG ou CNH). Sem CRLV, sem placa e sem CNH obrigatória.':'📄 Cadastro básico — aguardando o próprio motorista concluir e enviar os documentos. Não precisa mais de liberação manual pelo painel.'}</div>
+      ${aguardandoDocumentos ? `
+      <div class="subtitulo" style="margin-top:8px">${m.veiculo_tipo==='bicicleta'?'🚲 Cadastro incompleto — aguardando o ciclista concluir selfie e fotos necessárias.':'📄 Documentação incompleta — o motorista precisa voltar ao app e concluir o envio. Ainda não pode ser aprovado.'}</div>
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
       </div>
       <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.veiculo_tipo||''}')">🔔 ${m.veiculo_tipo==='bicicleta'?'Lembrar de concluir cadastro':'Lembrar de enviar os documentos'}</button>` : ''}
-      ${m.status==='pendente' ? `
+      ${m.status==='pendente' && docsCompletos ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')">✅ Aprovar</button>
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Reprovar</button>
