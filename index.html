@@ -1649,6 +1649,18 @@ let VEICULOS = {
   van:{label:'Van', emoji:'', km:2.30, kmRoca:3.00, minimo:15.00, veloc:22, limitePeso:'1.000 kg', volume:'267 x 179 x 166 cm'},
   caminhao:{label:'Caminhão', emoji:'', km:2.50, kmRoca:2.50, minimo:0, veloc:22, confereCarga:true, limitePeso:'1,5 t', volume:'300 x 180 x 200 cm'}
 };
+function iconeVeiculoPremium(tipo){
+  const desenhos = {
+    bicicleta:'<circle cx="15" cy="29" r="8"/><circle cx="49" cy="29" r="8"/><path d="M15 29l10-18h11l7 18M25 11l8 18M15 29h18l10-11M21 11h9M39 8h8"/>',
+    moto:'<circle cx="14" cy="29" r="8"/><circle cx="50" cy="29" r="8"/><path d="M14 29h15l7-13h11l7 13M27 29l-7-16h13M38 12h11M44 8h8"/>',
+    carro:'<circle cx="16" cy="30" r="6"/><circle cx="49" cy="30" r="6"/><path d="M6 29v-8l8-3 7-10h23l8 10 6 3v8M21 8l-4 10h31M10 24h6m33 0h8"/>',
+    carroaberto:'<circle cx="15" cy="30" r="6"/><circle cx="50" cy="30" r="6"/><path d="M5 29v-9h9l6-10h17v19M37 17h16l6 7v5M20 10v10H8M42 21h10l4 4H42"/>',
+    fiorino:'<circle cx="15" cy="30" r="6"/><circle cx="50" cy="30" r="6"/><path d="M5 30V10h35v20M40 16h10l9 9v5M45 20h6l4 5H45M10 15h25"/>',
+    van:'<circle cx="15" cy="30" r="6"/><circle cx="50" cy="30" r="6"/><path d="M5 30V9h40l12 12v9M45 9v12h12M10 14h29M21 9v12"/>',
+    caminhao:'<circle cx="14" cy="30" r="6"/><circle cx="50" cy="30" r="6"/><path d="M4 30V8h35v22M39 15h12l9 9v6M44 19h7l5 6H44zM8 13h27"/>'
+  };
+  return `<span class="icone-veiculo-premium" aria-hidden="true"><svg viewBox="0 0 64 40">${desenhos[tipo]||desenhos.carro}</svg></span>`;
+}
 // Regiões de cobertura: Sul de Minas + Grande São Paulo
 // O retângulo geral só limita a busca ao Sudeste próximo; a validação final continua pela lista de cidades atendidas.
 const REGIAO = { minLat:-24.25, maxLat:-14.23, minLon:-51.60, maxLon:-39.86 };
@@ -5744,7 +5756,7 @@ function telaCliente(){
       <div class="veiculo-titulo">Escolha o veículo da entrega</div>
       <div class="veiculo-ajuda">Toque no veículo certo antes de continuar. A opção selecionada fica destacada.</div>
       <div class="veiculos">
-        ${Object.entries(VEICULOS).map(([k,v])=>`<button type="button" aria-pressed="${f.veiculo===k?'true':'false'}" class="${f.veiculo===k?'sel':''}" onclick="mudarVeiculo('${k}')"><span class="emoji">${v.emoji}</span>${v.label}</button>`).join('')}
+        ${Object.entries(VEICULOS).map(([k,v])=>`<button type="button" aria-label="${v.label}" aria-pressed="${f.veiculo===k?'true':'false'}" class="${f.veiculo===k?'sel':''}" onclick="mudarVeiculo('${k}')">${iconeVeiculoPremium(k)}<span class="nome-veiculo">${v.label}</span></button>`).join('')}
       </div>
     </div>
 
@@ -10174,4 +10186,40 @@ html,body{background:#12161c!important}
 }
 .bv-cta-fixa .btn-instalar-fixo{border:1.5px solid #ff8a00!important;background:#171a1f!important;color:#ff9a16!important;box-shadow:inset 0 0 18px rgba(255,138,0,.06)!important}
 @media(max-width:360px){.bv-cta-fixa{gap:5px!important;padding-left:7px!important;padding-right:7px!important}.bv-cta-fixa button{font-size:12.5px!important}}
+</style>
+<style id="ef-escolha-veiculo-premium-contraste-20260902">
+/* Escolha da entrega: desenhos vetoriais do Index, nomes legíveis e contraste reforçado. */
+.veiculo-escolha-destaque .veiculos button{
+  min-height:88px!important;
+  padding:10px 4px 9px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  color:#4f5663!important;
+  background:#f7f8fa!important;
+  border-color:#d5d9e0!important;
+}
+.veiculo-escolha-destaque .veiculos button.sel{
+  color:#e98100!important;
+  background:#fff9ec!important;
+  border-color:#f2a21d!important;
+  box-shadow:0 5px 14px rgba(238,139,0,.13)!important;
+}
+.icone-veiculo-premium{display:flex;width:48px;height:31px;align-items:center;justify-content:center;color:currentColor}
+.icone-veiculo-premium svg{display:block;width:48px;height:31px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.veiculo-escolha-destaque .nome-veiculo{display:block;font-size:12.5px;line-height:1.05;font-weight:800;text-align:center}
+.veiculo-escolha-destaque .veiculo-ajuda{color:#5e6570!important}
+#tela-cliente label{color:#454b56}
+#tela-cliente .subtitulo{color:#5c6470}
+#tela-cliente textarea::placeholder,#tela-cliente input::placeholder{color:#7a818c;opacity:1}
+#tela-cliente .prioridade-niveis button{color:#3f4652}
+#tela-cliente .prioridade-niveis button span{color:#606875}
+@media(max-width:420px){
+  .veiculo-escolha-destaque .veiculos{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:6px!important}
+  .veiculo-escolha-destaque .veiculos button{min-height:82px!important;padding:8px 2px!important}
+  .icone-veiculo-premium,.icone-veiculo-premium svg{width:43px;height:28px}
+  .veiculo-escolha-destaque .nome-veiculo{font-size:11.5px}
+}
 </style>
