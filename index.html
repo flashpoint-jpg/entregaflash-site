@@ -5406,11 +5406,11 @@ function telaBoasVindas(){
       <div class="bv-vehicle-heading">Seu veículo pode virar renda</div>
       <div class="bv-vehicle-copy">Escolha seu veículo, faça o cadastro e receba oportunidades na sua região.</div>
       <div class="bv-vehicle-grid">
-        <div class="bv-vehicle-card"><strong>Bicicleta</strong><span>Entregas leves e percursos curtos</span></div>
-        <div class="bv-vehicle-card"><strong>Moto</strong><span>Agilidade para entregas urbanas e regionais</span></div>
-        <div class="bv-vehicle-card"><strong>Carro</strong><span>Mais espaço e proteção para volumes maiores</span></div>
-        <div class="bv-vehicle-card"><strong>Van</strong><span>Capacidade para cargas e rotas maiores</span></div>
-        <div class="bv-vehicle-card"><strong>Caminhão</strong><span>Atendimento a demandas de maior porte</span></div>
+        <div class="bv-vehicle-card"><span class="veh-premium"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="15" cy="29" r="8"/><circle cx="49" cy="29" r="8"/><path d="M15 29l10-18h11l7 18M25 11l8 18M15 29h18l10-11M21 11h9M39 8h8"/></svg></span><strong>Bicicleta</strong></div>
+        <div class="bv-vehicle-card"><span class="veh-premium"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="14" cy="29" r="8"/><circle cx="50" cy="29" r="8"/><path d="M14 29h15l7-13h11l7 13M27 29l-7-16h13M38 12h11M44 8h8"/></svg></span><strong>Moto</strong></div>
+        <div class="bv-vehicle-card"><span class="veh-premium"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="16" cy="30" r="6"/><circle cx="49" cy="30" r="6"/><path d="M6 29v-8l8-3 7-10h23l8 10 6 3v8M21 8l-4 10h31M10 24h6m33 0h8"/></svg></span><strong>Carro</strong></div>
+        <div class="bv-vehicle-card"><span class="veh-premium"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="15" cy="30" r="6"/><circle cx="50" cy="30" r="6"/><path d="M5 30V9h40l12 12v9M45 9v12h12M10 14h29M21 9v12"/></svg></span><strong>Van</strong></div>
+        <div class="bv-vehicle-card"><span class="veh-premium"><svg viewBox="0 0 64 40" aria-hidden="true"><circle cx="14" cy="30" r="6"/><circle cx="50" cy="30" r="6"/><path d="M4 30V8h35v22M39 15h12l9 9v6M44 19h7l5 6H44zM8 13h27"/></svg></span><strong>Caminhão</strong></div>
       </div>
     </section>
 
@@ -5436,26 +5436,6 @@ function telaBoasVindas(){
       <p>Chame um entregador quando precisar, sem manter motorista parado.</p>
       <div class="bv-business-chips"><span>Farmácia</span><span>Mercado</span><span>Restaurante</span><span>Loja</span></div>
       <button class="btn btn-primario" onclick="abrirParceiros()"> QUERO SER PARCEIRO</button>
-    </section>
-
-    <section class="bv-section-real bv-driver-real">
-      <div class="bv-driver-panel">
-        <div class="bv-kicker">Seja um entregador parceiro</div>
-        <h2>Ganhe fazendo <span>entregas</span></h2>
-        <div class="subtitulo">Trabalhe na sua região usando bicicleta, moto, carro, van ou caminhão.</div>
-        <div class="ef-founder-box">
-          <div class="ef-founder-title">Benefício Motorista Fundador</div>
-          <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
-          <div class="ef-founder-sub">Durante as 10 primeiras entregas elegíveis do benefício fundador, a plataforma não desconta comissão. Depois, valem as regras normais do plano escolhido.</div>
-        </div>
-        <div class="bv-driver-benefits">
-          <div> Faça seu próprio horário</div><div> Receba por entrega</div><div> Bicicleta também é aceita</div><div> Plano Free sem mensalidade</div>
-        </div>
-        <div class="ef-trust-mini"><span>Pré-cadastro rápido</span><span>Você escolhe quais corridas aceitar</span><span>Suporte dentro do app</span></div>
-        <button class="btn btn-primario" onclick="iniciarPreparacaoBV('entregador')"> GARANTIR MEU PRÉ-CADASTRO</button>
-        <button class="btn btn-azul" style="margin-top:8px" onclick="entrarBoasVindas('entregador')"> Já sou cadastrado — Entrar</button>
-        <div style="text-align:center;margin-top:10px"><span style="font-size:12.5px;color:var(--poeira);text-decoration:underline;cursor:pointer" onclick="entrarComoVisitante('entregador')"> Quero conhecer primeiro, sem cadastro</span></div>
-      </div>
     </section>
 
     <section class="bv-partner-real">
@@ -5487,6 +5467,7 @@ function telaBoasVindas(){
   <div class="bv-cta-fixa">
     <button type="button" class="btn-primario" onclick="entrarComoVisitante('cliente')"> Pedir entrega</button>
     <button type="button" class="btn-azul" onclick="escolherBoasVindas('entregador')"> Seja motorista</button>
+    <button type="button" class="btn-instalar-fixo" onclick="instalarPeloPopup()"> Instalar app</button>
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -10158,4 +10139,39 @@ html,body{background:#12161c!important}
 .bv-business-card .btn{width:auto!important;min-width:210px!important;height:44px!important;padding:8px 20px!important;margin:0 auto!important;font-size:14px!important;border-radius:12px!important}
 .bv-business-card{padding-bottom:16px!important}
 }
+</style>
+<style id="ef-vetor-premium-final">
+.bv-vehicle-card:before{content:none!important;display:none!important}
+.bv-vehicle-card .veh-premium{display:flex!important;align-items:center!important;justify-content:center!important;width:58px!important;height:38px!important;margin:0 auto 5px!important;color:#ff8a00!important}
+.bv-vehicle-card .veh-premium svg{display:block!important;width:58px!important;height:38px!important;fill:none!important;stroke:currentColor!important;stroke-width:2.4!important;stroke-linecap:round!important;stroke-linejoin:round!important;filter:drop-shadow(0 0 7px rgba(255,138,0,.22))}
+.bv-vehicle-card{height:92px!important;min-height:92px!important;max-height:92px!important;flex-direction:column!important;gap:0!important}
+.bv-vehicle-card strong{font-size:13px!important;letter-spacing:.2px!important}
+</style>
+<style id="ef-barra-fixa-3-acoes-final">
+.bv-wrap{padding-bottom:92px!important}
+.bv-cta-fixa{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:7px!important;
+  padding:9px 10px calc(9px + env(safe-area-inset-bottom,0px))!important;
+  min-height:70px!important;
+  box-sizing:border-box!important;
+  background:rgba(7,8,10,.97)!important;
+}
+.bv-cta-fixa button{
+  width:100%!important;
+  min-width:0!important;
+  height:52px!important;
+  min-height:52px!important;
+  margin:0!important;
+  padding:7px 5px!important;
+  border-radius:13px!important;
+  font-family:'Rajdhani',system-ui,sans-serif!important;
+  font-size:14px!important;
+  line-height:1!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+.bv-cta-fixa .btn-instalar-fixo{border:1.5px solid #ff8a00!important;background:#171a1f!important;color:#ff9a16!important;box-shadow:inset 0 0 18px rgba(255,138,0,.06)!important}
+@media(max-width:360px){.bv-cta-fixa{gap:5px!important;padding-left:7px!important;padding-right:7px!important}.bv-cta-fixa button{font-size:12.5px!important}}
 </style>
