@@ -7971,6 +7971,9 @@ async function avancarEtapa1(){
     if(!salvo || !salvo.id) throw new Error('cadastro_nao_confirmado');
     c.id = salvo.id;
     c.criadoEm = salvo.criado_em || Date.now();
+    // Permite recuperar o cadastro do banco após fechar ou recarregar a página.
+    salvarLocal('ef_motorista_telefone', c.telefone);
+    salvarLocal('ef_modo','entregador');
     c.enviando=false;
     // Pré-cadastro é apenas um lead. A conversão CompleteRegistration fica reservada
     // para quem realmente termina documentos, PIX e termos.
@@ -8037,6 +8040,26 @@ function voltarEtapa(n){ estado.painelMotorista.cadastro.etapa=n; estado.painelM
 
 let uploadPendente = null; // 'cnh' | 'crlv' | 'fotoVeiculoFrente' | 'fotoVeiculoTras' | 'fotoMotorista'
 let selfieMotoristaStream=null;
+function fecharOpcoesSelfieMotorista(){ document.getElementById('ef-selfie-opcoes')?.remove(); }
+function abrirOpcoesSelfieMotorista(){
+  fecharOpcoesSelfieMotorista();
+  const modal=document.createElement('div'); modal.id='ef-selfie-opcoes';
+  modal.innerHTML=`<div class="eso-card">
+    <button class="eso-fechar" type="button" onclick="fecharOpcoesSelfieMotorista()">&times;</button>
+    <div class="eso-icone">&#128247;</div><h2>Enviar foto do rosto</h2>
+    <p>Escolha a forma mais fácil. A foto precisa estar nítida, de frente e sem óculos escuros.</p>
+    <button class="btn btn-primario" type="button" onclick="fecharOpcoesSelfieMotorista();abrirTelaSelfieMotorista()">TIRAR SELFIE AGORA</button>
+    <button class="btn btn-secundario" type="button" onclick="escolherSelfieGaleria()">ESCOLHER FOTO DA GALERIA</button>
+  </div>`;
+  document.body.appendChild(modal);
+}
+function escolherSelfieGaleria(){
+  fecharOpcoesSelfieMotorista(); fecharTelaSelfieMotorista();
+  uploadPendente='fotoMotorista';
+  const input=document.getElementById('input-doc-motorista');
+  if(!input){ mostrarToast('Não consegui abrir as fotos. Atualize a página e tente novamente.','erro'); return; }
+  input.click();
+}
 function fecharTelaSelfieMotorista(){
   if(selfieMotoristaStream){ selfieMotoristaStream.getTracks().forEach(t=>t.stop()); selfieMotoristaStream=null; }
   document.getElementById('ef-selfie-motorista')?.remove();
@@ -8053,16 +8076,26 @@ async function abrirTelaSelfieMotorista(){
         <div class="esm-camera"><video id="esm-video" autoplay playsinline muted></video><canvas id="esm-canvas"></canvas><div class="esm-oval"></div><i class="c1"></i><i class="c2"></i><i class="c3"></i><i class="c4"></i></div>
         <p class="esm-pos">Posicione seu rosto dentro da moldura</p>
         <button id="esm-tirar" class="esm-btn" type="button" onclick="tirarSelfieMotorista()"> TIRAR SELFIE</button>
+        <button class="esm-galeria" type="button" onclick="escolherSelfieGaleria()">Ou escolher uma foto da galeria</button>
+        <div id="esm-camera-erro" class="esm-camera-erro" style="display:none"></div>
         <div class="esm-priv"> <span>Sua foto é usada apenas para verificação da sua conta.<br>Não compartilhamos com terceiros.</span></div>
       </div>
     </div></div>`;
   document.body.appendChild(modal);
   if(!document.getElementById('esm-css')){ const st=document.createElement('style'); st.id='esm-css'; st.textContent=`
 #ef-selfie-motorista{position:fixed;inset:0;z-index:1000000;background:radial-gradient(circle at 50% 10%,#10285e 0,#061b45 45%,#03132f 100%);color:#fff;overflow:auto;font-family:inherit}.esm-wrap{min-height:100%;max-width:720px;margin:auto;padding:24px 18px 34px}.esm-voltar{position:absolute;left:22px;top:22px;background:none;border:0;color:#fff;font-size:38px;display:flex;align-items:center;gap:7px}.esm-voltar span{font-size:17px;font-weight:800}.esm-brand{display:flex;justify-content:center;align-items:center;gap:10px;margin:4px auto 30px}.esm-logo{font-size:50px;color:#ffc400}.esm-brand b{font-size:24px;font-style:italic}.esm-brand em{color:#ffc400;font-style:italic}.esm-brand small{display:block;font-size:10px;margin-top:3px}.esm-card{border:1px solid #24549b;border-radius:18px;overflow:hidden;background:rgba(4,24,61,.55)}.esm-passos{display:flex;align-items:center;justify-content:center;padding:18px 14px;border-bottom:1px solid #24549b}.esm-passos div{display:grid;place-items:center;gap:4px;min-width:62px;font-size:12px}.esm-passos i{font-style:normal;width:38px;height:38px;border-radius:50%;background:#244b91;display:grid;place-items:center}.esm-passos .on{color:#ffc400}.esm-passos .on i{background:#ffc400;color:#071b40}.esm-passos b{height:3px;flex:1;max-width:70px;background:#31578e}.esm-body{text-align:center;padding:26px 18px}.esm-body h2{font-size:25px;margin:0 0 8px}.esm-body p{margin:0 auto 7px;color:#e1e7f3}.esm-body strong{display:block;color:#ffc400;margin-bottom:18px}.esm-camera{position:relative;width:min(480px,100%);aspect-ratio:1/1;margin:auto;border-radius:16px;overflow:hidden;background:#dfe3e7;border:1px solid #3876c9}.esm-camera video,.esm-camera canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}.esm-camera canvas{display:none}.esm-oval{position:absolute;left:16%;top:8%;width:68%;height:82%;border:3px dashed #1688ef;border-radius:50%;pointer-events:none}.esm-camera i{position:absolute;width:52px;height:52px;border-color:#fff;border-style:solid;filter:drop-shadow(0 0 2px #1688ef)}.esm-camera .c1{left:12%;top:8%;border-width:5px 0 0 5px;border-radius:18px 0 0}.esm-camera .c2{right:12%;top:8%;border-width:5px 5px 0 0;border-radius:0 18px 0 0}.esm-camera .c3{left:12%;bottom:8%;border-width:0 0 5px 5px;border-radius:0 0 0 18px}.esm-camera .c4{right:12%;bottom:8%;border-width:0 5px 5px 0;border-radius:0 0 18px}.esm-pos{font-size:16px;margin-top:14px!important}.esm-btn{background:#ffc400;color:#071b40;border:0;border-radius:10px;padding:14px 25px;font-weight:900;font-size:17px;margin:10px auto 18px}.esm-btn:disabled{opacity:.6}.esm-priv{display:flex;text-align:left;gap:12px;align-items:center;max-width:520px;margin:auto;padding:15px 18px;border:1px solid #244f8f;border-radius:13px;color:#e6ebf5;font-size:13px;line-height:1.45;background:rgba(13,42,89,.5)}
+.esm-galeria{display:block;margin:0 auto 14px;border:1px solid #5e8bc8;border-radius:10px;background:#102f63;color:#fff;padding:12px 18px;font-weight:800;font-size:14px}.esm-camera-erro{max-width:520px;margin:0 auto 14px;padding:12px;border:1px solid #ffbd3d;border-radius:10px;background:rgba(255,189,61,.12);color:#fff3cf;font-size:13px;line-height:1.4}
+#ef-selfie-opcoes{position:fixed;inset:0;z-index:1000001;display:grid;place-items:center;padding:18px;background:rgba(1,7,20,.88);font-family:inherit}.eso-card{position:relative;width:min(440px,100%);padding:26px 20px 20px;border:1px solid #315f9e;border-radius:18px;background:linear-gradient(160deg,#0b2a61,#061735);color:#fff;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.55)}.eso-card h2{margin:4px 0 8px;font-size:24px}.eso-card p{margin:0 0 18px;color:#dbe5f5;line-height:1.45;font-size:14px}.eso-card .btn{width:100%;min-height:50px;margin-top:9px}.eso-icone{font-size:38px}.eso-fechar{position:absolute;right:10px;top:8px;border:0;background:none;color:#fff;font-size:32px;line-height:1}
 @media(max-width:520px){.esm-wrap{padding:18px 10px 24px}.esm-brand{margin-top:42px}.esm-brand b{font-size:20px}.esm-body{padding:20px 12px}.esm-body h2{font-size:22px}.esm-passos span{font-size:10px}.esm-passos div{min-width:50px}.esm-passos b{max-width:35px}}
 `; document.head.appendChild(st); }
   try{ selfieMotoristaStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:900},height:{ideal:900}},audio:false}); const v=document.getElementById('esm-video'); v.srcObject=selfieMotoristaStream; await v.play(); }
-  catch(e){ mostrarToast('Não foi possível abrir a câmera. Verifique a permissão.', 'erro'); fecharTelaSelfieMotorista(); }
+  catch(e){
+    console.error('camera_selfie',e);
+    const erro=document.getElementById('esm-camera-erro');
+    if(erro){ erro.style.display='block'; erro.textContent='A câmera foi bloqueada ou não abriu neste aparelho. Use o botão “escolher uma foto da galeria” para continuar agora.'; }
+    const btn=document.getElementById('esm-tirar'); if(btn) btn.style.display='none';
+    mostrarToast('A câmera não abriu. Você pode escolher a selfie na galeria.','aviso');
+  }
 }
 async function tirarSelfieMotorista(){
   const v=document.getElementById('esm-video'), canvas=document.getElementById('esm-canvas'), btn=document.getElementById('esm-tirar'); if(!v||!v.videoWidth) return;
@@ -8074,7 +8107,7 @@ async function tirarSelfieMotorista(){
   const {data:pub}=sb.storage.from('motorista-documentos').getPublicUrl(nomeArquivo); c.fotoMotoristaUrl=pub.publicUrl; await salvarEtapaCadastro({foto_motorista_url:c.fotoMotoristaUrl});
   fecharTelaSelfieMotorista(); mostrarToast('Selfie salva com sucesso!'); render();
 }
-function solicitarUploadDocumento(tipo){ if(tipo==='fotoMotorista'){ abrirTelaSelfieMotorista(); return; } uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
+function solicitarUploadDocumento(tipo){ if(tipo==='fotoMotorista'){ abrirOpcoesSelfieMotorista(); return; } uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
 async function prepararImagemDocumento(file){
   // Fotos grandes de celular são reduzidas antes do upload para evitar travar/abandonar em internet móvel.
   if(!file || !String(file.type||'').startsWith('image/')) return file;
