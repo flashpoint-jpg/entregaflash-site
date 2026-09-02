@@ -1,0 +1,31 @@
+{
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": "/admin/admin.html"
+    },
+    {
+      "source": "/admin/",
+      "destination": "/admin/admin.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/entregaflash.apk",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=Entrega-Flash.apk"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0"
+        }
+      ]
+    }
+  ]
+}
