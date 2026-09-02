@@ -782,6 +782,31 @@ body.ef-admin-logado .admin-topo{position:sticky;top:0;z-index:30;backdrop-filte
   .admin-lista-secao{margin-left:2px;margin-right:2px}
 }
 </style>
+<style id="ef-veiculos-com-icones-compactos-20260902">
+/* Veículos com ilustrações grandes e cartões realmente padronizados. */
+@media(max-width:700px){
+  .bv-vehicle-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  .bv-vehicle-card{
+    width:100%!important;
+    height:86px!important;
+    min-height:86px!important;
+    max-height:86px!important;
+    grid-column:auto!important;
+    padding:8px 4px!important;
+    flex-direction:column!important;
+    gap:4px!important;
+  }
+  .bv-vehicle-card:before{display:block!important;font-size:32px!important;line-height:1!important}
+  .bv-vehicle-card:nth-child(1):before{content:"🚲"}
+  .bv-vehicle-card:nth-child(2):before{content:"🏍️"}
+  .bv-vehicle-card:nth-child(3):before{content:"🚗"}
+  .bv-vehicle-card:nth-child(4):before{content:"🚐"}
+  .bv-vehicle-card:nth-child(5):before{content:"🚚"}
+  .bv-vehicle-card strong{font-size:13px!important;line-height:1!important}
+  .bv-business-card .btn{width:auto!important;min-width:210px!important;height:44px!important;padding:8px 20px!important;margin:0 auto!important;font-size:14px!important;border-radius:12px!important}
+  .bv-business-card{padding-bottom:16px!important}
+}
+</style>
 <style id="ef-home-enxuta-padronizada-20260902">
 /* Home compacta: elimina blocos repetidos e mantém os acessos principais. */
 .bv-strip,
@@ -10122,4 +10147,15 @@ html,body{background:#12161c!important}
 .bv-business-card .btn{height:54px!important;margin:0!important;border-radius:13px!important;font-size:16px!important}
 .bv-hero-real>.bv-hero-actions .ef-home-action{min-height:84px!important;height:84px!important;box-sizing:border-box!important;margin:0!important}
 @media(max-width:700px){.bv-vehicle-zone,.bv-business-card{width:calc(100% - 24px)!important;margin-top:12px!important;padding:17px 14px!important}.bv-vehicle-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.bv-vehicle-card{min-height:52px!important}.bv-business-chips{grid-template-columns:repeat(2,minmax(0,1fr))!important}.bv-vehicle-heading,.bv-business-card h2{font-size:22px!important}}
+</style>
+<style id="ef-veiculos-compactos-prioridade-final">
+@media(max-width:700px){
+.bv-vehicle-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+.bv-vehicle-card{width:100%!important;height:86px!important;min-height:86px!important;max-height:86px!important;grid-column:auto!important;padding:8px 4px!important;flex-direction:column!important;gap:4px!important}
+.bv-vehicle-card:before{display:block!important;font-size:32px!important;line-height:1!important}
+.bv-vehicle-card:nth-child(1):before{content:"🚲"}.bv-vehicle-card:nth-child(2):before{content:"🏍️"}.bv-vehicle-card:nth-child(3):before{content:"🚗"}.bv-vehicle-card:nth-child(4):before{content:"🚐"}.bv-vehicle-card:nth-child(5):before{content:"🚚"}
+.bv-vehicle-card strong{font-size:13px!important;line-height:1!important}
+.bv-business-card .btn{width:auto!important;min-width:210px!important;height:44px!important;padding:8px 20px!important;margin:0 auto!important;font-size:14px!important;border-radius:12px!important}
+.bv-business-card{padding-bottom:16px!important}
+}
 </style>
