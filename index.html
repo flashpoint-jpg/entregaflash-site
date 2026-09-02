@@ -1178,7 +1178,6 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 @media(max-width:560px){.parceiro-grid{grid-template-columns:1fr}.parceiro-passos{grid-template-columns:1fr}.parceiro-hero h1{font-size:34px}.parceiro-page{padding:14px 12px 30px}}
 </style>
 
-<link rel="stylesheet" href="assets/entregaflash-premium.css?v=20260902b">
 <body>
 <div id="splash" style="display:none">
   <div class="splash-particulas">
@@ -5207,35 +5206,27 @@ function telaClienteBemVindoBV(nome){
 function telaBoasVindas(){
   return `
   <div class="bv-wrap">
-    <section class="bv-hero-real ef-reference-hero">
-      <nav class="ef-home-nav" aria-label="Menu principal">
-        <img class="ef-home-nav-logo" src="assets/inline/633a31acd527.webp" alt="Entrega Flash" decoding="async" fetchpriority="high">
-        <div class="ef-home-links">
-          <button class="ef-home-link" onclick="abrirParceiros()">Empresas</button>
-          <button class="ef-home-link" onclick="entrarComoVisitante('cliente')">Usuário</button>
-          <button class="ef-home-link" onclick="escolherBoasVindas('entregador')">Motorista</button>
-          <button class="ef-home-link" onclick="abrirParceiros()">Parcerias</button>
-          <button class="ef-home-link ef-home-login" onclick="entrarBoasVindas('cliente')">Entrar</button>
-          <button class="ef-home-link ef-home-signup" onclick="entrarComoVisitante('cliente')">Cadastre-se</button>
-        </div>
-      </nav>
-      <div class="ef-hero-copy">
-        <div class="bv-kicker">Plataforma de entregas sob demanda</div>
-        <div class="bv-titulo-grande">Solução rápida em <span class="destaque">entregas</span></div>
-        <div class="bv-subtagline">Entregas sob demanda na cidade, zona rural, sítios e fazendas da sua região.</div>
-        <div class="bv-hero-actions">
-          <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')">COMEÇAR A USAR</button>
-          <button class="btn btn-azul" onclick="escolherBoasVindas('entregador')">QUERO SER MOTORISTA</button>
-        </div>
-        <div class="ef-cta-note">Cliente: cadastro simples • Motorista: pré-cadastro grátis</div>
+    <section class="bv-hero-real">
+      <div class="bv-cabecalho">
+        <div class="bv-logo-badge"><img class="logo-img" src="${LOGO_ENTREGA_FLASH_INICIAL}" alt="Entrega Flash"></div>
       </div>
-      <div class="ef-fleet-visual"><img src="assets/inline/2d5cdd0b8ef8.webp" alt="Frota Entrega Flash" width="900" height="600" decoding="async" fetchpriority="high"></div>
+      <div class="bv-kicker"> Entregas rápidas e seguras</div>
+      <div class="bv-titulo-grande" data-text="Entregas na sua região">Entregas na sua <span class="destaque">região!</span></div>
+      <div class="bv-subtagline">Mercado, farmácia, documentos, encomendas e o que você precisar — na cidade, zona rural, sítios e fazendas da sua região.</div>
+      <div class="bv-chips">
+        <span class="bv-chip"> Atuação regional</span><span class="bv-chip"> Cidade + zona rural</span><span class="bv-chip"> Acompanhe pelo celular</span>
+      </div>
+      <div class="ef-live-proof">
+        <i class="ef-live-dot"></i>
+        <div><strong>Entrega Flash em funcionamento</strong><br><span>Peça pelo celular, acompanhe o atendimento e veja o motorista quando a corrida for aceita.</span></div>
+      </div>
+      <div class="bv-hero-actions">
+        <button class="btn btn-primario" onclick="entrarComoVisitante('cliente')"> PEDIR ENTREGA AGORA</button>
+        <button class="btn btn-azul" onclick="escolherBoasVindas('entregador')" style="font-size:17px;font-weight:900;min-height:58px"> QUERO SER MOTORISTA — COMEÇAR CADASTRO</button>
+        <button class="btn btn-secundario" style="margin-top:8px;border-color:#ff8a00;color:#ff9b14" onclick="abrirParceiros()"> TENHO UMA EMPRESA — QUERO SER PARCEIRO</button>
+      </div>
+      <div class="ef-cta-note">Cliente: cadastro simples • Motorista: pré-cadastro grátis</div>
     </section>
-    <div class="ef-home-cards">
-      <button class="ef-home-card" onclick="abrirParceiros()"><span>▣</span><div>Para empresas<small>Soluções para lojas e parceiros</small></div></button>
-      <button class="ef-home-card" onclick="entrarComoVisitante('cliente')"><span>◎</span><div>Para você<small>Peça e acompanhe sua entrega</small></div></button>
-      <button class="ef-home-card" onclick="escolherBoasVindas('entregador')"><span>♙</span><div>Seja motorista<small>Cadastre-se e receba entregas</small></div></button>
-    </div>
 
     <div class="bv-strip">
       <div class="bv-strip-item"><div class="bv-strip-icon"></div><div class="bv-strip-title">Rápido</div><div class="bv-strip-sub">Peça quando precisar</div></div>
@@ -9379,6 +9370,63 @@ iniciarAppReal();
   window.addEventListener('orientationchange',function(){setTimeout(aplicarModoApp,180);},{passive:true});
 })();
 </script>
+
+
+<style id="ef-ajuste-imagem-menu-2026-09-01">
+/* Ajuste final responsivo: imagem inteira no celular e topo sem cobrir textos */
+.bv-hero-real{box-sizing:border-box!important;overflow:hidden!important}
+.bv-hero-real .bv-cabecalho{z-index:10!important;pointer-events:auto!important}
+
+@media (min-width:701px){
+  .bv-hero-real{
+    min-height:650px!important;
+    padding:42px clamp(32px,5vw,76px) 46px!important;
+    padding-top:42px!important;
+    justify-content:flex-end!important;
+    background-size:cover!important;
+    background-position:center center!important;
+  }
+  .bv-hero-real .bv-cabecalho{
+    position:absolute!important;top:26px!important;left:clamp(32px,5vw,76px)!important;right:auto!important;
+    width:auto!important;min-height:92px!important;margin:0!important;
+    display:flex!important;align-items:flex-start!important;justify-content:flex-start!important;
+  }
+  .bv-hero-real .bv-logo-badge{width:220px!important;max-width:220px!important;margin:0!important}
+  .bv-hero-real .bv-logo-badge .logo-img{max-width:220px!important}
+  .bv-hero-real .bv-kicker{margin-top:120px!important}
+  .bv-hero-real .bv-titulo-grande{font-size:clamp(46px,5.2vw,76px)!important;max-width:650px!important}
+  .bv-hero-real .bv-subtagline,.bv-hero-real .bv-chips,.bv-hero-real .ef-live-proof,.bv-hero-actions,.ef-cta-note{max-width:650px!important}
+}
+
+@media (max-width:700px){
+  .bv-hero-real{
+    min-height:0!important;
+    padding:0 18px 30px!important;
+    justify-content:flex-start!important;
+    background-color:#08090b!important;
+    background-size:100% auto!important;
+    background-repeat:no-repeat!important;
+    background-position:center top!important;
+  }
+  .bv-hero-real:before,.bv-hero-real:after{
+    background:linear-gradient(180deg,rgba(5,6,8,.04) 0%,rgba(5,6,8,.08) 31%,rgba(5,6,8,.94) 48%,rgba(5,6,8,.99) 100%)!important;
+  }
+  .bv-hero-real .bv-cabecalho{
+    position:relative!important;top:auto!important;left:auto!important;right:auto!important;
+    min-height:0!important;margin:14px 0 0!important;height:72px!important;
+    display:flex!important;align-items:flex-start!important;justify-content:flex-start!important;
+  }
+  .bv-hero-real .bv-logo-badge{width:145px!important;max-width:145px!important;margin:0!important;justify-content:flex-start!important}
+  .bv-hero-real .bv-logo-badge .logo-img{max-width:145px!important;max-height:72px!important}
+  .bv-hero-real .bv-kicker{margin-top:250px!important;margin-bottom:8px!important;font-size:12px!important}
+  .bv-hero-real .bv-titulo-grande{font-size:clamp(38px,11vw,52px)!important;line-height:.98!important;max-width:100%!important;margin:8px 0 16px!important}
+  .bv-hero-real .bv-subtagline{font-size:16px!important;line-height:1.48!important;max-width:100%!important}
+  .bv-chips{gap:6px!important}.bv-chip{font-size:11px!important;padding:7px 9px!important}
+  .ef-live-proof{margin-top:10px!important}
+  .bv-hero-actions{margin-top:14px!important}
+}
+@media (max-width:390px){.bv-hero-real .bv-kicker{margin-top:225px!important}}
+</style>
 
 </body>
 </html>
