@@ -1191,7 +1191,7 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
  .bv-hero-real .bv-cabecalho{height:82px!important;min-height:82px!important;margin:0!important;padding:14px 0 0!important;justify-content:flex-start!important;align-items:flex-start!important}
  .bv-hero-real .bv-logo-badge{width:148px!important;max-width:148px!important;margin:0!important;justify-content:flex-start!important}
  .bv-hero-real .bv-logo-badge .logo-img{width:148px!important;max-width:148px!important;max-height:68px!important;object-fit:contain!important}
- .bv-kicker{margin-top:238px!important;margin-bottom:8px!important;font-size:12px!important;letter-spacing:.14em!important}
+ .bv-hero-real > .bv-kicker{margin-top:238px!important;margin-bottom:8px!important;font-size:12px!important;letter-spacing:.14em!important}
  .bv-hero-real .bv-titulo-grande{font-size:clamp(34px,10.5vw,46px)!important;line-height:.94!important;max-width:100%!important;margin:0 0 12px!important;letter-spacing:-.045em!important}
  .bv-hero-real .bv-subtagline{font-size:14px!important;line-height:1.45!important;max-width:100%!important;margin:0 0 12px!important}
  .bv-chips{display:none!important}
@@ -1206,7 +1206,7 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
  .bv-strip{display:none!important}
  .bv-section-real,.bv-vehicle-zone,.bv-partner-real,.bv-trust-line,.bv-business-card{margin-top:10px!important}
 }
-@media(max-width:370px){.bv-hero-actions{grid-template-columns:1fr!important}.ef-home-action{min-height:68px!important}.bv-kicker{margin-top:220px!important}}
+@media(max-width:370px){.bv-hero-actions{grid-template-columns:1fr!important}.ef-home-action{min-height:68px!important}.bv-hero-real > .bv-kicker{margin-top:220px!important}}
 </style>
 
 <style id="ef-fix-driver-gap-definitivo-20260901">
@@ -5850,26 +5850,27 @@ function progressoDocumentosHTML(c){
 function telaCadastroMotorista(){
   const c = estado.painelMotorista.cadastro;
   const introEtapa1 = c.etapa===1 ? `
-  <div class="campo-motorista" style="margin-bottom:14px">
-    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 8px">Como funciona</h2>
-    <div style="font-size:14.5px;color:var(--poeira);line-height:1.55">
-      O <b style="color:var(--osso)">Entrega Flash</b> conecta você a quem precisa de uma entrega na sua região — você aceita as corridas que quiser, no seu tempo livre, com bicicleta, moto, carro ou caminhão.
-    </div>
-    <div class="ef-founder-box" style="margin-top:12px">
-      <div class="ef-founder-title">Seu benefício de fundador</div>
-      <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
-      <div class="ef-founder-sub">Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</div>
-    </div>
-    <div style="margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
-      <div style="font-weight:700;color:var(--osso);font-size:15px"> Plano Free — sem mensalidade</div>
-      <div style="font-size:14px;color:var(--poeira);margin-top:4px">Você pode começar pelo Free. O Pro é opcional e oferece vantagens adicionais conforme as configurações atuais do app.</div>
-    </div>
-    <div class="ef-steps-mini"><div class="ef-step-mini"><b>1. Pré-cadastro</b>Nome, WhatsApp, cidade e veículo.</div><div class="ef-step-mini"><b>2. Recebimento</b>Informe sua chave PIX antes dos documentos.</div><div class="ef-step-mini"><b>3. Ativação</b>Envie os documentos e finalize o cadastro.</div></div>
-  </div>` : '';
+  <section class="ef-driver-signup-hero" style="margin:0 0 12px;padding:18px 18px 16px;border:1px solid rgba(255,255,255,.08);border-radius:20px;background:radial-gradient(circle at 88% 12%,rgba(255,145,0,.11),transparent 34%),linear-gradient(155deg,#1b2027,#13171c)">
+    <div style="font-family:'Rajdhani';font-size:clamp(27px,8vw,38px);line-height:.98;font-weight:900;text-transform:uppercase;color:var(--osso);letter-spacing:-.02em">Cadastro de <span style="color:#ff9518">motorista</span></div>
+    <div style="font-size:14px;color:var(--poeira);line-height:1.45;margin-top:8px">Trabalhe com entregas na sua região e aumente sua renda.</div>
+    <button class="btn btn-primario" style="margin-top:14px;min-height:58px;font-size:17px;font-weight:900" onclick="document.getElementById('cadastro-motorista-form')?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>document.getElementById('cm-nome')?.focus(),450)">QUERO ME CADASTRAR →</button>
+  </section>
+  <div class="ef-founder-box" style="margin:0 0 12px">
+    <div class="ef-founder-title">Seu benefício de fundador</div>
+    <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
+    <div class="ef-founder-sub">Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</div>
+  </div>
+  <div style="margin:0 0 12px;padding:14px 16px;border-radius:16px;background:linear-gradient(135deg,rgba(35,125,72,.18),rgba(20,51,34,.18));border:1px solid rgba(42,183,99,.70)">
+    <div style="font-weight:800;color:var(--osso);font-size:16px">Plano Free — sem mensalidade</div>
+    <div style="font-size:13.5px;color:var(--poeira);margin-top:4px;line-height:1.42">Você pode começar pelo Free. O Pro é opcional e oferece vantagens adicionais.</div>
+  </div>
+  <div style="font-family:'Rajdhani';font-weight:800;font-size:18px;text-transform:uppercase;margin:14px 0 8px">Como funciona</div>
+  <div class="ef-steps-mini" style="margin-bottom:12px"><div class="ef-step-mini"><b>1. Pré-cadastro</b>Nome, WhatsApp, cidade e veículo.</div><div class="ef-step-mini"><b>2. Recebimento</b>Informe sua chave PIX antes dos documentos.</div><div class="ef-step-mini"><b>3. Ativação</b>Envie os documentos e finalize o cadastro.</div></div>
+  ` : '';
   let corpo='';
   if(c.etapa===1){
     corpo = `
-    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 10px">Criar conta</h2>
+    <h2 style="font-family:'Rajdhani';font-weight:800;font-size:21px;text-transform:uppercase;margin:0 0 4px">Preencha seus dados</h2><div style="font-size:13px;color:var(--poeira);margin-bottom:12px">Comece pelo pré-cadastro. É rápido e gratuito.</div>
     <div class="campo-icone"><span class="ic"></span><input type="text" id="cm-nome" value="${c.nome}" placeholder="Nome completo"></div>
     <div class="campo-icone"><span class="ic"></span><input type="tel" id="cm-telefone" value="${c.telefone}" placeholder="Telefone / WhatsApp"></div>
     <div class="campo-icone"><span class="ic"></span><input type="text" id="cm-cidade" value="${c.cidade}" placeholder="Cidade"></div>
@@ -5979,7 +5980,7 @@ function telaCadastroMotorista(){
       <button class="btn btn-primario" style="margin-top:0" ${c.enviando?'disabled':''} onclick="finalizarCadastroMotorista()">${c.enviando?'A enviar...':'Enviar cadastro'}</button>
     </div>`;
   }
-  return `${introEtapa1}<div class="campo-motorista">
+  return `${introEtapa1}<div class="campo-motorista" id="cadastro-motorista-form">
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
       <button class="btn btn-secundario btn-pequeno botao-chat" onclick="abrirSuporteGeral()"> Falar com suporte</button>
     </div>
@@ -6648,7 +6649,7 @@ function _efAssinaturaTela(){
   ].join('|');
 }
 function barraNavegacaoFluxo(){
-  if(estado.cliente.logado || estado.motorista.ativo || estado.telaBoasVindas) return '';
+  if((estado.cliente.logado && !estado.cliente.visitante) || (estado.motorista.ativo && !estado.motorista.visitante) || estado.telaBoasVindas) return '';
   let titulo = estado.modo==='cliente' ? 'Área do cliente' : 'Área do entregador';
   if(estado.modo==='cliente' && estado.painelCliente?.tela==='cadastro') titulo='Cadastro de cliente';
   if(estado.modo==='entregador' && estado.painelMotorista?.tela==='cadastro') titulo=`Cadastro de entregador · etapa ${estado.painelMotorista.cadastro?.etapa||1}`;
@@ -6726,7 +6727,7 @@ function render(){
   // cliente/motorista, aparecimento de algum aviso etc.) — antes ele era recriado em TODO render(),
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
-      ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
+      ${((!estado.cliente.logado && !estado.motorista.ativo) || estado.cliente.visitante || estado.motorista.visitante) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">← Voltar</button>` : ''}
       ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}"></button>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
@@ -6735,12 +6736,6 @@ function render(){
   const _efClasseTransicao = _efAssinaturaAtual!==_efAssinaturaTelaAnterior ? ' ef-tela-entrando' : '';
   _efAssinaturaTelaAnterior = _efAssinaturaAtual;
   const restoHTML = `
-    ${(estado.cliente.visitante || estado.motorista.visitante) ? `
-    <div class="aviso-app-novo" style="background:rgba(255,201,60,0.16);border-color:var(--mango)">
-       <b>Modo visitante — você está só conhecendo o app.</b><br>${estado.motorista.visitante ? 'Veja as corridas e entenda como funciona. Quando quiser trabalhar de verdade, ative sua conta.' : 'Nenhum pedido/corrida real é criado aqui. Cadastre-se pra usar de verdade.'}
-      <div style="margin-top:8px"><button class="btn btn-primario btn-pequeno" onclick="sairDoModoVisitante()">${estado.motorista.visitante ? ' Quero trabalhar — ativar conta' : ' Cadastrar agora'}</button></div>
-    </div>` : ''}
-    <div class="aviso-app-novo"> <b>Aplicativo novo em funcionamento — pedimos paciência!</b><br>Estamos melhorando a cada dia. Contamos com sua ajuda e divulgação para crescer com a gente! Obrigado pela confiança! </div>
     ${barraNavegacaoFluxo()}
     <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
     ${(estado.podeInstalar && !estado.appInstalado) ? `
@@ -9446,5 +9441,13 @@ html,body{background:#12161c!important}
   /* remove o vão antes do conteúdo do motorista */
   .bv-driver-real{min-height:0!important;height:auto!important;align-items:flex-start!important;padding:16px 14px!important;background-position:center 35%!important}
   .bv-driver-panel{margin:0!important;padding:18px!important}
+}
+</style>
+
+<style id="ef-final-ajustes-20260902-0639">
+@media(max-width:700px){
+  .bv-driver-real .bv-kicker{margin-top:0!important;margin-bottom:8px!important}
+  .bv-wrap .bv-section-real.bv-driver-real{min-height:0!important;height:auto!important;display:block!important;align-items:flex-start!important;justify-content:flex-start!important;padding:14px!important;background-image:none!important}
+  .bv-wrap .bv-section-real.bv-driver-real .bv-driver-panel{min-height:0!important;height:auto!important;margin:0!important;padding:16px!important}
 }
 </style>
