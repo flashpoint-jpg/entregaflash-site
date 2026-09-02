@@ -9419,3 +9419,18 @@ iniciarAppReal();
 
 </body>
 </html>
+<style id="ef-ajuste-clarear-compactar-20260901">
+/* Clareamento sutil: mantém identidade premium escura sem ficar tudo preto */
+:root{--noite:#12161c;--painel:#1b2027;--painel-alt:#222832;--linha:rgba(255,255,255,.14);--poeira:#c5c9d1}
+html,body{background:#12161c!important}
+#app{background:radial-gradient(circle at 15% 0%,rgba(255,151,16,.07),transparent 38%),linear-gradient(180deg,#171c23 0%,#11151b 100%)!important}
+.bv-wrap{background:linear-gradient(180deg,#151a21 0%,#10141a 100%)!important}
+.bv-strip,.bv-section-real,.cartao,.painel-card,.card,.bloco,.modal-conteudo{background:linear-gradient(155deg,rgba(32,37,45,.98),rgba(20,24,30,.98))!important}
+.bv-business-card{background:radial-gradient(circle at 95% 5%,rgba(255,138,0,.16),transparent 36%),#1a1e24!important}
+.bv-driver-panel{background:rgba(22,25,30,.90)!important}
+@media(max-width:600px){
+  /* remove o vão antes do conteúdo do motorista */
+  .bv-driver-real{min-height:0!important;height:auto!important;align-items:flex-start!important;padding:16px 14px!important;background-position:center 35%!important}
+  .bv-driver-panel{margin:0!important;padding:18px!important}
+}
+</style>
