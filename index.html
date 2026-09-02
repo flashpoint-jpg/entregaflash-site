@@ -9435,7 +9435,8 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome){
   const numero=normalizarWhatsAppBR(telefone);
   if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
   const primeiro=(nome||'').trim().split(/\s+/)[0] || 'Olá';
-  const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar o cadastro de entregador. Envie a documentação pelo app o quanto antes. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+  const linkContinuacao='https://entregaflash.app.br/?ir=cadastro-motorista';
+  const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase concluído. Sua chave PIX foi salva, mas ainda não recebemos os seus documentos. Acesse agora o link abaixo, entre na sua conta e envie os documentos que faltam para ativarmos o seu cadastro:\n\n${linkContinuacao}\n\nSe precisar de ajuda, estamos à disposição.`;
   window.open(`https://wa.me/${numero}?text=${encodeURIComponent(msg)}`,'_blank','noopener,noreferrer');
 }
 async function lembrarEnviarDocumentosAdmin(telefone, nome){
