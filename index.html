@@ -1823,15 +1823,11 @@ function instalarPeloPopup(){
   else abrirComoInstalar();
 }
 function baixarAplicativoAndroid(){
-  const urlApk = new URL('entregaflash.apk', document.baseURI).href;
-  const link = document.createElement('a');
-  link.href = urlApk;
-  link.download = 'Entrega-Flash.apk';
-  link.target = '_blank';
-  link.rel = 'noopener';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
+  // O APK antigo deste projeto apontava para um servidor antigo.
+  // Para nunca mais entregar uma versão desatualizada, usamos a instalação PWA do site atual.
+  if(estado.podeInstalar && promptInstalacao){ instalarApp(); return; }
+  abrirComoInstalar();
+  mostrarToast('Instale pela opção “Instalar app” do navegador. Assim o aplicativo sempre abre a versão atual do Entrega Flash.', 'sucesso');
 }
 function popupInstalarHTML(){
   return `
@@ -5375,7 +5371,7 @@ function telaBoasVindas(){
     </div>
 
     <div class="bv-regional-note"> <b>Entrega Flash é regional:</b> conectamos clientes e entregadores nas cidades atendidas e também na zona rural próxima, sem limitar a comunicação a uma única cidade.</div>
-    <div class="bv-install-area"><a href="./entregaflash.apk" download="Entrega-Flash.apk" target="_blank" rel="noopener" class="btn-baixar-app"> BAIXAR APLICATIVO ANDROID</a><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">O download do APK começa diretamente. Você também pode usar pelo site sem instalar.</div></div>
+    <div class="bv-install-area"><button type="button" class="btn-baixar-app" style="width:100%" onclick="instalarPeloPopup()">📲 INSTALAR APLICATIVO ATUALIZADO</button><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Instala a versão atual do site na tela inicial. Não baixa mais o APK antigo.</div></div>
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -7547,6 +7543,14 @@ function sairCliente(){
 // status que já podem entrar no painel (ver pedidos, ficar online) mesmo sem estarem aprovados —
 // só "aceitar pedido" e "saque" ficam bloqueados até status virem 'aprovado' (ver checagens em
 // aceitarPedido() e solicitarSaque())
+function cadastroTemDocumentosCompletos(data){
+  if(!data) return false;
+  const pixOk = !!String(data.chave_pix||'').trim();
+  if(data.veiculo_tipo==='bicicleta'){
+    return pixOk && !!data.foto_motorista_url && !!data.foto_veiculo_url && !!data.foto_veiculo_tras_url && !!data.aceita_responsabilidade_bike;
+  }
+  return pixOk && !!data.foto_motorista_url && !!data.cnh_url && !!data.crlv_url && !!data.foto_veiculo_url && !!data.foto_veiculo_tras_url;
+}
 const STATUS_ACESSO_PAINEL = ['basico','pendente','aprovado'];
 async function entrarNoPainelMotorista(data){
   estado.motorista = {
@@ -7590,6 +7594,11 @@ async function loginFacialMotorista(){
   }
   const facial = await fluxoFacial({tipo:'motorista',telefone:data.telefone,modo:'login',descriptorSalvo:data.face_descriptor});
   if(!facial.ok){ pm.loginErro = facial.cancelado ? 'Reconhecimento facial cancelado.' : (facial.erro||'Não foi possível confirmar seu rosto.'); render(); return; }
+  if(data.status==='pendente' && !cadastroTemDocumentosCompletos(data)){
+    pm.telefoneLiberado=data.telefone; pm.loginTelefone=data.telefone;
+    await continuarParaDocumentos();
+    return;
+  }
   if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); atualizarPresencaSite('motorista'); return; }
 }
 
@@ -7621,7 +7630,14 @@ async function loginMotorista(){
     await continuarParaDocumentos();
     return;
   }
-  // pendente/aprovado entram no painel; ações financeiras continuam protegidas pelo status.
+  // Corrige cadastros antigos marcados como “pendente” antes de terem enviado tudo.
+  // Se faltar qualquer documento, retoma o cadastro em vez de mostrar “em análise”.
+  if(data.status==='pendente' && !cadastroTemDocumentosCompletos(data)){
+    pm.telefoneLiberado=data.telefone; pm.loginTelefone=data.telefone;
+    await continuarParaDocumentos();
+    return;
+  }
+  // Só entra como “em análise” quando a documentação realmente está completa.
   if(STATUS_ACESSO_PAINEL.includes(data.status)){ await entrarNoPainelMotorista(data); return; }
 }
 
