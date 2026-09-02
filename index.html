@@ -2090,6 +2090,28 @@ async function notificar(titulo, corpo, tag){
 // ---------- sessão persistente (mantém login/tela após F5) ----------
 function salvarLocal(chave,valor){ try{ localStorage.setItem(chave,valor); }catch(e){} }
 function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
+const CHAVE_RASCUNHO_PEDIDO_PAGAMENTO = 'ef_pedido_aguardando_saldo_v1';
+function salvarPedidoAguardandoSaldo(preco){
+  try{
+    const f = estado.form || {};
+    localStorage.setItem(CHAVE_RASCUNHO_PEDIDO_PAGAMENTO, JSON.stringify({
+      salvoEm:Date.now(), preco:Number(preco)||0,
+      form:{ ...f, origemFotoUrl:null, destinoFotoUrl:null }
+    }));
+  }catch(e){ console.warn('Não foi possível guardar o pedido aguardando saldo.', e); }
+}
+function restaurarPedidoAguardandoSaldo(){
+  try{
+    const bruto = localStorage.getItem(CHAVE_RASCUNHO_PEDIDO_PAGAMENTO);
+    if(!bruto) return false;
+    const r = JSON.parse(bruto);
+    if(!r || !r.form || !r.salvoEm || Date.now()-r.salvoEm>48*60*60*1000){
+      localStorage.removeItem(CHAVE_RASCUNHO_PEDIDO_PAGAMENTO); return false;
+    }
+    estado.form = { ...estado.form, ...r.form, extras:{...extrasVazios(),...(r.form.extras||{})} };
+    return true;
+  }catch(e){ return false; }
+}
 // roda ANTES do primeiro render(): decide a tela certa (modo escolhido + rascunho de
 // cadastro em andamento) direto do localStorage, sem precisar esperar nenhuma consulta ao
 // banco — evita o "pisca" da tela de boas-vindas aparecendo por um instante e depois trocando.
@@ -2099,6 +2121,7 @@ function aplicarEstadoInicialSincrono(){
     if(modoSalvo==='cliente' || modoSalvo==='entregador'){ estado.modo = modoSalvo; estado.telaBoasVindas = false; }
   }catch(e){}
   restaurarRascunhosCadastro();
+  restaurarPedidoAguardandoSaldo();
 }
 async function restaurarSessao(){
   try{
@@ -3821,7 +3844,9 @@ async function criarPedido(){
   }catch(e){ console.error(e); mostrarToast('Não consegui checar seu saldo. Tenta novamente.', 'erro'); return; }
   w.saldo = saldoAtualCliente;
   if(saldoAtualCliente < preco){
-    mostrarToast('Você está sem saldo. Adicione saldo para continuar.', 'erro');
+    salvarPedidoAguardandoSaldo(preco);
+    w.valorInput = (Math.ceil((preco-saldoAtualCliente)*100)/100).toFixed(2);
+    mostrarToast('Pedido guardado. Adicione o saldo e continue sem digitar os endereços novamente.', 'erro');
     abrirAdicionarSaldo();
     setTimeout(()=>{ document.querySelector('.pix-box')?.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
     return;
@@ -3834,7 +3859,9 @@ async function criarPedido(){
     const { data, error: erroDebito } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: -preco });
     if(erroDebito){
       if(erroDebito.message==='saldo_insuficiente'){
-        mostrarToast('Você está sem saldo. Adicione saldo para continuar.', 'erro');
+        salvarPedidoAguardandoSaldo(preco);
+        w.valorInput = (Math.ceil(Math.max(0.01,preco-(Number(w.saldo)||0))*100)/100).toFixed(2);
+        mostrarToast('Pedido guardado. Adicione o saldo e continue sem digitar os endereços novamente.', 'erro');
         abrirAdicionarSaldo();
         setTimeout(()=>{ document.querySelector('.pix-box')?.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
       } else {
@@ -3884,6 +3911,7 @@ async function criarPedido(){
   estado.transicaoPedido = { ativa:false, alvo:null };
   estado.pedidoBuscandoId = pedido.id;
   estado.abaPedidosCliente = 'ativos';
+  removerLocal(CHAVE_RASCUNHO_PEDIDO_PAGAMENTO);
   estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', destinoFotoUrl:null, destinoReferencia:'', roca:false, extras:extrasVazios() };
   // Mostra uma tela persistente de busca. Ela só sai quando o cliente escolher ver os pedidos
   // ou quando o realtime informar que um motorista aceitou.
@@ -3957,15 +3985,38 @@ async function aumentarPrioridadeBusca(id, novoValor){
   if(erroDebito){ console.error(erroDebito); mostrarToast('Saldo insuficiente para aumentar a prioridade.', 'erro'); return; }
   estado.cliente.carteira.saldo = Number(data)||0;
   const novoPreco = Math.round((p.preco+diferenca)*100)/100;
-  const { error } = await sb.from('entrega_pedidos').update({ prioridade:true, prioridade_valor:novoValor, preco:novoPreco, atualizado_em:Date.now() }).eq('id', id);
+  const atualizacao = { prioridade:true, prioridade_valor:novoValor, preco:novoPreco, atualizado_em:Date.now() };
+  let { error } = await sb.from('entrega_pedidos').update(atualizacao).eq('id', id).eq('status','buscando');
+
+  // Compatibilidade com instalações em que atualizado_em é controlado pelo banco.
   if(error){
-    console.error(error);
+    console.warn('Nova tentativa de prioridade sem timestamp manual:', error);
+    ({ error } = await sb.from('entrega_pedidos')
+      .update({ prioridade:true, prioridade_valor:novoValor, preco:novoPreco })
+      .eq('id', id)
+      .eq('status','buscando'));
+  }
+
+  // Última alternativa: usa o mesmo formato completo empregado ao criar o pedido.
+  if(error){
+    console.warn('Nova tentativa de prioridade pelo formato completo:', error);
+    const pedidoAtualizado = { ...p, prioridade:true, prioridadeValor:novoValor, preco:novoPreco, atualizadoEm:Date.now() };
+    ({ error } = await sb.from('entrega_pedidos').upsert(paraCamposDB(pedidoAtualizado)));
+  }
+
+  if(error){
+    console.error('Falha final ao aumentar prioridade:', error);
     // devolve o valor debitado, já que a atualização do pedido falhou
-    const { data: dataEstorno } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: diferenca });
+    const { data: dataEstorno, error: erroEstorno } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: diferenca });
+    if(erroEstorno) console.error('Falha ao estornar prioridade:', erroEstorno);
     estado.cliente.carteira.saldo = Number(dataEstorno)||estado.cliente.carteira.saldo;
-    mostrarToast('Erro ao aumentar a prioridade.', 'erro');
+    mostrarToast('Não foi possível aumentar agora. O valor não foi cobrado.', 'erro');
     return;
   }
+  p.prioridade = true;
+  p.prioridadeValor = novoValor;
+  p.preco = novoPreco;
+  p.atualizadoEm = Date.now();
   mostrarToast('Prioridade aumentada! Sua entrega ganhou mais destaque pros entregadores.', 'sucesso');
   await carregarPedidos();
 }
@@ -4160,8 +4211,10 @@ function iniciarPollingCarteira(){
     if(data && data.status==='pago'){
       w.pix.status='pago'; clearInterval(pixPollTimer); pixPollTimer=null;
       await carregarCarteiraCliente();
-      mostrarToast('Saldo adicionado com sucesso!', 'sucesso');
+      restaurarPedidoAguardandoSaldo();
+      mostrarToast('Saldo adicionado! Seu pedido continua preenchido — agora é só solicitar.', 'sucesso');
       w.adicionando = false; render();
+      setTimeout(()=>{ document.getElementById('escolha-veiculo-pedido')?.scrollIntoView({behavior:'smooth',block:'start'}); }, 100);
     }
   }, 4000);
 }
