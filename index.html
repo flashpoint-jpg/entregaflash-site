@@ -709,7 +709,7 @@ fbq('track', 'PageView');
 .bv-strip-item{padding:18px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.08)}
 .bv-strip-item:last-child{border-right:0} .bv-strip-icon{font-size:25px;margin-bottom:6px} .bv-strip-title{font-weight:900;font-size:13px} .bv-strip-sub{font-size:11px;color:#b7b9bf;margin-top:4px;line-height:1.35}
 .bv-section-real{margin:0 16px 18px;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.10);background:#151619;box-shadow:0 18px 38px rgba(0,0,0,.24)}
-.bv-driver-real{position:relative;min-height:420px;padding:26px 20px;display:flex;align-items:flex-end;background-image:linear-gradient(0deg,rgba(4,5,6,.94) 0%,rgba(4,5,6,.20) 75%),url("assets/inline/7d288eb57f41.jpg");background-size:cover;background-position:center}
+.bv-driver-real{position:relative;min-height:0;padding:26px 20px;display:flex;align-items:flex-start;background-image:linear-gradient(0deg,rgba(4,5,6,.94) 0%,rgba(4,5,6,.20) 75%),url("assets/inline/7d288eb57f41.jpg");background-size:cover;background-position:center}
 .bv-driver-panel{width:100%;background:rgba(8,8,9,.78);border:1px solid rgba(255,149,24,.35);backdrop-filter:blur(8px);padding:18px;border-radius:16px}
 .bv-driver-panel h2{font-family:'Rajdhani',sans-serif;font-size:30px;line-height:1;margin:3px 0 10px;text-transform:uppercase} .bv-driver-panel h2 span{color:#ff9518}
 .bv-driver-benefits{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0} .bv-driver-benefits div{font-size:12.5px;background:rgba(255,255,255,.06);padding:9px;border-radius:10px}
@@ -1172,10 +1172,6 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 .ef-home-action small{font-size:11px;line-height:1.25;color:#b8bbc1;font-weight:600}
 .ef-home-action.ef-client strong,.ef-home-action.ef-client .ef-action-icon{color:#111}
 .ef-home-action.ef-client small{color:rgba(0,0,0,.68)}
-.ef-home-action.ef-driver strong{color:#fff!important;text-shadow:0 1px 2px rgba(0,0,0,.35)!important}
-.ef-home-action.ef-driver small{color:#fff!important;font-weight:800!important;opacity:1!important;text-shadow:0 1px 2px rgba(0,0,0,.38)!important}
-.ef-home-action.ef-driver .ef-action-icon{color:#b94d00!important}
-
 @media(min-width:701px){
  .bv-hero-real{min-height:560px!important;height:auto!important;padding:46px clamp(40px,6vw,92px)!important;justify-content:center!important;background-position:70% 50%!important;background-size:cover!important}
  .bv-hero-real .bv-cabecalho{position:relative!important;min-height:72px!important;margin:0 0 26px!important;justify-content:flex-start!important}
@@ -1225,6 +1221,16 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
     width:100%!important;margin:0!important;padding:18px!important;box-sizing:border-box!important;
   }
 }
+</style>
+
+<style id="ef-driver-signup-clean-20260902">
+.ef-driver-signup-hero{margin:0 0 12px;padding:18px 16px;border-radius:18px;background:linear-gradient(145deg,#171b20,#101317);border:1px solid rgba(255,255,255,.06)}
+.ef-driver-signup-title{font-family:Inter,system-ui,sans-serif;font-size:29px;line-height:1.05;font-weight:950;letter-spacing:-.045em;color:#fff;text-align:center}.ef-driver-signup-title span{color:#ff9418}
+.ef-driver-signup-sub{text-align:center;color:var(--poeira);font-size:14px;margin:8px 0 14px}.ef-driver-signup-cta{width:100%;font-size:17px!important;font-weight:900!important;margin:0 0 12px!important;min-height:52px}
+.ef-driver-benefit{padding:14px 15px;border-radius:15px;margin-top:10px}.ef-driver-benefit b,.ef-driver-benefit strong,.ef-driver-benefit small{display:block}.ef-driver-benefit b{font-size:15px;color:#fff}.ef-driver-benefit strong{font-size:18px;color:#ffad27;margin-top:4px}.ef-driver-benefit small{font-size:12.5px;color:var(--poeira);line-height:1.4;margin-top:5px}.ef-driver-benefit.founder{border:1px solid rgba(255,153,24,.55);background:linear-gradient(135deg,rgba(255,153,24,.14),rgba(255,153,24,.04))}.ef-driver-benefit.free{border:1px solid rgba(45,190,95,.65);background:rgba(35,160,80,.08)}
+.ef-driver-how{margin-top:14px}.ef-driver-how>b{display:block;font-size:14px;color:#fff;margin-bottom:7px}.ef-driver-how>div{display:flex;align-items:center;gap:10px;padding:9px 10px;margin-top:6px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}.ef-driver-how span{width:27px;height:27px;display:grid;place-items:center;border:1px solid #ff9418;border-radius:50%;color:#ff9418;font-weight:900;flex:0 0 auto}.ef-driver-how p{margin:0}.ef-driver-how strong,.ef-driver-how small{display:block}.ef-driver-how strong{font-size:13px;color:#fff}.ef-driver-how small{font-size:11.5px;color:var(--poeira);margin-top:1px}
+#ef-form-cadastro-motorista{scroll-margin-top:12px}
+@media(max-width:700px){.bv-wrap .bv-section-real.bv-driver-real{min-height:0!important;height:auto!important;padding:12px 14px!important;display:block!important;background-image:none!important}.bv-wrap .bv-section-real.bv-driver-real .bv-driver-panel{margin:0!important}.ef-driver-signup-hero{padding:15px 13px}.ef-driver-signup-title{font-size:25px}}
 </style>
 </head>
 
@@ -5595,10 +5601,6 @@ function telaCliente(){
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <h2 style="margin:0">Pedir entrega</h2>
     </div>
-    <div style="font-size:14px;color:var(--osso);display:flex;align-items:center;gap:6px;margin-top:2px">
-      <span style="width:8px;height:8px;border-radius:50%;background:${estado.motoristasOnline>0?'#7fae72':'#a9a89c'};display:inline-block"></span>
-      ${estado.motoristasOnline>0 ? `${estado.motoristasOnline} motorista${estado.motoristasOnline>1?'s':''} online agora` : 'Nenhum motorista online no momento'}
-    </div>
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
     ${f.etapaPedido===1 ? `
@@ -5854,22 +5856,16 @@ function progressoDocumentosHTML(c){
 function telaCadastroMotorista(){
   const c = estado.painelMotorista.cadastro;
   const introEtapa1 = c.etapa===1 ? `
-  <div class="campo-motorista" style="margin-bottom:14px">
-    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 8px">Como funciona</h2>
-    <div style="font-size:14.5px;color:var(--poeira);line-height:1.55">
-      O <b style="color:var(--osso)">Entrega Flash</b> conecta você a quem precisa de uma entrega na sua região — você aceita as corridas que quiser, no seu tempo livre, com bicicleta, moto, carro ou caminhão.
+  <section class="ef-driver-signup-hero">
+    <div class="ef-driver-signup-title">CADASTRO DE <span>MOTORISTA</span></div>
+    <div class="ef-driver-signup-sub">Trabalhe com entregas na sua região e aumente sua renda.</div>
+    <button class="btn btn-primario ef-driver-signup-cta" onclick="document.getElementById('ef-form-cadastro-motorista')?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>document.getElementById('cm-nome')?.focus(),350)">QUERO ME CADASTRAR →</button>
+    <div class="ef-driver-benefit founder">
+      <div><b>Seu benefício de fundador</b><strong>10 primeiras entregas com 100% do valor</strong><small>Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</small></div>
     </div>
-    <div class="ef-founder-box" style="margin-top:12px">
-      <div class="ef-founder-title">Seu benefício de fundador</div>
-      <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
-      <div class="ef-founder-sub">Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</div>
-    </div>
-    <div style="margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
-      <div style="font-weight:700;color:var(--osso);font-size:15px"> Plano Free — sem mensalidade</div>
-      <div style="font-size:14px;color:var(--poeira);margin-top:4px">Você pode começar pelo Free. O Pro é opcional e oferece vantagens adicionais conforme as configurações atuais do app.</div>
-    </div>
-    <div class="ef-steps-mini"><div class="ef-step-mini"><b>1. Pré-cadastro</b>Nome, WhatsApp, cidade e veículo.</div><div class="ef-step-mini"><b>2. Recebimento</b>Informe sua chave PIX antes dos documentos.</div><div class="ef-step-mini"><b>3. Ativação</b>Envie os documentos e finalize o cadastro.</div></div>
-  </div>` : '';
+    <div class="ef-driver-benefit free"><div><b>Plano Free — sem mensalidade</b><small>Comece pelo Free. O Pro é opcional.</small></div></div>
+    <div class="ef-driver-how"><b>COMO FUNCIONA</b><div><span>1</span><p><strong>Pré-cadastro</strong><small>Nome, WhatsApp, cidade e veículo.</small></p></div><div><span>2</span><p><strong>Recebimento</strong><small>Informe sua chave PIX.</small></p></div><div><span>3</span><p><strong>Ativação</strong><small>Envie os documentos e finalize.</small></p></div></div>
+  </section>` : '';
   let corpo='';
   if(c.etapa===1){
     corpo = `
@@ -5983,7 +5979,7 @@ function telaCadastroMotorista(){
       <button class="btn btn-primario" style="margin-top:0" ${c.enviando?'disabled':''} onclick="finalizarCadastroMotorista()">${c.enviando?'A enviar...':'Enviar cadastro'}</button>
     </div>`;
   }
-  return `${introEtapa1}<div class="campo-motorista">
+  return `${introEtapa1}<div class="campo-motorista" id="ef-form-cadastro-motorista">
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
       <button class="btn btn-secundario btn-pequeno botao-chat" onclick="abrirSuporteGeral()"> Falar com suporte</button>
     </div>
@@ -6744,7 +6740,6 @@ function render(){
        <b>Modo visitante — você está só conhecendo o app.</b><br>${estado.motorista.visitante ? 'Veja as corridas e entenda como funciona. Quando quiser trabalhar de verdade, ative sua conta.' : 'Nenhum pedido/corrida real é criado aqui. Cadastre-se pra usar de verdade.'}
       <div style="margin-top:8px"><button class="btn btn-primario btn-pequeno" onclick="sairDoModoVisitante()">${estado.motorista.visitante ? ' Quero trabalhar — ativar conta' : ' Cadastrar agora'}</button></div>
     </div>` : ''}
-    <div class="aviso-app-novo"> <b>Aplicativo novo em funcionamento — pedimos paciência!</b><br>Estamos melhorando a cada dia. Contamos com sua ajuda e divulgação para crescer com a gente! Obrigado pela confiança! </div>
     ${barraNavegacaoFluxo()}
     <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
     ${(estado.podeInstalar && !estado.appInstalado) ? `
