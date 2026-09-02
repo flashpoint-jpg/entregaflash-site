@@ -709,7 +709,7 @@ fbq('track', 'PageView');
 .bv-strip-item{padding:18px 10px;text-align:center;border-right:1px solid rgba(255,255,255,.08)}
 .bv-strip-item:last-child{border-right:0} .bv-strip-icon{font-size:25px;margin-bottom:6px} .bv-strip-title{font-weight:900;font-size:13px} .bv-strip-sub{font-size:11px;color:#b7b9bf;margin-top:4px;line-height:1.35}
 .bv-section-real{margin:0 16px 18px;border-radius:20px;overflow:hidden;border:1px solid rgba(255,255,255,.10);background:#151619;box-shadow:0 18px 38px rgba(0,0,0,.24)}
-.bv-driver-real{position:relative;min-height:0;padding:26px 20px;display:flex;align-items:flex-start;background-image:linear-gradient(0deg,rgba(4,5,6,.94) 0%,rgba(4,5,6,.20) 75%),url("assets/inline/7d288eb57f41.jpg");background-size:cover;background-position:center}
+.bv-driver-real{position:relative;min-height:420px;padding:26px 20px;display:flex;align-items:flex-end;background-image:linear-gradient(0deg,rgba(4,5,6,.94) 0%,rgba(4,5,6,.20) 75%),url("assets/inline/7d288eb57f41.jpg");background-size:cover;background-position:center}
 .bv-driver-panel{width:100%;background:rgba(8,8,9,.78);border:1px solid rgba(255,149,24,.35);backdrop-filter:blur(8px);padding:18px;border-radius:16px}
 .bv-driver-panel h2{font-family:'Rajdhani',sans-serif;font-size:30px;line-height:1;margin:3px 0 10px;text-transform:uppercase} .bv-driver-panel h2 span{color:#ff9518}
 .bv-driver-benefits{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:13px 0} .bv-driver-benefits div{font-size:12.5px;background:rgba(255,255,255,.06);padding:9px;border-radius:10px}
@@ -1221,16 +1221,6 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
     width:100%!important;margin:0!important;padding:18px!important;box-sizing:border-box!important;
   }
 }
-</style>
-
-<style id="ef-driver-signup-clean-20260902">
-.ef-driver-signup-hero{margin:0 0 12px;padding:18px 16px;border-radius:18px;background:linear-gradient(145deg,#171b20,#101317);border:1px solid rgba(255,255,255,.06)}
-.ef-driver-signup-title{font-family:Inter,system-ui,sans-serif;font-size:29px;line-height:1.05;font-weight:950;letter-spacing:-.045em;color:#fff;text-align:center}.ef-driver-signup-title span{color:#ff9418}
-.ef-driver-signup-sub{text-align:center;color:var(--poeira);font-size:14px;margin:8px 0 14px}.ef-driver-signup-cta{width:100%;font-size:17px!important;font-weight:900!important;margin:0 0 12px!important;min-height:52px}
-.ef-driver-benefit{padding:14px 15px;border-radius:15px;margin-top:10px}.ef-driver-benefit b,.ef-driver-benefit strong,.ef-driver-benefit small{display:block}.ef-driver-benefit b{font-size:15px;color:#fff}.ef-driver-benefit strong{font-size:18px;color:#ffad27;margin-top:4px}.ef-driver-benefit small{font-size:12.5px;color:var(--poeira);line-height:1.4;margin-top:5px}.ef-driver-benefit.founder{border:1px solid rgba(255,153,24,.55);background:linear-gradient(135deg,rgba(255,153,24,.14),rgba(255,153,24,.04))}.ef-driver-benefit.free{border:1px solid rgba(45,190,95,.65);background:rgba(35,160,80,.08)}
-.ef-driver-how{margin-top:14px}.ef-driver-how>b{display:block;font-size:14px;color:#fff;margin-bottom:7px}.ef-driver-how>div{display:flex;align-items:center;gap:10px;padding:9px 10px;margin-top:6px;border:1px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.025)}.ef-driver-how span{width:27px;height:27px;display:grid;place-items:center;border:1px solid #ff9418;border-radius:50%;color:#ff9418;font-weight:900;flex:0 0 auto}.ef-driver-how p{margin:0}.ef-driver-how strong,.ef-driver-how small{display:block}.ef-driver-how strong{font-size:13px;color:#fff}.ef-driver-how small{font-size:11.5px;color:var(--poeira);margin-top:1px}
-#ef-form-cadastro-motorista{scroll-margin-top:12px}
-@media(max-width:700px){.bv-wrap .bv-section-real.bv-driver-real{min-height:0!important;height:auto!important;padding:12px 14px!important;display:block!important;background-image:none!important}.bv-wrap .bv-section-real.bv-driver-real .bv-driver-panel{margin:0!important}.ef-driver-signup-hero{padding:15px 13px}.ef-driver-signup-title{font-size:25px}}
 </style>
 </head>
 
@@ -5527,12 +5517,12 @@ function irEtapaPedido(alvo){
 
 function telaCliente(){
   const f = estado.form;
+  const clienteVisitante = !!estado.cliente.visitante;
   const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
     const infoVeiculo = VEICULOS[pedidoBuscando.veiculo] || {label:'Veículo'};
     const iconesBusca = { bicicleta:'🚲', moto:'🏍️', carro:'🚗', carroaberto:'🛻', fiorino:'🚐', van:'🚐', caminhao:'🚚' };
     const iconeBusca = iconesBusca[pedidoBuscando.veiculo] || '🚘';
-    const onlineBusca = Number(estado.motoristasOnline)||0;
     const distanciaBusca = Number(pedidoBuscando.distancia)||0;
     return `<div class="cartao busca-motorista-premium" id="pedido-buscando-tela">
       <div class="busca-topo">
@@ -5545,7 +5535,7 @@ function telaCliente(){
       <div class="busca-status-card">
         <div class="busca-status-linha"><span>Localizando seu motorista</span><span>${iconeBusca} ${infoVeiculo.label}</span></div>
         <div class="busca-barra" role="progressbar" aria-label="Buscando motorista" aria-valuetext="Busca em andamento"><div class="busca-barra-movel"></div></div>
-        <div class="busca-fase"><span class="busca-sinal"></span><span>${onlineBusca>0 ? `Verificando ${onlineBusca} motorista${onlineBusca===1?'':'s'} online e aguardando aceite do pedido...` : 'Procurando motoristas disponíveis na sua região...'}</span></div>
+        <div class="busca-fase"><span class="busca-sinal"></span><span>Procurando motoristas disponíveis na sua região e aguardando aceite do pedido...</span></div>
       </div>
       <div class="busca-detalhes">
         <div class="busca-endereco origem"><b>Recolha</b>${pedidoBuscando.origem}</div>
@@ -5554,9 +5544,8 @@ function telaCliente(){
       <div class="busca-resumo">
         <div class="busca-mini"><small>Veículo pedido</small><strong>${iconeBusca} ${infoVeiculo.label}</strong></div>
         <div class="busca-mini"><small>Distância</small><strong>${distanciaBusca>0 ? distanciaBusca.toFixed(1).replace('.',',')+' km' : 'Calculando'}</strong></div>
-        <div class="busca-mini"><small>Disponíveis</small><strong>${onlineBusca} online</strong></div>
       </div>
-      <button class="btn btn-secundario btn-pequeno" style="margin-top:16px;width:100%" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>
+      ${clienteVisitante ? '' : `<button class="btn btn-secundario btn-pequeno" style="margin-top:16px;width:100%" onclick="estado.pedidoBuscandoId=null;render()">Ver meus pedidos</button>`}
     </div>`;
   }
   const paradasValidasPreco = (f.paradas||[]).map(x=>x.trim()).filter(Boolean).length;
@@ -5567,6 +5556,11 @@ function telaCliente(){
   const listaExibida = estado.abaPedidosCliente==='ativos' ? pedidosAtivos : pedidosHistorico;
   const w = estado.cliente.carteira;
   return `
+  ${clienteVisitante ? `
+  <div class="cartao" style="padding:18px 20px;background:linear-gradient(135deg,rgba(255,166,0,.10),rgba(255,111,0,.03));border-color:rgba(255,166,0,.30)">
+    <div style="font-family:'Rajdhani';font-size:28px;line-height:1.05;font-weight:800;text-transform:uppercase;color:var(--osso);letter-spacing:.2px">Peça sua <span style="color:var(--mango)">corrida agora</span></div>
+    <div style="font-size:14.5px;color:var(--poeira);margin-top:7px">Informe a coleta e o destino para começar. O cadastro será solicitado apenas quando for necessário finalizar o pedido.</div>
+  </div>` : `
   <div class="cartao">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div style="font-size:14px;color:var(--poeira)">Olá, <b style="color:var(--osso);font-size:16px">${estado.cliente.nome}</b></div>
@@ -5595,11 +5589,11 @@ function telaCliente(){
       <div class="pix-status ${w.pix.status==='pago'?'pago':'aguardando'}">${w.pix.status==='pago'?' Pagamento confirmado!':'⏳ Aguardando pagamento...'}</div>
       ` : ''}
     </div>` : ''}
-  </div>
+  </div>`}
 
   <div class="cartao">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
-      <h2 style="margin:0">Pedir entrega</h2>
+      <h2 style="margin:0">${clienteVisitante ? 'Pedir entrega' : 'Pedir entrega'}</h2>
     </div>
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
@@ -5727,7 +5721,7 @@ function telaCliente(){
     </div>
   </div>
 
-  <div class="cartao">
+  ${clienteVisitante ? '' : `  <div class="cartao">
     <h2>Os meus pedidos</h2>
     <div class="aba-mini">
       <button class="${estado.abaPedidosCliente==='ativos'?'ativo':''}" onclick="estado.abaPedidosCliente='ativos';render()">Em andamento</button>
@@ -5739,7 +5733,7 @@ function telaCliente(){
         ? `<div class="vazio"><span class="emoji-grande"></span>${estado.abaPedidosCliente==='ativos'?'Nenhum pedido em andamento.':'Ainda não há pedidos no histórico.'}</div>`
         : listaExibida.map(cartaoPedidoCliente).join('')
     }
-  </div>
+  </div>`}
   ${estado.edicaoPedido ? modalEdicaoPedidoHTML() : ''}`;
 }
 
@@ -5856,16 +5850,22 @@ function progressoDocumentosHTML(c){
 function telaCadastroMotorista(){
   const c = estado.painelMotorista.cadastro;
   const introEtapa1 = c.etapa===1 ? `
-  <section class="ef-driver-signup-hero">
-    <div class="ef-driver-signup-title">CADASTRO DE <span>MOTORISTA</span></div>
-    <div class="ef-driver-signup-sub">Trabalhe com entregas na sua região e aumente sua renda.</div>
-    <button class="btn btn-primario ef-driver-signup-cta" onclick="document.getElementById('ef-form-cadastro-motorista')?.scrollIntoView({behavior:'smooth',block:'start'});setTimeout(()=>document.getElementById('cm-nome')?.focus(),350)">QUERO ME CADASTRAR →</button>
-    <div class="ef-driver-benefit founder">
-      <div><b>Seu benefício de fundador</b><strong>10 primeiras entregas com 100% do valor</strong><small>Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</small></div>
+  <div class="campo-motorista" style="margin-bottom:14px">
+    <h2 style="font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;margin:0 0 8px">Como funciona</h2>
+    <div style="font-size:14.5px;color:var(--poeira);line-height:1.55">
+      O <b style="color:var(--osso)">Entrega Flash</b> conecta você a quem precisa de uma entrega na sua região — você aceita as corridas que quiser, no seu tempo livre, com bicicleta, moto, carro ou caminhão.
     </div>
-    <div class="ef-driver-benefit free"><div><b>Plano Free — sem mensalidade</b><small>Comece pelo Free. O Pro é opcional.</small></div></div>
-    <div class="ef-driver-how"><b>COMO FUNCIONA</b><div><span>1</span><p><strong>Pré-cadastro</strong><small>Nome, WhatsApp, cidade e veículo.</small></p></div><div><span>2</span><p><strong>Recebimento</strong><small>Informe sua chave PIX.</small></p></div><div><span>3</span><p><strong>Ativação</strong><small>Envie os documentos e finalize.</small></p></div></div>
-  </section>` : '';
+    <div class="ef-founder-box" style="margin-top:12px">
+      <div class="ef-founder-title">Seu benefício de fundador</div>
+      <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
+      <div class="ef-founder-sub">Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</div>
+    </div>
+    <div style="margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
+      <div style="font-weight:700;color:var(--osso);font-size:15px"> Plano Free — sem mensalidade</div>
+      <div style="font-size:14px;color:var(--poeira);margin-top:4px">Você pode começar pelo Free. O Pro é opcional e oferece vantagens adicionais conforme as configurações atuais do app.</div>
+    </div>
+    <div class="ef-steps-mini"><div class="ef-step-mini"><b>1. Pré-cadastro</b>Nome, WhatsApp, cidade e veículo.</div><div class="ef-step-mini"><b>2. Recebimento</b>Informe sua chave PIX antes dos documentos.</div><div class="ef-step-mini"><b>3. Ativação</b>Envie os documentos e finalize o cadastro.</div></div>
+  </div>` : '';
   let corpo='';
   if(c.etapa===1){
     corpo = `
@@ -5979,7 +5979,7 @@ function telaCadastroMotorista(){
       <button class="btn btn-primario" style="margin-top:0" ${c.enviando?'disabled':''} onclick="finalizarCadastroMotorista()">${c.enviando?'A enviar...':'Enviar cadastro'}</button>
     </div>`;
   }
-  return `${introEtapa1}<div class="campo-motorista" id="ef-form-cadastro-motorista">
+  return `${introEtapa1}<div class="campo-motorista">
     <div style="display:flex;justify-content:flex-end;margin-bottom:8px">
       <button class="btn btn-secundario btn-pequeno botao-chat" onclick="abrirSuporteGeral()"> Falar com suporte</button>
     </div>
@@ -6740,6 +6740,7 @@ function render(){
        <b>Modo visitante — você está só conhecendo o app.</b><br>${estado.motorista.visitante ? 'Veja as corridas e entenda como funciona. Quando quiser trabalhar de verdade, ative sua conta.' : 'Nenhum pedido/corrida real é criado aqui. Cadastre-se pra usar de verdade.'}
       <div style="margin-top:8px"><button class="btn btn-primario btn-pequeno" onclick="sairDoModoVisitante()">${estado.motorista.visitante ? ' Quero trabalhar — ativar conta' : ' Cadastrar agora'}</button></div>
     </div>` : ''}
+    <div class="aviso-app-novo"> <b>Aplicativo novo em funcionamento — pedimos paciência!</b><br>Estamos melhorando a cada dia. Contamos com sua ajuda e divulgação para crescer com a gente! Obrigado pela confiança! </div>
     ${barraNavegacaoFluxo()}
     <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
     ${(estado.podeInstalar && !estado.appInstalado) ? `
