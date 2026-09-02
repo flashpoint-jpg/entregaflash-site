@@ -782,6 +782,77 @@ body.ef-admin-logado .admin-topo{position:sticky;top:0;z-index:30;backdrop-filte
   .admin-lista-secao{margin-left:2px;margin-right:2px}
 }
 </style>
+<style id="ef-home-enxuta-padronizada-20260902">
+/* Home compacta: elimina blocos repetidos e mantém os acessos principais. */
+.bv-strip,
+.bv-client-card,
+.bv-driver-real,
+.bv-partner-real,
+.bv-trust-line{display:none!important}
+
+.bv-wrap{background:#0b0d10!important;padding-bottom:72px!important}
+.bv-vehicle-zone,
+.bv-business-card{
+  width:calc(100% - 28px)!important;
+  max-width:980px!important;
+  margin:14px auto 0!important;
+  padding:20px!important;
+  box-sizing:border-box!important;
+  border:1px solid rgba(255,138,0,.30)!important;
+  border-radius:18px!important;
+  background:linear-gradient(155deg,#181c22,#111419)!important;
+  color:#fff!important;
+  box-shadow:none!important;
+}
+.bv-vehicle-heading,
+.bv-business-card h2{
+  margin:0 0 8px!important;
+  color:#fff!important;
+  font-size:24px!important;
+  line-height:1.08!important;
+}
+.bv-vehicle-copy,
+.bv-business-card p{
+  margin:0 0 16px!important;
+  color:#b9bec8!important;
+  font-size:14px!important;
+  line-height:1.45!important;
+}
+.bv-vehicle-grid{
+  display:grid!important;
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.bv-vehicle-card{
+  min-height:58px!important;
+  padding:12px 6px!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  text-align:center!important;
+  border:1px solid rgba(255,255,255,.12)!important;
+  border-radius:12px!important;
+  background:#20242b!important;
+  color:#fff!important;
+}
+.bv-vehicle-card strong{font-size:14px!important;color:#fff!important}
+.bv-vehicle-card span{display:none!important}
+.bv-business-card .mini{margin-bottom:7px!important;font-size:11px!important;color:#ff9512!important}
+.bv-business-card h2 span{color:#ff8a00!important}
+.bv-business-chips{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important;margin:0 0 14px!important}
+.bv-business-chips span{padding:9px 4px!important;text-align:center!important;border-radius:10px!important;background:#20242b!important;border:1px solid rgba(255,255,255,.12)!important;color:#d8dbe1!important;font-size:12px!important}
+.bv-business-card .btn{height:54px!important;margin:0!important;border-radius:13px!important;font-size:16px!important}
+.ef-home-action{min-height:84px!important;height:84px!important;box-sizing:border-box!important;margin:0!important}
+
+@media(max-width:700px){
+  .bv-vehicle-zone,.bv-business-card{width:calc(100% - 24px)!important;margin-top:12px!important;padding:17px 14px!important}
+  .bv-vehicle-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .bv-vehicle-card{min-height:52px!important}
+  .bv-business-chips{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .bv-vehicle-heading,.bv-business-card h2{font-size:22px!important}
+}
+</style>
 <style id="ef-premium-v2-fix">
 /* V2 — corrige logo e leva o padrão premium para as telas internas */
 .bv-hero-real{padding-top:34px!important;gap:0!important}
@@ -5308,7 +5379,7 @@ function telaBoasVindas(){
 
     <section class="bv-vehicle-zone">
       <div class="bv-vehicle-heading">Seu veículo pode virar renda</div>
-      <div class="bv-vehicle-copy">O Entrega Flash abre espaço para diferentes perfis de entregador. Você escolhe quando trabalhar e recebe oportunidades compatíveis com o tipo de veículo cadastrado.</div>
+      <div class="bv-vehicle-copy">Escolha seu veículo, faça o cadastro e receba oportunidades na sua região.</div>
       <div class="bv-vehicle-grid">
         <div class="bv-vehicle-card"><strong>Bicicleta</strong><span>Entregas leves e percursos curtos</span></div>
         <div class="bv-vehicle-card"><strong>Moto</strong><span>Agilidade para entregas urbanas e regionais</span></div>
@@ -5337,8 +5408,8 @@ function telaBoasVindas(){
     <section class="bv-business-card">
       <div class="mini">Entrega Flash para empresas</div>
       <h2>Sua loja vende. <span>A gente entrega.</span></h2>
-      <p>Farmácias, mercados, restaurantes e lojas podem chamar um entregador quando precisarem — sem manter motorista parado e sem obrigar o cliente final a criar conta.</p>
-      <div class="bv-business-chips"><span>Farmácia</span><span>Mercado</span><span>Restaurante</span><span>Loja</span><span>Pet shop</span><span>Autopeças</span></div>
+      <p>Chame um entregador quando precisar, sem manter motorista parado.</p>
+      <div class="bv-business-chips"><span>Farmácia</span><span>Mercado</span><span>Restaurante</span><span>Loja</span></div>
       <button class="btn btn-primario" onclick="abrirParceiros()"> QUERO SER PARCEIRO</button>
     </section>
 
@@ -10035,4 +10106,20 @@ html,body{background:#12161c!important}
  .bv-hero-real>.ef-cta-note{width:calc(100% - 24px)!important;margin-bottom:18px!important}
 }
 @media(max-width:370px){.bv-hero-real>.bv-hero-actions{grid-template-columns:1fr!important}.bv-hero-real>.bv-hero-actions .ef-home-action{min-height:66px!important}}
+</style>
+<style id="ef-home-enxuta-prioridade-final">
+.bv-strip,.bv-client-card,.bv-driver-real,.bv-partner-real,.bv-trust-line{display:none!important}
+.bv-wrap{background:#0b0d10!important;padding-bottom:72px!important}
+.bv-vehicle-zone,.bv-business-card{width:calc(100% - 28px)!important;max-width:980px!important;margin:14px auto 0!important;padding:20px!important;box-sizing:border-box!important;border:1px solid rgba(255,138,0,.30)!important;border-radius:18px!important;background:linear-gradient(155deg,#181c22,#111419)!important;color:#fff!important;box-shadow:none!important}
+.bv-vehicle-heading,.bv-business-card h2{margin:0 0 8px!important;color:#fff!important;font-size:24px!important;line-height:1.08!important}
+.bv-vehicle-copy,.bv-business-card p{margin:0 0 16px!important;color:#b9bec8!important;font-size:14px!important;line-height:1.45!important}
+.bv-vehicle-grid{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:8px!important}
+.bv-vehicle-card{min-height:58px!important;padding:12px 6px!important;box-sizing:border-box!important;display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;border:1px solid rgba(255,255,255,.12)!important;border-radius:12px!important;background:#20242b!important;color:#fff!important}
+.bv-vehicle-card strong{font-size:14px!important;color:#fff!important}.bv-vehicle-card span{display:none!important}
+.bv-business-card .mini{margin-bottom:7px!important;font-size:11px!important;color:#ff9512!important}.bv-business-card h2 span{color:#ff8a00!important}
+.bv-business-chips{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:7px!important;margin:0 0 14px!important}
+.bv-business-chips span{padding:9px 4px!important;text-align:center!important;border-radius:10px!important;background:#20242b!important;border:1px solid rgba(255,255,255,.12)!important;color:#d8dbe1!important;font-size:12px!important}
+.bv-business-card .btn{height:54px!important;margin:0!important;border-radius:13px!important;font-size:16px!important}
+.bv-hero-real>.bv-hero-actions .ef-home-action{min-height:84px!important;height:84px!important;box-sizing:border-box!important;margin:0!important}
+@media(max-width:700px){.bv-vehicle-zone,.bv-business-card{width:calc(100% - 24px)!important;margin-top:12px!important;padding:17px 14px!important}.bv-vehicle-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important}.bv-vehicle-card{min-height:52px!important}.bv-business-chips{grid-template-columns:repeat(2,minmax(0,1fr))!important}.bv-vehicle-heading,.bv-business-card h2{font-size:22px!important}}
 </style>
