@@ -2007,7 +2007,20 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  try{ await navigator.serviceWorker.register('entregaflash-sw.js'); }catch(e){ console.warn('Service worker indisponível', e); }
+  const versaoApp = '20260902-8';
+  try{
+    const chaveVersao = 'ef_versao_cache_app';
+    const versaoAnterior = localStorage.getItem(chaveVersao);
+    if(versaoAnterior!==versaoApp && 'caches' in window){
+      const nomes = await caches.keys();
+      await Promise.all(nomes.map(nome=>caches.delete(nome)));
+      localStorage.setItem(chaveVersao, versaoApp);
+    }
+    const reg = await navigator.serviceWorker.register(`entregaflash-sw.js?v=${versaoApp}`, { updateViaCache:'none' });
+    await reg.update();
+    const novoWorker = reg.waiting || reg.installing;
+    if(novoWorker) novoWorker.postMessage({type:'SKIP_WAITING'});
+  }catch(e){ console.warn('Service worker indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
   if(typeof Notification==='undefined'){ mostrarToast('Este navegador não suporta notificações.'); return; }
