@@ -2128,8 +2128,14 @@ function motoristaOnlineAgora(m, agora=Date.now()){
 }
 // Regras únicas de situação do motorista usadas em TODO o painel.
 // Evita o resumo geral mostrar um número e o resumo por cidade mostrar outro.
-function motoristaSemDocumentos(m){ return !!m && ['basico','liberado'].includes(m.status); }
-function motoristaEmAnalise(m){ return !!m && m.status==='pendente'; }
+function motoristaTemDocumentosCompletos(m){
+  if(!m) return false;
+  const pixOk=!!String(m.chave_pix||'').trim();
+  if(m.veiculo_tipo==='bicicleta') return pixOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.aceita_responsabilidade_bike;
+  return pixOk && !!m.foto_motorista_url && !!m.cnh_url && !!m.crlv_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url;
+}
+function motoristaSemDocumentos(m){ return !!m && (['basico','liberado'].includes(m.status) || (m.status==='pendente' && !motoristaTemDocumentosCompletos(m))); }
+function motoristaEmAnalise(m){ return !!m && m.status==='pendente' && motoristaTemDocumentosCompletos(m); }
 function motoristaAprovado(m){ return !!m && m.status==='aprovado'; }
 async function carregarMotoristasOnline(){
   try{
