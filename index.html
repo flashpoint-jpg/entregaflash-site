@@ -1897,7 +1897,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaMotoristas:'', buscaClientes:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' },
@@ -8823,6 +8823,17 @@ function filtrarPedidosAdmin(){
 }
 function definirFiltroPedidosAdmin(f){ estado.admin.filtroPedidos=f; render(); }
 function digitarBuscaPedidosAdmin(v){ estado.admin.buscaPedidos=v; render(); }
+function digitarBuscaMotoristasAdmin(v){ estado.admin.buscaMotoristas=v; render(); }
+function digitarBuscaClientesAdmin(v){ estado.admin.buscaClientes=v; render(); }
+function correspondeBuscaAdmin(nome, telefone, termo){
+  if(!termo) return true;
+  const t = termo.trim().toLowerCase().replace(/\D/g,'') || termo.trim().toLowerCase();
+  const nomeOk = String(nome||'').toLowerCase().includes(termo.trim().toLowerCase());
+  const telDigitos = String(telefone||'').replace(/\D/g,'');
+  const termoDigitos = termo.trim().replace(/\D/g,'');
+  const telOk = termoDigitos ? telDigitos.includes(termoDigitos) : false;
+  return nomeOk || telOk;
+}
 
 function adminCorpoHTML(){
   const a = estado.admin;
@@ -9253,10 +9264,16 @@ function adminAbaClientesHTML(){
   const a = estado.admin;
   if(a.carregando) return skeletonLista(4);
   if(a.clientes.length===0) return `<div class="vazio"><span class="emoji-grande"></span>Nenhum cliente cadastrado ainda.</div>`;
-  const pendentes = a.clientes.filter(c=>!c.facial_ativa && !c.bloqueado);
-  const ativos = a.clientes.filter(c=>!!c.facial_ativa && !c.bloqueado);
-  const bloqueados = a.clientes.filter(c=>!!c.bloqueado);
-  return `
+  const campoBusca = `<input type="text" placeholder="🔍 Buscar cliente por nome ou telefone..." value="${(a.buscaClientes||'').replace(/"/g,'&quot;')}" oninput="digitarBuscaClientesAdmin(this.value)" style="margin-bottom:14px">`;
+  const termo = (a.buscaClientes||'').trim();
+  const listaBase = termo ? a.clientes.filter(c=>correspondeBuscaAdmin(c.nome, c.telefone, termo)) : a.clientes;
+  if(termo && listaBase.length===0){
+    return `${campoBusca}<div class="vazio"><span class="emoji-grande">🔍</span>Nenhum cliente encontrado para "${termo}". Confira se essa pessoa está cadastrada como motorista na outra aba — documentos (CNH, CRLV, fotos) só aparecem lá.</div>`;
+  }
+  const pendentes = listaBase.filter(c=>!c.facial_ativa && !c.bloqueado);
+  const ativos = listaBase.filter(c=>!!c.facial_ativa && !c.bloqueado);
+  const bloqueados = listaBase.filter(c=>!!c.bloqueado);
+  return `${campoBusca}
     <div class="admin-lista-secao"><b>⏳ Clientes pendentes</b><span class="selo selo-andamento">${pendentes.length}</span></div>
     ${pendentes.length?pendentes.map(clienteCardAdminHTML).join(''):`<div class="subtitulo">Nenhum cliente aguardando validação.</div>`}
     <div class="admin-lista-secao" style="margin-top:20px"><b> Clientes ativos</b><span class="selo selo-entregue">${ativos.length}</span></div>
@@ -9313,15 +9330,21 @@ function adminAbaMotoristasHTML(){
   const a = estado.admin;
   if(a.carregando) return skeletonLista(4);
   if(a.motoristas.length===0) return `<div class="vazio"><span class="emoji-grande"></span>Nenhum cadastro de entregador ainda.</div>`;
+  const campoBusca = `<input type="text" placeholder="🔍 Buscar motorista por nome ou telefone..." value="${(a.buscaMotoristas||'').replace(/"/g,'&quot;')}" oninput="digitarBuscaMotoristasAdmin(this.value)" style="margin-bottom:14px">`;
+  const termo = (a.buscaMotoristas||'').trim();
+  const listaBase = termo ? a.motoristas.filter(m=>correspondeBuscaAdmin(m.nome, m.telefone, termo)) : a.motoristas;
+  if(termo && listaBase.length===0){
+    return `${campoBusca}<div class="vazio"><span class="emoji-grande">🔍</span>Nenhum motorista encontrado para "${termo}". Confira se essa pessoa está cadastrada como cliente na outra aba.</div>`;
+  }
   const emRotaPorTelefone = {};
   (a.todosPedidos||[]).forEach(p=>{ if(p.motorista_telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status)) emRotaPorTelefone[p.motorista_telefone]=true; });
   const cardHTML=(m)=>motoristaCardHTML(m,!!emRotaPorTelefone[m.telefone]);
-  const online=a.motoristas.filter(m=>motoristaOnlineAgora(m));
-  const aguardandoDocs=a.motoristas.filter(m=>motoristaAguardandoDocumentosAdmin(m));
-  const pendentes=a.motoristas.filter(m=>m.status==='pendente' && motoristaDocumentosCompletosAdmin(m));
-  const ativos=a.motoristas.filter(m=>m.status==='aprovado' && !motoristaOnlineAgora(m));
-  const outros=a.motoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
-  return `
+  const online=listaBase.filter(m=>motoristaOnlineAgora(m));
+  const aguardandoDocs=listaBase.filter(m=>motoristaAguardandoDocumentosAdmin(m));
+  const pendentes=listaBase.filter(m=>m.status==='pendente' && motoristaDocumentosCompletosAdmin(m));
+  const ativos=listaBase.filter(m=>m.status==='aprovado' && !motoristaOnlineAgora(m));
+  const outros=listaBase.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m));
+  return `${campoBusca}
     <div class="admin-lista-secao"><b> Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
     ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista online agora.</div>`}
     ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b> Ainda não enviaram documentos</b><span class="selo selo-aguardando">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
@@ -9756,7 +9779,7 @@ window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoP
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
 window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
-window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
+window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin; window.digitarBuscaMotoristasAdmin=digitarBuscaMotoristasAdmin; window.digitarBuscaClientesAdmin=digitarBuscaClientesAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
 window.definirPapelAvisoGeral=definirPapelAvisoGeral; window.enviarAvisoGeralAdmin=enviarAvisoGeralAdmin; window.marcarFeedbackLido=marcarFeedbackLido;
 window.salvarConfigGeralAdmin=salvarConfigGeralAdmin; window.ajustarSaldoMotoristaAdmin=ajustarSaldoMotoristaAdmin;
