@@ -8211,7 +8211,15 @@ async function abrirTelaSelfieMotorista(){
 #ef-selfie-opcoes{position:fixed;inset:0;z-index:1000001;display:grid;place-items:center;padding:18px;background:rgba(1,7,20,.88);font-family:inherit}.eso-card{position:relative;width:min(440px,100%);padding:26px 20px 20px;border:1px solid #315f9e;border-radius:18px;background:linear-gradient(160deg,#0b2a61,#061735);color:#fff;text-align:center;box-shadow:0 24px 70px rgba(0,0,0,.55)}.eso-card h2{margin:4px 0 8px;font-size:24px}.eso-card p{margin:0 0 18px;color:#dbe5f5;line-height:1.45;font-size:14px}.eso-card .btn{width:100%;min-height:50px;margin-top:9px}.eso-icone{font-size:38px}.eso-fechar{position:absolute;right:10px;top:8px;border:0;background:none;color:#fff;font-size:32px;line-height:1}
 @media(max-width:520px){.esm-wrap{padding:18px 10px 24px}.esm-brand{margin-top:42px}.esm-brand b{font-size:20px}.esm-body{padding:20px 12px}.esm-body h2{font-size:22px}.esm-passos span{font-size:10px}.esm-passos div{min-width:50px}.esm-passos b{max-width:35px}}
 `; document.head.appendChild(st); }
-  try{ selfieMotoristaStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:900},height:{ideal:900}},audio:false}); const v=document.getElementById('esm-video'); v.srcObject=selfieMotoristaStream; await v.play(); }
+  try{
+    selfieMotoristaStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:900},height:{ideal:900}},audio:false});
+    const v=document.getElementById('esm-video'); v.srcObject=selfieMotoristaStream;
+    const btn=document.getElementById('esm-tirar');
+    if(btn){ btn.disabled=true; btn.dataset.textoOriginal=btn.textContent; btn.textContent='Preparando câmera...'; }
+    await v.play();
+    const ficarPronto=()=>{ if(btn){ btn.disabled=false; btn.textContent=btn.dataset.textoOriginal||' TIRAR SELFIE'; } };
+    if(v.videoWidth){ ficarPronto(); } else { v.addEventListener('loadedmetadata', ficarPronto, {once:true}); }
+  }
   catch(e){
     console.error('camera_selfie',e);
     const erro=document.getElementById('esm-camera-erro');
@@ -8221,7 +8229,9 @@ async function abrirTelaSelfieMotorista(){
   }
 }
 async function tirarSelfieMotorista(){
-  const v=document.getElementById('esm-video'), canvas=document.getElementById('esm-canvas'), btn=document.getElementById('esm-tirar'); if(!v||!v.videoWidth) return;
+  const v=document.getElementById('esm-video'), canvas=document.getElementById('esm-canvas'), btn=document.getElementById('esm-tirar');
+  if(!v) return;
+  if(!v.videoWidth){ mostrarToast('A câmera ainda está carregando, espera um instante e tenta de novo.','aviso'); return; }
   btn.disabled=true; btn.textContent='Enviando selfie...'; canvas.width=v.videoWidth; canvas.height=v.videoHeight; canvas.getContext('2d').drawImage(v,0,0,canvas.width,canvas.height);
   const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.88)); if(!blob){btn.disabled=false;btn.textContent=' TIRAR SELFIE';return;}
   const c=estado.painelMotorista.cadastro; const nomeArquivo=`${c.id}/fotoMotorista-${Date.now()}.jpg`;
