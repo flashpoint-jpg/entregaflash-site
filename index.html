@@ -6082,7 +6082,7 @@ function passosHTML(atual){
 
 function progressoDocumentosCadastro(c){
   const itens = c.veiculo==='bicicleta'
-    ? [!!c.fotoMotoristaUrl, !!c.fotoVeiculoFrenteUrl, !!c.fotoVeiculoTrasUrl]
+    ? [!!c.fotoMotoristaUrl, !!c.fotoVeiculoFrenteUrl, !!c.fotoVeiculoTrasUrl, !!c.cnhUrl]
     : [!!c.fotoMotoristaUrl, !!c.fotoVeiculoFrenteUrl, !!c.fotoVeiculoTrasUrl, !!c.crlvUrl, !!c.cnhUrl];
   const feitos = itens.filter(Boolean).length;
   return { feitos, total:itens.length, pct:Math.round((feitos/itens.length)*100) };
@@ -6178,7 +6178,9 @@ function telaCadastroMotorista(){
       <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 2. Fotos da bicicleta — 2 fotos</div>
       ${uploadSlotHTML('fotoVeiculoFrente', 'Frente da bicicleta', c.fotoVeiculoFrenteUrl)}
       ${uploadSlotHTML('fotoVeiculoTras', 'Lado da bicicleta', c.fotoVeiculoTrasUrl)}
-      <div style="font-size:12px;color:var(--poeira);margin-top:10px"> Para bicicleta não pedimos CNH, CRLV nem placa.</div>
+      <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> 3. Documento pessoal — RG ou CNH</div>
+      ${uploadSlotHTML('cnh', 'RG ou CNH', c.cnhUrl)}
+      <div style="font-size:12px;color:var(--poeira);margin-top:10px"> Para bicicleta não pedimos CRLV nem placa — só o documento pessoal acima.</div>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;text-transform:none;font-size:14px;color:var(--osso);margin-top:16px" onclick="alternarResponsabilidadeBike()">
         <input type="checkbox" ${c.aceitaResponsabilidadeBike?'checked':''} style="width:auto;accent-color:var(--mango)"> Confirmo que a bicicleta é minha e sou responsável por ela
       </label>
@@ -6262,8 +6264,9 @@ function telaReenviarDocumentosMotorista(){
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> Fotos ${ehBike?'da bicicleta':'do veículo'}</div>
     ${uploadSlotHTMLReenvio('fotoVeiculoFrente', ehBike?'Frente da bicicleta':'Frente — veículo parado, placa visível', r.fotoVeiculoFrenteUrl)}
     ${uploadSlotHTMLReenvio('fotoVeiculoTras', ehBike?'Lado da bicicleta':'Trás — parte de trás, placa nítida', r.fotoVeiculoTrasUrl)}
-    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> Documento${ehBike?' pessoal':'s'}</div>
-    ${ehBike ? '' : uploadSlotHTMLReenvio('crlv', 'Documento do veículo (CRLV)', r.crlvUrl)}
+    ${ehBike ? '' : `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> Documento do veículo</div>
+    ${uploadSlotHTMLReenvio('crlv', 'Documento do veículo (CRLV)', r.crlvUrl)}`}
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> Documento pessoal</div>
     ${uploadSlotHTMLReenvio('cnh', ehBike?'RG ou CNH':'CNH (frente e verso)', r.cnhUrl)}
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-secundario" style="margin-top:0" onclick="irParaLogin()">Cancelar</button>
@@ -7882,7 +7885,7 @@ function cadastroTemDocumentosCompletos(data){
   if(!data) return false;
   const pixOk = !!String(data.chave_pix||'').trim();
   if(data.veiculo_tipo==='bicicleta'){
-    return pixOk && !!data.foto_motorista_url && !!data.foto_veiculo_url && !!data.foto_veiculo_tras_url && !!data.aceita_responsabilidade_bike;
+    return pixOk && !!data.foto_motorista_url && !!data.foto_veiculo_url && !!data.foto_veiculo_tras_url && !!data.cnh_url && !!data.aceita_responsabilidade_bike;
   }
   return pixOk && !!data.foto_motorista_url && !!data.cnh_url && !!data.crlv_url && !!data.foto_veiculo_url && !!data.foto_veiculo_tras_url;
 }
@@ -8284,7 +8287,7 @@ async function processarDocumentoSelecionado(input){
   if(tipo==='fotoMotorista') c.fotoMotoristaUrl = pub.publicUrl;
   const campos={ cnh_url:c.cnhUrl, crlv_url:c.crlvUrl, foto_veiculo_url:c.fotoVeiculoFrenteUrl, foto_veiculo_tras_url:c.fotoVeiculoTrasUrl, foto_motorista_url:c.fotoMotoristaUrl, aceita_responsabilidade_bike:c.aceitaResponsabilidadeBike };
   const prog=progressoDocumentosCadastro(c);
-  if(prog.feitos===prog.total && c.veiculo!=='bicicleta') campos.documentos_enviados_em=Date.now();
+  if(prog.feitos===prog.total) campos.documentos_enviados_em=Date.now();
   const ok=await salvarEtapaCadastro(campos);
   if(!ok){ mostrarToast('A foto subiu, mas não consegui registrar no cadastro. Tente novamente.', 'erro'); return; }
   mostrarToast(`Foto salva! ${prog.feitos} de ${prog.total} enviados.`, 'sucesso');
