@@ -2007,7 +2007,7 @@ function agendarPopupInstalarSeNecessario(){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260903-1';
+  const versaoApp = '20260903-4';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -6839,6 +6839,31 @@ function _efAssinaturaTela(){
     estado.abaPrincipalMotorista, estado.admin.aberto, estado.admin.aba
   ].join('|');
 }
+let _efRenderAdminPendente = false;
+function adminTemCampoEmUso(){
+  if(!estado.admin?.aberto || !estado.admin?.logado) return false;
+  const el=document.activeElement;
+  if(!el || !el.closest || !el.closest('.modal-fundo-admin')) return false;
+  return el.matches('input, textarea, select, [contenteditable="true"]');
+}
+function capturarMotoristasAdminAbertos(){
+  return Array.from(document.querySelectorAll('.modal-fundo-admin details.admin-resumo-card[open][data-motorista-telefone]'))
+    .map(el=>el.getAttribute('data-motorista-telefone')).filter(Boolean);
+}
+function restaurarMotoristasAdminAbertos(telefones){
+  (telefones||[]).forEach(telefone=>{
+    const el=document.querySelector(`.modal-fundo-admin details.admin-resumo-card[data-motorista-telefone="${telefone}"]`);
+    if(el) el.open=true;
+  });
+}
+document.addEventListener('focusout',()=>{
+  setTimeout(()=>{
+    if(_efRenderAdminPendente && !adminTemCampoEmUso()){
+      _efRenderAdminPendente=false;
+      render();
+    }
+  },180);
+});
 function barraNavegacaoFluxo(){
   if(estado.cliente.logado || estado.motorista.ativo || estado.telaBoasVindas) return '';
   let titulo = estado.modo==='cliente' ? 'Área do cliente' : 'Área do entregador';
@@ -6873,10 +6898,17 @@ function render(){
   if(estado.admin && estado.admin.suporteAbertoTelefone && document.getElementById('suporte-admin-input')){
     return;
   }
+  // Nunca recria o painel no meio de uma digitação/seleção. A atualização fica na fila
+  // e é aplicada assim que o campo perde o foco, preservando tudo que o administrador digitou.
+  if(adminTemCampoEmUso()){
+    _efRenderAdminPendente=true;
+    return;
+  }
   const app = document.getElementById('app');
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
   const _valores = capturarValoresInputs();
+  const _motoristasAdminAbertos = capturarMotoristasAdminAbertos();
   if(estado.parceiro && estado.parceiro.aberto){
     app.innerHTML = telaParceiros();
     restaurarFocoAtivo(_foco);
@@ -7107,6 +7139,7 @@ function render(){
   if(estado.chatAberto) renderChat();
   if(estado.suporteAberto) renderSuporteChat();
   if(estado.admin.suporteAbertoTelefone) renderSuporteAdminChat();
+  restaurarMotoristasAdminAbertos(_motoristasAdminAbertos);
   restaurarScroll(_scroll);
   restaurarFocoAtivo(_foco);
   restaurarValoresInputs(_valores);
@@ -8248,10 +8281,43 @@ function avancarEtapa5(){
   if(c.plano==='pro' && c.pix.status!=='pago'){ mostrarToast('Aguarda a confirmação do pagamento.'); return; }
   c.etapa=6; render();
 }
+let _verificandoAprovacaoCadastro=false;
+async function verificarAprovacaoCadastroEmAndamento(){
+  if(_verificandoAprovacaoCadastro || estado.motorista.ativo || estado.modo!=='entregador') return false;
+  const pm=estado.painelMotorista;
+  const c=pm?.cadastro;
+  if(pm?.tela!=='cadastro' || !c?.telefone) return false;
+  _verificandoAprovacaoCadastro=true;
+  try{
+    const {data:dados,error}=await sb.rpc('entrega_motorista_meu_perfil',{p_telefone:c.telefone});
+    const perfil=Array.isArray(dados)?(dados[0]||null):dados;
+    if(error || !perfil) return false;
+    if(perfil.status==='aprovado'){
+      c.enviando=false; c.erroEtapa='';
+      removerLocal('ef_motorista_rascunho');
+      await entrarNoPainelMotorista(perfil);
+      mostrarToast('Cadastro aprovado! Seu acesso de motorista foi liberado.', 'sucesso');
+      notificar('Cadastro aprovado!', 'Seu acesso ao Entrega Flash foi liberado.');
+      return true;
+    }
+    if(perfil.status==='reprovado'){
+      pm.tela='reprovado';
+      pm.motivoReprovacao=perfil.motivo_reprovacao||'Confira os documentos e envie novamente.';
+      c.enviando=false;
+      render();
+      return true;
+    }
+    return false;
+  }catch(e){ console.warn('Não foi possível verificar a aprovação agora.',e); return false; }
+  finally{ _verificandoAprovacaoCadastro=false; }
+}
 async function finalizarCadastroMotorista(){
   const c = estado.painelMotorista.cadastro;
   if(!c.chavePix){ c.erroEtapa='A chave PIX é obrigatória. Volte e informe a chave para recebimento.'; c.etapa=3; render(); return; }
   if(!c.aceitouTermos){ c.erroEtapa='Aceite os termos de uso e a LGPD para continuar.'; render(); return; }
+  // Se o administrador aprovou enquanto esta tela estava aberta, entra direto no painel
+  // e não tenta rebaixar o cadastro aprovado novamente para "pendente".
+  if(await verificarAprovacaoCadastroEmAndamento()) return;
   c.erroEtapa=''; c.enviando=true; render();
   const ok = await salvarEtapaCadastro({ termos_aceitos:true, status:'pendente' });
   c.enviando=false;
@@ -8263,6 +8329,7 @@ async function finalizarCadastroMotorista(){
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 800);
     removerLocal('ef_motorista_rascunho');
   }else{
+    if(await verificarAprovacaoCadastroEmAndamento()) return;
     c.erroEtapa='Não foi possível finalizar agora. Seu progresso está salvo; confira a internet e tente novamente.';
   }
   render();
@@ -8335,10 +8402,11 @@ function resumoAdminHTML(){
 function motoristaDocumentosCompletosAdmin(m){
   if(!m) return false;
   const pixOk=!!String(m.chave_pix||'').trim();
+  const termosOk=!!m.termos_aceitos;
   if(m.veiculo_tipo==='bicicleta'){
-    return pixOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.aceita_responsabilidade_bike;
+    return pixOk && termosOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.aceita_responsabilidade_bike;
   }
-  return pixOk && !!m.foto_motorista_url && !!m.cnh_url && !!m.crlv_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url;
+  return pixOk && termosOk && !!m.foto_motorista_url && !!m.cnh_url && !!m.crlv_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url;
 }
 function motoristaAguardandoDocumentosAdmin(m){
   return ['basico','liberado'].includes(m?.status) || (m?.status==='pendente' && !motoristaDocumentosCompletosAdmin(m));
@@ -8385,7 +8453,7 @@ function motoristaCardHTML(m, emRota){
           <button type="button" class="btn btn-secundario btn-pequeno botao-chat"
             style="margin:0;padding:7px 10px"
             onclick="event.preventDefault();event.stopPropagation();abrirSuporteAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')"> Mensagem</button>
-          ${aguardandoDocumentos ? `<button type="button" class="btn btn-pequeno" style="margin:0;padding:7px 10px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="event.preventDefault();event.stopPropagation();abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">WhatsApp + link</button>` : ''}
+          ${aguardandoDocumentos ? `<button type="button" class="btn btn-pequeno" style="margin:0;padding:9px 12px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:950" onclick="event.preventDefault();event.stopPropagation();abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 ENVIAR LINK DOS DOCUMENTOS</button>` : ''}
           <span class="selo ${aguardandoDocumentos?'selo-aguardando':m.status==='pendente'?'selo-andamento':m.status==='aprovado'?'selo-entregue':m.status==='bloqueado'?'selo-cancelado':'selo-aguardando'}">${aguardandoDocumentos?'documentos pendentes':m.status}</span>
         </div>
       </summary>
@@ -8449,7 +8517,7 @@ function motoristaCardHTML(m, emRota){
         <div style="font-size:12.5px;font-weight:800;color:${vencido?'#ff7474':'var(--osso)'}">${vencido?'⚠️ PRAZO DE 5 DIAS ULTRAPASSADO':`⏳ Documentos pendentes · ${faltam} dia${faltam===1?'':'s'} restante${faltam===1?'':'s'}`}</div>
         <div style="font-size:12px;color:var(--poeira);margin-top:4px;line-height:1.45">${vencido?'Este motorista ainda não enviou a documentação. Você já pode revisar e excluir o cadastro, se desejar.':'Envie um lembrete pelo WhatsApp antes do prazo terminar.'}</div>
       </div>
-      <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Enviar WhatsApp com informações e link</button>
+      <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:950" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 ENVIAR LINK DOS DOCUMENTOS NO WHATSAPP</button>
       <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:6px" onclick="lembrarEnviarDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">🔔 Enviar lembrete pelo app</button>`; })()}` : ''}
       ${m.status==='pendente' && docsCompletos ? `
       <div style="display:flex;gap:8px;margin-top:10px">
@@ -9586,6 +9654,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   carregarMotoristasOnline();
   setInterval(carregarMotoristasOnline, 20000);
   setInterval(atualizarPresencaTipo, 20000);
+  setInterval(verificarAprovacaoCadastroEmAndamento, 5000);
   // Atalho pra quem vem de anúncio: ?ir=cadastro-cliente ou ?ir=cadastro-motorista
   // marca a visita como "via anúncio" pra cortar onboarding/popup de instalar/faixa de notificação
   try{
