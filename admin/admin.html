@@ -8222,7 +8222,11 @@ let _adminRenderPendente = false;
 function adminTemInteracaoAberta(){
   if(!estado.admin?.aberto) return false;
   if(estado.modalReprovar || estado.modalConfirmar || estado.admin.motoristaEditando || estado.admin.clienteEditando || estado.admin.pedidoEditando) return true;
-  if(document.querySelector('.admin-resumo-card[open], .modal-fundo, .foto-ampliada')) return true;
+  // OBS: não bloqueia mais só por um card estar aberto pra visualização — isso travava o painel
+  // inteiro (nenhum motorista atualizava) enquanto qualquer card ficasse aberto sem edição.
+  // O estado (motoristaAberto/clienteAberto/motoristaEditando/...) já garante que o card
+  // continua aberto depois de um re-render, então não precisa mais congelar a tela pra isso.
+  if(document.querySelector('.modal-fundo, .foto-ampliada')) return true;
   const ativo=document.activeElement;
   return !!(ativo && ativo.closest && ativo.closest('.admin-conteudo') && /^(INPUT|TEXTAREA|SELECT)$/.test(ativo.tagName));
 }
