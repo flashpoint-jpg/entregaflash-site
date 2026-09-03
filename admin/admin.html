@@ -6690,6 +6690,7 @@ function pendenciasDocumentosMotorista(m){
   if(!m.foto_veiculo_tras_url) itens.push(m.veiculo_tipo==='bicicleta'?'Foto da bicicleta (lado/trás)':'Foto do veículo (trás)');
   if(m.veiculo_tipo==='bicicleta'){
     if(!m.cnh_url) itens.push('RG ou CNH');
+    if(!m.aceita_responsabilidade_bike) itens.push('Confirmação de responsabilidade pela bicicleta');
   }else{
     if(!m.cnh_url) itens.push('CNH');
     if(!m.crlv_url) itens.push('CRLV');
@@ -6729,7 +6730,7 @@ function motoristaDocumentosCompletosAdmin(m){
   if(!m) return false;
   const pixOk=!!String(m.chave_pix||'').trim();
   if(m.veiculo_tipo==='bicicleta'){
-    return pixOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.aceita_responsabilidade_bike;
+    return pixOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.cnh_url && !!m.aceita_responsabilidade_bike;
   }
   return pixOk && !!m.foto_motorista_url && !!m.cnh_url && !!m.crlv_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url;
 }
