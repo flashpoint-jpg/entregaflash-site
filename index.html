@@ -1897,7 +1897,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaMotoristas:'', buscaClientes:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaMotoristas:'', buscaClientes:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' },
@@ -2580,11 +2580,32 @@ function modalConfirmarHTML(){
     </div>
   </div>`;
 }
+const DOCUMENTOS_MOTORISTA_LABELS = {
+  fotoMotorista: 'Foto do rosto (selfie)',
+  fotoVeiculoFrente: 'Foto da frente do veículo',
+  fotoVeiculoTras: 'Foto de trás do veículo',
+  crlv: 'CRLV',
+  cnh: 'CNH'
+};
+const DOCUMENTOS_BICICLETA_LABELS = {
+  fotoMotorista: 'Foto do rosto (selfie)',
+  fotoVeiculoFrente: 'Foto da frente da bicicleta',
+  fotoVeiculoTras: 'Foto do lado da bicicleta',
+  cnh: 'RG ou CNH'
+};
 function abrirModalReprovar(id){
-  estado.modalReprovar = { id, motivo:'' };
+  const motorista=(estado.admin.motoristas||[]).find(m=>String(m.id)===String(id));
+  estado.modalReprovar = { id, motivo:'', docs:[], ehBike: motorista?.veiculo_tipo==='bicicleta' };
   render();
 }
 function fecharModalReprovar(){ estado.modalReprovar = null; render(); }
+function alternarDocumentoReprovado(chave){
+  const m = estado.modalReprovar;
+  if(!m) return;
+  const i = m.docs.indexOf(chave);
+  if(i>=0) m.docs.splice(i,1); else m.docs.push(chave);
+  render();
+}
 function selecionarMotivoPreset(texto, botao){
   if(!estado.modalReprovar) return;
   estado.modalReprovar.motivo = texto;
@@ -2602,13 +2623,20 @@ async function confirmarReprovacao(){
   const m = estado.modalReprovar;
   if(!m) return;
   const textarea = document.getElementById('reprovar-motivo-texto');
-  const motivo = (textarea ? textarea.value : m.motivo || '').trim();
-  if(!motivo){ mostrarToast('Escolhe ou escreve um motivo antes de reprovar.'); return; }
+  let motivo = (textarea ? textarea.value : m.motivo || '').trim();
+  const labels = m.ehBike ? DOCUMENTOS_BICICLETA_LABELS : DOCUMENTOS_MOTORISTA_LABELS;
+  const docsSelecionados = (m.docs||[]).filter(d=>labels[d]);
+  if(!motivo && !docsSelecionados.length){ mostrarToast('Escolhe a foto/documento errado e escreve ou escolhe um motivo antes de reprovar.'); return; }
+  if(docsSelecionados.length){
+    const listaDocs = docsSelecionados.map(d=>'• '+labels[d]).join('\n');
+    motivo = motivo ? `Reenviar apenas:\n${listaDocs}\n\n${motivo}` : `Reenviar apenas:\n${listaDocs}`;
+  }
   const id = m.id;
   estado.modalReprovar = null; render();
-  const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'reprovado', p_motivo: motivo });
+  const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'reprovado', p_motivo: motivo, p_documentos_reprovados: docsSelecionados.length?docsSelecionados:null });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao reprovar.', 'erro'); return; }
-  mostrarToast('Cadastro reprovado — o motorista vai ver o motivo na tela dele.', 'sucesso');
+  estado.admin.motoristaAberto = id;
+  mostrarToast('Cadastro reprovado — o motorista vai ver exatamente o que precisa reenviar.', 'sucesso');
   await carregarMotoristasAdmin();
 }
 function modalReprovarHTML(){
@@ -2621,14 +2649,25 @@ function modalReprovarHTML(){
     ' CNH vencida — regulariza e reenvia uma foto atualizada.',
     ' Fotos com baixa qualidade — reenvia fotos mais nítidas, com boa luz.'
   ];
+  const labels = m.ehBike ? DOCUMENTOS_BICICLETA_LABELS : DOCUMENTOS_MOTORISTA_LABELS;
   return `<div class="modal-fundo" style="z-index:600" onclick="if(event.target===this) fecharModalReprovar()">
     <div class="confirmar-caixa" style="text-align:left;max-width:420px">
-      <div class="confirmar-texto" style="text-align:left;font-weight:700">Motivo da reprovação</div>
-      <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Escolhe um motivo rápido ou escreve o teu. O motorista vai ver essa mensagem na tela dele e vai poder reenviar os documentos.</div>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+      <div class="confirmar-texto" style="text-align:left;font-weight:700">Qual foto/documento está errado?</div>
+      <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Marca só o que está errado — o resto continua salvo. O motorista vai ver na tela dele exatamente o que precisa reenviar, sem perder o que já mandou certo.</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        ${Object.entries(labels).map(([chave,rotulo])=>{
+          const marcado = (m.docs||[]).includes(chave);
+          return `<label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid ${marcado?'var(--chama)':'var(--linha)'};border-radius:10px;background:${marcado?'rgba(255,92,92,.08)':'transparent'};cursor:pointer">
+            <input type="checkbox" style="width:auto" ${marcado?'checked':''} onchange="alternarDocumentoReprovado('${chave}')">
+            <span style="font-weight:${marcado?800:500}">${rotulo}</span>
+          </label>`;
+        }).join('')}
+      </div>
+      <div class="confirmar-texto" style="text-align:left;font-weight:700;font-size:13.5px">Motivo (opcional se já marcou a foto acima)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin:8px 0 10px">
         ${presets.map(p=>`<button type="button" data-motivo-reprovacao aria-pressed="false" class="btn btn-secundario btn-pequeno" style="text-align:left;white-space:normal" onclick="selecionarMotivoPreset(${JSON.stringify(p)},this)">${p}</button>`).join('')}
       </div>
-      <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve o motivo..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
+      <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve um detalhe extra (opcional)..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
       <div class="confirmar-botoes" style="margin-top:12px">
         <button class="btn btn-secundario" onclick="fecharModalReprovar()">Cancelar</button>
         <button class="btn btn-primario" onclick="confirmarReprovacao()"> Reprovar e avisar</button>
@@ -6248,27 +6287,31 @@ function uploadSlotHTML(tipo, rotulo, url){
     ${url ? `<img src="${url}"><div class="up-texto">✅ ${rotulo} — salvo<br><span style="font-size:11.5px;font-weight:500">Toque somente se quiser trocar</span></div>` : `<span class="up-emoji">📷</span><div class="up-texto">Enviar agora: ${rotulo}</div>`}
   </div>`;
 }
-function uploadSlotHTMLReenvio(tipo, rotulo, url){
+function uploadSlotHTMLReenvio(tipo, rotulo, url, reprovado){
   return `
-  <div class="upload-slot ${url?'feito':''}" onclick="solicitarUploadReenvio('${tipo}')">
-    ${url ? `<img src="${url}"><div class="up-texto"> ${rotulo} enviado — toque para trocar</div>` : `<span class="up-emoji"></span><div class="up-texto">Toque para enviar foto de: ${rotulo}</div>`}
+  <div class="upload-slot ${url?'feito':''}" style="${reprovado?'border:2px solid var(--chama);background:rgba(255,92,92,.08)':''}" onclick="solicitarUploadReenvio('${tipo}')">
+    ${reprovado ? `<div style="font-size:12px;font-weight:800;color:var(--chama);margin-bottom:4px">⚠️ ESTA FOTO PRECISA SER TROCADA</div>` : ''}
+    ${url ? `<img src="${url}"><div class="up-texto">${reprovado?'❌':' '} ${rotulo}${reprovado?' — toque para reenviar':' enviado — toque para trocar'}</div>` : `<span class="up-emoji"></span><div class="up-texto">Toque para enviar foto de: ${rotulo}</div>`}
   </div>`;
 }
 function telaReenviarDocumentosMotorista(){
   const r = estado.painelMotorista.reenvio || {};
   const ehBike = r.veiculoTipo==='bicicleta';
+  const reprovados = Array.isArray(r.documentosReprovados) ? r.documentosReprovados : [];
+  const marcado = tipo => reprovados.includes(tipo);
+  const temMarcados = reprovados.length>0;
   return `<div class="campo-motorista">
     <div class="etapa-titulo">Corrigir e reenviar documentos</div>
-    <div class="etapa-sub">Envia de novo os documentos indicados no motivo da reprovação (ou todos, se não tiveres certeza) e toca em "Reenviar para análise".</div>
+    <div class="etapa-sub">${temMarcados ? 'Só a(s) foto(s) marcada(s) com ⚠️ abaixo precisa(m) ser reenviada(s) — as outras já estão certas e continuam salvas.' : 'Envia de novo os documentos indicados no motivo da reprovação (ou todos, se não tiveres certeza) e toca em "Reenviar para análise".'}</div>
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:14px 0 6px"> Foto do rosto — selfie</div>
-    ${uploadSlotHTMLReenvio('fotoMotorista','Foto de rosto (de frente)', r.fotoMotoristaUrl)}
+    ${uploadSlotHTMLReenvio('fotoMotorista','Foto de rosto (de frente)', r.fotoMotoristaUrl, marcado('fotoMotorista'))}
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> Fotos ${ehBike?'da bicicleta':'do veículo'}</div>
-    ${uploadSlotHTMLReenvio('fotoVeiculoFrente', ehBike?'Frente da bicicleta':'Frente — veículo parado, placa visível', r.fotoVeiculoFrenteUrl)}
-    ${uploadSlotHTMLReenvio('fotoVeiculoTras', ehBike?'Lado da bicicleta':'Trás — parte de trás, placa nítida', r.fotoVeiculoTrasUrl)}
+    ${uploadSlotHTMLReenvio('fotoVeiculoFrente', ehBike?'Frente da bicicleta':'Frente — veículo parado, placa visível', r.fotoVeiculoFrenteUrl, marcado('fotoVeiculoFrente'))}
+    ${uploadSlotHTMLReenvio('fotoVeiculoTras', ehBike?'Lado da bicicleta':'Trás — parte de trás, placa nítida', r.fotoVeiculoTrasUrl, marcado('fotoVeiculoTras'))}
     ${ehBike ? '' : `<div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> Documento do veículo</div>
-    ${uploadSlotHTMLReenvio('crlv', 'Documento do veículo (CRLV)', r.crlvUrl)}`}
+    ${uploadSlotHTMLReenvio('crlv', 'Documento do veículo (CRLV)', r.crlvUrl, marcado('crlv'))}`}
     <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.03em;color:var(--poeira);margin:16px 0 6px"> Documento pessoal</div>
-    ${uploadSlotHTMLReenvio('cnh', ehBike?'RG ou CNH':'CNH (frente e verso)', r.cnhUrl)}
+    ${uploadSlotHTMLReenvio('cnh', ehBike?'RG ou CNH':'CNH (frente e verso)', r.cnhUrl, marcado('cnh'))}
     <div style="display:flex;gap:8px;margin-top:14px">
       <button class="btn btn-secundario" style="margin-top:0" onclick="irParaLogin()">Cancelar</button>
       <button class="btn btn-primario" style="margin-top:0" ${r.enviando?'disabled':''} onclick="enviarReenvioDocumentos()">${r.enviando?'A reenviar...':'Reenviar para análise'}</button>
@@ -7924,7 +7967,7 @@ async function loginFacialMotorista(){
   if(data.status==='liberado'){ registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted'); mostrarLembreteDocumentosDiario(data.telefone,data.status); pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
-    pm.reenvio = { telefone:data.telefone, senhaHash:data.senha_hash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
+    pm.reenvio = { telefone:data.telefone, senhaHash:data.senha_hash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, documentosReprovados:data.documentos_reprovados||[], enviando:false };
     render(); return;
   }
   if(!data.facial_ativa || !Array.isArray(data.face_descriptor) || !data.face_descriptor.length){
@@ -7956,7 +7999,7 @@ async function loginMotorista(){
   if(data.status==='liberado'){ registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted'); mostrarLembreteDocumentosDiario(data.telefone,data.status); pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
-    pm.reenvio = { telefone:data.telefone, senhaHash:senhaHash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
+    pm.reenvio = { telefone:data.telefone, senhaHash:senhaHash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, documentosReprovados:data.documentos_reprovados||[], enviando:false };
     render(); return;
   }
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
@@ -8591,7 +8634,7 @@ function motoristaCardHTML(m, emRota){
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${estado.admin.motoristaEditando===m.id?'open':''} style="${emRota?'border-color:var(--mango)':onlineAgora?'border-color:var(--verde)':''}">
+    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${(estado.admin.motoristaEditando===m.id||estado.admin.motoristaAberto===m.id)?'open':''} ontoggle="onToggleCardMotoristaAdmin(this,'${m.id}')" style="${emRota?'border-color:var(--mango)':onlineAgora?'border-color:var(--verde)':''}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px"></div>`}
@@ -8672,7 +8715,8 @@ function motoristaCardHTML(m, emRota){
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')"> Aprovar</button>
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')"> Reprovar</button>
       </div>` : ''}
-      ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>` : ''}
+      ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px;white-space:pre-line">Motivo: ${m.motivo_reprovacao}</div>` : ''}
+      ${m.status==='reprovado' && Array.isArray(m.documentos_reprovados) && m.documentos_reprovados.length ? `<div class="subtitulo" style="margin-top:4px;color:var(--chama);font-weight:700">⚠️ Aguardando reenvio de: ${m.documentos_reprovados.map(d=>(m.veiculo_tipo==='bicicleta'?DOCUMENTOS_BICICLETA_LABELS:DOCUMENTOS_MOTORISTA_LABELS)[d]||d).join(', ')}</div>` : ''}
       ${m.status==='aprovado' ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <label style="margin:0 0 6px">Ajustar saldo manualmente (R$, use negativo pra debitar)</label>
@@ -9672,7 +9716,8 @@ async function aprovarMotoristaAdmin(id){
   }
   const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao aprovar.', 'erro'); return; }
-  mostrarToast('Motorista aprovado!', 'sucesso');
+  estado.admin.motoristaAberto = id;
+  mostrarToast('Motorista aprovado! Já pode enviar a mensagem de boas-vindas abaixo.', 'sucesso');
   await carregarMotoristasAdmin();
 }
 async function liberarDocumentosMotoristaAdmin(id){
@@ -9709,6 +9754,10 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome){
 async function lembrarEnviarDocumentosAdmin(telefone, nome){
   await enviarPushServidor('motorista', telefone, ' Falta enviar seus documentos!', `${nome?nome+', c':'C'}ontinue seu cadastro no Entrega Flash — envie seus documentos agora e comece a receber corridas hoje mesmo.`);
   mostrarToast('Lembrete enviado! (só toca com som se o motorista já tiver ativado as notificações dele)', 'sucesso');
+}
+function onToggleCardMotoristaAdmin(detalhesEl, id){
+  if(detalhesEl.open){ estado.admin.motoristaAberto = id; }
+  else if(estado.admin.motoristaAberto===id){ estado.admin.motoristaAberto = null; }
 }
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
@@ -9780,7 +9829,7 @@ window.escolherPlano=escolherPlano;
 window.processarDocumentoSelecionado=processarDocumentoSelecionado; window.copiarPix=copiarPix;
 window.finalizarCadastroMotorista=finalizarCadastroMotorista; window.alternarTermos=alternarTermos;
 window.abrirAdmin=abrirAdmin; window.fecharAdmin=fecharAdmin; window.digitarSenhaAdmin=digitarSenhaAdmin;
-window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao;
+window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao; window.alternarDocumentoReprovado=alternarDocumentoReprovado; window.onToggleCardMotoristaAdmin=onToggleCardMotoristaAdmin;
 window.alternarEdicaoMotoristaAdmin=alternarEdicaoMotoristaAdmin; window.salvarEdicaoMotoristaAdmin=salvarEdicaoMotoristaAdmin;
 window.alternarEdicaoClienteAdmin=alternarEdicaoClienteAdmin; window.salvarEdicaoClienteAdmin=salvarEdicaoClienteAdmin;
 window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearClienteAdmin=bloquearClienteAdmin;
