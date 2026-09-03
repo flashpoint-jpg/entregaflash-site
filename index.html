@@ -6919,8 +6919,9 @@ function adminTemCampoEmUso(){
 function adminTemEditorAbertoNoDOM(){
   if(!estado.admin?.aberto || !estado.admin?.logado) return false;
   if(!estado.admin.motoristaEditando && !estado.admin.clienteEditando && !estado.admin.pedidoEditando) return false;
-  // Mantém o formulário na tela mesmo quando chega atualização automática.
-  return !!document.querySelector('.modal-fundo-admin [id^="edit-nome-"], .modal-fundo-admin [id^="edit-pedido-nome-"], .modal-fundo-admin [id^="edit-nome-cliente-"]');
+  // IMPORTANTE: o painel também pode rodar em /admin/ sem depender do wrapper .modal-fundo-admin.
+  // Enquanto qualquer editor estiver realmente aberto, atualizações automáticas/realtime NÃO podem recriar o painel.
+  return !!document.querySelector('[id^="edit-nome-"], [id^="edit-pedido-nome-"], [id^="edit-nome-cliente-"], [id^="edit-telefone-"], [id^="edit-veiculo-"]');
 }
 function capturarMotoristasAdminAbertos(){
   return Array.from(document.querySelectorAll('.modal-fundo-admin details.admin-resumo-card[open][data-motorista-telefone]'))
@@ -6934,7 +6935,7 @@ function restaurarMotoristasAdminAbertos(telefones){
 }
 document.addEventListener('focusout',()=>{
   setTimeout(()=>{
-    if(_efRenderAdminPendente && !adminTemCampoEmUso()){
+    if(_efRenderAdminPendente && !adminTemCampoEmUso() && !adminTemEditorAbertoNoDOM()){
       _efRenderAdminPendente=false;
       render();
     }
