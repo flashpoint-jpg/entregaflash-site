@@ -1661,7 +1661,7 @@ function iconeVeiculoPremium(tipo){
   };
   return `<span class="icone-veiculo-premium" aria-hidden="true"><svg viewBox="0 0 64 40">${desenhos[tipo]||desenhos.carro}</svg></span>`;
 }
-// Regiões de cobertura: Sul de Minas + Grande São Paulo
+// Regiões de cobertura: Sul de Minas + Grande São Paulo + Região de Campinas
 // O retângulo geral só limita a busca ao Sudeste próximo; a validação final continua pela lista de cidades atendidas.
 const REGIAO = { minLat:-24.25, maxLat:-14.23, minLon:-51.60, maxLon:-39.86 };
 const REGIAO_GRANDE_SP = { minLat:-24.15, maxLat:-23.05, minLon:-47.25, maxLon:-45.65 };
@@ -1685,8 +1685,17 @@ const CIDADES_GRANDE_SP = [
   'Suzano','Mogi das Cruzes','Biritiba Mirim','Guararema','Salesópolis','Embu das Artes','Taboão da Serra',
   'Itapecerica da Serra','Embu-Guaçu','Cotia','Vargem Grande Paulista','Juquitiba','São Lourenço da Serra'
 ];
+const CIDADES_REGIAO_CAMPINAS = [
+  'Campinas','Limeira','Americana','Santa Bárbara d’Oeste','Santa Bárbara d\'Oeste','Nova Odessa',
+  'Sumaré','Hortolândia','Paulínia','Cosmópolis','Artur Nogueira','Engenheiro Coelho','Holambra',
+  'Jaguariúna','Pedreira','Monte Mor','Indaiatuba','Valinhos','Vinhedo','Louveira','Itatiba',
+  'Jundiaí','Itupeva','Cabreúva','Elias Fausto','Capivari','Rafard','Mombuca','Piracicaba',
+  'Rio Claro','Cordeirópolis','Iracemápolis','Araras','Leme','Conchal','Mogi Mirim','Mogi Guaçu',
+  'Santo Antônio de Posse','Amparo','Serra Negra','Atibaia','Bragança Paulista','Morungaba',
+  'Várzea Paulista','Campo Limpo Paulista','Jarinu'
+];
 // Lista única usada pelo autocomplete e pela validação de cidades.
-const CIDADES_PERMITIDAS = [...CIDADES_MG, ...CIDADES_GRANDE_SP];
+const CIDADES_PERMITIDAS = [...CIDADES_MG, ...CIDADES_GRANDE_SP, ...CIDADES_REGIAO_CAMPINAS];
 function normalizarTexto(t){
   return (t||'').toString().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
 }
@@ -2253,7 +2262,14 @@ function dentroDaRegiao(lat,lon){
 }
 // Busca no Photon (bom para endereços incompletos/digitação parcial, tipo autocomplete de verdade)
 async function buscarPhoton(texto, limite){
-  const centros=[{lat:-23.55052,lon:-46.63331},{lat:-21.3757,lon:-46.5256}],todos=[];
+  // Vários centros impedem que ruas com o mesmo nome sejam puxadas apenas da capital.
+  const centros=[
+    {lat:-23.55052,lon:-46.63331}, // São Paulo
+    {lat:-23.5448,lon:-46.3112},  // Suzano
+    {lat:-22.9056,lon:-47.0608},  // Campinas
+    {lat:-22.5646,lon:-47.4017},  // Limeira
+    {lat:-21.3757,lon:-46.5256}   // Sul de Minas
+  ],todos=[];
   for(const c of centros){try{const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&lat=${c.lat}&lon=${c.lon}&zoom=12&limit=${limite}&lang=pt`;const resp=await fetch(url);if(!resp.ok)continue;const dados=await resp.json();for(const f of ((dados&&dados.features)||[])){const pr=f.properties||{},coords=f.geometry&&f.geometry.coordinates;if(!coords)continue;const lon=coords[0],lat=coords[1],cidade=pr.city||pr.town||pr.village||pr.county||'',partes=[pr.name,pr.street,pr.housenumber,pr.district,cidade,pr.state,pr.postcode].filter(Boolean),chave=Number(lat).toFixed(6)+','+Number(lon).toFixed(6);if(!todos.some(x=>x.chave===chave))todos.push({lat,lon,cidade,nome:partes.join(', '),chave});}}catch(e){console.warn('Photon falhou',e);}}
   return todos.map(({chave,...r})=>r);
 }
@@ -2287,10 +2303,10 @@ async function resolverCEP(texto){
 async function buscarNominatim(texto, limite){
   // Se o usuário digitar só rua+número, tenta as duas praças explicitamente.
   // Isso evita que uma rua de São Paulo seja descartada por falta do nome da cidade.
-  const temCidadeOuUF = /\b(brasil|mg|sp|são paulo|sao paulo|muzambinho)\b/i.test(texto);
+  const temCidadeOuUF = /\b(brasil|mg|sp|são paulo|sao paulo|muzambinho|campinas|limeira|suzano)\b/i.test(texto);
   const consultas = temCidadeOuUF
     ? [texto]
-    : [texto+', São Paulo, SP, Brasil', texto+', Muzambinho, MG, Brasil', texto+', Brasil'];
+    : [texto+', Campinas, SP, Brasil', texto+', Limeira, SP, Brasil', texto+', Suzano, SP, Brasil', texto+', São Paulo, SP, Brasil', texto+', Muzambinho, MG, Brasil', texto+', Brasil'];
   const viewbox = `${REGIAO.minLon},${REGIAO.maxLat},${REGIAO.maxLon},${REGIAO.minLat}`;
   const saida=[];
   for(const q of consultas){
@@ -2311,7 +2327,7 @@ async function buscarNominatim(texto, limite){
   }
   return saida.map(({chave,...r})=>r);
 }
-// Junta os dois provedores e mantém só resultados nas cidades atendidas (Sul de Minas + Grande São Paulo)
+// Junta os dois provedores e mantém só resultados nas cidades atendidas.
 async function buscarEnderecos(texto, limite){
   texto=(texto||'').trim();if(!texto)return [];const norm=t=>normalizarTexto(t);
   if(/^\s*\d{5}-?\d{3}\s*$/.test(texto)){const cep=await resolverCEP(texto);if(cep){if(cep.fora)return [];if(Number.isFinite(cep.lat)&&Number.isFinite(cep.lon)&&dentroDaRegiao(cep.lat,cep.lon))return [{lat:cep.lat,lon:cep.lon,cidade:cep.cidade,nome:cep.endereco}];try{let via=await buscarNominatim(cep.endereco,limite*3);via=via.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(via.length)return via.slice(0,limite);}catch(e){}try{let ph=await buscarPhoton(cep.endereco,limite*3);ph=ph.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(ph.length)return ph.slice(0,limite);}catch(e){}}}
@@ -4974,7 +4990,7 @@ function iniciarTickRadarBusca(){
       const el = wrap.querySelector('.radar-raio-texto');
       if(!el) return;
       const minutosBuscando = (Date.now() - criado) / 60000;
-      const raioKm = Math.min(15, 2 + Math.floor(minutosBuscando));
+      const raioKm = minutosBuscando<2 ? 5 : minutosBuscando<4 ? 15 : minutosBuscando<7 ? 30 : minutosBuscando<10 ? 60 : 120;
       const ampliando = minutosBuscando >= 1;
       el.textContent = `${ampliando ? 'Ampliando a área de busca' : 'Buscando na área'} — ${raioKm} km`;
     });
@@ -5115,7 +5131,7 @@ function cartaoPedidoCliente(p){
   if(p.status==='buscando'){
     const foiCanceladoPeloMotorista = p.canceladoPor==='motorista';
     const minutosBuscando = (Date.now() - p.criadoEm) / 60000;
-    const raioKm = Math.min(15, 2 + Math.floor(minutosBuscando));
+    const raioKm = minutosBuscando<2 ? 5 : minutosBuscando<4 ? 15 : minutosBuscando<7 ? 30 : minutosBuscando<10 ? 60 : 120;
     const ampliando = minutosBuscando >= 1;
     return `
     <div class="pedido" id="pedido-${p.id}">
@@ -5897,7 +5913,7 @@ function telaCliente(){
       <button class="btn btn-primario" style="margin-top:0" ${atributoDesabilitado('criarPedido')} onclick="executarComCarregando('criarPedido', criarPedido)">${carregando('criarPedido') ? '<span class="girando"></span>'+(f.tipoRetirada==='agendado'?'Agendando...':'Confirmando...') : (f.tipoRetirada==='agendado'?' Agendar pedido':' Confirmar pedido')}</button>
       ` : ''}
     </div>
-    ${preco==null && !estado.calculando && !estado.falhaCalculo ? `<div class="subtitulo" style="margin-top:12px">Cobrimos cidades do Sul de Minas e da Grande São Paulo.</div>` : ''}
+    ${preco==null && !estado.calculando && !estado.falhaCalculo ? `<div class="subtitulo" style="margin-top:12px">Cobrimos o Sul de Minas, a Grande São Paulo, Campinas, Limeira e cidades próximas.</div>` : ''}
     ` : ''}
     </div>
   </div>
@@ -6370,11 +6386,11 @@ function telaMotorista(){
     .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
     // Despacho inteligente: começa perto e amplia automaticamente enquanto ninguém aceita.
-    // 0-2 min: 5 km | 2-4 min: 10 km | 4-7 min: 20 km | depois: 40 km.
+    // 0-2 min: 5 km | 2-4 min: 15 km | 4-7 min: 30 km | 7-10 min: 60 km | depois: 120 km.
     .filter(p=>{
       if(p.distanciaAteMim==null) return true; // sem coordenada: não bloqueia o pedido
       const idadeMin=Math.max(0,(agoraTs-Number(p.criadoEm||agoraTs))/60000);
-      const raioAuto=idadeMin<2?5:idadeMin<4?10:idadeMin<7?20:40;
+      const raioAuto=idadeMin<2?5:idadeMin<4?15:idadeMin<7?30:idadeMin<10?60:120;
       const limite=(m.plano==='pro' && m.raioAtendimentoKm)?Math.min(raioAuto,Number(m.raioAtendimentoKm)):raioAuto;
       return p.distanciaAteMim<=limite;
     })
@@ -6565,7 +6581,7 @@ function montarMapaMotoristaHome(){
 }
 
 function raioAtendimentoHTML(m){
-  const opcoes = [5,10,15,20,30,50];
+  const opcoes = [5,10,15,20,30,50,80,120];
   return `
   <div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--painel-alt);border:1px solid var(--linha)">
     <div style="font-weight:700;color:var(--osso);font-size:14px"> Raio de atendimento (benefício Pro)</div>
@@ -6726,7 +6742,7 @@ function comoFuncionaClienteHTML(){
 
   <div class="cf-titulo-secao"> Entrega prioritária</div>
   <div class="subtitulo" style="margin:6px 0 0">Por um valor a mais (+R$ ${TAXA_PRIORIDADE_VALOR.toFixed(2)}) na hora de pedir, a sua entrega aparece primeiro para TODOS os entregadores da região (inclusive antes dos pedidos comuns) e é feita direto — sem paradas de outros clientes pelo caminho. Ideal para quando é urgente.</div>
-  <div class="cf-nota">Cobrimos cidades do Sul de Minas e da Grande São Paulo. Todos os preços e regras podem ser ajustados pela equipe Entrega Flash.</div>`;
+  <div class="cf-nota">Cobrimos o Sul de Minas, a Grande São Paulo, Campinas, Limeira e cidades próximas. Todos os preços e regras podem ser ajustados pela equipe Entrega Flash.</div>`;
 }
 function comoFuncionaMotoristaHTML(){
   return `
