@@ -6840,6 +6840,9 @@ function motoristaCardHTML(m, emRota){
       ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>` : ''}
       ${m.status==='aprovado' ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
+        <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarAprovacaoWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Enviar aprovação + link do app no WhatsApp</button>
+      </div>
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <label style="margin:0 0 6px">Ajustar saldo manualmente (R$, use negativo pra debitar)</label>
         <div style="display:flex;gap:8px">
           <input type="number" id="ajuste-saldo-${m.telefone.replace(/\D/g,'')}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1">
@@ -8052,6 +8055,22 @@ function normalizarWhatsAppBR(telefone){
   if(n.startsWith('55') && (n.length===12 || n.length===13)) return n;
   if(n.length===10 || n.length===11) return '55'+n;
   return n;
+}
+function enviarAprovacaoWhatsAppMotorista(telefone, nome){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkApp=`https://entregaflash.app.br/?ir=login-motorista&tel=${encodeURIComponent(telefoneLogin)}`;
+  const msg=`Olá, ${primeiro}! 🎉 Seu cadastro na Entrega Flash foi APROVADO! Muito obrigado pela confiança em fazer parte da nossa equipe de entregadores 🙏
+
+Acesse o link abaixo e entre com sua senha para abrir o app:
+${linkApp}
+
+🔔 Assim que entrar, ative as notificações — é assim que você vai saber na hora exata que aparecer uma corrida disponível pra você. Sem isso, você pode perder pedidos sem perceber!
+
+Bora começar a entregar? 🚀`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
 function abrirWhatsAppDocumentosAdmin(telefone, nome, veiculoTipo){
   const numero=normalizarWhatsAppBR(telefone);
