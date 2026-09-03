@@ -6900,7 +6900,8 @@ function motoristaCardHTML(m, emRota){
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Reprovar</button>
       </div>` : ''}
       ${m.status==='pendente' && docsCompletos && !adminEhDono() ? `<div class="subtitulo" style="margin-top:10px">✅ Documentação completa — aguardando o dono aprovar.</div>` : ''}
-      ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>` : ''}
+      ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>
+      <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="enviarReprovacaoWhatsAppMotorista('${m.telefone}',${JSON.stringify(m.nome||'')},${JSON.stringify(m.motivo_reprovacao||'')})">💬 Avisar no WhatsApp + link de reenvio</button>` : ''}
       ${m.status==='aprovado' ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarAprovacaoWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Enviar aprovação + link do app no WhatsApp</button>
@@ -8173,6 +8174,23 @@ ${linkApp}
 Bora começar a entregar? 🚀`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
+function enviarReprovacaoWhatsAppMotorista(telefone, nome, motivo){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkReenvio=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(telefoneLogin)}`;
+  const motivoTexto=(motivo||'').trim();
+  const msg=`Olá, ${primeiro}! Aqui é da Entrega Flash. Analisamos seu cadastro e infelizmente algo precisa ser corrigido:
+
+${motivoTexto || 'Um dos documentos enviados não pôde ser aceito.'}
+
+Acesse o link abaixo, entre com sua senha e reenvie exatamente o que está pedindo (o que já está certo continua salvo, não precisa reenviar tudo):
+${linkReenvio}
+
+Qualquer dúvida, estamos à disposição. 🙏`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
 function abrirWhatsAppDocumentosAdmin(telefone, nome, veiculoTipo){
   const numero=normalizarWhatsAppBR(telefone);
   if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
@@ -8797,7 +8815,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
+window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin; window.enviarReprovacaoWhatsAppMotorista=enviarReprovacaoWhatsAppMotorista;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
