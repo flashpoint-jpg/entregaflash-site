@@ -6700,7 +6700,11 @@ function abrirWhatsAppPendenciaEspecifica(telefone,nome,item){
   const tel=String(telefone||'').replace(/\D/g,'');
   const numero=tel.startsWith('55')?tel:'55'+tel;
   const primeiro=String(nome||'').trim().split(' ')[0]||'Olá';
-  const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase pronto. Falta somente: ${item}. Entre novamente no app e envie/corrija esse item para concluir seu cadastro.`;
+  const linkContinuacao=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(tel)}`;
+  const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase pronto. Falta somente: ${item}.
+
+Acesse o link abaixo, entre com sua senha e envie/corrija esse item para concluir seu cadastro:
+${linkContinuacao}`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
 function abrirWhatsAppTodasPendencias(telefone,nome,itensTexto){
@@ -6709,11 +6713,16 @@ function abrirWhatsAppTodasPendencias(telefone,nome,itensTexto){
   const primeiro=String(nome||'').trim().split(' ')[0]||'tudo bem';
   const itens=String(itensTexto||'').split('|||').filter(Boolean);
   const lista=itens.map(x=>'• '+x).join('\n');
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkContinuacao=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(telefoneLogin)}`;
   const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Seu cadastro está quase pronto, mas ainda faltam estas pendências:
 
 ${lista}
 
-Entre novamente no app com seu WhatsApp e senha e conclua tudo de uma vez para podermos analisar e ativar seu cadastro. Se precisar de ajuda, responda esta mensagem.`;
+Acesse agora o link abaixo, entre com sua senha e conclua tudo de uma vez para podermos analisar e ativar seu cadastro:
+${linkContinuacao}
+
+Se precisar de ajuda, responda esta mensagem.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
 function motoristaDocumentosCompletosAdmin(m){
@@ -6746,7 +6755,7 @@ function motoristaCardHTML(m, emRota){
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
+    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${estado.admin.motoristaEditando===m.id?'open':''} style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">🛵</div>`}
@@ -7786,7 +7795,7 @@ function clienteCardAdminHTML(c){
   const idc = String(c.telefone).replace(/\D/g,'');
   const validado = !c.bloqueado;
   return `
-    <details class="admin-resumo-card" data-cliente-telefone="${idc}" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
+    <details class="admin-resumo-card" data-cliente-telefone="${idc}" ${estado.admin.clienteEditando===c.telefone?'open':''} style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">👤</div>
@@ -8048,9 +8057,11 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome, veiculoTipo){
   if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
   const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
   const ehBike=veiculoTipo==='bicicleta';
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkContinuacao=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(telefoneLogin)}`;
   const msg=ehBike
-    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: entre novamente no app com seu WhatsApp e senha e continue exatamente de onde parou. Complete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
-    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Seu cadastro está quase pronto. Entre novamente no app com seu WhatsApp e senha: ele vai abrir exatamente de onde você parou. Complete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: acesse o link abaixo, entre com sua senha e continue exatamente de onde parou:\n${linkContinuacao}\n\nComplete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
+    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Seu cadastro está quase pronto. Acesse o link abaixo, entre com sua senha: ele vai abrir exatamente de onde você parou:\n${linkContinuacao}\n\nComplete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg), '_blank');
 }
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
@@ -8265,11 +8276,11 @@ function assinarAdminRealtime(){
       const novo=payload?.new||{};
       const atual=(estado.admin.motoristas||[]).find(m=>m.id===novo.id || (m.telefone&&m.telefone===novo.telefone));
       if(payload?.eventType==='UPDATE' && atual){
-        const camposEstruturais=['nome','cpf','telefone','cidade','veiculo_tipo','veiculo_marca','veiculo_placa','veiculo_cor','status','plano','disponivel','cnh_url','crlv_url','foto_motorista_url','foto_veiculo_url','foto_veiculo_tras_url','chave_pix'];
+        const camposEstruturais=['nome','cpf','telefone','cidade','veiculo_tipo','veiculo_marca','veiculo_placa','veiculo_cor','status','plano','cnh_url','crlv_url','foto_motorista_url','foto_veiculo_url','foto_veiculo_tras_url','chave_pix'];
         const mudouAlgoImportante=camposEstruturais.some(k=>String(atual[k]??'')!==String(novo[k]??''));
-        atual.disponivel_atualizado_em=novo.disponivel_atualizado_em;
+        atual.disponivel=novo.disponivel; atual.disponivel_atualizado_em=novo.disponivel_atualizado_em;
         atual.lat_atual=novo.lat_atual; atual.lng_atual=novo.lng_atual; atual.lat_atualizado_em=novo.lat_atualizado_em;
-        if(!mudouAlgoImportante){ carregarMotoristasOnline(); return; } // heartbeat: zero piscada
+        if(!mudouAlgoImportante){ carregarMotoristasOnline(); atualizarPresencaAdminDOM(); return; } // heartbeat/online-offline: zero piscada
       }
       debounce('admin-motoristas', carregarMotoristasAdmin);
     })
@@ -8324,7 +8335,10 @@ function assinarAdminRealtime(){
   // agora que o sinal instantâneo faz o trabalho pesado — garante que o painel não fique desatualizado pra sempre.
   if(intervaloAdminMotoristasClientesPoll) clearInterval(intervaloAdminMotoristasClientesPoll);
   intervaloAdminMotoristasClientesPoll = setInterval(() => {
-    if(estado.admin.logado) { carregarMotoristasAdmin(); if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) carregarClientesAdmin(); }
+    if(estado.admin.logado) {
+      if(!estado.admin.motoristaEditando) carregarMotoristasAdmin();
+      if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) carregarClientesAdmin();
+    }
   }, 120000);
 }
 function encerrarAdminRealtime(){
@@ -8419,7 +8433,7 @@ async function carregarMotoristasAdmin(){
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
   const novos = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  const assinatura=(lista)=>JSON.stringify((lista||[]).map(m=>[m.id,m.nome,m.telefone,m.cidade,m.status,m.plano,m.veiculo_tipo,m.veiculo_marca,m.veiculo_placa,m.veiculo_cor,m.cnh_url,m.crlv_url,m.foto_motorista_url,m.foto_veiculo_url,m.foto_veiculo_tras_url,m.chave_pix,Number(m.saldo||0),!!motoristaOnlineAgora(m)]));
+  const assinatura=(lista)=>JSON.stringify((lista||[]).map(m=>[m.id,m.nome,m.telefone,m.cidade,m.status,m.plano,m.veiculo_tipo,m.veiculo_marca,m.veiculo_placa,m.veiculo_cor,m.cnh_url,m.crlv_url,m.foto_motorista_url,m.foto_veiculo_url,m.foto_veiculo_tras_url,m.chave_pix,Number(m.saldo||0)]));
   const mudou = assinatura(estado.admin.motoristas)!==assinatura(novos);
   estado.admin.motoristas = novos;
   if(mudou || !jaTinhaMotoristas) agendarRenderAdmin();
