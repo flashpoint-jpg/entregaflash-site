@@ -115,6 +115,16 @@ fbq('track', 'PageView');
   @keyframes bv-aceso{0%{background-position:-120% 0;}100%{background-position:120% 0;}}
   @keyframes bv-brilho{0%{text-shadow:none;}55%{text-shadow:0 0 20px rgba(255,201,60,0.95),0 0 40px rgba(255,201,60,0.65);}100%{text-shadow:0 0 10px rgba(255,201,60,0.5);}}
   .bv-subtagline{text-align:left;font-size:15px;color:rgba(255,255,255,0.8);letter-spacing:0.2px;text-transform:none;font-weight:600;margin-bottom:22px;}
+  .bv-cobertura{margin:14px 0 18px;padding:14px;border:1px solid rgba(255,201,60,.34);border-radius:16px;background:rgba(8,10,14,.76);box-shadow:0 12px 28px rgba(0,0,0,.24);}
+  .bv-cobertura-titulo{font-family:'Rajdhani';font-size:17px;font-weight:800;color:#fff;margin-bottom:3px;}
+  .bv-cobertura-sub{font-size:12.5px;color:rgba(255,255,255,.72);margin-bottom:10px;}
+  .bv-cobertura-linha{display:flex;gap:8px;align-items:stretch;}
+  .bv-cobertura-linha input{min-width:0;flex:1;margin:0!important;background:#171a20!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:12px!important;font-size:16px!important;}
+  .bv-cobertura-linha button{width:auto;min-width:112px;margin:0!important;padding:11px 13px!important;border-radius:12px!important;white-space:nowrap;}
+  .bv-cobertura-resultado{display:none;margin-top:10px;padding:10px 11px;border-radius:11px;font-size:13px;font-weight:750;line-height:1.4;}
+  .bv-cobertura-resultado.ok{display:block;color:#bff6c8;background:rgba(45,190,91,.13);border:1px solid rgba(45,190,91,.38);}
+  .bv-cobertura-resultado.fora{display:block;color:#ffe1a5;background:rgba(255,164,32,.12);border:1px solid rgba(255,164,32,.38);}
+  @media(max-width:380px){.bv-cobertura-linha{flex-direction:column}.bv-cobertura-linha button{width:100%}}
   .bv-selo-diferencial{display:inline-flex;align-items:center;gap:6px;background:rgba(255,201,60,0.12);border:1px solid rgba(255,201,60,0.35);color:var(--mango,#ffc93c);font-size:11.5px;font-weight:700;letter-spacing:0.2px;padding:6px 12px;border-radius:20px;margin-bottom:14px;}
   .bv-ilustracao{display:flex;justify-content:center;gap:14px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.18);border-radius:16px;padding:18px 10px;margin-bottom:20px;font-size:34.5px;}
   .bv-pergunta{text-align:center;font-family:'Rajdhani';font-weight:700;font-size:17px;text-transform:uppercase;letter-spacing:0.4px;color:#fff;margin:0 0 18px;}
@@ -2298,6 +2308,40 @@ async function resolverCEP(texto){
     if(!CIDADES_PERMITIDAS_NORM.includes(normalizarTexto(cidade))) return {fora:true,cidade,uf};
     return {fora:false,cidade,uf,endereco:[d.logradouro,d.bairro,cidade,uf,d.cep,'Brasil'].filter(Boolean).join(', '),cep:d.cep||digitos,lat:null,lon:null};
   }catch(e){ console.warn('ViaCEP falhou',e); return null; }
+}
+async function verificarCoberturaInicial(){
+  const input=document.getElementById('bv-cep-cobertura');
+  const resultado=document.getElementById('bv-cobertura-resultado');
+  const botao=document.getElementById('bv-btn-cobertura');
+  if(!input || !resultado || !botao) return;
+  const cep=String(input.value||'').replace(/\D/g,'');
+  if(cep.length!==8){
+    resultado.className='bv-cobertura-resultado fora';
+    resultado.textContent='Digite um CEP válido com 8 números.';
+    input.focus();
+    return;
+  }
+  botao.disabled=true; botao.textContent='Verificando...';
+  resultado.className='bv-cobertura-resultado'; resultado.textContent='';
+  try{
+    const local=await resolverCEP(cep);
+    if(!local){
+      resultado.className='bv-cobertura-resultado fora';
+      resultado.textContent='Não conseguimos consultar esse CEP agora. Confira os números e tente novamente.';
+    }else if(local.fora){
+      resultado.className='bv-cobertura-resultado fora';
+      resultado.textContent=`📍 ${local.cidade||'Cidade identificada'}${local.uf?' - '+local.uf:''}: ainda não atendemos essa cidade.`;
+    }else{
+      resultado.className='bv-cobertura-resultado ok';
+      resultado.textContent=`✅ ${local.cidade}${local.uf?' - '+local.uf:''}: cidade coberta pela Entrega Flash!`;
+    }
+  }catch(e){
+    console.error('verificacao_cobertura',e);
+    resultado.className='bv-cobertura-resultado fora';
+    resultado.textContent='Não foi possível verificar agora. Tente novamente em alguns segundos.';
+  }finally{
+    botao.disabled=false; botao.textContent='VERIFICAR';
+  }
 }
 // Busca no Nominatim (reforço/fallback; exige texto mais parecido com o endereço completo)
 async function buscarNominatim(texto, limite){
@@ -5476,6 +5520,15 @@ function telaBoasVindas(){
       <div class="bv-subtagline">Mercado, farmácia, documentos, encomendas e o que você precisar — na cidade, zona rural, sítios e fazendas da sua região.</div>
       <div class="bv-chips">
         <span class="bv-chip"> Atuação regional</span><span class="bv-chip"> Cidade + zona rural</span><span class="bv-chip"> Acompanhe pelo celular</span>
+      </div>
+      <div class="bv-cobertura">
+        <div class="bv-cobertura-titulo">📍 Atendemos a sua cidade?</div>
+        <div class="bv-cobertura-sub">Digite seu CEP e confira na hora, sem fazer cadastro.</div>
+        <div class="bv-cobertura-linha">
+          <input id="bv-cep-cobertura" type="tel" inputmode="numeric" maxlength="9" autocomplete="postal-code" placeholder="Digite seu CEP" oninput="this.value=this.value.replace(/\D/g,'').replace(/(\d{5})(\d)/,'$1-$2').slice(0,9)" onkeydown="if(event.key==='Enter') verificarCoberturaInicial()">
+          <button id="bv-btn-cobertura" type="button" class="btn btn-primario" onclick="verificarCoberturaInicial()">VERIFICAR</button>
+        </div>
+        <div id="bv-cobertura-resultado" class="bv-cobertura-resultado" aria-live="polite"></div>
       </div>
       <div class="ef-live-proof">
         <i class="ef-live-dot"></i>
