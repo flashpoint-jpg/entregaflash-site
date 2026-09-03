@@ -9781,7 +9781,11 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
         if(destinoAnuncio === 'cadastro-cliente'){ escolherBoasVindas('cliente'); }
         else if(destinoAnuncio === 'cadastro-motorista'){ escolherBoasVindas('entregador'); }
         else if(destinoAnuncio === 'login-cliente'){ entrarBoasVindas('cliente'); }
-        else if(destinoAnuncio === 'login-motorista'){ entrarBoasVindas('entregador'); }
+        else if(destinoAnuncio === 'login-motorista'){
+          entrarBoasVindas('entregador');
+          const telLink=(new URLSearchParams(window.location.search).get('tel')||'').replace(/\D/g,'');
+          if(telLink){ estado.painelMotorista.loginTelefone=telLink; render(); }
+        }
         else if(destinoAnuncio === 'continuar-documentos'){
           const telefoneLink=(new URLSearchParams(window.location.search).get('tel')||'').replace(/\D/g,'');
           estado.telaBoasVindas=false;
