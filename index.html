@@ -24,6 +24,7 @@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Meta Pixel -->
 <script>
@@ -8230,21 +8231,40 @@ async function tirarSelfieMotorista(){
   fecharTelaSelfieMotorista(); mostrarToast('Selfie salva com sucesso!'); render();
 }
 function solicitarUploadDocumento(tipo){ if(tipo==='fotoMotorista'){ abrirOpcoesSelfieMotorista(); return; } uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
+function arquivoPareceHeic(file){
+  const tipo=String(file.type||'').toLowerCase(), nome=String(file.name||'').toLowerCase();
+  return tipo.includes('heic') || tipo.includes('heif') || /\.hei[cf]$/.test(nome);
+}
 async function decodificarImagemComFallback(file){
   // Tenta o jeito mais rápido primeiro (createImageBitmap). Se falhar — acontece em alguns
   // Android com certas fotos (orientação/EXIF, formato específico do fabricante) mesmo
   // quando o arquivo em si está ok — tenta de novo pelo jeito mais tolerante (<img>) antes
   // de desistir. Antes, uma falha no primeiro método já cancelava o envio na hora.
+  // Fotos de galeria em HEIC/HEIF (comuns em vários celulares) não decodificam por nenhum
+  // dos dois jeitos acima na maioria dos navegadores — pra essas, converte pra JPEG primeiro
+  // com a lib heic2any antes de tentar decodificar de novo.
   if(typeof createImageBitmap==='function'){
     try{ return await createImageBitmap(file); }
     catch(e){ console.warn('createImageBitmap_falhou_tentando_img',e); }
   }
-  return await new Promise((resolve,reject)=>{
-    const img=new Image(), url=URL.createObjectURL(file);
-    img.onload=()=>{ URL.revokeObjectURL(url); resolve(img); };
-    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('imagem_invalida')); };
-    img.src=url;
-  });
+  try{
+    return await new Promise((resolve,reject)=>{
+      const img=new Image(), url=URL.createObjectURL(file);
+      img.onload=()=>{ URL.revokeObjectURL(url); resolve(img); };
+      img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('imagem_invalida')); };
+      img.src=url;
+    });
+  }catch(eImg){
+    console.warn('img_falhou',eImg);
+    if(arquivoPareceHeic(file) && typeof heic2any==='function'){
+      try{
+        const convertido = await heic2any({ blob:file, toType:'image/jpeg', quality:.85 });
+        const blobJpeg = Array.isArray(convertido) ? convertido[0] : convertido;
+        return await decodificarImagemComFallback(new File([blobJpeg],'convertido.jpg',{type:'image/jpeg'}));
+      }catch(eHeic){ console.warn('heic2any_falhou',eHeic); throw eHeic; }
+    }
+    throw eImg;
+  }
 }
 async function prepararImagemDocumento(file){
   // Converte TODAS as fotos para JPEG real. Alguns celulares entregam HEIC/WEBP
@@ -8263,7 +8283,10 @@ async function prepararImagemDocumento(file){
     const blob=await new Promise(r=>canvas.toBlob(r,'image/jpeg',.82));
     if(!blob || blob.size<1000) throw new Error('jpeg_vazio');
     return blob;
-  }catch(e){ console.warn('conversao_documento_falhou',e); return null; }
+  }catch(e){
+    console.warn('conversao_documento_falhou', e, '— arquivo:', file.name, file.type, file.size+'bytes');
+    return null;
+  }
 }
 
 async function processarDocumentoSelecionado(input){
@@ -8276,7 +8299,7 @@ async function processarDocumentoSelecionado(input){
   mostrarToast('Salvando foto...');
   const preparado = await prepararImagemDocumento(file);
   if(!preparado){
-    mostrarToast('Não consegui abrir esta foto. Tire outra foto pela câmera e tente novamente.', 'erro');
+    mostrarToast('Não consegui abrir esta foto. Tente escolher outra foto da galeria ou tirar uma nova agora.', 'erro');
     return;
   }
   const nomeArquivo = `${c.id}/${tipo}-${Date.now()}.jpg`;
