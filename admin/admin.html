@@ -7033,10 +7033,10 @@ function centroOperacoesHTML(){
   const online=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)>=agora-120000);
   const gpsParado=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)<agora-120000);
   const demorando=buscando.filter(p=>agora-Number(p.criado_em||p.criadoEm||0)>240000);
-  const cards=[['📍','Motoristas online',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length],['📡','GPS desatualizado',gpsParado.length]];
+  const cards=[['📍','Motoristas online',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length],['📡','Motoristas sem sinal',gpsParado.length]];
   const alertas=[];
   demorando.slice(0,8).forEach(p=>alertas.push(`Pedido ${p.id||''} está há mais de 4 minutos procurando motorista.`));
-  gpsParado.slice(0,8).forEach(m=>alertas.push(`${m.nome||'Motorista'} aparece online, mas o GPS não atualiza há mais de 2 minutos.`));
+  gpsParado.slice(0,8).forEach(m=>alertas.push(`${m.nome||'Motorista'} aparece disponível, mas o app dele não manda sinal há mais de 2 minutos (perdeu conexão, fechou o app ou o celular travou em segundo plano).`));
   return `<div class="admin-secao-titulo"><div><h2>🎛️ Centro de Operações</h2><p>Acompanhe a operação em tempo real e veja somente o que precisa da sua atenção.</p></div><button class="btn btn-secundario btn-pequeno" onclick="carregarTudoAdmin()">↻ Atualizar</button></div>
     <div class="admin-grade-cartoes">${cards.map(c=>`<div class="admin-cartao"><div style="font-size:24px">${c[0]}</div><div class="subtitulo">${c[1]}</div><div style="font:800 32px 'Rajdhani';margin-top:4px">${c[2]}</div></div>`).join('')}</div>
     <div class="admin-cartao" style="margin-top:14px"><b>🚨 Alertas operacionais</b>${alertas.length?`<div style="margin-top:10px">${alertas.map(x=>`<div class="am-linha"><span>${x}</span><b style="color:#ffb25b">ATENÇÃO</b></div>`).join('')}</div>`:`<div class="subtitulo" style="margin-top:8px">Nenhum alerta crítico agora.</div>`}</div>
