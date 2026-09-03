@@ -5034,7 +5034,7 @@ function iniciarTickRadarBusca(){
       const el = wrap.querySelector('.radar-raio-texto');
       if(!el) return;
       const minutosBuscando = (Date.now() - criado) / 60000;
-      const raioKm = minutosBuscando<2 ? 5 : minutosBuscando<4 ? 15 : minutosBuscando<7 ? 30 : minutosBuscando<10 ? 60 : 120;
+      const raioKm = minutosBuscando<2 ? 5 : minutosBuscando<4 ? 15 : minutosBuscando<7 ? 30 : minutosBuscando<10 ? 60 : minutosBuscando<15 ? 120 : 200;
       const ampliando = minutosBuscando >= 1;
       el.textContent = `${ampliando ? 'Ampliando a área de busca' : 'Buscando na área'} — ${raioKm} km`;
     });
@@ -5175,7 +5175,7 @@ function cartaoPedidoCliente(p){
   if(p.status==='buscando'){
     const foiCanceladoPeloMotorista = p.canceladoPor==='motorista';
     const minutosBuscando = (Date.now() - p.criadoEm) / 60000;
-    const raioKm = minutosBuscando<2 ? 5 : minutosBuscando<4 ? 15 : minutosBuscando<7 ? 30 : minutosBuscando<10 ? 60 : 120;
+    const raioKm = minutosBuscando<2 ? 5 : minutosBuscando<4 ? 15 : minutosBuscando<7 ? 30 : minutosBuscando<10 ? 60 : minutosBuscando<15 ? 120 : 200;
     const ampliando = minutosBuscando >= 1;
     return `
     <div class="pedido" id="pedido-${p.id}">
@@ -6439,12 +6439,12 @@ function telaMotorista(){
     .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
     // Despacho inteligente: começa perto e amplia automaticamente enquanto ninguém aceita.
-    // 0-2 min: 5 km | 2-4 min: 15 km | 4-7 min: 30 km | 7-10 min: 60 km | depois: 120 km.
+    // 0-2 min: 5 km | 2-4 min: 15 km | 4-7 min: 30 km | 7-10 min: 60 km | 10-15 min: 120 km | depois: 200 km.
     .filter(p=>{
       if(p.distanciaAteMim==null) return true; // sem coordenada: não bloqueia o pedido
       const idadeMin=Math.max(0,(agoraTs-Number(p.criadoEm||agoraTs))/60000);
-      const raioAuto=idadeMin<2?5:idadeMin<4?15:idadeMin<7?30:idadeMin<10?60:120;
-      const limite=(m.plano==='pro' && m.raioAtendimentoKm)?Math.min(raioAuto,Number(m.raioAtendimentoKm)):raioAuto;
+      const raioAuto=idadeMin<2?5:idadeMin<4?15:idadeMin<7?30:idadeMin<10?60:idadeMin<15?120:200;
+      const limite=m.raioAtendimentoKm?Math.min(raioAuto,Number(m.raioAtendimentoKm)):raioAuto;
       return p.distanciaAteMim<=limite;
     })
     .sort((a,b)=> (b.prioridadeValor||0) - (a.prioridadeValor||0) || (a.distanciaAteMim!=null && b.distanciaAteMim!=null ? a.distanciaAteMim-b.distanciaAteMim : a.criadoEm-b.criadoEm)) : [];
@@ -6547,7 +6547,7 @@ function telaMotorista(){
       <button class="btn btn-primario btn-pequeno" style="margin-top:0;white-space:nowrap${m.status!=='aprovado'?';opacity:0.6':''}" ${m.status!=='aprovado'?'disabled title="Disponível após aprovação do cadastro"':''} onclick="solicitarSaque()"> Saque</button>
     </div>
     ${trocaPlanoMotoristaHTML(m)}
-    ${m.plano==='pro' ? raioAtendimentoHTML(m) : ''}
+    ${raioAtendimentoHTML(m)}
     ${m.plano==='free' ? ganhoPerdidoSemanaHTML(m) : ''}
     ${direitosPlanoHTML(planoAtual, m.plano)}
   </div>
@@ -6634,11 +6634,11 @@ function montarMapaMotoristaHome(){
 }
 
 function raioAtendimentoHTML(m){
-  const opcoes = [5,10,15,20,30,50,80,120];
+  const opcoes = [5,10,15,20,30,50,80,120,200];
   return `
   <div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--painel-alt);border:1px solid var(--linha)">
-    <div style="font-weight:700;color:var(--osso);font-size:14px"> Raio de atendimento (benefício Pro)</div>
-    <div style="font-size:12.5px;color:var(--poeira);margin:4px 0 8px">Só recebes pedidos até essa distância de onde estás agora.</div>
+    <div style="font-weight:700;color:var(--osso);font-size:14px"> Raio de atendimento</div>
+    <div style="font-size:12.5px;color:var(--poeira);margin:4px 0 8px">Disponível nos planos Free e Pro. Você recebe pedidos até a distância escolhida.</div>
     <select id="sel-raio-atendimento" onchange="salvarRaioAtendimento(this.value)" style="width:100%">
       <option value="" ${!m.raioAtendimentoKm?'selected':''}>Sem limite</option>
       ${opcoes.map(km=>`<option value="${km}" ${m.raioAtendimentoKm==km?'selected':''}>Até ${km} km</option>`).join('')}
@@ -6690,7 +6690,8 @@ function direitosPlanoHTML(planoAtual, chave){
     ` Até ${planoAtual.limiteSimultaneo} corridas ao mesmo tempo`,
     ` Até ${planoAtual.limiteCancelamentosDia} cancelamentos por dia`,
     ` Vê os pedidos novos ${atrasoSeg}s depois dos motoristas Pro`,
-    ` Saque em até ${planoAtual.saqueDias} dias`
+    ` Saque em até ${planoAtual.saqueDias} dias`,
+    ' Escolhe o raio de atendimento — de 5 km até 200 km'
   ];
   return `
   <div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--painel-alt);border:1px solid var(--linha)">
@@ -6817,7 +6818,7 @@ function comoFuncionaMotoristaHTML(){
     <tr><td>Vê pedidos novos</td><td>${(ATRASO_PRIORIDADE_PRO_MS/1000)}s depois do Pro</td><td class="destaque">na hora, primeiro que todo mundo</td></tr>
     <tr><td>Vê entregas prioritárias </td><td>na hora (todo mundo vê)</td><td class="destaque">na hora (todo mundo vê)</td></tr>
     <tr><td>Prazo de saque</td><td>até ${PLANOS.free.saqueDias} dias</td><td class="destaque">${PLANOS.pro.saqueDias>0?`até ${PLANOS.pro.saqueDias} dias`:'imediato'}</td></tr>
-    <tr><td> Raio de atendimento</td><td>vê pedidos de qualquer distância</td><td class="destaque">escolhe até quantos km quer rodar</td></tr>
+    <tr><td> Raio de atendimento</td><td class="destaque">escolhe de 5 a 200 km</td><td class="destaque">escolhe de 5 a 200 km</td></tr>
     <tr><td> Motorista amigo</td><td>—</td><td class="destaque">se o veículo quebrar, chama outro motorista terminar a corrida por ti</td></tr>
     <tr><td> Acréscimo noturno/feriado/chuva</td><td>—</td><td class="destaque">+${Math.round(ACRESCIMO_NOTURNO_PCT*100)}% na corrida</td></tr>
     <tr><td>⏱ Taxa de espera (coleta/entrega)</td><td class="destaque">após ${TAXA_ESPERA_TOLERANCIA_MIN} min, R$ ${TAXA_ESPERA_VALOR_MIN.toFixed(2)}/min</td><td class="destaque">após ${TAXA_ESPERA_TOLERANCIA_MIN} min, R$ ${TAXA_ESPERA_VALOR_MIN.toFixed(2)}/min</td></tr>
@@ -7404,7 +7405,7 @@ async function alternarDisponibilidade(){
   render();
 }
 
-// ---------- raio de atendimento (benefício Pro) ----------
+// ---------- raio de atendimento (Free e Pro) ----------
 async function salvarRaioAtendimento(valor){
   const m = estado.motorista;
   const km = valor ? Number(valor) : null;
