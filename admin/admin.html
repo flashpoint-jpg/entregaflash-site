@@ -382,7 +382,7 @@ fbq('track', 'PageView');
   .estrela-clicavel[data-carregando="1"]{opacity:0.5;pointer-events:none;}
 
   /* ---------- caixa de confirmação (substitui o confirm() nativo do navegador) ---------- */
-  .confirmar-caixa{background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:22px 20px;max-width:380px;width:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:toast-entrar 0.18s ease-out;}
+  .confirmar-caixa{background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:22px 20px;max-width:380px;width:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:toast-entrar 0.18s ease-out;max-height:85vh;overflow-y:auto;}
   .confirmar-texto{font-size:15.5px;line-height:1.45;color:var(--osso);margin-bottom:18px;}
   .confirmar-botoes{display:flex;gap:10px;}
   .confirmar-botoes .btn{flex:1;margin:0;}
@@ -6901,7 +6901,7 @@ function motoristaCardHTML(m, emRota){
       </div>` : ''}
       ${m.status==='pendente' && docsCompletos && !adminEhDono() ? `<div class="subtitulo" style="margin-top:10px">✅ Documentação completa — aguardando o dono aprovar.</div>` : ''}
       ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>
-      <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="enviarReprovacaoWhatsAppMotorista('${m.telefone}',${JSON.stringify(m.nome||'')},${JSON.stringify(m.motivo_reprovacao||'')})">💬 Avisar no WhatsApp + link de reenvio</button>` : ''}
+      <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="enviarReprovacaoWhatsAppMotorista('${m.telefone}',${JSON.stringify(m.nome||'').replace(/"/g,'&quot;')},${JSON.stringify(m.motivo_reprovacao||'').replace(/"/g,'&quot;')})">💬 Avisar no WhatsApp + link de reenvio</button>` : ''}
       ${m.status==='aprovado' ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarAprovacaoWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Enviar aprovação + link do app no WhatsApp</button>
