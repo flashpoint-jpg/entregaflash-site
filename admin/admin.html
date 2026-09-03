@@ -1230,7 +1230,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null, clienteAberto:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' }
@@ -6756,7 +6756,7 @@ function motoristaCardHTML(m, emRota){
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${estado.admin.motoristaEditando===m.id?'open':''} style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
+    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${(estado.admin.motoristaEditando===m.id || estado.admin.motoristaAberto===m.id)?'open':''} ontoggle="registrarAberturaCardAdmin('motorista','${m.id}',this.open)" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">🛵</div>`}
@@ -7796,7 +7796,7 @@ function clienteCardAdminHTML(c){
   const idc = String(c.telefone).replace(/\D/g,'');
   const validado = !c.bloqueado;
   return `
-    <details class="admin-resumo-card" data-cliente-telefone="${idc}" ${estado.admin.clienteEditando===c.telefone?'open':''} style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
+    <details class="admin-resumo-card" data-cliente-telefone="${idc}" ${(estado.admin.clienteEditando===c.telefone || estado.admin.clienteAberto===c.telefone)?'open':''} ontoggle="registrarAberturaCardAdmin('cliente','${c.telefone}',this.open)" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">👤</div>
@@ -8473,6 +8473,16 @@ async function lembrarEnviarDocumentosAdmin(telefone, nome){
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
   render();
+}
+function registrarAberturaCardAdmin(tipo, chave, aberto){
+  // Guarda qual card o admin deixou expandido manualmente (clique no <summary>), pra sobreviver
+  // a qualquer atualização de fundo (realtime, polling) que recrie a lista inteira do zero.
+  // Só fecha de fato quando o próprio admin fecha esse card ou abre outro (não sozinho).
+  if(tipo==='motorista'){
+    estado.admin.motoristaAberto = aberto ? chave : (estado.admin.motoristaAberto===chave ? null : estado.admin.motoristaAberto);
+  }else if(tipo==='cliente'){
+    estado.admin.clienteAberto = aberto ? chave : (estado.admin.clienteAberto===chave ? null : estado.admin.clienteAberto);
+  }
 }
 async function salvarEdicaoMotoristaAdmin(id){
   const ler=(suf)=>document.getElementById('edit-'+suf+'-'+id)?.value?.trim()||'';
