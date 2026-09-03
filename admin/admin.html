@@ -1789,11 +1789,32 @@ function modalConfirmarHTML(){
     </div>
   </div>`;
 }
+const DOCUMENTOS_MOTORISTA_LABELS = {
+  fotoMotorista: 'Foto do rosto (selfie)',
+  fotoVeiculoFrente: 'Foto da frente do veículo',
+  fotoVeiculoTras: 'Foto de trás do veículo',
+  crlv: 'CRLV',
+  cnh: 'CNH'
+};
+const DOCUMENTOS_BICICLETA_LABELS = {
+  fotoMotorista: 'Foto do rosto (selfie)',
+  fotoVeiculoFrente: 'Foto da frente da bicicleta',
+  fotoVeiculoTras: 'Foto do lado da bicicleta',
+  cnh: 'RG ou CNH'
+};
 function abrirModalReprovar(id){
-  estado.modalReprovar = { id, motivo:'' };
+  const motorista=(estado.admin.motoristas||[]).find(m=>String(m.id)===String(id));
+  estado.modalReprovar = { id, motivo:'', docs:[], ehBike: motorista?.veiculo_tipo==='bicicleta' };
   render();
 }
 function fecharModalReprovar(){ estado.modalReprovar = null; render(); }
+function alternarDocumentoReprovado(chave){
+  const m = estado.modalReprovar;
+  if(!m) return;
+  const i = m.docs.indexOf(chave);
+  if(i>=0) m.docs.splice(i,1); else m.docs.push(chave);
+  render();
+}
 function selecionarMotivoPreset(texto, botao){
   if(!estado.modalReprovar) return;
   estado.modalReprovar.motivo = texto;
@@ -1811,13 +1832,20 @@ async function confirmarReprovacao(){
   const m = estado.modalReprovar;
   if(!m) return;
   const textarea = document.getElementById('reprovar-motivo-texto');
-  const motivo = (textarea ? textarea.value : m.motivo || '').trim();
-  if(!motivo){ mostrarToast('Escolhe ou escreve um motivo antes de reprovar.'); return; }
+  let motivo = (textarea ? textarea.value : m.motivo || '').trim();
+  const labels = m.ehBike ? DOCUMENTOS_BICICLETA_LABELS : DOCUMENTOS_MOTORISTA_LABELS;
+  const docsSelecionados = (m.docs||[]).filter(d=>labels[d]);
+  if(!motivo && !docsSelecionados.length){ mostrarToast('Escolhe a foto/documento errado e escreve ou escolhe um motivo antes de reprovar.'); return; }
+  if(docsSelecionados.length){
+    const listaDocs = docsSelecionados.map(d=>'• '+labels[d]).join('\n');
+    motivo = motivo ? `Reenviar apenas:\n${listaDocs}\n\n${motivo}` : `Reenviar apenas:\n${listaDocs}`;
+  }
   const id = m.id;
   estado.modalReprovar = null; render();
-  const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'reprovado', p_motivo: motivo });
+  const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'reprovado', p_motivo: motivo, p_documentos_reprovados: docsSelecionados.length?docsSelecionados:null });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao reprovar.', 'erro'); return; }
-  mostrarToast('Cadastro reprovado — o motorista vai ver o motivo na tela dele.', 'sucesso');
+  estado.admin.motoristaAberto = id;
+  mostrarToast('Cadastro reprovado — o motorista vai ver exatamente o que precisa reenviar.', 'sucesso');
   await carregarMotoristasAdmin();
 }
 function modalReprovarHTML(){
@@ -1830,14 +1858,25 @@ function modalReprovarHTML(){
     '📅 CNH vencida — regulariza e reenvia uma foto atualizada.',
     '📸 Fotos com baixa qualidade — reenvia fotos mais nítidas, com boa luz.'
   ];
+  const labels = m.ehBike ? DOCUMENTOS_BICICLETA_LABELS : DOCUMENTOS_MOTORISTA_LABELS;
   return `<div class="modal-fundo" style="z-index:600" onclick="if(event.target===this) fecharModalReprovar()">
     <div class="confirmar-caixa" style="text-align:left;max-width:420px">
-      <div class="confirmar-texto" style="text-align:left;font-weight:700">Motivo da reprovação</div>
-      <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Escolhe um motivo rápido ou escreve o teu. O motorista vai ver essa mensagem na tela dele e vai poder reenviar os documentos.</div>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+      <div class="confirmar-texto" style="text-align:left;font-weight:700">Qual foto/documento está errado?</div>
+      <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Marca só o que está errado — o resto continua salvo. O motorista vai ver na tela dele exatamente o que precisa reenviar, sem perder o que já mandou certo.</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        ${Object.entries(labels).map(([chave,rotulo])=>{
+          const marcado = (m.docs||[]).includes(chave);
+          return `<label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid ${marcado?'var(--chama)':'var(--linha)'};border-radius:10px;background:${marcado?'rgba(255,92,92,.08)':'transparent'};cursor:pointer">
+            <input type="checkbox" style="width:auto" ${marcado?'checked':''} onchange="alternarDocumentoReprovado('${chave}')">
+            <span style="font-weight:${marcado?800:500}">${rotulo}</span>
+          </label>`;
+        }).join('')}
+      </div>
+      <div class="confirmar-texto" style="text-align:left;font-weight:700;font-size:13.5px">Motivo (opcional se já marcou a foto acima)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin:8px 0 10px">
         ${presets.map(p=>`<button type="button" data-motivo-reprovacao aria-pressed="false" class="btn btn-secundario btn-pequeno" style="text-align:left;white-space:normal" onclick="selecionarMotivoPreset(${JSON.stringify(p)},this)">${p}</button>`).join('')}
       </div>
-      <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve o motivo..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
+      <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve um detalhe extra (opcional)..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
       <div class="confirmar-botoes" style="margin-top:12px">
         <button class="btn btn-secundario" onclick="fecharModalReprovar()">Cancelar</button>
         <button class="btn btn-primario" onclick="confirmarReprovacao()">❌ Reprovar e avisar</button>
@@ -8751,7 +8790,7 @@ window.escolherPlano=escolherPlano;
 window.processarDocumentoSelecionado=processarDocumentoSelecionado; window.copiarPix=copiarPix;
 window.finalizarCadastroMotorista=finalizarCadastroMotorista; window.alternarTermos=alternarTermos;
 window.abrirAdmin=abrirAdmin; window.fecharAdmin=fecharAdmin; window.digitarSenhaAdmin=digitarSenhaAdmin;
-window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao;
+window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao; window.alternarDocumentoReprovado=alternarDocumentoReprovado;
 window.alternarEdicaoMotoristaAdmin=alternarEdicaoMotoristaAdmin; window.salvarEdicaoMotoristaAdmin=salvarEdicaoMotoristaAdmin;
 window.alternarEdicaoClienteAdmin=alternarEdicaoClienteAdmin; window.salvarEdicaoClienteAdmin=salvarEdicaoClienteAdmin;
 window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearClienteAdmin=bloquearClienteAdmin;
