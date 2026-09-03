@@ -1230,7 +1230,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null, clienteAberto:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', papel:null, funcionarioUsuario:'', funcionarioSenhaHash:'', funcionarioNome:'', funcionarioLoginUsuario:'', funcionarioLoginSenha:'', mostrarLoginFuncionario:false, aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null, clienteAberto:null, funcionarios:[],
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' }
@@ -1490,9 +1490,31 @@ async function restaurarSessao(){
     if(estado.cliente.logado) assinarCarteiraClienteRealtime(estado.cliente.telefone);
 
     if(localStorage.getItem('ef_admin_logado')==='true'){
+      const papelSalvo = localStorage.getItem('ef_admin_papel') || 'dono';
+      if(papelSalvo==='funcionario'){
+        const usuarioSalvo = localStorage.getItem('ef_funcionario_usuario');
+        const hashSalvo = localStorage.getItem('ef_funcionario_senha_hash');
+        if(usuarioSalvo && hashSalvo){
+          estado.admin.logado = true;
+          estado.admin.papel = 'funcionario';
+          estado.admin.funcionarioUsuario = usuarioSalvo;
+          estado.admin.funcionarioSenhaHash = hashSalvo;
+          estado.admin.funcionarioNome = localStorage.getItem('ef_funcionario_nome')||'';
+          estado.telaBoasVindas = false;
+          if(localStorage.getItem('ef_admin_aberto')==='true') estado.admin.aberto = true;
+          const abaSalva = localStorage.getItem('ef_admin_aba');
+          estado.admin.aba = (abaSalva && ['motoristas','clientes','suporte'].includes(abaSalva)) ? abaSalva : 'motoristas';
+          assinarSuporteAdminGlobal();
+          assinarAdminRealtime();
+          if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
+        } else {
+          removerLocal('ef_admin_logado');
+        }
+      } else {
       const senhaSalva = localStorage.getItem('ef_admin_senha');
       if(senhaSalva){
         estado.admin.logado = true;
+        estado.admin.papel = 'dono';
         estado.admin.senhaDigitada = senhaSalva;
         estado.telaBoasVindas = false;
         // reabre o painel se ele estava aberto antes do F5 (senão o admin fica logado
@@ -1505,6 +1527,7 @@ async function restaurarSessao(){
         if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
       } else {
         removerLocal('ef_admin_logado');
+      }
       }
     }
   }catch(e){ console.error(e); }
@@ -6828,27 +6851,29 @@ function motoristaCardHTML(m, emRota){
       </div>` : ''}
       ${aguardandoDocumentos ? `
       <div class="subtitulo" style="margin-top:8px">${m.veiculo_tipo==='bicicleta'?'🚲 Cadastro incompleto — aguardando o ciclista concluir selfie e fotos necessárias.':'📄 Documentação incompleta — o motorista precisa voltar ao app e concluir o envio. Ainda não pode ser aprovado.'}</div>
-      <div style="display:flex;gap:8px;margin-top:10px">
+      ${adminEhDono() ? `<div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
-      </div>
+      </div>` : ''}
       <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.veiculo_tipo||''}')">🔔 ${m.veiculo_tipo==='bicicleta'?'Lembrar de concluir cadastro':'Lembrar de enviar os documentos'}</button>` : ''}
-      ${m.status==='pendente' && docsCompletos ? `
+      ${m.status==='pendente' && docsCompletos && adminEhDono() ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')">✅ Aprovar</button>
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Reprovar</button>
       </div>` : ''}
+      ${m.status==='pendente' && docsCompletos && !adminEhDono() ? `<div class="subtitulo" style="margin-top:10px">✅ Documentação completa — aguardando o dono aprovar.</div>` : ''}
       ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>` : ''}
       ${m.status==='aprovado' ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarAprovacaoWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Enviar aprovação + link do app no WhatsApp</button>
       </div>
-      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
+      ${adminEhDono() ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <label style="margin:0 0 6px">Ajustar saldo manualmente (R$, use negativo pra debitar)</label>
         <div style="display:flex;gap:8px">
           <input type="number" id="ajuste-saldo-${m.telefone.replace(/\D/g,'')}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1">
           <button class="btn btn-secundario btn-pequeno" onclick="ajustarSaldoMotoristaAdmin('${m.telefone}')">Aplicar</button>
         </div>
-      </div>` : ''}
+      </div>` : ''}` : ''}
+      ${adminEhDono() ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <b style="font-family:'Rajdhani';font-weight:700;font-size:12.5px;text-transform:uppercase">🔧 Gerenciar cadastro</b>
         ${estado.admin.motoristaEditando===m.id ? `
@@ -6882,7 +6907,7 @@ function motoristaCardHTML(m, emRota){
             : `<button class="btn btn-secundario btn-pequeno" style="flex:1" ${atributoDesabilitado('bloquearMotorista_'+m.id)} onclick="executarComCarregando('bloquearMotorista_${m.id}', ()=>bloquearMotoristaAdmin('${m.id}'))">${rotuloCarregando('bloquearMotorista_'+m.id,'🔒 Bloquear','Bloqueando...')}</button>`}
           <button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" ${atributoDesabilitado('excluirMotorista_'+m.id)} onclick="executarComCarregando('excluirMotorista_${m.id}', ()=>excluirMotoristaAdmin('${m.id}','${(m.nome||'').replace(/'/g,"\\'")}'))">${rotuloCarregando('excluirMotorista_'+m.id,'🗑️ Excluir','Excluindo...')}</button>
         </div>
-      </div>
+      </div>` : ''}
       </div>
     </details>`;
 }
@@ -6989,7 +7014,9 @@ async function carregarClientesAdmin(){
   // ela pra um placeholder no meio do caminho, senão o scroll da pessoa "pula" pro topo.
   const jaTinhaClientes = estado.admin.clientes.length>0;
   if(!jaTinhaClientes){ estado.admin.carregando=true; agendarRenderAdmin(); }
-  const { data, error } = await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada });
+  const { data, error } = adminEhDono()
+    ? await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada })
+    : await sb.rpc('entrega_funcionario_listar_clientes', { p_usuario: estado.admin.funcionarioUsuario, p_senha_hash: estado.admin.funcionarioSenhaHash });
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar clientes.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_clientes_saldos').select('telefone,saldo');
   estado.admin.carregando=false;
@@ -7216,6 +7243,31 @@ window.executarDiagnosticoSistema=executarDiagnosticoSistema;
 function adminCorpoHTML(){
   const a = estado.admin;
   if(!a.logado){
+    if(a.mostrarLoginFuncionario){
+      return `
+      <section class="admin-login-shell">
+        <div class="admin-login-card">
+          <div class="admin-login-brand">
+            <img class="admin-login-logo" src="entregaflash-logo-premium.png" alt="Entrega Flash">
+            <div class="admin-login-eyebrow">◆ Acesso da equipe</div>
+            <div class="admin-login-title">Login de funcionário</div>
+            <div class="admin-login-subtitle">Acesso restrito: dá pra ver motoristas/clientes, verificar documentação e responder o suporte. Aprovar, reprovar, excluir e mexer em saldo continua só com o dono.</div>
+          </div>
+          <label class="admin-login-label" for="func-usuario"><span>Usuário</span></label>
+          <div class="admin-login-input-wrap">
+            <span class="admin-login-lock" aria-hidden="true">◆</span>
+            <input type="text" id="func-usuario" autocomplete="username" placeholder="Seu usuário" oninput="digitarLoginFuncionario('usuario',this.value)" onkeydown="if(event.key==='Enter') document.getElementById('func-senha').focus()">
+          </div>
+          <label class="admin-login-label" for="func-senha" style="margin-top:10px"><span>Senha</span></label>
+          <div class="admin-login-input-wrap">
+            <span class="admin-login-lock" aria-hidden="true">▣</span>
+            <input type="password" id="func-senha" autocomplete="current-password" placeholder="Sua senha" oninput="digitarLoginFuncionario('senha',this.value)" onkeydown="if(event.key==='Enter') entrarFuncionario()">
+          </div>
+          <button class="admin-login-btn" onclick="entrarFuncionario()">Entrar &nbsp;→</button>
+          <div class="admin-login-security" style="cursor:pointer" onclick="alternarLoginFuncionario()"><span>← Sou o dono, entrar com a senha principal</span></div>
+        </div>
+      </section>`;
+    }
     return `
     <section class="admin-login-shell">
       <div class="admin-login-card">
@@ -7233,6 +7285,7 @@ function adminCorpoHTML(){
         </div>
         <button class="admin-login-btn" onclick="entrarAdmin()">Entrar no painel &nbsp;→</button>
         <div class="admin-login-security"><span class="dot"></span><span>Área restrita • conexão segura</span></div>
+        <div class="admin-login-security" style="cursor:pointer" onclick="alternarLoginFuncionario()"><span>Sou funcionário, não o dono →</span></div>
         <div class="admin-login-version">Entrega Flash Admin • MG + Grande SP</div>
       </div>
     </section>`;
@@ -7242,7 +7295,7 @@ function adminCorpoHTML(){
   const pendentesMotoristas = (a.motoristas||[]).filter(m=>m.status==='pendente'||m.status==='basico');
   const alertasNaoLidos = (a.alertas||[]).filter(x=>!x.lido);
   const feedbacksNaoLidos = (a.feedbacks||[]).filter(x=>!x.lido);
-  const abas = [
+  const abasCompletas = [
     {id:'resumo', label:'📊 Resumo'},
     {id:'operacoes', label:'🎛️ Operações'},
     {id:'diagnostico', label:'🩺 Diagnóstico'},
@@ -7254,8 +7307,15 @@ function adminCorpoHTML(){
     {id:'alertas', label:`🔔 Alertas${alertasNaoLidos.length?` (${alertasNaoLidos.length})`:''}`},
     {id:'suporte', label:`💬 Suporte${suporteAbertos.length?` (${suporteAbertos.length})`:''}`},
     {id:'avisos', label:'📢 Avisos'},
-    {id:'feedbacks', label:`💡 Feedback${feedbacksNaoLidos.length?` (${feedbacksNaoLidos.length})`:''}`}
+    {id:'feedbacks', label:`💡 Feedback${feedbacksNaoLidos.length?` (${feedbacksNaoLidos.length})`:''}`},
+    {id:'funcionarios', label:'🧑‍💼 Equipe'}
   ];
+  // funcionário só vê o que precisa pra atender: motoristas, clientes e suporte —
+  // aprovar/reprovar/excluir/saldo/config/senhas continuam exclusivos do dono.
+  const abas = adminEhDono() ? abasCompletas : abasCompletas.filter(x=>['motoristas','clientes','suporte'].includes(x.id));
+  // trava de segurança na própria tela: se por algum motivo a aba guardada for de uma seção exclusiva
+  // do dono, funcionário cai pra "motoristas" em vez de ver uma tela em branco/quebrada.
+  if(!adminEhDono() && !['motoristas','clientes','suporte'].includes(a.aba)) a.aba='motoristas';
   let corpo;
   if(a.aba==='resumo') corpo = adminAbaResumoHTML();
   else if(a.aba==='operacoes') corpo = centroOperacoesHTML();
@@ -7268,6 +7328,7 @@ function adminCorpoHTML(){
   else if(a.aba==='alertas') corpo = adminAbaAlertasHTML();
   else if(a.aba==='avisos') corpo = adminAbaAvisosHTML();
   else if(a.aba==='feedbacks') corpo = adminAbaFeedbacksHTML();
+  else if(a.aba==='funcionarios') corpo = adminAbaFuncionariosHTML();
   else corpo = adminAbaSuporteHTML();
   return `
     <div class="admin-cartao" style="margin-bottom:12px;padding:12px 14px">
@@ -7818,6 +7879,7 @@ function clienteCardAdminHTML(c){
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsApp('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}','${idc}')">💬 WhatsApp</button>
         </div>
+        ${adminEhDono() ? `
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <label style="margin:0 0 6px">Ajustar saldo (R$; negativo debita)</label>
           <div style="display:flex;gap:8px"><input type="number" id="ajuste-saldo-cliente-${idc}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1"><button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('ajustarSaldo_'+c.telefone)} onclick="dispararAjusteSaldoCliente('${c.telefone}','${idc}')">${rotuloCarregando('ajustarSaldo_'+c.telefone,'Aplicar','Aplicando...')}</button></div>
@@ -7827,7 +7889,7 @@ function clienteCardAdminHTML(c){
           ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone / login</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Observação administrativa</label><textarea id="edit-obs-cliente-${idc}" rows="3">${c.observacao_admin||''}</textarea></div><label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="edit-bloqueado-cliente-${idc}" ${c.bloqueado?'checked':''}> Cliente bloqueado</label><div style="display:flex;gap:8px"><button class="btn btn-verde btn-pequeno" style="flex:1" onclick="salvarEdicaoClienteAdmin('${c.telefone}')">💾 Salvar tudo</button><button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">Cancelar</button></div></div>` : `<button class="btn btn-verde btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">✏️ EDITAR TODOS OS DADOS</button>`}
           <div style="margin-top:8px;display:flex;gap:8px"><input type="password" id="nova-senha-cliente-${idc}" placeholder="Nova senha" style="flex:1"><button class="btn btn-secundario btn-pequeno" onclick="alterarSenhaClienteAdmin('${c.telefone}', document.getElementById('nova-senha-cliente-${idc}').value)">🔑 Trocar senha</button></div>
           <div style="display:flex;gap:8px;margin-top:8px">${c.bloqueado?`<button class="btn btn-verde btn-pequeno" style="flex:1" onclick="desbloquearClienteAdmin('${c.telefone}')">🔓 Desbloquear</button>`:`<button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="bloquearClienteAdmin('${c.telefone}')">🔒 Bloquear</button>`}<button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" onclick="excluirClienteAdmin('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}')">🗑️ Excluir</button></div>
-        </div>
+        </div>` : ''}
       </div>
     </details>`;
 }
@@ -8397,13 +8459,117 @@ async function entrarAdmin(){
   if(erroSenha){ console.error(erroSenha); mostrarToast('Erro ao verificar a senha. Tenta de novo.', 'erro'); return; }
   if(!senhaOk){ mostrarToast('Senha incorreta.', 'erro'); return; }
   estado.admin.logado=true;
+  estado.admin.papel='dono';
   salvarLocal('ef_admin_logado','true');
+  salvarLocal('ef_admin_papel','dono');
   salvarLocal('ef_admin_senha', senha);
-  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin()]);
+  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin(), carregarFuncionariosAdmin()]);
   await carregarSuporteAdmin();
   assinarSuporteAdminGlobal();
   assinarAdminRealtime();
   if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
+  render();
+}
+function alternarLoginFuncionario(){
+  estado.admin.mostrarLoginFuncionario = !estado.admin.mostrarLoginFuncionario;
+  render();
+}
+function digitarLoginFuncionario(campo, v){
+  if(campo==='usuario') estado.admin.funcionarioLoginUsuario=v;
+  else estado.admin.funcionarioLoginSenha=v;
+}
+async function entrarFuncionario(){
+  const usuario = (estado.admin.funcionarioLoginUsuario||'').trim();
+  const senha = estado.admin.funcionarioLoginSenha||'';
+  if(!usuario || !senha){ mostrarToast('Preenche usuário e senha.'); return; }
+  const senhaHash = await hashSenha(senha);
+  const { data, error } = await sb.rpc('entrega_funcionario_login', { p_usuario: usuario, p_senha_hash: senhaHash });
+  if(error || !data || !data.length){ mostrarToast('Usuário ou senha incorretos.', 'erro'); return; }
+  estado.admin.logado=true;
+  estado.admin.papel='funcionario';
+  estado.admin.funcionarioUsuario=usuario;
+  estado.admin.funcionarioSenhaHash=senhaHash;
+  estado.admin.funcionarioNome=data[0].nome;
+  estado.admin.aba='motoristas';
+  salvarLocal('ef_admin_logado','true');
+  salvarLocal('ef_admin_papel','funcionario');
+  salvarLocal('ef_funcionario_usuario', usuario);
+  salvarLocal('ef_funcionario_senha_hash', senhaHash);
+  salvarLocal('ef_funcionario_nome', data[0].nome);
+  await Promise.all([carregarMotoristasAdmin(), carregarClientesAdmin()]);
+  await carregarSuporteAdmin();
+  assinarSuporteAdminGlobal();
+  assinarAdminRealtime();
+  if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
+  render();
+}
+function adminEhDono(){ return estado.admin.logado && estado.admin.papel==='dono'; }
+async function carregarFuncionariosAdmin(){
+  if(!adminEhDono()) return;
+  const { data, error } = await sb.rpc('entrega_admin_listar_funcionarios', { p_senha: estado.admin.senhaDigitada });
+  if(error){ console.error(error); return; }
+  estado.admin.funcionarios = data||[];
+}
+function adminAbaFuncionariosHTML(){
+  const lista = estado.admin.funcionarios||[];
+  return `
+  <div class="admin-secao-titulo"><div><h2>🧑‍💼 Equipe (acesso restrito)</h2><p>Crie um login pra alguém te ajudar com suporte, motoristas e clientes — sem poder aprovar, reprovar, excluir cadastro nem mexer em saldo. Só quem entra com a senha principal (você) pode fazer isso.</p></div></div>
+  <div class="admin-cartao" style="margin-bottom:14px">
+    <b>Novo funcionário</b>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+      <input type="text" id="novo-func-nome" placeholder="Nome">
+      <input type="text" id="novo-func-usuario" placeholder="Usuário de login (ex: joana)" autocomplete="off">
+      <input type="password" id="novo-func-senha" placeholder="Senha" autocomplete="new-password">
+      <button class="btn btn-primario" onclick="criarFuncionarioAdmin()">+ Criar acesso</button>
+    </div>
+  </div>
+  ${lista.length ? lista.map(f=>`
+    <div class="admin-cartao" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><b>${f.nome||f.usuario}</b><div class="subtitulo">usuário: ${f.usuario}</div></div>
+        <span class="selo ${f.ativo?'selo-entregue':'selo-cancelado'}">${f.ativo?'ativo':'desativado'}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-secundario btn-pequeno" onclick="alternarStatusFuncionarioAdmin('${f.id}',${!f.ativo})">${f.ativo?'Desativar':'Reativar'}</button>
+        <button class="btn btn-secundario btn-pequeno" onclick="trocarSenhaFuncionarioAdmin('${f.id}')">Trocar senha</button>
+        <button class="btn btn-secundario btn-pequeno" onclick="excluirFuncionarioAdmin('${f.id}')">🗑️ Excluir</button>
+      </div>
+    </div>`).join('') : `<div class="admin-cartao"><div class="subtitulo">Nenhum funcionário cadastrado ainda.</div></div>`}`;
+}
+async function criarFuncionarioAdmin(){
+  const nome=(document.getElementById('novo-func-nome')?.value||'').trim();
+  const usuario=(document.getElementById('novo-func-usuario')?.value||'').trim();
+  const senha=document.getElementById('novo-func-senha')?.value||'';
+  if(!nome || !usuario || !senha){ mostrarToast('Preenche nome, usuário e senha.'); return; }
+  if(senha.length<4){ mostrarToast('Senha muito curta (mínimo 4 caracteres).'); return; }
+  const senhaHash = await hashSenha(senha);
+  const { error } = await sb.rpc('entrega_admin_criar_funcionario', { p_senha: estado.admin.senhaDigitada, p_nome: nome, p_usuario: usuario, p_senha_hash: senhaHash });
+  if(error){ console.error(error); mostrarToast(error.message==='usuario_invalido' ? 'Informe um usuário válido.' : 'Erro ao criar (usuário já existe?).', 'erro'); return; }
+  mostrarToast('Funcionário criado!', 'sucesso');
+  await carregarFuncionariosAdmin();
+  render();
+}
+async function alternarStatusFuncionarioAdmin(id, novoAtivo){
+  const { error } = await sb.rpc('entrega_admin_definir_status_funcionario', { p_senha: estado.admin.senhaDigitada, p_id: id, p_ativo: novoAtivo });
+  if(error){ console.error(error); mostrarToast('Erro ao atualizar.', 'erro'); return; }
+  await carregarFuncionariosAdmin();
+  render();
+}
+async function trocarSenhaFuncionarioAdmin(id){
+  const nova = prompt('Nova senha para esse funcionário:');
+  if(!nova) return;
+  if(nova.length<4){ mostrarToast('Senha muito curta (mínimo 4 caracteres).'); return; }
+  const senhaHash = await hashSenha(nova);
+  const { error } = await sb.rpc('entrega_admin_trocar_senha_funcionario', { p_senha: estado.admin.senhaDigitada, p_id: id, p_senha_hash_nova: senhaHash });
+  if(error){ console.error(error); mostrarToast('Erro ao trocar a senha.', 'erro'); return; }
+  mostrarToast('Senha atualizada!', 'sucesso');
+}
+async function excluirFuncionarioAdmin(id){
+  if(!confirm('Excluir esse acesso de funcionário? Ele não vai mais conseguir entrar.')) return;
+  const { error } = await sb.rpc('entrega_admin_excluir_funcionario', { p_senha: estado.admin.senhaDigitada, p_id: id });
+  if(error){ console.error(error); mostrarToast('Erro ao excluir.', 'erro'); return; }
+  mostrarToast('Funcionário excluído.', 'sucesso');
+  await carregarFuncionariosAdmin();
   render();
 }
 async function carregarAlertasAdmin(){
@@ -8427,6 +8593,7 @@ function sairAdmin(){
   const fundo = document.querySelector('.modal-fundo-admin');
   if(fundo) fundo.remove();
   estado.admin.logado=false; estado.admin.aberto=true; estado.admin.senhaDigitada='';
+  estado.admin.papel=null; estado.admin.funcionarioUsuario=''; estado.admin.funcionarioSenhaHash=''; estado.admin.funcionarioNome=''; estado.admin.mostrarLoginFuncionario=false;
   encerrarSuporteAdminGlobal();
   encerrarAdminRealtime();
   if(mapaAdminGeral){
@@ -8437,18 +8604,26 @@ function sairAdmin(){
   salvarLocal('ef_admin_aberto','true');
   removerLocal('ef_admin_aba');
   removerLocal('ef_admin_senha');
+  removerLocal('ef_admin_papel');
+  removerLocal('ef_funcionario_usuario');
+  removerLocal('ef_funcionario_senha_hash');
+  removerLocal('ef_funcionario_nome');
   render();
 }
 async function carregarMotoristasAdmin(){
-  try{
-    const {data:apps,error:erroApps}=await sb.rpc('entrega_admin_status_apps',{p_senha:estado.admin.senhaDigitada});
-    if(!erroApps) estado.admin.appDispositivos=apps||[];
-  }catch(e){ console.warn('Status dos aplicativos indisponível',e); }
+  if(adminEhDono()){
+    try{
+      const {data:apps,error:erroApps}=await sb.rpc('entrega_admin_status_apps',{p_senha:estado.admin.senhaDigitada});
+      if(!erroApps) estado.admin.appDispositivos=apps||[];
+    }catch(e){ console.warn('Status dos aplicativos indisponível',e); }
+  }
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
   if(!jaTinhaMotoristas){ estado.admin.carregando=true; agendarRenderAdmin(); }
-  const { data: dadosBrutos, error } = await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada });
+  const { data: dadosBrutos, error } = adminEhDono()
+    ? await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada })
+    : await sb.rpc('entrega_funcionario_listar_motoristas', { p_usuario: estado.admin.funcionarioUsuario, p_senha_hash: estado.admin.funcionarioSenhaHash });
   const data = (dadosBrutos||[]).filter(m => m.status !== 'incompleto');
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar cadastros.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_saldos').select('telefone,saldo');
