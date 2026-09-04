@@ -3155,24 +3155,29 @@ function assinarMotoristaLogadoRealtime(telefone){
     .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_motoristas', filter:'telefone=eq.'+telefone}, (payload)=>{
       const novo = payload.new || {};
       if(novo.status==='bloqueado'){ debounce('motorista-logado', verificarBloqueioAtivo); return; }
-      // status mudou (ex: pendente/básico -> aprovado, ou reprovado) — atualiza a tela na hora,
-      // sem precisar recarregar a página
-      if(novo.status && novo.status!==estado.motorista.status){
-        const statusAnterior = estado.motorista.status;
-        estado.motorista.status = novo.status;
-        estado.motorista.plano = novo.plano || estado.motorista.plano;
-        estado.motorista.veiculo = novo.veiculo_tipo || estado.motorista.veiculo;
-        estado.motorista.marca = novo.veiculo_marca || estado.motorista.marca;
-        estado.motorista.placa = novo.veiculo_placa || estado.motorista.placa;
-        estado.motorista.cor = novo.veiculo_cor || estado.motorista.cor;
-        estado.motorista.fotoMotoristaUrl = novo.foto_motorista_url || estado.motorista.fotoMotoristaUrl;
-        estado.motorista.raioAtendimentoKm = novo.raio_atendimento_km!=null ? novo.raio_atendimento_km : estado.motorista.raioAtendimentoKm;
-        if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
-          mostrarToast(' Seu cadastro foi aprovado! Já pode começar a receber pedidos.', 'sucesso');
-          notificar(' Cadastro aprovado!', 'Já pode começar a receber pedidos no Entrega Flash.');
-        }
-        render();
+      // Qualquer atualização do cadastro precisa refletir na tela na hora.
+      // Antes o plano só era atualizado quando o STATUS do cadastro mudava; por isso
+      // um pagamento Pro confirmado podia ficar aparecendo como Free até recarregar.
+      const statusAnterior = estado.motorista.status;
+      const planoAnterior = estado.motorista.plano;
+      let mudou = false;
+      if(novo.status && novo.status!==estado.motorista.status){ estado.motorista.status=novo.status; mudou=true; }
+      if(novo.plano && novo.plano!==estado.motorista.plano){ estado.motorista.plano=novo.plano; mudou=true; }
+      if(novo.veiculo_tipo && novo.veiculo_tipo!==estado.motorista.veiculo){ estado.motorista.veiculo=novo.veiculo_tipo; mudou=true; }
+      if(novo.veiculo_marca && novo.veiculo_marca!==estado.motorista.marca){ estado.motorista.marca=novo.veiculo_marca; mudou=true; }
+      if(novo.veiculo_placa && novo.veiculo_placa!==estado.motorista.placa){ estado.motorista.placa=novo.veiculo_placa; mudou=true; }
+      if(novo.veiculo_cor && novo.veiculo_cor!==estado.motorista.cor){ estado.motorista.cor=novo.veiculo_cor; mudou=true; }
+      if(novo.foto_motorista_url && novo.foto_motorista_url!==estado.motorista.fotoMotoristaUrl){ estado.motorista.fotoMotoristaUrl=novo.foto_motorista_url; mudou=true; }
+      if(novo.raio_atendimento_km!=null && novo.raio_atendimento_km!==estado.motorista.raioAtendimentoKm){ estado.motorista.raioAtendimentoKm=novo.raio_atendimento_km; mudou=true; }
+      if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
+        mostrarToast(' Seu cadastro foi aprovado! Já pode começar a receber pedidos.', 'sucesso');
+        notificar(' Cadastro aprovado!', 'Já pode começar a receber pedidos no Entrega Flash.');
       }
+      if(novo.plano==='pro' && planoAnterior!=='pro'){
+        mostrarToast(' Pagamento confirmado! Plano Pro ativado automaticamente.', 'sucesso');
+        notificar(' Plano Pro ativado!', 'Pagamento confirmado. Seus benefícios Pro já estão liberados.');
+      }
+      if(mudou) render();
     })
     .on('postgres_changes', {event:'*', schema:'public', table:'entrega_saldos', filter:'telefone=eq.'+telefone}, ()=>{
       debounce('motorista-logado-saldo', carregarSaldoMotorista);
@@ -4437,10 +4442,12 @@ function iniciarPollingUpgradeMotorista(){
   planoPixPollTimer=setInterval(async()=>{
     const t=estado.trocaPlanoMotorista;
     if(!t.motoristaId || t.status==='pago'){ clearInterval(planoPixPollTimer); planoPixPollTimer=null; return; }
-    const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id',t.motoristaId).maybeSingle();
-    if(data && data.taxa_status==='pago'){
-      const { error } = await sb.from('entrega_motoristas').update({ plano:'pro' }).eq('id',t.motoristaId);
-      if(error){ console.error(error); t.erro='Pagamento confirmado, mas houve erro ao ativar o plano. Fale com o suporte.'; render(); return; }
+    const { data } = await sb.from('entrega_motoristas').select('taxa_status,plano').eq('id',t.motoristaId).maybeSingle();
+    if(data && (data.taxa_status==='pago' || data.plano==='pro')){
+      if(data.plano!=='pro'){
+        const { error } = await sb.from('entrega_motoristas').update({ plano:'pro' }).eq('id',t.motoristaId);
+        if(error){ console.error(error); t.erro='Pagamento confirmado, mas houve erro ao ativar o plano. Fale com o suporte.'; render(); return; }
+      }
       t.status='pago'; estado.motorista.plano='pro'; clearInterval(planoPixPollTimer); planoPixPollTimer=null;
       mostrarToast(' Pagamento confirmado! Plano Pro ativado.', 'sucesso'); render();
     }
