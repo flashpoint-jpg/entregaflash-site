@@ -7216,6 +7216,7 @@ function render(){
       </div>
     </div>` : ''}
     <input type="file" id="input-doc-motorista" accept="image/*" style="display:none" onchange="processarDocumentoSelecionado(this)">
+    <input type="file" id="input-selfie-camera" accept="image/*" capture="user" style="display:none" onchange="processarSelfieCameraSelecionada(this)">
     <input type="file" id="input-doc-reenvio" accept="image/*" style="display:none" onchange="processarReenvioDocumento(this)">
     ${estado.alertaMotorista ? `
     <div class="alerta-motorista" onclick="fecharAlertaMotorista()">
@@ -8283,10 +8284,23 @@ function abrirOpcoesSelfieMotorista(){
     <button class="eso-fechar" type="button" onclick="fecharOpcoesSelfieMotorista()">&times;</button>
     <div class="eso-icone">&#128247;</div><h2>Enviar foto do rosto</h2>
     <p>Escolha a forma mais fácil. A foto precisa estar nítida, de frente e sem óculos escuros.</p>
-    <button class="btn btn-primario" type="button" onclick="fecharOpcoesSelfieMotorista();abrirTelaSelfieMotorista()">TIRAR SELFIE AGORA</button>
+    <button class="btn btn-primario" type="button" onclick="tirarSelfieCameraNativa()">TIRAR SELFIE AGORA</button>
     <button class="btn btn-secundario" type="button" onclick="escolherSelfieGaleria()">ESCOLHER FOTO DA GALERIA</button>
   </div>`;
   document.body.appendChild(modal);
+}
+function tirarSelfieCameraNativa(){
+  fecharOpcoesSelfieMotorista(); fecharTelaSelfieMotorista();
+  uploadPendente='fotoMotorista';
+  const input=document.getElementById('input-selfie-camera');
+  if(!input){ abrirTelaSelfieMotorista(); return; }
+  try{ input.value=''; input.click(); }
+  catch(e){ console.warn('camera_nativa_selfie',e); abrirTelaSelfieMotorista(); }
+}
+async function processarSelfieCameraSelecionada(input){
+  if(!input?.files?.length){ uploadPendente=null; return; }
+  uploadPendente='fotoMotorista';
+  await processarDocumentoSelecionado(input);
 }
 function escolherSelfieGaleria(){
   fecharOpcoesSelfieMotorista(); fecharTelaSelfieMotorista();
@@ -8324,6 +8338,12 @@ async function abrirTelaSelfieMotorista(){
 @media(max-width:520px){.esm-wrap{padding:18px 10px 24px}.esm-brand{margin-top:42px}.esm-brand b{font-size:20px}.esm-body{padding:20px 12px}.esm-body h2{font-size:22px}.esm-passos span{font-size:10px}.esm-passos div{min-width:50px}.esm-passos b{max-width:35px}}
 `; document.head.appendChild(st); }
   try{
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      const erro=document.getElementById('esm-camera-erro');
+      if(erro){ erro.style.display='block'; erro.innerHTML='A câmera interna não está disponível neste aparelho. <button type=\"button\" class=\"esm-galeria\" style=\"margin-top:10px\" onclick=\"tirarSelfieCameraNativa()\">ABRIR CÂMERA DO CELULAR</button>'; }
+      const btn=document.getElementById('esm-tirar'); if(btn) btn.style.display='none';
+      return;
+    }
     selfieMotoristaStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:900},height:{ideal:900}},audio:false});
     const v=document.getElementById('esm-video'); v.srcObject=selfieMotoristaStream;
     const btn=document.getElementById('esm-tirar');
@@ -8335,7 +8355,7 @@ async function abrirTelaSelfieMotorista(){
   catch(e){
     console.error('camera_selfie',e);
     const erro=document.getElementById('esm-camera-erro');
-    if(erro){ erro.style.display='block'; erro.textContent='A câmera foi bloqueada ou não abriu neste aparelho. Use o botão “escolher uma foto da galeria” para continuar agora.'; }
+    if(erro){ erro.style.display='block'; erro.innerHTML='A câmera foi bloqueada ou não abriu neste aparelho. <button type=\"button\" class=\"esm-galeria\" style=\"margin-top:10px\" onclick=\"tirarSelfieCameraNativa()\">ABRIR CÂMERA DO CELULAR</button><span style=\"display:block;margin-top:6px\">Ou escolha uma foto da galeria abaixo.</span>'; }
     const btn=document.getElementById('esm-tirar'); if(btn) btn.style.display='none';
     mostrarToast('A câmera não abriu. Você pode escolher a selfie na galeria.','aviso');
   }
@@ -8353,6 +8373,12 @@ async function tirarSelfieMotorista(){
   fecharTelaSelfieMotorista(); mostrarToast('Selfie salva com sucesso!'); render();
 }
 function solicitarUploadDocumento(tipo){ if(tipo==='fotoMotorista'){ abrirOpcoesSelfieMotorista(); return; } uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
+function arquivoEhImagemMotorista(file){
+  if(!file) return false;
+  const tipo=String(file.type||'').toLowerCase();
+  const nome=String(file.name||'').toLowerCase();
+  return tipo.startsWith('image/') || /\.(jpe?g|png|webp|heic|heif|gif|bmp)$/i.test(nome) || (!tipo && file.size>0);
+}
 function arquivoPareceHeic(file){
   const tipo=String(file.type||'').toLowerCase(), nome=String(file.name||'').toLowerCase();
   return tipo.includes('heic') || tipo.includes('heif') || /\.hei[cf]$/.test(nome);
@@ -8392,7 +8418,7 @@ async function prepararImagemDocumento(file){
   // Converte TODAS as fotos para JPEG real. Alguns celulares entregam HEIC/WEBP
   // mesmo quando o nome parece .jpg; enviar os bytes originais como image/jpeg
   // cria um link válido que aparece quebrado no painel administrativo.
-  if(!file || !String(file.type||'').startsWith('image/')) return null;
+  if(!arquivoEhImagemMotorista(file)) return null;
   try{
     const bitmap = await decodificarImagemComFallback(file);
     if(!bitmap || !bitmap.width || !bitmap.height) throw new Error('imagem_sem_dimensoes');
@@ -8417,7 +8443,7 @@ async function processarDocumentoSelecionado(input){
   if(!file || !uploadPendente) return;
   const tipo = uploadPendente; uploadPendente = null;
   const c = estado.painelMotorista.cadastro;
-  if(!String(file.type||'').startsWith('image/')){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
+  if(!arquivoEhImagemMotorista(file)){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
   mostrarToast('Salvando foto...');
   const preparado = await prepararImagemDocumento(file);
   if(!preparado){
