@@ -2202,7 +2202,7 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 120000; // 2 min sem sinal = offline real
+const PRESENCA_MOTORISTA_MS = 180000; // 3 min sem sinal = offline real
 function motoristaOnlineAgora(m, agora=Date.now()){
   if(!m || !m.disponivel || !STATUS_ACESSO_PAINEL.includes(m.status)) return false;
   const ultimo = Number(m.disponivel_atualizado_em||0);
