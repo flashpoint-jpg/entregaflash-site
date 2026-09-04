@@ -1,0 +1,27 @@
+ENTREGA FLASH — CENTRAL DE LANÇAMENTO
+Atualização: 04/09/2026
+
+Implementado no painel administrativo:
+- Central de Lançamento na aba de resumo.
+- Indicadores de cadastrados, aprovados, aprovados online e aprovados offline.
+- Status automático: SEM COBERTURA / PREPARANDO OPERAÇÃO / PRONTO PARA ANUNCIAR.
+- Meta mínima de motoristas online configurável por região e salva no navegador.
+- Filtros de Todas as regiões, Grande São Paulo e Sul de Minas aproveitados pela central.
+- Botão para abrir diretamente a lista de motoristas aprovados que estão offline.
+- Botão individual “CHAMAR PARA FICAR ONLINE” via WhatsApp nos motoristas aprovados e offline.
+- Mensagem de ativação com link direto para login do motorista.
+- Botão para copiar texto de campanha de clientes.
+- Botão para abrir Meta Ads, liberado quando a meta de cobertura é atingida.
+- Normalização visual dos nomes de cidades: diferenças de maiúsculas/minúsculas e acentos passam a ser agrupadas quando correspondem a uma cidade atendida cadastrada no sistema.
+
+Arquivos atualizados:
+- admin/index.html
+- admin/admin.html
+
+Observação:
+A normalização agrupa variações equivalentes, como Sao Paulo / SÃO PAULO / São Paulo. Erros reais de digitação, como “São Pauko”, permanecem separados para não transformar automaticamente uma cidade errada em outra.
+
+04/09/2026 — PLANO PRO AUTOMÁTICO
+- Webhook de pagamento corrigido no Supabase: pagamento aprovado agora grava plano='pro' e taxa_status='pago' automaticamente.
+- O app do motorista agora reflete mudança de plano em tempo real, mesmo sem mudar o status do cadastro.
+- Mantido botão manual no admin apenas como contingência.
