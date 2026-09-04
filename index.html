@@ -2045,7 +2045,7 @@ function aguardarPromptInstalacao(timeoutMs){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260904-7';
+  const versaoApp = '20260904-8';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -3013,7 +3013,7 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 120000; // 2 min sem sinal = offline real
+const PRESENCA_MOTORISTA_MS = 180000; // 3 min sem sinal = offline real
 function motoristaOnlineAgora(m, agora=Date.now()){
   if(!m || !m.disponivel || !STATUS_ACESSO_PAINEL.includes(m.status)) return false;
   const ultimo = Number(m.disponivel_atualizado_em||0);
@@ -4833,9 +4833,15 @@ async function enviarPosicaoMotorista(){
   // grava a posição atual do motorista sempre que ele estiver logado — isso alimenta o mapa
   // geral do admin, que mostra motoristas disponíveis mesmo sem corrida em andamento
   if(estado.motorista.telefone){
-    sb.from('entrega_motoristas').update({
-      lat_atual: ultimaPosicaoMotorista.lat, lng_atual: ultimaPosicaoMotorista.lon, lat_atualizado_em: Date.now()
-    }).eq('telefone', estado.motorista.telefone);
+    const payloadPosicao = { lat_atual: ultimaPosicaoMotorista.lat, lng_atual: ultimaPosicaoMotorista.lon, lat_atualizado_em: Date.now() };
+    // aproveita cada atualização de GPS (a cada ~8s) pra também renovar o "disponível agora" —
+    // assim, mesmo se o timer de 45s for pausado pelo navegador com a tela bloqueada, o sinal de
+    // online continua chegando enquanto o GPS ainda estiver ativo
+    if(estado.motorista.disponivel){
+      payloadPosicao.disponivel_atualizado_em = Date.now();
+      estado.motorista.disponivel_atualizado_em = payloadPosicao.disponivel_atualizado_em;
+    }
+    sb.from('entrega_motoristas').update(payloadPosicao).eq('telefone', estado.motorista.telefone);
   }
   const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0) return;

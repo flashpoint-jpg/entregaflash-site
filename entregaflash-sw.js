@@ -1,7 +1,7 @@
-// build: corrige-texto-botao-apk-20260904-v7
+// build: corrige-heartbeat-online-20260904-v8
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260904-7
-const EF_VERSION = '20260904-7';
+// Versão: 20260904-8
+const EF_VERSION = '20260904-8';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
