@@ -1231,7 +1231,8 @@ let estado = {
     }
   },
   admin:{ aberto:false, logado:false, senhaDigitada:'', papel:null, funcionarioUsuario:'', funcionarioSenhaHash:'', funcionarioNome:'', funcionarioLoginUsuario:'', funcionarioLoginSenha:'', mostrarLoginFuncionario:false, aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null, clienteAberto:null, funcionarios:[],
-    avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
+    avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false,
+    testeGps:{ enviando:false, testeId:null, disparadoEm:null, respostas:[], onlineNoDisparo:0 } },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' }
 };
@@ -6976,6 +6977,38 @@ async function marcarFeedbackLido(id){
   render();
 }
 function definirPapelAvisoGeral(papel){ estado.admin.avisoGeral.papel = papel; render(); }
+// ---------- teste de GPS/notificação com motoristas online ----------
+let canalTesteGpsRealtime = null;
+async function dispararTesteGpsAdmin(){
+  if(!(await confirmarAcao(`Enviar um teste de GPS agora para TODOS os motoristas online (${estado.motoristasOnline||0} agora)? Eles vão receber um aviso claro de que é só um teste.`))) return;
+  const tg = estado.admin.testeGps;
+  tg.enviando = true; render();
+  const { data: testeId, error } = await sb.rpc('entrega_admin_disparar_teste_gps', { p_senha: estado.admin.senhaDigitada });
+  tg.enviando = false;
+  if(error){
+    console.error(error);
+    mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao disparar o teste: '+(error.message||'tenta de novo'), 'erro');
+    render();
+    return;
+  }
+  tg.testeId = testeId;
+  tg.disparadoEm = Date.now();
+  tg.respostas = [];
+  tg.onlineNoDisparo = estado.motoristasOnline||0;
+  enviarPushServidor('motorista', null, '🧪 Teste de GPS', 'Isto NÃO é uma entrega real. Toque pra confirmar que seu app está enviando sua localização certinho.');
+  assinarRespostasTesteGpsRealtime();
+  mostrarToast('Teste de GPS enviado! Acompanhe as confirmações abaixo.', 'sucesso');
+  render();
+}
+function assinarRespostasTesteGpsRealtime(){
+  if(canalTesteGpsRealtime) sb.removeChannel(canalTesteGpsRealtime);
+  canalTesteGpsRealtime = sb.channel('teste-gps-respostas-'+estado.admin.testeGps.testeId)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'entrega_testes_gps_respostas', filter:'teste_id=eq.'+estado.admin.testeGps.testeId}, (payload)=>{
+      estado.admin.testeGps.respostas.push(payload.new);
+      render();
+    })
+    .subscribe();
+}
 async function enviarAvisoGeralAdmin(){
   const ag = estado.admin.avisoGeral;
   const texto = (document.getElementById('aviso-geral-mensagem')?.value || ag.mensagem || '').trim();
@@ -6997,6 +7030,19 @@ async function enviarAvisoGeralAdmin(){
 }
 function adminAbaAvisosHTML(){
   const ag = estado.admin.avisoGeral;
+  const tg = estado.admin.testeGps;
+  const respostasHTML = tg.testeId ? `
+    <div style="margin-top:14px;padding:12px;border:1px solid var(--linha);border-radius:12px;background:var(--painel-alt)">
+      <div style="font-weight:700;margin-bottom:6px">📍 ${tg.respostas.length} de ${tg.onlineNoDisparo} motorista(s) que estavam online já confirmaram</div>
+      ${tg.respostas.length===0 ? `<div class="subtitulo">Aguardando confirmações... (o motorista precisa tocar no aviso que apareceu no app dele)</div>` : `
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto">
+        ${tg.respostas.map(r=>`
+          <div style="display:flex;justify-content:space-between;gap:8px;font-size:13.5px;border-bottom:1px solid var(--linha);padding-bottom:5px">
+            <div><strong>${r.motorista_nome||r.motorista_telefone}</strong> ${r.veiculo?`· ${r.veiculo}`:''}</div>
+            <div>${r.lat && r.lng ? `<a href="https://www.google.com/maps?q=${r.lat},${r.lng}" target="_blank" style="color:var(--mango,#ffc93c)">📍 ver GPS</a>` : '<span style="color:#c0392b">sem GPS</span>'}</div>
+          </div>`).join('')}
+      </div>`}
+    </div>` : '';
   return `
   <h3 style="margin:0 0 10px">📢 Alerta geral</h3>
   <div class="subtitulo" style="margin-bottom:12px">Manda um aviso que aparece na tela de todos os motoristas ou de todos os clientes cadastrados, na hora.</div>
@@ -7007,7 +7053,12 @@ function adminAbaAvisosHTML(){
   </div>
   <label style="margin-top:10px">Mensagem</label>
   <textarea id="aviso-geral-mensagem" rows="4" placeholder="Ex: Olá! O que vocês estão achando do preço da quilometragem? Deixem sua sugestão — queremos ouvir vocês!">${ag.mensagem}</textarea>
-  <button class="btn btn-primario" ${ag.enviando?'disabled':''} onclick="enviarAvisoGeralAdmin()">${ag.enviando?'A enviar...':`📢 Mandar alerta para ${ag.papel==='motorista'?'TODOS os motoristas':'TODOS os clientes'}`}</button>`;
+  <button class="btn btn-primario" ${ag.enviando?'disabled':''} onclick="enviarAvisoGeralAdmin()">${ag.enviando?'A enviar...':`📢 Mandar alerta para ${ag.papel==='motorista'?'TODOS os motoristas':'TODOS os clientes'}`}</button>
+
+  <h3 style="margin:22px 0 10px">🧪 Teste de GPS com motoristas online</h3>
+  <div class="subtitulo" style="margin-bottom:12px">Manda na hora um teste (deixando claro que NÃO é uma entrega real) pra todos os motoristas com o app aberto agora (${estado.motoristasOnline||0} online). Cada um que tocar em "confirmar" manda de volta a localização do celular dele, pra você conferir se o GPS está funcionando certinho.</div>
+  <button class="btn btn-secundario" ${tg.enviando?'disabled':''} onclick="dispararTesteGpsAdmin()">${tg.enviando?'A enviar...':'🧪 Disparar teste de GPS agora'}</button>
+  ${respostasHTML}`;
 }
 function adminAbaFeedbacksHTML(){
   const a = estado.admin;
@@ -8847,7 +8898,7 @@ window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
-window.definirPapelAvisoGeral=definirPapelAvisoGeral; window.enviarAvisoGeralAdmin=enviarAvisoGeralAdmin; window.marcarFeedbackLido=marcarFeedbackLido;
+window.definirPapelAvisoGeral=definirPapelAvisoGeral; window.enviarAvisoGeralAdmin=enviarAvisoGeralAdmin; window.marcarFeedbackLido=marcarFeedbackLido; window.dispararTesteGpsAdmin=dispararTesteGpsAdmin;
 window.salvarConfigGeralAdmin=salvarConfigGeralAdmin; window.ajustarSaldoMotoristaAdmin=ajustarSaldoMotoristaAdmin;
 window.ajustarSaldoClienteAdmin=ajustarSaldoClienteAdmin; window.dispararAjusteSaldoCliente=dispararAjusteSaldoCliente; window.enviarBoasVindasWhatsApp=enviarBoasVindasWhatsApp; window.enviarBoasVindasWhatsAppMotorista=enviarBoasVindasWhatsAppMotorista; window.marcarTaxaProPagaAdmin=marcarTaxaProPagaAdmin;
 window.alterarPlanoMotoristaAdmin=alterarPlanoMotoristaAdmin;
