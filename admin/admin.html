@@ -8056,28 +8056,44 @@ function adminAbaMotoristasHTML(){
   const a = estado.admin;
   if(!a.filtroRegiaoMotoristas) a.filtroRegiaoMotoristas='todos';
   if(!a.filtroStatusMotoristas) a.filtroStatusMotoristas='todos';
+  if(!a.filtroVeiculoMotoristas) a.filtroVeiculoMotoristas='todos';
   if(a.carregando) return skeletonLista(4);
   if(a.motoristas.length===0) return `<div class="vazio"><span class="emoji-grande">🛵</span>Nenhum cadastro de entregador ainda.</div>`;
   const emRotaPorTelefone = {};
   (a.todosPedidos||[]).forEach(p=>{ if(p.motorista_telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status)) emRotaPorTelefone[p.motorista_telefone]=true; });
   const cardHTML=(m)=>motoristaCardHTML(m,!!emRotaPorTelefone[m.telefone]);
-  const baseMotoristas=a.motoristas.filter(m=>{
+  const regiaoMotoristas=a.motoristas.filter(m=>{
     if(a.filtroRegiaoMotoristas==='sp') return cidadeEhGrandeSP(m.cidade);
     if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
     return true;
+  });
+  const veiculosDisponiveis = ['moto','carro','bicicleta'];
+  const baseMotoristas=regiaoMotoristas.filter(m=>{
+    if(a.filtroVeiculoMotoristas==='todos') return true;
+    if(a.filtroVeiculoMotoristas==='outros') return !veiculosDisponiveis.includes(m.veiculo_tipo);
+    return m.veiculo_tipo===a.filtroVeiculoMotoristas;
   });
   const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m));
   const aguardandoDocs=baseMotoristas.filter(m=>motoristaSemDocumentos(m));
   const pendentes=baseMotoristas.filter(m=>motoristaEmAnalise(m));
   const ativos=baseMotoristas.filter(m=>motoristaAprovado(m) && !motoristaOnlineAgora(m));
   const bloqueados=baseMotoristas.filter(m=>m.status==='bloqueado');
-  const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m));
+  const reprovados=baseMotoristas.filter(m=>m.status==='reprovado');
+  const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m)&&!reprovados.includes(m));
+  const veiculoChips = [
+    {id:'todos', label:'🚚 Todos os veículos', n:regiaoMotoristas.length},
+    {id:'moto', label:'🏍️ Moto', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='moto').length},
+    {id:'carro', label:'🚗 Carro', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='carro').length},
+    {id:'bicicleta', label:'🚲 Bicicleta', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='bicicleta').length},
+    {id:'outros', label:'⚙️ Outros veículos', n:regiaoMotoristas.filter(m=>!veiculosDisponiveis.includes(m.veiculo_tipo)).length}
+  ];
   const chips = [
     {id:'todos', label:'Todos', n:baseMotoristas.length},
     {id:'docs', label:'🆕 Falta documento', n:aguardandoDocs.length},
     {id:'analise', label:'📄 Aguardando aprovação', n:pendentes.length},
     {id:'online', label:'🟢 Online agora', n:online.length},
     {id:'ativos', label:'✅ Aprovados', n:ativos.length},
+    {id:'reprovados', label:'❌ Reprovados', n:reprovados.length},
     {id:'bloqueados', label:'🔒 Bloqueados', n:bloqueados.length}
   ];
   const grupoFiltrado = {
@@ -8085,6 +8101,7 @@ function adminAbaMotoristasHTML(){
     analise: {titulo:'📄 Documentos enviados, aguardando aprovação', lista:pendentes},
     online: {titulo:'🟢 Online agora', lista:online},
     ativos: {titulo:'✅ Aprovados (offline)', lista:ativos},
+    reprovados: {titulo:'❌ Reprovados', lista:reprovados},
     bloqueados: {titulo:'🔒 Bloqueados', lista:bloqueados}
   }[a.filtroStatusMotoristas];
   const corpoLista = grupoFiltrado
@@ -8096,6 +8113,7 @@ function adminAbaMotoristasHTML(){
     ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🆕 Acabou de se cadastrar — falta documento</b><span class="selo" style="background:rgba(255,151,16,0.16);color:var(--mango)">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
     ${pendentes.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>📄 Documentos enviados, aguardando aprovação</b><span class="selo" style="background:rgba(111,168,220,0.18);color:var(--azul)">${pendentes.length}</span></div>${pendentes.map(cardHTML).join('')}`:''}
     ${ativos.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>✅ Aprovados (offline)</b><span class="selo selo-entregue">${ativos.length}</span></div>${ativos.map(cardHTML).join('')}`:''}
+    ${reprovados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>❌ Reprovados</b><span class="selo selo-cancelado">${reprovados.length}</span></div>${reprovados.map(cardHTML).join('')}`:''}
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
     ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
   return `
@@ -8105,6 +8123,9 @@ function adminAbaMotoristasHTML(){
       <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
       <button class="${a.filtroRegiaoMotoristas==='sp'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='sp';render()">📍 Grande São Paulo</button>
       <button class="${a.filtroRegiaoMotoristas==='mg'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='mg';render()">📍 Sul de Minas</button>
+    </div>
+    <div class="admin-filtros-grade" style="margin-bottom:10px">
+      ${veiculoChips.map(c=>`<button class="${a.filtroVeiculoMotoristas===c.id?'ativo':''}" onclick="estado.admin.filtroVeiculoMotoristas='${c.id}';render()">${c.label} (${c.n})</button>`).join('')}
     </div>
     <div class="admin-filtros-grade" style="margin-bottom:12px">
       ${chips.map(c=>`<button class="${a.filtroStatusMotoristas===c.id?'ativo':''}" onclick="estado.admin.filtroStatusMotoristas='${c.id}';render()">${c.label} (${c.n})</button>`).join('')}
