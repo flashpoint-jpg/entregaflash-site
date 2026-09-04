@@ -8067,10 +8067,12 @@ function adminAbaMotoristasHTML(){
     if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
     return true;
   });
-  const veiculosDisponiveis = ['moto','carro','bicicleta'];
+  // Filtro de frota: cada tipo de veículo fica separado para facilitar o planejamento da operação/campanhas.
+  const veiculosDisponiveis = ['moto','carro','bicicleta','carroaberto','fiorino','van','caminhao'];
   const baseMotoristas=regiaoMotoristas.filter(m=>{
     if(a.filtroVeiculoMotoristas==='todos') return true;
-    if(a.filtroVeiculoMotoristas==='outros') return !veiculosDisponiveis.includes(m.veiculo_tipo);
+    if(a.filtroVeiculoMotoristas==='sem_veiculo') return !String(m.veiculo_tipo||'').trim();
+    if(a.filtroVeiculoMotoristas==='outros') return !!String(m.veiculo_tipo||'').trim() && !veiculosDisponiveis.includes(m.veiculo_tipo);
     return m.veiculo_tipo===a.filtroVeiculoMotoristas;
   });
   const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m));
@@ -8081,11 +8083,16 @@ function adminAbaMotoristasHTML(){
   const reprovados=baseMotoristas.filter(m=>m.status==='reprovado');
   const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m)&&!reprovados.includes(m));
   const veiculoChips = [
-    {id:'todos', label:'🚚 Todos os veículos', n:regiaoMotoristas.length},
-    {id:'moto', label:'🏍️ Moto', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='moto').length},
-    {id:'carro', label:'🚗 Carro', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='carro').length},
-    {id:'bicicleta', label:'🚲 Bicicleta', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='bicicleta').length},
-    {id:'outros', label:'⚙️ Outros veículos', n:regiaoMotoristas.filter(m=>!veiculosDisponiveis.includes(m.veiculo_tipo)).length}
+    {id:'todos', label:'🚚 Toda a frota', n:regiaoMotoristas.length},
+    {id:'moto', label:'🏍️ Motos', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='moto').length},
+    {id:'carro', label:'🚗 Carros', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='carro').length},
+    {id:'carroaberto', label:'🛻 Utilitários', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='carroaberto').length},
+    {id:'fiorino', label:'🚐 Fiorinos', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='fiorino').length},
+    {id:'van', label:'🚐 Vans', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='van').length},
+    {id:'caminhao', label:'🚚 Caminhões', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='caminhao').length},
+    {id:'bicicleta', label:'🚲 Bicicletas', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='bicicleta').length},
+    {id:'sem_veiculo', label:'⚠️ Sem veículo informado', n:regiaoMotoristas.filter(m=>!String(m.veiculo_tipo||'').trim()).length},
+    {id:'outros', label:'⚙️ Outros', n:regiaoMotoristas.filter(m=>!!String(m.veiculo_tipo||'').trim() && !veiculosDisponiveis.includes(m.veiculo_tipo)).length}
   ];
   const chips = [
     {id:'todos', label:'Todos', n:baseMotoristas.length},
