@@ -2045,7 +2045,7 @@ function aguardarPromptInstalacao(timeoutMs){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260904-2';
+  const versaoApp = '20260904-3';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -3043,13 +3043,35 @@ function assinarAvisosGeraisRealtime(){
       const aviso = payload.new;
       const meuPapel = estado.modo==='entregador' ? 'motorista' : 'cliente';
       if(aviso.papel !== meuPapel) return;
-      estado.avisoGeralExibido = { id:aviso.id, mensagem:aviso.mensagem };
+      estado.avisoGeralExibido = { id:aviso.id, mensagem:aviso.mensagem, testeGpsId:aviso.teste_gps_id||null };
       render();
+      if(aviso.teste_gps_id) tocarSomAlerta();
       notificar(' Aviso do Entrega Flash', aviso.mensagem, 'aviso-geral-'+aviso.id);
     })
     .subscribe();
 }
 function fecharAvisoGeral(){ estado.avisoGeralExibido=null; render(); }
+async function confirmarTesteGps(){
+  const av = estado.avisoGeralExibido;
+  if(!av || !av.testeGpsId) return;
+  const testeId = av.testeGpsId;
+  const telefone = estado.motorista.telefone;
+  const nome = estado.motorista.nome;
+  const veiculo = estado.motorista.veiculo;
+  estado.avisoGeralExibido = null; render();
+  if(!navigator.geolocation){
+    await sb.rpc('entrega_motorista_confirmar_teste_gps', { p_teste_id:testeId, p_telefone:telefone, p_nome:nome, p_veiculo:veiculo, p_lat:null, p_lng:null });
+    mostrarToast('Confirmado (seu aparelho não tem GPS disponível).', 'sucesso');
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(async (pos)=>{
+    await sb.rpc('entrega_motorista_confirmar_teste_gps', { p_teste_id:testeId, p_telefone:telefone, p_nome:nome, p_veiculo:veiculo, p_lat:pos.coords.latitude, p_lng:pos.coords.longitude });
+    mostrarToast('Confirmado! Sua localização foi enviada.', 'sucesso');
+  }, async ()=>{
+    await sb.rpc('entrega_motorista_confirmar_teste_gps', { p_teste_id:testeId, p_telefone:telefone, p_nome:nome, p_veiculo:veiculo, p_lat:null, p_lng:null });
+    mostrarToast('Confirmado (não deu pra pegar seu GPS agora, verifica a permissão de localização).', 'aviso');
+  }, { enableHighAccuracy:true, timeout:8000 });
+}
 
 // ---------- config geral em tempo real (preço do plano etc. atualiza pra todo mundo na hora) ----------
 let canalConfigGeralRealtime = null;
@@ -7172,11 +7194,12 @@ function render(){
       <button class="alerta-fechar" onclick="event.stopPropagation();fecharAlertaMotorista()">&times;</button>
     </div>` : ''}
     ${estado.avisoGeralExibido ? `
-    <div class="alerta-motorista" onclick="fecharAvisoGeral()">
-      <div class="alerta-emoji"></div>
+    <div class="alerta-motorista" ${estado.avisoGeralExibido.testeGpsId ? '' : 'onclick="fecharAvisoGeral()"'}>
+      <div class="alerta-emoji">${estado.avisoGeralExibido.testeGpsId ? '🧪' : ''}</div>
       <div class="alerta-texto">
-        <div class="alerta-titulo">Aviso do Entrega Flash</div>
+        <div class="alerta-titulo">${estado.avisoGeralExibido.testeGpsId ? 'Teste de GPS (não é entrega real)' : 'Aviso do Entrega Flash'}</div>
         <div class="alerta-sub">${estado.avisoGeralExibido.mensagem}</div>
+        ${estado.avisoGeralExibido.testeGpsId ? `<button class="btn btn-primario btn-pequeno" style="margin-top:8px" onclick="event.stopPropagation();confirmarTesteGps()">📍 Confirmar recebimento</button>` : ''}
       </div>
       <button class="alerta-fechar" onclick="event.stopPropagation();fecharAvisoGeral()">&times;</button>
     </div>` : ''}
@@ -9883,6 +9906,7 @@ window.abrirSuporte=abrirSuporte; window.fecharSuporte=fecharSuporte; window.env
 window.abrirContatoRapido=abrirContatoRapido; window.fecharContatoRapido=fecharContatoRapido; window.enviarContatoRapido=enviarContatoRapido;
 window.abrirFeedback=abrirFeedback; window.fecharFeedback=fecharFeedback; window.definirCategoriaFeedback=definirCategoriaFeedback; window.enviarFeedback=enviarFeedback;
 window.fecharAvisoGeral=fecharAvisoGeral;
+window.confirmarTesteGps=confirmarTesteGps;
 window.abrirSuporteAdmin=abrirSuporteAdmin; window.fecharSuporteAdmin=fecharSuporteAdmin; window.enviarMensagemSuporteAdmin=enviarMensagemSuporteAdmin;
 window.marcarSuporteResolvido=marcarSuporteResolvido;
 window.falarNoCampo=falarNoCampo; window.irParaCadastroCliente=irParaCadastroCliente; window.irParaLoginCliente=irParaLoginCliente;

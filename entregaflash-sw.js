@@ -1,7 +1,7 @@
-// build: remove-barra-fixa-duplicada-20260904-v2
+// build: teste-gps-motoristas-online-20260904-v3
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260904-2
-const EF_VERSION = '20260904-2';
+// Versão: 20260904-3
+const EF_VERSION = '20260904-3';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
