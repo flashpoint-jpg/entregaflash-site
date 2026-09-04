@@ -1,7 +1,7 @@
-// build: meta-cadastro-performance-20260901-v2
+// build: correcao-instalar-app-20260904-v1
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260901-meta2
-const EF_VERSION = '20260901-meta2';
+// Versão: 20260904-1
+const EF_VERSION = '20260904-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {

@@ -1946,11 +1946,18 @@ function fecharPopupInstalar(){
   try{ localStorage.setItem('ef_popup_instalar_visto','1'); }catch(e){}
   render();
 }
-function instalarPeloPopup(){
+async function instalarPeloPopup(){
   fecharPopupInstalar();
-  if(estado.podeInstalar) instalarApp();
-  else if(/Android/i.test(navigator.userAgent || '')) baixarAplicativoAndroid();
-  else abrirComoInstalar();
+  if(estado.podeInstalar){ instalarApp(); return; }
+  const isAndroid = /Android/i.test(navigator.userAgent || '');
+  if(isAndroid){
+    mostrarToast('Preparando instalação...', 'sucesso');
+    const chegou = await aguardarPromptInstalacao(4000);
+    if(chegou && promptInstalacao){ estado.podeInstalar = true; instalarApp(); return; }
+    baixarAplicativoAndroid();
+  } else {
+    abrirComoInstalar();
+  }
 }
 function baixarAplicativoAndroid(){
   // O APK antigo deste projeto apontava para um servidor antigo.
@@ -2022,12 +2029,23 @@ function agendarPopupInstalarSeNecessario(){
   let jaVisto=false;
   try{ jaVisto = !!localStorage.getItem('ef_popup_instalar_visto'); }catch(e){}
   if(jaVisto || estado.appInstalado) return;
-  setTimeout(()=>{ if(!estado.appInstalado && !estado.popupInstalarAberto) abrirPopupInstalar(); }, 900);
+  setTimeout(()=>{ if(!estado.appInstalado && !estado.popupInstalarAberto) abrirPopupInstalar(); }, 4000);
+}
+
+// Dá uma chance extra pro evento beforeinstallprompt chegar antes de desistir e mostrar
+// as instruções manuais — o Chrome pode demorar alguns segundos pra liberar o prompt real.
+function aguardarPromptInstalacao(timeoutMs){
+  return new Promise((resolve)=>{
+    if(promptInstalacao){ resolve(true); return; }
+    const limite = setTimeout(()=>{ window.removeEventListener('beforeinstallprompt', onChegou); resolve(false); }, timeoutMs);
+    function onChegou(){ clearTimeout(limite); resolve(true); }
+    window.addEventListener('beforeinstallprompt', onChegou, { once:true });
+  });
 }
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260903-5';
+  const versaoApp = '20260904-1';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -7079,7 +7097,7 @@ function render(){
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
-      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'abrirComoInstalar()'}"></button>` : ''}
+      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'instalarPeloPopup()'}"></button>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
   `;
