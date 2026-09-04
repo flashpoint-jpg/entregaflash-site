@@ -2045,7 +2045,7 @@ function aguardarPromptInstalacao(timeoutMs){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260904-5';
+  const versaoApp = '20260904-7';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -5705,6 +5705,11 @@ function telaBoasVindas(){
 
     <div class="bv-regional-note"> <b>Entrega Flash é regional:</b> conectamos clientes e entregadores nas cidades atendidas e também na zona rural próxima, sem limitar a comunicação a uma única cidade.</div>
     <div class="bv-install-area"><button type="button" class="btn-baixar-app" style="width:100%" onclick="instalarPeloPopup()">📲 INSTALAR APLICATIVO ATUALIZADO</button><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Instala a versão atual do site na tela inicial. Não baixa mais o APK antigo.</div></div>
+  </div>
+  <div class="bv-cta-fixa">
+    <button type="button" class="btn-primario" onclick="entrarComoVisitante('cliente')"> Pedir entrega</button>
+    <button type="button" class="btn-azul" onclick="escolherBoasVindas('entregador')"> Seja motorista</button>
+    <button type="button" class="btn-instalar-fixo" onclick="instalarPeloPopup()"> Instalar app</button>
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -6812,7 +6817,7 @@ function comoInstalarHTML(){
     <div class="modal-chat" style="max-height:88vh">
       <div class="chat-topo"><h3> Como instalar o app</h3><button class="chat-fechar" onclick="fecharComoInstalar()">&times;</button></div>
       <div class="cf-corpo" style="padding:16px">
-        <button class="btn btn-primario" style="width:100%;margin-bottom:12px" onclick="baixarAplicativoAndroid()">Baixar aplicativo Android (APK)</button>
+        <button class="btn btn-primario" style="width:100%;margin-bottom:12px" onclick="baixarAplicativoAndroid()">📲 Instalar aplicativo atualizado</button>
         ${estado.podeInstalar ? `
         <button class="btn btn-primario" onclick="instalarApp()">Instalar agora</button>
         <div class="subtitulo" style="margin:14px 0 6px">Ou instala manualmente:</div>` : ''}
@@ -10661,6 +10666,7 @@ html,body{background:#12161c!important}
 .bv-vehicle-card strong{font-size:13px!important;letter-spacing:.2px!important}
 </style>
 <style id="ef-barra-fixa-3-acoes-final">
+.bv-wrap{padding-bottom:92px!important}
 .bv-cta-fixa{
   display:grid!important;
   grid-template-columns:repeat(3,minmax(0,1fr))!important;

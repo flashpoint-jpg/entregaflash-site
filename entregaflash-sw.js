@@ -1,7 +1,7 @@
-// build: aumenta-volume-sons-20260904-v5
+// build: corrige-texto-botao-apk-20260904-v7
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260904-5
-const EF_VERSION = '20260904-5';
+// Versão: 20260904-7
+const EF_VERSION = '20260904-7';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
