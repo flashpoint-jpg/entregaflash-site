@@ -1915,7 +1915,7 @@ function tocarSomAlerta(){
       osc.type='sine'; osc.frequency.value=freq;
       osc.connect(gain); gain.connect(ctx.destination);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
-      gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime+inicio+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.03);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
       osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
     };
@@ -1933,13 +1933,32 @@ function tocarSomNovoPedido(){
       osc.type='square'; osc.frequency.value=freq;
       osc.connect(gain); gain.connect(ctx.destination);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
-      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime+inicio+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
       osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
     };
     tocarNota(880,0,0.1); tocarNota(880,0.16,0.1); tocarNota(880,0.32,0.1);
   }catch(e){ console.warn('audio indisponível', e); }
   if(navigator.vibrate) navigator.vibrate([90,60,90,60,90]);
+}
+// toque de "confirmação recebida" (3 notas subindo, diferente dos outros dois) — usado quando um
+// motorista confirma o teste de GPS, pra dar pra saber sem precisar olhar a tela
+function tocarSomConfirmacaoGps(){
+  try{
+    const ctx = obterAudioContext();
+    if(!ctx) return;
+    const tocarNota=(freq,inicio,duracao)=>{
+      const osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type='triangle'; osc.frequency.value=freq;
+      osc.connect(gain); gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
+      osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
+    };
+    tocarNota(523,0,0.12); tocarNota(659,0.11,0.12); tocarNota(880,0.22,0.22);
+  }catch(e){ console.warn('audio indisponível', e); }
+  if(navigator.vibrate) navigator.vibrate([60,40,60,40,140]);
 }
 function dispararAlertaMotorista(pedido){
   estado.alertaMotorista = { nome: pedido.motoristaNome||'Um entregador', pedidoId: pedido.id };
@@ -7005,6 +7024,7 @@ function assinarRespostasTesteGpsRealtime(){
   canalTesteGpsRealtime = sb.channel('teste-gps-respostas-'+estado.admin.testeGps.testeId)
     .on('postgres_changes', {event:'INSERT', schema:'public', table:'entrega_testes_gps_respostas', filter:'teste_id=eq.'+estado.admin.testeGps.testeId}, (payload)=>{
       estado.admin.testeGps.respostas.push(payload.new);
+      tocarSomConfirmacaoGps();
       render();
     })
     .subscribe();
