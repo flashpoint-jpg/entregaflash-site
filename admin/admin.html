@@ -7522,7 +7522,11 @@ function abrirListaAprovadosOfflineAdmin(regiao){
   estado.admin.filtroStatusMotoristas='ativos';
   estado.admin.aba='motoristas';
   render();
-  setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),50);
+  setTimeout(()=>{
+    const alvo=document.getElementById('lista-motoristas-admin');
+    if(alvo) alvo.scrollIntoView({behavior:'smooth',block:'start'});
+    mostrarToast('Lista de aprovados offline aberta. Toque em “CHAMAR PARA FICAR ONLINE” para abrir o WhatsApp.','sucesso');
+  },120);
 }
 function abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade){
   const numero=normalizarWhatsAppBR(telefone);
@@ -7571,7 +7575,7 @@ function centralLancamentoHTML(){
     </div>
     <div style="margin-top:10px;padding:10px;border-radius:10px;background:${fundo};border:1px solid ${cor};font-size:12.5px"><b style="color:${cor}">${titulo}</b><div style="margin-top:3px">${orientacao}</div></div>
     <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px">
-      <button class="btn btn-verde btn-pequeno" onclick="abrirListaAprovadosOfflineAdmin('${regiao}')">📲 CHAMAR ${offline.length} APROVADOS OFFLINE</button>
+      <button class="btn btn-verde btn-pequeno" onclick="abrirListaAprovadosOfflineAdmin('${regiao}')">📲 VER E CHAMAR ${offline.length} APROVADOS OFFLINE</button>
       <button class="btn btn-secundario btn-pequeno" onclick="copiarTextoCampanhaClientesAdmin('${regiao}')">📋 COPIAR TEXTO DA CAMPANHA DE CLIENTES</button>
       <button class="btn btn-pequeno" ${nivel==='pronto'?'':'disabled style="opacity:.45;cursor:not-allowed"'} onclick="abrirMetaAdsAdmin()" style="${nivel==='pronto'?'background:var(--mango);color:#171717;font-weight:900':''}">📣 ABRIR META ADS ${nivel==='pronto'?'':'— BLOQUEADO ATÉ ATINGIR A META'}</button>
     </div>
@@ -8118,7 +8122,7 @@ function adminAbaClientesHTML(){
     <div class="admin-filtros-grade" style="margin-bottom:12px">
       ${chips.map(c=>`<button class="${a.filtroStatusClientes===c.id?'ativo':''}" onclick="estado.admin.filtroStatusClientes='${c.id}';render()">${c.label} (${c.n})</button>`).join('')}
     </div>
-    ${corpoLista}`;
+    <div id="lista-motoristas-admin" style="scroll-margin-top:90px">${corpoLista}</div>`;
 }
 function alternarEdicaoClienteAdmin(telefone){
   estado.admin.clienteEditando = estado.admin.clienteEditando===telefone ? null : telefone;
