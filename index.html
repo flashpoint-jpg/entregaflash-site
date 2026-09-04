@@ -2045,7 +2045,7 @@ function aguardarPromptInstalacao(timeoutMs){
 
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260904-3';
+  const versaoApp = '20260904-5';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2723,7 +2723,7 @@ function tocarSomAlerta(){
       osc.type='sine'; osc.frequency.value=freq;
       osc.connect(gain); gain.connect(ctx.destination);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
-      gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime+inicio+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.03);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
       osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
     };
@@ -2741,7 +2741,7 @@ function tocarSomNovoPedido(){
       osc.type='square'; osc.frequency.value=freq;
       osc.connect(gain); gain.connect(ctx.destination);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
-      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime+inicio+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
       osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
     };
@@ -3059,18 +3059,33 @@ async function confirmarTesteGps(){
   const nome = estado.motorista.nome;
   const veiculo = estado.motorista.veiculo;
   estado.avisoGeralExibido = null; render();
+  async function enviarConfirmacaoTesteGps(lat, lng, msg, tipo){
+    await sb.rpc('entrega_motorista_confirmar_teste_gps', { p_teste_id:testeId, p_telefone:telefone, p_nome:nome, p_veiculo:veiculo, p_lat:lat, p_lng:lng });
+    mostrarToast(msg, tipo||'sucesso');
+  }
+  // o motorista online já está com o GPS sendo rastreado em segundo plano (iniciarRastreioMotorista) —
+  // usa essa posição na hora em vez de pedir uma nova do zero, que pode "travar" à toa (ex: local
+  // fechado) mesmo com a localização ligada no aparelho e fazer o teste dar falso negativo.
+  if(ultimaPosicaoMotorista){
+    await enviarConfirmacaoTesteGps(ultimaPosicaoMotorista.lat, ultimaPosicaoMotorista.lon, 'Confirmado! Sua localização foi enviada.');
+    return;
+  }
   if(!navigator.geolocation){
-    await sb.rpc('entrega_motorista_confirmar_teste_gps', { p_teste_id:testeId, p_telefone:telefone, p_nome:nome, p_veiculo:veiculo, p_lat:null, p_lng:null });
-    mostrarToast('Confirmado (seu aparelho não tem GPS disponível).', 'sucesso');
+    await enviarConfirmacaoTesteGps(null, null, 'Confirmado (seu aparelho não tem GPS disponível).');
     return;
   }
   navigator.geolocation.getCurrentPosition(async (pos)=>{
-    await sb.rpc('entrega_motorista_confirmar_teste_gps', { p_teste_id:testeId, p_telefone:telefone, p_nome:nome, p_veiculo:veiculo, p_lat:pos.coords.latitude, p_lng:pos.coords.longitude });
-    mostrarToast('Confirmado! Sua localização foi enviada.', 'sucesso');
-  }, async ()=>{
-    await sb.rpc('entrega_motorista_confirmar_teste_gps', { p_teste_id:testeId, p_telefone:telefone, p_nome:nome, p_veiculo:veiculo, p_lat:null, p_lng:null });
-    mostrarToast('Confirmado (não deu pra pegar seu GPS agora, verifica a permissão de localização).', 'aviso');
-  }, { enableHighAccuracy:true, timeout:8000 });
+    await enviarConfirmacaoTesteGps(pos.coords.latitude, pos.coords.longitude, 'Confirmado! Sua localização foi enviada.');
+  }, ()=>{
+    // 1ª tentativa (alta precisão, rápida) falhou/demorou — tenta de novo mais tolerante, aceitando
+    // até uma posição em cache recente, antes de marcar como "sem GPS"
+    navigator.geolocation.getCurrentPosition(async (pos)=>{
+      await enviarConfirmacaoTesteGps(pos.coords.latitude, pos.coords.longitude, 'Confirmado! Sua localização foi enviada.');
+    }, async (err)=>{
+      const msg = (err && err.code===1) ? 'Confirmado (você precisa permitir o acesso à localização pro navegador).' : 'Confirmado (não deu pra pegar seu GPS agora, tenta de novo num lugar mais aberto).';
+      await enviarConfirmacaoTesteGps(null, null, msg, 'aviso');
+    }, { enableHighAccuracy:false, timeout:15000, maximumAge:120000 });
+  }, { enableHighAccuracy:true, timeout:8000, maximumAge:0 });
 }
 
 // ---------- config geral em tempo real (preço do plano etc. atualiza pra todo mundo na hora) ----------

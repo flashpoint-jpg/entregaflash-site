@@ -1,7 +1,7 @@
-// build: teste-gps-motoristas-online-20260904-v3
+// build: aumenta-volume-sons-20260904-v5
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260904-3
-const EF_VERSION = '20260904-3';
+// Versão: 20260904-5
+const EF_VERSION = '20260904-5';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
