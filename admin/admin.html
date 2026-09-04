@@ -6865,6 +6865,8 @@ function motoristaCardHTML(m, emRota){
           Incluir aviso de bônus na mensagem
         </label>
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.telefone.replace(/\D/g,'')}')">💬 Enviar boas-vindas no WhatsApp</button>
+        ${m.status==='aprovado' && !onlineAgora ? `<button class="btn btn-verde btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">🟢 CHAMAR PARA FICAR ONLINE</button>` : ''}
+
         ${['basico','liberado'].includes(m.status) ? (()=>{
           const criado=Number(m.criado_em||0);
           const dias=criado?Math.floor((Date.now()-criado)/(24*60*60*1000)):0;
@@ -7491,7 +7493,90 @@ function focarCartaoBuscaRapidaAdmin(tipo, telefoneDigitos){
 window.buscarClienteOuMotoristaPorTelefoneAdmin = buscarClienteOuMotoristaPorTelefoneAdmin;
 
 function normalizarCidadePainel(nome){
-  return String(nome||'').trim().replace(/\s+/g,' ');
+  const bruto = String(nome||'').trim().replace(/\s+/g,' ');
+  if(!bruto) return '';
+  const norm = normalizarTexto(bruto);
+  const canonica = CIDADES_PERMITIDAS.find(c=>normalizarTexto(c)===norm);
+  if(canonica) return canonica;
+  return bruto.toLocaleLowerCase('pt-BR').replace(/(^|[\s-])([a-záàâãéèêíïóôõöúç])/g,(m,sep,l)=>sep+l.toLocaleUpperCase('pt-BR'));
+}
+function motoristasDaRegiaoAdmin(regiao){
+  const lista=estado.admin.motoristas||[];
+  if(regiao==='sp') return lista.filter(m=>cidadeEhGrandeSP(normalizarCidadePainel(m.cidade)));
+  if(regiao==='mg') return lista.filter(m=>!cidadeEhGrandeSP(normalizarCidadePainel(m.cidade)));
+  return lista;
+}
+function metaOnlineCampanhaAdmin(regiao){
+  const chave='entregaflash_meta_online_'+(regiao||'todos');
+  const padrao=regiao==='mg'?3:5;
+  const salvo=Number(localStorage.getItem(chave));
+  return Number.isFinite(salvo)&&salvo>0?Math.round(salvo):padrao;
+}
+function salvarMetaOnlineCampanhaAdmin(regiao,valor){
+  const n=Math.max(1,Math.min(99,Math.round(Number(valor)||0)));
+  localStorage.setItem('entregaflash_meta_online_'+(regiao||'todos'),String(n));
+  render();
+}
+function abrirListaAprovadosOfflineAdmin(regiao){
+  estado.admin.filtroRegiaoMotoristas=regiao||'todos';
+  estado.admin.filtroStatusMotoristas='ativos';
+  estado.admin.aba='motoristas';
+  render();
+  setTimeout(()=>window.scrollTo({top:0,behavior:'smooth'}),50);
+}
+function abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.','erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'motorista';
+  const link=window.location.origin+'/?ir=login-motorista';
+  const cidadeTxt=normalizarCidadePainel(cidade)||'sua região';
+  const msg=`Olá, ${primeiro}! 🚀 Seu cadastro na Entrega Flash já está APROVADO ✅\n\nEstamos ativando as primeiras entregas em ${cidadeTxt}. Entre no aplicativo e fique ONLINE para receber solicitações.\n\n🟢 Abrir Entrega Flash e ficar online: ${link}\n\nOs motoristas ativos no lançamento entram primeiro na operação e continuam com os benefícios válidos da plataforma.`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
+function copiarTextoCampanhaClientesAdmin(regiao){
+  const regiaoNome=regiao==='sp'?'Grande São Paulo':regiao==='mg'?'Sul de Minas':'regiões atendidas';
+  const texto=`🚀 Entrega Flash chegou para facilitar suas entregas em ${regiaoNome}!\n\nPeça entregas rápidas pelo celular, acompanhe sua solicitação e conte com motoristas cadastrados na plataforma.\n\n📦 Peça sua entrega agora: ${window.location.origin}/?ir=cadastro-cliente`;
+  if(navigator.clipboard?.writeText){ navigator.clipboard.writeText(texto).then(()=>mostrarToast('Texto da campanha copiado.','sucesso')).catch(()=>window.prompt('Copie o texto da campanha:',texto)); }
+  else window.prompt('Copie o texto da campanha:',texto);
+}
+function abrirMetaAdsAdmin(){ window.open('https://www.facebook.com/adsmanager/','_blank'); }
+function centralLancamentoHTML(){
+  const regiao=estado.admin.filtroRegiaoMotoristas||'todos';
+  const ms=motoristasDaRegiaoAdmin(regiao);
+  const aprovados=ms.filter(m=>motoristaAprovado(m));
+  const online=aprovados.filter(m=>motoristaOnlineAgora(m));
+  const offline=aprovados.filter(m=>!motoristaOnlineAgora(m));
+  const meta=metaOnlineCampanhaAdmin(regiao);
+  const pct=meta?Math.min(100,Math.round(online.length/meta*100)):0;
+  let nivel='critico', cor='#ff6666', fundo='rgba(255,92,92,.10)', titulo='SEM COBERTURA', orientacao='Não abra campanha para clientes ainda.';
+  if(online.length>=meta){ nivel='pronto'; cor='var(--verde)'; fundo='rgba(127,174,114,.12)'; titulo='PRONTO PARA ANUNCIAR'; orientacao='Cobertura mínima atingida. Você já pode ativar a campanha de clientes nesta região.'; }
+  else if(online.length>=Math.max(1,Math.ceil(meta*0.6))){ nivel='preparando'; cor='var(--mango)'; fundo='rgba(255,201,60,.10)'; titulo='PREPARANDO OPERAÇÃO'; orientacao='Está perto da meta. Ative mais aprovados antes de aumentar a divulgação para clientes.'; }
+  const regiaoNome=regiao==='sp'?'Grande São Paulo':regiao==='mg'?'Sul de Minas':'Todas as regiões';
+  return `<div class="admin-cartao" style="margin-bottom:14px;border:2px solid ${cor};background:linear-gradient(145deg,${fundo},var(--painel))">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+      <div><b style="font-family:'Rajdhani';font-size:18px;color:var(--mango);text-transform:uppercase">🚀 Central de lançamento</b><div style="font-size:12.5px;color:var(--poeira);margin-top:2px">Ativação dos motoristas e liberação da campanha de clientes.</div></div>
+      <span class="selo" style="border:1px solid ${cor};color:${cor};background:${fundo}">${titulo}</span>
+    </div>
+    <div style="margin:12px 0 8px;font-weight:800">📍 ${regiaoNome}</div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
+      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px">${ms.length}</b><div style="font-size:11.5px;color:var(--poeira)">Cadastrados</div></div>
+      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px">${aprovados.length}</b><div style="font-size:11.5px;color:var(--poeira)">✅ Aprovados</div></div>
+      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px;color:var(--verde)">${online.length}</b><div style="font-size:11.5px;color:var(--poeira)">🟢 Online aprovados</div></div>
+      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px;color:var(--mango)">${offline.length}</b><div style="font-size:11.5px;color:var(--poeira)">📲 Aprovados offline</div></div>
+    </div>
+    <div style="margin-top:12px;padding:10px;border-radius:10px;background:rgba(0,0,0,.12)">
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px"><b>Meta de cobertura</b><b>${online.length}/${meta} online · ${pct}%</b></div>
+      <div style="height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${pct}%;background:${cor}"></div></div>
+      <div style="display:flex;gap:7px;align-items:center;margin-top:9px"><label style="margin:0;font-size:12px;flex:1">Mínimo de motoristas online para liberar campanha</label><input type="number" min="1" max="99" value="${meta}" onchange="salvarMetaOnlineCampanhaAdmin('${regiao}',this.value)" style="width:68px;padding:7px"></div>
+    </div>
+    <div style="margin-top:10px;padding:10px;border-radius:10px;background:${fundo};border:1px solid ${cor};font-size:12.5px"><b style="color:${cor}">${titulo}</b><div style="margin-top:3px">${orientacao}</div></div>
+    <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px">
+      <button class="btn btn-verde btn-pequeno" onclick="abrirListaAprovadosOfflineAdmin('${regiao}')">📲 CHAMAR ${offline.length} APROVADOS OFFLINE</button>
+      <button class="btn btn-secundario btn-pequeno" onclick="copiarTextoCampanhaClientesAdmin('${regiao}')">📋 COPIAR TEXTO DA CAMPANHA DE CLIENTES</button>
+      <button class="btn btn-pequeno" ${nivel==='pronto'?'':'disabled style="opacity:.45;cursor:not-allowed"'} onclick="abrirMetaAdsAdmin()" style="${nivel==='pronto'?'background:var(--mango);color:#171717;font-weight:900':''}">📣 ABRIR META ADS ${nivel==='pronto'?'':'— BLOQUEADO ATÉ ATINGIR A META'}</button>
+    </div>
+    <div style="font-size:11.5px;color:var(--poeira);margin-top:9px">O bloqueio do botão é operacional: você pode alterar a meta acima conforme sua estratégia. A campanha deve ser concentrada na mesma região em que os motoristas estiverem online.</div>
+  </div>`;
 }
 function resumoMotoristasPorCidadeHTML(){
   const motoristas = estado.admin.motoristas||[];
@@ -7575,6 +7660,7 @@ function adminAbaResumoHTML(){
       <button class="${a.filtroRegiaoMotoristas==='sp'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='sp';render()">📍 Grande São Paulo</button>
       <button class="${a.filtroRegiaoMotoristas==='mg'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='mg';render()">📍 Sul de Minas</button>
     </div>
+    ${centralLancamentoHTML()}
     ${resumoSituacaoMotoristasHTML()}
     ${resumoMotoristasPorCidadeHTML()}
     <div class="admin-cartao" style="background:linear-gradient(135deg, var(--painel-alt), var(--painel));border:2px solid var(--mango);margin-bottom:14px">
@@ -8914,7 +9000,7 @@ window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearCliente
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin; window.enviarReprovacaoWhatsAppMotorista=enviarReprovacaoWhatsAppMotorista;
+window.abrirWhatsAppAtivacaoMotorista=abrirWhatsAppAtivacaoMotorista; window.abrirListaAprovadosOfflineAdmin=abrirListaAprovadosOfflineAdmin; window.salvarMetaOnlineCampanhaAdmin=salvarMetaOnlineCampanhaAdmin; window.copiarTextoCampanhaClientesAdmin=copiarTextoCampanhaClientesAdmin; window.abrirMetaAdsAdmin=abrirMetaAdsAdmin; window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin; window.enviarReprovacaoWhatsAppMotorista=enviarReprovacaoWhatsAppMotorista;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
