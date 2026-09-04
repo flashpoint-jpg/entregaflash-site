@@ -1,6 +1,6 @@
 // build: sp-cep-controles-20260830
-const CACHE='entrega-flash-admin-v12-20260901-app-status';
-const APP_SHELL=['/admin/admin.html?v=20260901-app-status-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
+const CACHE='entrega-flash-admin-v13-20260904-central-lancamento';
+const APP_SHELL=['/admin/admin.html?v=20260904-central-lancamento-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
 self.addEventListener('install',event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).catch(()=>{}));

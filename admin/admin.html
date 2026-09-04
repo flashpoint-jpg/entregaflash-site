@@ -5855,7 +5855,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL ULTRA • WHATSAPP 5 DIAS • SEM PISCAR • 30/08</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL ULTRA • CENTRAL LANÇAMENTO • VERSÃO 04/09</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -8281,6 +8281,8 @@ function adminAbaMotoristasHTML(){
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
     ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
   return `
+    <div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;background:rgba(255,151,16,.10);border:1px solid rgba(255,151,16,.35);font-size:12px;font-weight:800;color:var(--mango)">🚀 CENTRAL DE LANÇAMENTO ATIVA • VERSÃO 04/09</div>
+    ${centralLancamentoHTML()}
     ${centralRecuperacaoMotoristasHTML(baseMotoristas)}
     ${funilCadastroMotoristasHTML(baseMotoristas)}
     <div class="admin-filtros-grade" style="margin-bottom:10px">
