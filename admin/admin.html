@@ -6838,7 +6838,7 @@ function motoristaCardHTML(m, emRota){
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${(estado.admin.motoristaEditando===m.id || estado.admin.motoristaAberto===m.id)?'open':''} ontoggle="registrarAberturaCardAdmin('motorista','${m.id}',this.open)" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
+    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${(estado.admin.motoristaEditando===m.id || estado.admin.motoristaAberto===m.id)?'open':''} ontoggle="registrarAberturaCardAdmin('motorista','${m.id}',this.open)" onmousedown="if(!event.target.closest('summary')) estado.admin.motoristaAberto='${m.id}';" ontouchstart="if(!event.target.closest('summary')) estado.admin.motoristaAberto='${m.id}';" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">🛵</div>`}
@@ -7518,15 +7518,26 @@ function salvarMetaOnlineCampanhaAdmin(regiao,valor){
   render();
 }
 function abrirListaAprovadosOfflineAdmin(regiao){
-  estado.admin.filtroRegiaoMotoristas=regiao||'todos';
-  estado.admin.filtroStatusMotoristas='ativos';
-  estado.admin.aba='motoristas';
-  render();
-  setTimeout(()=>{
-    const alvo=document.getElementById('lista-motoristas-admin');
-    if(alvo) alvo.scrollIntoView({behavior:'smooth',block:'start'});
-    mostrarToast('Lista de aprovados offline aberta. Toque em “CHAMAR PARA FICAR ONLINE” para abrir o WhatsApp.','sucesso');
-  },120);
+  try{
+    // Reseta filtro de frota: se ficou travado numa categoria (ex: "motos") de uma navegação
+    // anterior, a lista de aprovados offline aparecia vazia mesmo o contador mostrando aprovados.
+    estado.admin.filtroVeiculoMotoristas='todos';
+    estado.admin.filtroRegiaoMotoristas=regiao||'todos';
+    estado.admin.filtroStatusMotoristas='ativos';
+    estado.admin.aba='motoristas';
+    salvarLocal('ef_admin_aba','motoristas');
+    render();
+    setTimeout(()=>{
+      try{
+        const alvo=document.getElementById('lista-motoristas-admin');
+        if(alvo) alvo.scrollIntoView({behavior:'smooth',block:'start'});
+      }catch(e){ console.error('Falha ao rolar até a lista de motoristas:', e); }
+      mostrarToast('Lista de aprovados offline aberta. Toque em “CHAMAR PARA FICAR ONLINE” para abrir o WhatsApp.','sucesso');
+    },150);
+  }catch(e){
+    console.error('Falha ao abrir lista de aprovados offline:', e);
+    mostrarToast('Não consegui abrir a lista agora. Tenta de novo.','erro');
+  }
 }
 function abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade){
   const numero=normalizarWhatsAppBR(telefone);
@@ -8061,7 +8072,7 @@ function clienteCardAdminHTML(c){
   const idc = String(c.telefone).replace(/\D/g,'');
   const validado = !c.bloqueado;
   return `
-    <details class="admin-resumo-card" data-cliente-telefone="${idc}" ${(estado.admin.clienteEditando===c.telefone || estado.admin.clienteAberto===c.telefone)?'open':''} ontoggle="registrarAberturaCardAdmin('cliente','${c.telefone}',this.open)" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
+    <details class="admin-resumo-card" data-cliente-telefone="${idc}" ${(estado.admin.clienteEditando===c.telefone || estado.admin.clienteAberto===c.telefone)?'open':''} ontoggle="registrarAberturaCardAdmin('cliente','${c.telefone}',this.open)" onmousedown="if(!event.target.closest('summary')) estado.admin.clienteAberto='${c.telefone}';" ontouchstart="if(!event.target.closest('summary')) estado.admin.clienteAberto='${c.telefone}';" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">👤</div>
