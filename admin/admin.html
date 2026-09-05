@@ -7246,8 +7246,8 @@ function centroOperacoesHTML(){
   const pedidos=a.todosPedidos||[], motors=a.motoristas||[];
   const buscando=pedidos.filter(p=>p.status==='buscando');
   const andamento=pedidos.filter(p=>!['buscando','entregue','cancelado'].includes(p.status));
-  const online=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)>=agora-120000);
-  const gpsParado=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)<agora-120000);
+  const online=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)>=agora-PRESENCA_MOTORISTA_MS);
+  const gpsParado=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)<agora-PRESENCA_MOTORISTA_MS);
   const demorando=buscando.filter(p=>agora-Number(p.criado_em||p.criadoEm||0)>240000);
   const cards=[['📍','Motoristas online',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length],['📡','Motoristas sem sinal',gpsParado.length]];
   const alertas=[];
