@@ -2445,9 +2445,14 @@ async function buscarNominatim(texto, limite){
   // outra) — se a cidade certa fosse a última da lista, ou se o Nominatim demorasse, a busca
   // inteira travava por vários segundos. Agora todas saem em paralelo, com prazo máximo.
   const temCidadeOuUF = /\b(brasil|mg|sp|são paulo|sao paulo|muzambinho|campinas|limeira|suzano)\b/i.test(texto);
+  // CORREÇÃO: os "chutes" de cidade só cobriam Campinas/Limeira/Suzano/São Paulo/Muzambinho —
+  // uma rua em qualquer outra cidade atendida (Santo André, Diadema, Guarulhos, Poços de
+  // Caldas etc.) nunca batia com nenhum chute e a busca por nome falhava, mesmo a cidade
+  // sendo coberta. Agora sempre tenta também o texto puro (sem cidade nenhuma) — com o
+  // viewbox já restringindo à região atendida, isso cobre as cidades fora da lista de chutes.
   const consultas = temCidadeOuUF
     ? [texto]
-    : [texto+', Campinas, SP, Brasil', texto+', Limeira, SP, Brasil', texto+', Suzano, SP, Brasil', texto+', São Paulo, SP, Brasil', texto+', Muzambinho, MG, Brasil', texto+', Brasil'];
+    : [texto, texto+', Campinas, SP, Brasil', texto+', Limeira, SP, Brasil', texto+', Suzano, SP, Brasil', texto+', São Paulo, SP, Brasil', texto+', Muzambinho, MG, Brasil', texto+', Brasil'];
   const viewbox = `${REGIAO.minLon},${REGIAO.maxLat},${REGIAO.maxLon},${REGIAO.minLat}`;
   const saida=[];
   const resultados = await Promise.allSettled(consultas.map(async q=>{
@@ -2536,7 +2541,7 @@ async function buscarSugestoes(campo){
     const achados = await buscarEnderecos(texto, 6);
     // o campo pode ter mudado enquanto a busca corria - confere se ainda é o texto atual
     if(document.getElementById('c-'+campo).value.trim() !== texto) return;
-    if(!achados || achados.length===0){ cont.innerHTML = `<div class="sugestao-vazia">Não achei sugestões prontas pra "${texto}". Pode continuar digitando o endereço completo normalmente, ou:<button type="button" class="btn-gps-sugestao" onclick="usarLocalizacaoAtualComoCampo('${campo}')"> Usar localização atual (GPS)</button></div>`; return; }
+    if(!achados || achados.length===0){ cont.innerHTML = `<div class="sugestao-vazia">Não achei sugestões prontas pra "${texto}". Se souber o CEP, digitar só ele costuma achar até ruas que o nome não encontra. Ou pode continuar digitando o endereço completo normalmente, ou:<button type="button" class="btn-gps-sugestao" onclick="usarLocalizacaoAtualComoCampo('${campo}')"> Usar localização atual (GPS)</button></div>`; return; }
     estado.sugestoesTemp[campo] = achados;
     cont.innerHTML = estado.sugestoesTemp[campo].map((s,idx)=>
       `<div class="sugestao-item" onclick="selecionarSugestao('${campo}',${idx})"> ${s.nome}</div>`
