@@ -2326,7 +2326,7 @@ async function restaurarSessao(){
   estado.sessaoCarregando = false;
   if(estado.cliente.logado || estado.motorista.ativo) estado.telaBoasVindas = false;
 }
-function debounce(chave, fn, delay=400){
+function debounce(chave, fn, delay=650){
   clearTimeout(temporizadoresDebounce[chave]);
   temporizadoresDebounce[chave] = setTimeout(fn, delay);
 }
@@ -2350,33 +2350,29 @@ function dentroDaRegiao(lat,lon){
 }
 // Busca no Photon (bom para endereços incompletos/digitação parcial, tipo autocomplete de verdade)
 async function buscarPhoton(texto, limite){
-  // Vários centros impedem que ruas com o mesmo nome sejam puxadas apenas da capital.
-  // CORREÇÃO: antes cada centro era consultado um de cada vez (await dentro do for), então
-  // 5 buscas sequenciais podiam levar 5x mais tempo que o necessário, ou travar tudo se um
-  // centro demorasse. Agora todas saem juntas (Promise.all) e com prazo máximo por chamada.
-  const centros=[
-    {lat:-23.55052,lon:-46.63331}, // São Paulo
-    {lat:-23.5448,lon:-46.3112},  // Suzano
-    {lat:-22.9056,lon:-47.0608},  // Campinas
-    {lat:-22.5646,lon:-47.4017},  // Limeira
-    {lat:-21.3757,lon:-46.5256}   // Sul de Minas
-  ],todos=[];
-  const resultados = await Promise.allSettled(centros.map(async c=>{
-    const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&lat=${c.lat}&lon=${c.lon}&zoom=12&limit=${limite}&lang=pt`;
-    const resp=await fetchComPrazo(url, null, 4000);
+  // Photon como fallback/autocomplete. Uma consulta por vez evita bloqueio por excesso
+  // de chamadas e continua funcionando para rua, bairro, comércio e endereço parcial.
+  try{
+    const url=`https://photon.komoot.io/api/?q=${encodeURIComponent(texto)}&limit=${Math.max(10,limite*2)}&lang=pt`;
+    const resp=await fetchComPrazo(url, {headers:{'Accept':'application/json'}}, 5500);
     if(!resp.ok) return [];
-    const dados=await resp.json();
-    return (dados&&dados.features)||[];
-  }));
-  for(const r of resultados){
-    if(r.status!=='fulfilled') continue;
-    for(const f of r.value){
-      const pr=f.properties||{},coords=f.geometry&&f.geometry.coordinates;if(!coords)continue;
-      const lon=coords[0],lat=coords[1],cidade=pr.city||pr.town||pr.village||pr.county||'',partes=[pr.name,pr.street,pr.housenumber,pr.district,cidade,pr.state,pr.postcode].filter(Boolean),chave=Number(lat).toFixed(6)+','+Number(lon).toFixed(6);
-      if(!todos.some(x=>x.chave===chave))todos.push({lat,lon,cidade,nome:partes.join(', '),chave});
+    const dados=await resp.json(), todos=[];
+    for(const f of ((dados&&dados.features)||[])){
+      const pr=f.properties||{}, coords=f.geometry&&f.geometry.coordinates;
+      if(!coords) continue;
+      const lon=Number(coords[0]), lat=Number(coords[1]);
+      if(!Number.isFinite(lat)||!Number.isFinite(lon)||!dentroDaRegiao(lat,lon)) continue;
+      const cidade=pr.city||pr.town||pr.village||pr.county||'';
+      const partes=[pr.name,pr.street,pr.housenumber,pr.district,cidade,pr.state,pr.postcode].filter(Boolean);
+      const nome=partes.join(', ');
+      const chave=lat.toFixed(6)+','+lon.toFixed(6);
+      if(!todos.some(x=>x.chave===chave)) todos.push({lat,lon,cidade,nome,chave});
     }
+    return todos.map(({chave,...r})=>r);
+  }catch(e){
+    console.warn('Photon indisponível:', e);
+    return [];
   }
-  return todos.map(({chave,...r})=>r);
 }
 async function resolverCEP(texto){
   const digitos=(texto||'').replace(/\D/g,'');
@@ -2450,68 +2446,75 @@ function textoJaTemCidadeAtendida(texto){
   return CIDADES_PERMITIDAS_NORM.some(c=>norm.includes(c));
 }
 async function buscarNominatim(texto, limite){
-  // Se o usuário digitar só rua+número, tenta as praças conhecidas explicitamente.
-  // CORREÇÃO: antes cada tentativa de cidade era uma chamada sequencial (até 6 uma atrás da
-  // outra) — se a cidade certa fosse a última da lista, ou se o Nominatim demorasse, a busca
-  // inteira travava por vários segundos. Agora todas saem em paralelo, com prazo máximo.
-  const temCidadeOuUF = textoJaTemCidadeAtendida(texto);
-  // Continua tentando também alguns chutes de cidade quando o texto não menciona nenhuma —
-  // e sempre inclui o texto puro (sem chute nenhum), com o viewbox restringindo à região.
-  const consultas = temCidadeOuUF
-    ? [texto]
-    : [texto, texto+', Campinas, SP, Brasil', texto+', Limeira, SP, Brasil', texto+', Suzano, SP, Brasil', texto+', São Paulo, SP, Brasil', texto+', Muzambinho, MG, Brasil', texto+', Brasil'];
+  // Uma única consulta por digitação. O código antigo fazia várias chamadas paralelas
+  // ao Nominatim, o que podia acionar limite do serviço e fazer TODAS as buscas sumirem.
   const viewbox = `${REGIAO.minLon},${REGIAO.maxLat},${REGIAO.maxLon},${REGIAO.minLat}`;
-  const saida=[];
-  const resultados = await Promise.allSettled(consultas.map(async q=>{
-    const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(q)}&viewbox=${viewbox}&bounded=1&countrycodes=br&limit=${limite}`;
-    const resp = await fetchComPrazo(url, {headers:{'Accept-Language':'pt-BR'}}, 4000);
+  const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(texto)}&viewbox=${viewbox}&bounded=1&countrycodes=br&limit=${Math.max(8,limite*2)}&accept-language=pt-BR`;
+  try{
+    const resp = await fetchComPrazo(url, {headers:{'Accept':'application/json','Accept-Language':'pt-BR'}}, 5500);
     if(!resp.ok) return [];
-    return (await resp.json())||[];
-  }));
-  for(const r of resultados){
-    if(r.status!=='fulfilled') continue;
-    for(const item of r.value){
+    const dados = (await resp.json()) || [];
+    const saida=[];
+    for(const item of dados){
       const lat=parseFloat(item.lat), lon=parseFloat(item.lon);
-      const a = item.address||{};
-      const cidade = a.city||a.town||a.village||a.municipality||a.city_district||a.county||'';
-      const chave = lat.toFixed(6)+','+lon.toFixed(6);
-      if(!saida.some(x=>x.chave===chave)) saida.push({ lat, lon, cidade, nome:item.display_name.split(',').slice(0,5).join(',').trim(), chave });
+      if(!Number.isFinite(lat)||!Number.isFinite(lon)||!dentroDaRegiao(lat,lon)) continue;
+      const a=item.address||{};
+      const cidade=a.city||a.town||a.village||a.municipality||a.city_district||a.county||'';
+      const nome=(item.display_name||'').split(',').slice(0,7).join(',').trim();
+      saida.push({lat,lon,cidade,nome});
     }
+    return saida;
+  }catch(e){
+    console.warn('Nominatim indisponível:', e);
+    return [];
   }
-  return saida.map(({chave,...r})=>r);
 }
 // Junta os dois provedores e mantém só resultados nas cidades atendidas.
 // CORREÇÃO: antes o Nominatim rodava, esperava terminar, só depois o Photon começava —
 // dobrava o tempo de espera à toa, já que um não depende do outro. Agora saem juntos.
 async function buscarEnderecos(texto, limite){
-  texto=(texto||'').trim();if(!texto)return [];const norm=t=>normalizarTexto(t);
-  // CORREÇÃO: antes só reconhecia CEP quando o campo tinha SÓ o CEP e mais nada. Quando o
-  // campo já vinha com o endereço completo (rua, bairro, cidade, UF, CEP, Brasil — o que
-  // acontece sempre que uma edição invalida a coordenada salva e o app tenta achar de novo
-  // sozinho ao calcular a corrida), o CEP embutido no meio do texto era ignorado, e a busca
-  // caía só na tentativa por nome de rua — que pode falhar pra ruas que o OpenStreetMap não
-  // indexa bem, mesmo o CEP sendo perfeitamente válido e conhecido. Agora extrai o CEP de
-  // qualquer lugar do texto (não só quando é só ele) e tenta por ele primeiro.
+  texto=(texto||'').trim();
+  if(!texto) return [];
+  const norm=t=>normalizarTexto(t);
+
   const cepEmbutido = texto.match(/(?<!\d)(\d{5})-?(\d{3})(?!\d)/);
   const soCep = /^\s*\d{5}-?\d{3}\s*$/.test(texto);
   if(soCep || cepEmbutido){
     const cepTexto = soCep ? texto : (cepEmbutido[1]+cepEmbutido[2]);
-    const cep=await resolverCEP(cepTexto);
-    if(cep){
-      if(cep.fora)return [];
-      if(Number.isFinite(cep.lat)&&Number.isFinite(cep.lon)&&dentroDaRegiao(cep.lat,cep.lon))return [{lat:cep.lat,lon:cep.lon,cidade:cep.cidade,nome:cep.endereco}];
-      try{let via=await buscarNominatim(cep.endereco,limite*3);via=via.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(via.length)return via.slice(0,limite);}catch(e){}
-      try{let ph=await buscarPhoton(cep.endereco,limite*3);ph=ph.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(ph.length)return ph.slice(0,limite);}catch(e){}
+    try{
+      const cep=await resolverCEP(cepTexto);
+      if(cep && !cep.fora){
+        if(Number.isFinite(cep.lat)&&Number.isFinite(cep.lon)&&dentroDaRegiao(cep.lat,cep.lon))
+          return [{lat:cep.lat,lon:cep.lon,cidade:cep.cidade,nome:cep.endereco}];
+        const porCep = await buscarNominatim(cep.endereco, limite);
+        if(porCep.length) return porCep.slice(0,limite);
+      }
+    }catch(e){ console.warn('Falha ao resolver CEP:',e); }
+  }
+
+  const resultados = await Promise.allSettled([
+    buscarNominatim(texto, limite),
+    buscarPhoton(texto, limite)
+  ]);
+
+  const todos=[];
+  for(const r of resultados){
+    if(r.status!=='fulfilled') continue;
+    for(const item of (r.value||[])){
+      if(!item || !dentroDaRegiao(Number(item.lat),Number(item.lon))) continue;
+      if(!todos.some(x=>Math.abs(x.lat-item.lat)<.00001 && Math.abs(x.lon-item.lon)<.00001)) todos.push(item);
     }
   }
-  const [viaResult, phResult] = await Promise.allSettled([buscarNominatim(texto,limite*3), buscarPhoton(texto,limite*3)]);
-  let permitidos=[];
-  if(viaResult.status==='fulfilled'){ permitidos = viaResult.value.filter(r=>dentroDaRegiao(r.lat,r.lon)).filter(r=>r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade))); }
-  if(phResult.status==='fulfilled'){
-    const ph = phResult.value.filter(r=>dentroDaRegiao(r.lat,r.lon)).filter(r=>r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));
-    for(const r of ph) if(!permitidos.some(x=>Math.abs(x.lat-r.lat)<.00001&&Math.abs(x.lon-r.lon)<.00001)) permitidos.push(r);
-  }
-  return permitidos.slice(0,limite);
+
+  // Prioriza cidades oficialmente atendidas, mas não apaga todos os resultados quando
+  // o provedor devolve município/county em formato diferente.
+  const permitidos = todos.filter(r=>{
+    const cidadeOk = r.cidade && CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade));
+    const nomeNorm = norm(r.nome||'');
+    const nomeTemCidade = CIDADES_PERMITIDAS_NORM.some(c=>nomeNorm.includes(c));
+    return cidadeOk || nomeTemCidade;
+  });
+  return (permitidos.length ? permitidos : todos).slice(0,limite);
 }
 async function geocodificar(endereco){
   try{
