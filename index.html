@@ -1897,7 +1897,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaMotoristas:'', buscaClientes:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null,
+  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pushEventos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaMotoristas:'', buscaClientes:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' },
@@ -2117,14 +2117,35 @@ function mostrarLembreteDocumentosDiario(telefone,status){
 }
 // ---------- push real (via servidor), funciona mesmo com o app fechado ----------
 // papel: 'cliente' | 'motorista' | 'admin'. referencia omitida/null = todos do papel.
-async function enviarPushServidor(papel, referencia, title, body, url){
+async function enviarPushServidor(papel, referencia, title, body, url, tipo){
   try{
-    await fetch(`${FUNCOES_URL}/enviar-push`, {
+    const resp = await fetch(`${FUNCOES_URL}/enviar-push`, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+SUPABASE_KEY, 'apikey':SUPABASE_KEY },
-      body: JSON.stringify({ papel, referencia: referencia||undefined, title, body: body||'', url: url||'/entregaflash.html' })
+      body: JSON.stringify({ papel, referencia: referencia||undefined, title, body: body||'', url: url||'/?ir=login-motorista', tipo: tipo||'geral' })
     });
-  }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); }
+    const data = await resp.json().catch(()=>({}));
+    if(!resp.ok) throw new Error(data.erro||('HTTP '+resp.status));
+    return data;
+  }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); return {erro:String(e)}; }
+}
+async function registrarEventoPushAtivacao(evento){
+  let eventId='';
+  try{
+    const params=new URLSearchParams(window.location.search);
+    eventId=params.get('ef_push_evento')||localStorage.getItem('ef_push_evento_ativacao')||'';
+    if(params.get('ef_push_evento')) salvarLocal('ef_push_evento_ativacao',eventId);
+  }catch(e){}
+  if(!eventId) return false;
+  try{
+    const resp=await fetch(`${FUNCOES_URL}/enviar-push`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({action:'event',event_id:eventId,evento:evento==='online'?'online':'aberto'})
+    });
+    if(resp.ok && evento==='online') removerLocal('ef_push_evento_ativacao');
+    return resp.ok;
+  }catch(e){ console.warn('Falha ao registrar evento da push',e); return false; }
 }
 async function notificar(titulo, corpo, tag){
   if(typeof Notification==='undefined' || Notification.permission!=='granted') return;
@@ -7513,6 +7534,7 @@ async function alternarDisponibilidade(){
   m.disponivel = novoValor;
   salvarLocal('ef_motorista_disponivel', m.disponivel ? 'true' : 'false');
   if(m.disponivel){
+    registrarEventoPushAtivacao('online');
     iniciarRastreioMotorista();
     // redundância intencional: confirma imediatamente a coordenada no banco,
     // além do watchPosition que continuará atualizando enquanto estiver online.
@@ -8749,6 +8771,7 @@ function motoristaCardHTML(m, emRota){
       <div class="am-linha"><span>CPF</span><b>${m.cpf}</b></div>
       <div class="am-linha"><span>Telefone</span><b>${m.telefone}</b></div>
       <div style="margin:8px 0;padding:10px;border-radius:10px;background:rgba(111,168,220,.08);border:1px solid rgba(111,168,220,.35);font-size:12.5px"><b>📱 Status do aplicativo</b><div style="margin-top:6px">${appStatus}</div><div style="margin-top:3px">${pushStatus}</div><div style="margin-top:3px;color:var(--poeira)">Último acesso: ${ultimoApp}</div></div>
+      ${m.status==='aprovado' && !onlineAgora ? `<div style="display:grid;grid-template-columns:${(app?.notificacoes==='granted'&&app?.push_ativo)?'1fr 1fr':'1fr'};gap:7px;margin:8px 0">${(app?.notificacoes==='granted'&&app?.push_ativo)?`<button class="btn btn-primario btn-pequeno" style="width:100%;font-weight:900" onclick="enviarPushAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">🔔 ENVIAR PUSH</button>`:''}<button class="btn btn-verde btn-pequeno" style="width:100%;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">💬 WHATSAPP</button></div>${statusPushAtivacaoHTML(m.telefone)}` : ''}
       <div class="am-linha"><span>Cidade</span><b>${m.cidade}</b></div>
       <div class="am-linha"><span>Veículo</span><b>${VEICULOS[m.veiculo_tipo]?.emoji||''} ${m.veiculo_marca||''} ${m.veiculo_cor||''}${m.veiculo_placa?' · '+m.veiculo_placa:''}</b></div>
       <div class="am-linha"><span>Chave PIX</span><b style="${m.chave_pix?'':'color:var(--chama)'}">${m.chave_pix||'⚠️ NÃO INFORMADA'}</b></div>
@@ -9541,6 +9564,48 @@ async function ajustarSaldoMotoristaAdmin(telefone){
   if(estado.motorista.telefone===telefone) estado.motorista.saldo = Number(novoSaldo);
   await carregarMotoristasAdmin();
 }
+function abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.','erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'motorista';
+  const link=window.location.origin+'/?ir=login-motorista';
+  const cidadeTxt=(cidade||'sua região').trim()||'sua região';
+  const msg=`Olá, ${primeiro}! 🚀 Seu cadastro na Entrega Flash já está APROVADO ✅\n\nEstamos ativando as primeiras entregas em ${cidadeTxt}. Entre no aplicativo e fique ONLINE para receber solicitações.\n\n🟢 Abrir Entrega Flash e ficar online: ${link}`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
+async function enviarPushAtivacaoMotorista(telefone,nome,cidade){
+  const ref=String(telefone||'').replace(/\D/g,'');
+  if(!ref){ mostrarToast('Telefone inválido para enviar push.','erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'motorista';
+  const cidadeTxt=(cidade||'sua região').trim()||'sua região';
+  const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===ref);
+  if(!(app?.notificacoes==='granted' && app?.push_ativo)){
+    mostrarToast('Esse motorista ainda não ativou notificações. Use o WhatsApp.','aviso');
+    abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade); return;
+  }
+  const r=await enviarPushServidor('motorista',ref,'🚚 Entrega Flash · fique online',`${primeiro}, há oportunidade de entregas em ${cidadeTxt}. Abra o app e fique ONLINE para receber chamadas.`,'/?ir=login-motorista','ativacao_online');
+  if(r?.erro || Number(r?.enviados||0)<1){ mostrarToast('Push não entregue. Abrindo WhatsApp.','aviso'); abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade); return; }
+  mostrarToast(`🔔 Push enviada para ${primeiro}.`,'sucesso');
+  await carregarPushEventosAdmin();
+}
+async function carregarPushEventosAdmin(){
+  if(!estado.admin?.senhaDigitada) return;
+  try{ const {data,error}=await sb.rpc('entrega_admin_push_status',{p_senha:estado.admin.senhaDigitada,p_referencia:null}); if(!error){ estado.admin.pushEventos=data||[]; render(); } }catch(e){ console.warn('Status de push indisponível',e); }
+}
+function ultimoPushAtivacaoMotorista(telefone){
+  const ref=String(telefone||'').replace(/\D/g,'');
+  return (estado.admin.pushEventos||[]).find(e=>String(e.referencia||'').replace(/\D/g,'')===ref && e.tipo==='ativacao_online')||null;
+}
+function statusPushAtivacaoHTML(telefone){
+  const e=ultimoPushAtivacaoMotorista(telefone); if(!e) return '';
+  let txt='🔔 Push enviada',cor='var(--mango)';
+  if(Number(e.enviados||0)<1){txt='⚠️ Push não entregue ao serviço';cor='#ff7474';}
+  if(e.aberto_em){txt='👁️ Abriu a notificação';cor='#63b3ff';}
+  if(e.online_em){txt='🟢 Abriu e ficou online';cor='var(--verde)';}
+  const quando=e.criado_em?new Date(e.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+  return `<div style="margin-top:7px;font-size:11.5px;font-weight:800;color:${cor}">${txt}${quando?' · '+quando:''}</div>`;
+}
+
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
   const motorista=(estado.admin.motoristas||[]).find(m=>String(m.telefone||'').replace(/\D/g,'')===String(telefone||'').replace(/\D/g,''));
   // Cadastro incompleto: envia a relação exata do que falta e o endereço direto.
@@ -9778,6 +9843,7 @@ async function carregarMotoristasAdmin(){
   try{
     const {data:apps,error:erroApps}=await sb.rpc('entrega_admin_status_apps',{p_senha:estado.admin.senhaDigitada});
     if(!erroApps) estado.admin.appDispositivos=apps||[];
+    try{ const {data:pe,error:ee}=await sb.rpc('entrega_admin_push_status',{p_senha:estado.admin.senhaDigitada,p_referencia:null}); if(!ee) estado.admin.pushEventos=pe||[]; }catch(e){}
   }catch(e){ console.warn('Status dos aplicativos indisponível',e); }
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
@@ -9987,6 +10053,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   render();
   carregarConfigGeral().then(render);
   registrarServiceWorker();
+  registrarEventoPushAtivacao('aberto');
   assinarPedidosRealtime();
   assinarMotoristasOnlineRealtime();
   assinarChatGlobalRealtime();
