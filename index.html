@@ -2239,6 +2239,11 @@ async function restaurarSessao(){
         if(estado.motorista.disponivel && estado.motorista.status==='aprovado') iniciarRastreioMotorista();
         atualizarDisponibilidadeDB(estado.motorista.telefone, estado.motorista.disponivel);
         assinarMotoristaLogadoRealtime(estado.motorista.telefone);
+        // Motorista aprovado entra online automaticamente ao abrir o app/site,
+        // exceto se ele próprio escolheu ficar offline manualmente.
+        if(estado.motorista.status==='aprovado' && !estado.motorista.disponivel){
+          setTimeout(()=>ativarOnlineAutomaticamenteMotorista(), 700);
+        }
       } else { removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); }
     }
 
@@ -7522,6 +7527,33 @@ function iniciarHeartbeatMotoristaPresenca(){
 }
 iniciarHeartbeatMotoristaPresenca();
 
+// Ativação automática real: só considera ONLINE quando o app está aberto,
+// o cadastro está aprovado e conseguimos a localização operacional. Se o
+// motorista apertar OFFLINE, respeitamos a escolha dele nas próximas aberturas.
+let ativacaoOnlineAutomaticaEmAndamento=false;
+async function ativarOnlineAutomaticamenteMotorista(){
+  const m=estado.motorista;
+  if(ativacaoOnlineAutomaticaEmAndamento || !m?.ativo || !m.telefone || m.status!=='aprovado' || m.disponivel) return false;
+  if(localStorage.getItem('ef_motorista_offline_manual')==='true') return false;
+  ativacaoOnlineAutomaticaEmAndamento=true;
+  try{
+    if(!(await exigirLocalizacaoOperacional('motorista'))) return false;
+    if(!ultimaPosicaoMotorista) return false;
+    const ok=await atualizarDisponibilidadeDB(m.telefone,true);
+    if(!ok) return false;
+    m.disponivel=true;
+    salvarLocal('ef_motorista_disponivel','true');
+    iniciarRastreioMotorista();
+    await enviarPosicaoMotorista();
+    heartbeatMotoristaPresenca();
+    render();
+    mostrarToast('Você está ONLINE e disponível para receber entregas.', 'sucesso');
+    if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),900);
+    return true;
+  }catch(e){ console.warn('ativação online automática',e); return false; }
+  finally{ ativacaoOnlineAutomaticaEmAndamento=false; }
+}
+
 async function alternarDisponibilidade(){
   const m = estado.motorista;
   const temAtivos = estado.pedidos.some(p=>!['buscando','entregue','cancelado'].includes(p.status) && p.motoristaTelefone===m.telefone);
@@ -7542,6 +7574,8 @@ async function alternarDisponibilidade(){
   if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
   m.disponivel = novoValor;
   salvarLocal('ef_motorista_disponivel', m.disponivel ? 'true' : 'false');
+  if(m.disponivel) removerLocal('ef_motorista_offline_manual');
+  else salvarLocal('ef_motorista_offline_manual','true');
   if(m.disponivel){
     registrarEventoPushAtivacao('online');
     iniciarRastreioMotorista();
@@ -8054,6 +8088,7 @@ async function entrarNoPainelMotorista(data){
   if(estado.notificacoesStatus==='granted') inscreverPushReal();
   registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted');
   mostrarLembreteDocumentosDiario(data.telefone,data.status);
+  if(data.status==='aprovado') setTimeout(()=>ativarOnlineAutomaticamenteMotorista(),700);
 }
 
 async function loginFacialMotorista(){
