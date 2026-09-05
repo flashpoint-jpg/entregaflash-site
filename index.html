@@ -1878,7 +1878,7 @@ let estado = {
   contatoRapido:{ aberto:false, nome:'', telefone:'', contexto:'cliente', erro:'', enviando:false },
   sugestoesTemp:{ origem:[], destino:[] },
   alertaMotorista:null, avisoGeralExibido:null, fotoAmpliada:null, statusAnterior:{}, statusAnteriorMotorista:{}, statusAnteriorEntregaMotorista:{},
-  podeInstalar:false, appInstalado:false, comoInstalarAberto:false, editarDistanciaAberto:false, extrasAberto:false, popupInstalarAberto:false,
+  podeInstalar:false, appInstalado:false, comoInstalarAberto:false, editarDistanciaAberto:false, extrasAberto:false, popupInstalarAberto:false, avisoNavegadorEmbutidoAberto:false,
   onboardingAberto:false, onboardingSlide:0,
   notificacoesStatus: (typeof Notification!=='undefined') ? Notification.permission : 'unsupported',
 
@@ -1940,6 +1940,14 @@ function instalarApp(){
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream;
   estado.mostrarDicaIOS = isIOS && !standalone;
 })();
+// Navegador embutido do WhatsApp/Instagram/Facebook/Messenger: reporta "Android" no user agent
+// (então cai no fluxo normal de instalação Android) mas NUNCA dispara o evento nativo de instalar
+// e não tem o menu "Instalar app" do Chrome — por isso o botão de instalar parecia "sem reação"
+// pra quem abre o link direto de uma conversa do WhatsApp/Instagram.
+function ehNavegadorEmbutido(){
+  const ua = navigator.userAgent || '';
+  return /; ?wv\)/i.test(ua) || /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua) || /\bWhatsApp\b/i.test(ua) || /\bLine\//i.test(ua);
+}
 function abrirPopupInstalar(){ estado.popupInstalarAberto=true; render(); }
 function fecharPopupInstalar(){
   estado.popupInstalarAberto=false;
@@ -1949,6 +1957,7 @@ function fecharPopupInstalar(){
 async function instalarPeloPopup(){
   fecharPopupInstalar();
   if(estado.podeInstalar){ instalarApp(); return; }
+  if(ehNavegadorEmbutido()){ abrirAvisoNavegadorEmbutido(); return; }
   const isAndroid = /Android/i.test(navigator.userAgent || '');
   if(isAndroid){
     mostrarToast('Preparando instalação...', 'sucesso');
@@ -1959,10 +1968,26 @@ async function instalarPeloPopup(){
     abrirComoInstalar();
   }
 }
+function abrirAvisoNavegadorEmbutido(){ estado.avisoNavegadorEmbutidoAberto=true; render(); }
+function fecharAvisoNavegadorEmbutido(){ estado.avisoNavegadorEmbutidoAberto=false; render(); }
+function avisoNavegadorEmbutidoHTML(){
+  return `
+  <div class="modal-fundo" onclick="if(event.target===this) fecharAvisoNavegadorEmbutido()">
+    <div class="modal-chat" style="max-width:400px;border-radius:14px">
+      <div class="cf-corpo" style="padding:26px 22px 22px;text-align:center">
+        <div style="font-size:44px;line-height:1;margin-bottom:10px">🌐</div>
+        <h3 style="margin:0 0 8px;font-size:19px">Abra pelo navegador pra instalar</h3>
+        <div class="subtitulo" style="margin-bottom:18px">Você está acessando por dentro do WhatsApp/Instagram, e por aí não dá pra instalar o app. Toque nos <b>⋮</b> (três pontinhos) no canto e escolha <b>"Abrir no Chrome"</b> ou <b>"Abrir no navegador"</b> — depois é só tocar em instalar de novo.</div>
+        <button class="btn btn-primario" style="width:100%" onclick="fecharAvisoNavegadorEmbutido()">Entendi</button>
+      </div>
+    </div>
+  </div>`;
+}
 function baixarAplicativoAndroid(){
   // O APK antigo deste projeto apontava para um servidor antigo.
   // Para nunca mais entregar uma versão desatualizada, usamos a instalação PWA do site atual.
   if(estado.podeInstalar && promptInstalacao){ instalarApp(); return; }
+  if(ehNavegadorEmbutido()){ abrirAvisoNavegadorEmbutido(); return; }
   abrirComoInstalar();
   mostrarToast('Instale pela opção “Instalar app” do navegador. Assim o aplicativo sempre abre a versão atual do Entrega Flash.', 'sucesso');
 }
@@ -7232,6 +7257,7 @@ function render(){
     ${estado.comoFunciona.aberto ? comoFuncionaHTML() : ''}
     ${estado.comoInstalarAberto ? comoInstalarHTML() : ''}
     ${estado.popupInstalarAberto ? popupInstalarHTML() : ''}
+    ${estado.avisoNavegadorEmbutidoAberto ? avisoNavegadorEmbutidoHTML() : ''}
     ${estado.onboardingAberto ? onboardingHTML() : ''}
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin" onclick="if(event.target===this) fecharAdmin()">
