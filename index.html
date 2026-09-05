@@ -2130,21 +2130,13 @@ async function enviarPushServidor(papel, referencia, title, body, url, tipo){
   }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); return {erro:String(e)}; }
 }
 async function registrarEventoPushAtivacao(evento){
-  let eventId='', jaRegistrouAberto=false;
+  let eventId='';
   try{
     const params=new URLSearchParams(window.location.search);
-    const novoId=params.get('ef_push_evento');
-    if(novoId){
-      eventId=novoId;
-      salvarLocal('ef_push_evento_ativacao',JSON.stringify({id:novoId,aberto:false}));
-    } else {
-      const salvo=JSON.parse(localStorage.getItem('ef_push_evento_ativacao')||'null');
-      if(salvo && salvo.id){ eventId=salvo.id; jaRegistrouAberto=!!salvo.aberto; }
-    }
+    eventId=params.get('ef_push_evento')||localStorage.getItem('ef_push_evento_ativacao')||'';
+    if(params.get('ef_push_evento')) salvarLocal('ef_push_evento_ativacao',eventId);
   }catch(e){}
   if(!eventId) return false;
-  // já registramos 'abriu a notificação' pra esse evento antes; evita reenviar toda vez que o app é reaberto
-  if(evento!=='online' && jaRegistrouAberto) return false;
   try{
     const resp=await fetch(`${FUNCOES_URL}/enviar-push`,{
       method:'POST',
@@ -2152,7 +2144,6 @@ async function registrarEventoPushAtivacao(evento){
       body:JSON.stringify({action:'event',event_id:eventId,evento:evento==='online'?'online':'aberto'})
     });
     if(resp.ok && evento==='online') removerLocal('ef_push_evento_ativacao');
-    else if(resp.ok) salvarLocal('ef_push_evento_ativacao',JSON.stringify({id:eventId,aberto:true}));
     return resp.ok;
   }catch(e){ console.warn('Falha ao registrar evento da push',e); return false; }
 }
@@ -2231,19 +2222,20 @@ async function restaurarSessao(){
         await continuarParaDocumentos();
       } else if(data && STATUS_ACESSO_PAINEL.includes(data.status)){
         estado.motorista = {
-          nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:localStorage.getItem('ef_motorista_disponivel')==='true',
+          nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
           veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
           fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
           notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null
         };
-        if(estado.motorista.disponivel && estado.motorista.status==='aprovado') iniciarRastreioMotorista();
-        atualizarDisponibilidadeDB(estado.motorista.telefone, estado.motorista.disponivel);
-        assinarMotoristaLogadoRealtime(estado.motorista.telefone);
-        // Motorista aprovado entra online automaticamente ao abrir o app/site,
-        // exceto se ele próprio escolheu ficar offline manualmente.
-        if(estado.motorista.status==='aprovado' && !estado.motorista.disponivel){
-          setTimeout(()=>ativarOnlineAutomaticamenteMotorista(), 700);
+        if(estado.motorista.disponivel && estado.motorista.status==='aprovado'){
+          salvarLocal('ef_motorista_disponivel','true');
+          iniciarRastreioMotorista();
+        } else {
+          salvarLocal('ef_motorista_disponivel','false');
         }
+        // Não sobrescreve a ativação automática salva no banco ao restaurar a sessão.
+        // O GPS/heartbeat confirma o online real quando o app estiver aberto.
+        assinarMotoristaLogadoRealtime(estado.motorista.telefone);
       } else { removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); }
     }
 
@@ -3048,15 +3040,15 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 180000; // 3 min sem sinal = offline real
+const PRESENCA_MOTORISTA_MS = 180000; // usado apenas para indicar se o GPS está recente
 function motoristaOnlineAgora(m, agora=Date.now()){
-  if(!m || !m.disponivel || !STATUS_ACESSO_PAINEL.includes(m.status)) return false;
-  const ultimo = Number(m.disponivel_atualizado_em||0);
-  return ultimo>0 && (agora-ultimo) <= PRESENCA_MOTORISTA_MS;
+  // Regra operacional do lançamento: aprovado permanece ONLINE até tocar em FICAR OFFLINE.
+  // A ausência de heartbeat/GPS não muda sozinho o campo disponivel para false.
+  return !!(m && m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
 }
 async function carregarMotoristasOnline(){
   try{
-    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).gte('disponivel_atualizado_em', Date.now()-PRESENCA_MOTORISTA_MS).in('status', STATUS_ACESSO_PAINEL);
+    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).in('status', STATUS_ACESSO_PAINEL);
     if(error){ console.error(error); return; }
     if(count!==estado.motoristasOnline){ estado.motoristasOnline = count||0; if(!estaDigitandoEndereco()) render(); }
   }catch(e){ console.error(e); }
@@ -3205,8 +3197,13 @@ function assinarMotoristaLogadoRealtime(telefone){
       if(novo.foto_motorista_url && novo.foto_motorista_url!==estado.motorista.fotoMotoristaUrl){ estado.motorista.fotoMotoristaUrl=novo.foto_motorista_url; mudou=true; }
       if(novo.raio_atendimento_km!=null && novo.raio_atendimento_km!==estado.motorista.raioAtendimentoKm){ estado.motorista.raioAtendimentoKm=novo.raio_atendimento_km; mudou=true; }
       if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
-        mostrarToast(' Seu cadastro foi aprovado! Já pode começar a receber pedidos.', 'sucesso');
-        notificar(' Cadastro aprovado!', 'Já pode começar a receber pedidos no Entrega Flash.');
+        estado.motorista.disponivel = true;
+        salvarLocal('ef_motorista_disponivel','true');
+        iniciarRastreioMotorista();
+        setTimeout(()=>heartbeatMotoristaPresenca(),900);
+        mostrarToast(' Cadastro aprovado! Ativação online automática iniciada.', 'sucesso');
+        notificar(' Cadastro aprovado!', 'Abra o Entrega Flash e mantenha o GPS ativo para receber pedidos.');
+        mudou=true;
       }
       if(novo.plano==='pro' && planoAnterior!=='pro'){
         mostrarToast(' Pagamento confirmado! Plano Pro ativado automaticamente.', 'sucesso');
@@ -3847,16 +3844,9 @@ async function processarFotoSemEnderecoSelecionado(inputEl){
   if(!file) return;
   const campo = estado.semEndereco.campo;
   if(campoEhParada(campo)){ mostrarToast('Foto do local só está disponível para recolha e entrega principal por enquanto.'); return; }
-  if(!arquivoEhImagemMotorista(file)){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
   estado.semEndereco.enviandoFoto = true; render();
-  const preparado = await prepararImagemDocumento(file);
-  if(!preparado){
-    estado.semEndereco.enviandoFoto = false;
-    mostrarToast('Não consegui abrir esta foto. Tente escolher outra foto da galeria ou tirar uma nova agora.', 'erro');
-    render(); return;
-  }
   const nomeArquivo = `${campo}-ref-${Date.now()}.jpg`;
-  const { error: erroUp } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, preparado, { upsert:true, contentType:'image/jpeg' });
+  const { error: erroUp } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, file, { upsert:true, contentType:file.type||'image/jpeg' });
   estado.semEndereco.enviandoFoto = false;
   if(erroUp){ mostrarToast('Erro ao enviar a foto. Tenta novamente.', 'erro'); render(); return; }
   const { data: pub } = sb.storage.from('entrega-fotos').getPublicUrl(nomeArquivo);
@@ -4836,12 +4826,9 @@ async function processarFotoSelecionada(input){
   input.value = '';
   if(!file || !fotoPendente) return;
   const pendente = fotoPendente; fotoPendente = null;
-  if(!arquivoEhImagemMotorista(file)){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
   mostrarToast('Enviando foto...');
-  const preparado = await prepararImagemDocumento(file);
-  if(!preparado){ mostrarToast('Não consegui abrir esta foto. Tente escolher outra foto da galeria ou tirar uma nova agora.', 'erro'); return; }
   const nomeArquivo = `${pendente.pedidoId}-${pendente.tipo}-${Date.now()}.jpg`;
-  const { error: erroUpload } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, preparado, { upsert:true, contentType: 'image/jpeg' });
+  const { error: erroUpload } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, file, { upsert:true, contentType: file.type || 'image/jpeg' });
   if(erroUpload){ console.error(erroUpload); mostrarToast('Erro ao enviar a foto. Tenta novamente.', 'erro'); return; }
   const { data: pub } = sb.storage.from('entrega-fotos').getPublicUrl(nomeArquivo);
   const campo = pendente.tipo==='antes' ? 'foto_antes_url' : 'foto_depois_url';
@@ -6641,7 +6628,7 @@ function telaMotorista(){
     <div class="ef-app20-status"><div><div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--poeira);font-weight:800"><span class="ef-app20-dot ${m.disponivel?'on':''}"></span>${m.disponivel?'ONLINE · RECEBENDO PEDIDOS':'OFFLINE'}</div><div class="ef-app20-money">R$ ${ganhosHoje.toFixed(2)}</div><div style="font-size:12px;color:var(--poeira);margin-top:4px">Ganhos de hoje</div></div><div style="font-size:28px">${m.disponivel?'⚡':'◉'}</div></div>
     <div class="ef-app20-stats"><div class="ef-app20-stat"><small>Entregas hoje</small><b>${entreguesHojeArr.length}</b></div><div class="ef-app20-stat"><small>Saldo disponível</small><b>R$ ${Number(m.saldo||0).toFixed(2)}</b></div></div>
     <button class="btn ef-app20-mainbtn ${m.disponivel?'btn-secundario':'btn-verde'}" ${atributoDesabilitado('alternarDisponibilidade')} onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${carregando('alternarDisponibilidade') ? '<span class="girando"></span>Atualizando...' : (m.disponivel?'PARAR · FICAR OFFLINE':'⚡ FICAR ONLINE')}</button>
-    <div class="cf-ajuda" style="text-align:center;margin-top:8px">${m.disponivel?'Mantenha o app aberto para receber novas entregas.':'Toque para começar a receber pedidos compatíveis com seu veículo.'}</div>
+    <div class="cf-ajuda" style="text-align:center;margin-top:8px">${m.disponivel?'Você permanece ONLINE até tocar em FICAR OFFLINE. Mantenha o app aberto/GPS ativo para localização em tempo real.':'Toque para começar a receber pedidos compatíveis com seu veículo.'}</div>
   </div>` : `<div class="cartao" style="opacity:.78;text-align:center"><button class="btn btn-secundario" disabled style="width:100%">🔒 FICAR ONLINE</button><div class="cf-ajuda" style="margin-top:8px">Liberado automaticamente após a aprovação dos documentos.</div></div>`;
 
   const blocoPrimeiroDia = (m.status==='aprovado' && entregasMes===0) ? `<div class="cartao ef-app20-guide"><div style="font-family:'Rajdhani';font-size:19px;font-weight:900">🚀 SEU PRIMEIRO DIA</div><div class="subtitulo" style="margin-top:3px">É simples: fique online e siga o fluxo da primeira entrega.</div><div class="ef-app20-steps"><div class="ef-app20-step"><i>1</i>Online</div><div class="ef-app20-step"><i>2</i>Receba</div><div class="ef-app20-step"><i>3</i>Aceite</div><div class="ef-app20-step"><i>4</i>Receba</div></div></div>` : '';
@@ -7485,7 +7472,7 @@ async function entrarComoMotorista(){
   await carregarPedidos();
   render();
 }
-function sairMotorista(){ pararRastreioMotorista(); liberarWakeLockMotorista(); encerrarMotoristaLogadoRealtime(); if(estado.motorista.telefone) atualizarDisponibilidadeDB(estado.motorista.telefone,false); estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
+function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); /* sair da conta NÃO coloca offline: só o botão FICAR OFFLINE faz isso */ estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
 async function trocarMinhaSenhaMotorista(){
   const atual = document.getElementById('ef-senha-atual-motorista')?.value||'';
   const nova = document.getElementById('ef-senha-nova-motorista')?.value||'';
@@ -7514,29 +7501,6 @@ async function atualizarDisponibilidadeDB(telefone, disponivel){
 }
 
 let intervaloHeartbeatMotoristaPresenca = null;
-// Mantém a tela acesa enquanto o motorista está online: em muitos celulares, a tela
-// apaga sozinha depois de um tempo parado, o navegador pausa o app em segundo plano
-// e o sinal de presença/GPS para de ser enviado — fazendo o painel achar que ele
-// "sumiu" mesmo continuando online de verdade. O wake lock evita isso na maioria dos
-// casos (não cobre quando o motorista troca de app manualmente, ex: abre o Waze).
-let wakeLockMotorista = null;
-async function ativarWakeLockMotorista(){
-  try{
-    if(!('wakeLock' in navigator)) return;
-    wakeLockMotorista = await navigator.wakeLock.request('screen');
-    wakeLockMotorista.addEventListener('release', ()=>{ wakeLockMotorista=null; });
-  }catch(e){ console.warn('wake_lock_falhou', e); }
-}
-function liberarWakeLockMotorista(){
-  try{ if(wakeLockMotorista){ wakeLockMotorista.release(); } }catch(e){}
-  wakeLockMotorista=null;
-}
-// O wake lock é liberado automaticamente pelo navegador quando a aba fica oculta;
-// reativa sozinho se o motorista voltar pro app e continuar online.
-document.addEventListener('visibilitychange', ()=>{
-  if(document.visibilityState==='visible' && estado.motorista?.disponivel && !wakeLockMotorista) ativarWakeLockMotorista();
-});
-
 async function heartbeatMotoristaPresenca(){
   const m=estado.motorista;
   if(!m?.ativo || !m.telefone || !m.disponivel || m.status!=='aprovado') return;
@@ -7560,34 +7524,6 @@ function iniciarHeartbeatMotoristaPresenca(){
 }
 iniciarHeartbeatMotoristaPresenca();
 
-// Ativação automática real: só considera ONLINE quando o app está aberto,
-// o cadastro está aprovado e conseguimos a localização operacional. Se o
-// motorista apertar OFFLINE, respeitamos a escolha dele nas próximas aberturas.
-let ativacaoOnlineAutomaticaEmAndamento=false;
-async function ativarOnlineAutomaticamenteMotorista(){
-  const m=estado.motorista;
-  if(ativacaoOnlineAutomaticaEmAndamento || !m?.ativo || !m.telefone || m.status!=='aprovado' || m.disponivel) return false;
-  if(localStorage.getItem('ef_motorista_offline_manual')==='true') return false;
-  ativacaoOnlineAutomaticaEmAndamento=true;
-  try{
-    if(!(await exigirLocalizacaoOperacional('motorista'))) return false;
-    if(!ultimaPosicaoMotorista) return false;
-    const ok=await atualizarDisponibilidadeDB(m.telefone,true);
-    if(!ok) return false;
-    m.disponivel=true;
-    salvarLocal('ef_motorista_disponivel','true');
-    iniciarRastreioMotorista();
-    ativarWakeLockMotorista();
-    await enviarPosicaoMotorista();
-    heartbeatMotoristaPresenca();
-    render();
-    mostrarToast('Você está ONLINE e disponível para receber entregas.', 'sucesso');
-    if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),900);
-    return true;
-  }catch(e){ console.warn('ativação online automática',e); return false; }
-  finally{ ativacaoOnlineAutomaticaEmAndamento=false; }
-}
-
 async function alternarDisponibilidade(){
   const m = estado.motorista;
   const temAtivos = estado.pedidos.some(p=>!['buscando','entregue','cancelado'].includes(p.status) && p.motoristaTelefone===m.telefone);
@@ -7608,12 +7544,9 @@ async function alternarDisponibilidade(){
   if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
   m.disponivel = novoValor;
   salvarLocal('ef_motorista_disponivel', m.disponivel ? 'true' : 'false');
-  if(m.disponivel) removerLocal('ef_motorista_offline_manual');
-  else salvarLocal('ef_motorista_offline_manual','true');
   if(m.disponivel){
     registrarEventoPushAtivacao('online');
     iniciarRastreioMotorista();
-    ativarWakeLockMotorista();
     // redundância intencional: confirma imediatamente a coordenada no banco,
     // além do watchPosition que continuará atualizando enquanto estiver online.
     await enviarPosicaoMotorista();
@@ -7621,7 +7554,7 @@ async function alternarDisponibilidade(){
     // aproveita o momento em que ele mais precisa de avisos pra pedir notificação, se ainda não tiver decidido
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
   }
-  else { pararRastreioMotorista(); liberarWakeLockMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
+  else { pararRastreioMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
   render();
 }
 
@@ -8108,7 +8041,7 @@ function cadastroTemDocumentosCompletos(data){
 const STATUS_ACESSO_PAINEL = ['basico','pendente','aprovado'];
 async function entrarNoPainelMotorista(data){
   estado.motorista = {
-    nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:false,
+    nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
     veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
     fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
     notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null
@@ -8122,8 +8055,14 @@ async function entrarNoPainelMotorista(data){
   assinarMotoristaLogadoRealtime(data.telefone);
   if(estado.notificacoesStatus==='granted') inscreverPushReal();
   registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted');
+  if(estado.motorista.status==='aprovado' && estado.motorista.disponivel){
+    salvarLocal('ef_motorista_disponivel','true');
+    iniciarRastreioMotorista();
+    setTimeout(()=>heartbeatMotoristaPresenca(),1200);
+  } else {
+    salvarLocal('ef_motorista_disponivel','false');
+  }
   mostrarLembreteDocumentosDiario(data.telefone,data.status);
-  if(data.status==='aprovado') setTimeout(()=>ativarOnlineAutomaticamenteMotorista(),700);
 }
 
 async function loginFacialMotorista(){
@@ -9960,7 +9899,14 @@ async function aprovarMotoristaAdmin(id){
   const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao aprovar.', 'erro'); return; }
   estado.admin.motoristaAberto = id;
-  mostrarToast('Motorista aprovado! Já pode enviar a mensagem de boas-vindas abaixo.', 'sucesso');
+  mostrarToast('Motorista aprovado e ativado automaticamente para ficar online.', 'sucesso');
+  try{
+    if(motorista?.telefone){
+      const primeiro=String(motorista.nome||'Motorista').trim().split(/\s+/)[0];
+      const cidadeTxt=String(motorista.cidade||'sua região').trim()||'sua região';
+      await enviarPushServidor('motorista',String(motorista.telefone).replace(/\D/g,''),'🚚 Cadastro aprovado · fique online',`${primeiro}, seu cadastro foi aprovado e você já está ONLINE no Entrega Flash. Abra o app para ativar o GPS e receber chamadas em ${cidadeTxt}. Se não quiser ficar disponível, toque em FICAR OFFLINE.`,'/?ir=login-motorista','aprovacao_auto_online');
+    }
+  }catch(e){ console.warn('push aprovação automática',e); }
   await carregarMotoristasAdmin();
 }
 async function liberarDocumentosMotoristaAdmin(id){
