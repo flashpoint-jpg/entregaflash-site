@@ -382,7 +382,7 @@ fbq('track', 'PageView');
   .estrela-clicavel[data-carregando="1"]{opacity:0.5;pointer-events:none;}
 
   /* ---------- caixa de confirmação (substitui o confirm() nativo do navegador) ---------- */
-  .confirmar-caixa{background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:22px 20px;max-width:380px;width:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:toast-entrar 0.18s ease-out;}
+  .confirmar-caixa{background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:22px 20px;max-width:380px;width:calc(100% - 40px);box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:toast-entrar 0.18s ease-out;max-height:85vh;overflow-y:auto;}
   .confirmar-texto{font-size:15.5px;line-height:1.45;color:var(--osso);margin-bottom:18px;}
   .confirmar-botoes{display:flex;gap:10px;}
   .confirmar-botoes .btn{flex:1;margin:0;}
@@ -1230,8 +1230,9 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', aba:'resumo', motoristas:[], appDispositivos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null,
-    avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
+  admin:{ aberto:false, logado:false, senhaDigitada:'', papel:null, funcionarioUsuario:'', funcionarioSenhaHash:'', funcionarioNome:'', funcionarioLoginUsuario:'', funcionarioLoginSenha:'', mostrarLoginFuncionario:false, aba:'resumo', motoristas:[], appDispositivos:[], pushEventos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null, clienteAberto:null, funcionarios:[],
+    avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false,
+    testeGps:{ enviando:false, testeId:null, disparadoEm:null, respostas:[], onlineNoDisparo:0 } },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' }
 };
@@ -1421,14 +1422,35 @@ async function registrarStatusAplicativo(papel,referencia,temPush){
 }
 // ---------- push real (via servidor), funciona mesmo com o app fechado ----------
 // papel: 'cliente' | 'motorista' | 'admin'. referencia omitida/null = todos do papel.
-async function enviarPushServidor(papel, referencia, title, body, url){
+async function enviarPushServidor(papel, referencia, title, body, url, tipo){
   try{
-    await fetch(`${FUNCOES_URL}/enviar-push`, {
+    const resp = await fetch(`${FUNCOES_URL}/enviar-push`, {
       method:'POST',
       headers:{ 'Content-Type':'application/json', 'Authorization':'Bearer '+SUPABASE_KEY, 'apikey':SUPABASE_KEY },
-      body: JSON.stringify({ papel, referencia: referencia||undefined, title, body: body||'', url: url||'/entregaflash.html' })
+      body: JSON.stringify({ papel, referencia: referencia||undefined, title, body: body||'', url: url||'/?ir=login-motorista', tipo: tipo||'geral' })
     });
-  }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); }
+    const data = await resp.json().catch(()=>({}));
+    if(!resp.ok) throw new Error(data.erro||('HTTP '+resp.status));
+    return data;
+  }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); return {erro:String(e)}; }
+}
+async function registrarEventoPushAtivacao(evento){
+  let eventId='';
+  try{
+    const params=new URLSearchParams(window.location.search);
+    eventId=params.get('ef_push_evento')||localStorage.getItem('ef_push_evento_ativacao')||'';
+    if(params.get('ef_push_evento')) salvarLocal('ef_push_evento_ativacao',eventId);
+  }catch(e){}
+  if(!eventId) return false;
+  try{
+    const resp=await fetch(`${FUNCOES_URL}/enviar-push`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({action:'event',event_id:eventId,evento:evento==='online'?'online':'aberto'})
+    });
+    if(resp.ok && evento==='online') removerLocal('ef_push_evento_ativacao');
+    return resp.ok;
+  }catch(e){ console.warn('Falha ao registrar evento da push',e); return false; }
 }
 async function notificar(titulo, corpo, tag){
   if(typeof Notification==='undefined' || Notification.permission!=='granted') return;
@@ -1490,9 +1512,31 @@ async function restaurarSessao(){
     if(estado.cliente.logado) assinarCarteiraClienteRealtime(estado.cliente.telefone);
 
     if(localStorage.getItem('ef_admin_logado')==='true'){
+      const papelSalvo = localStorage.getItem('ef_admin_papel') || 'dono';
+      if(papelSalvo==='funcionario'){
+        const usuarioSalvo = localStorage.getItem('ef_funcionario_usuario');
+        const hashSalvo = localStorage.getItem('ef_funcionario_senha_hash');
+        if(usuarioSalvo && hashSalvo){
+          estado.admin.logado = true;
+          estado.admin.papel = 'funcionario';
+          estado.admin.funcionarioUsuario = usuarioSalvo;
+          estado.admin.funcionarioSenhaHash = hashSalvo;
+          estado.admin.funcionarioNome = localStorage.getItem('ef_funcionario_nome')||'';
+          estado.telaBoasVindas = false;
+          if(localStorage.getItem('ef_admin_aberto')==='true') estado.admin.aberto = true;
+          const abaSalva = localStorage.getItem('ef_admin_aba');
+          estado.admin.aba = (abaSalva && ['motoristas','clientes','suporte'].includes(abaSalva)) ? abaSalva : 'motoristas';
+          assinarSuporteAdminGlobal();
+          assinarAdminRealtime();
+          if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
+        } else {
+          removerLocal('ef_admin_logado');
+        }
+      } else {
       const senhaSalva = localStorage.getItem('ef_admin_senha');
       if(senhaSalva){
         estado.admin.logado = true;
+        estado.admin.papel = 'dono';
         estado.admin.senhaDigitada = senhaSalva;
         estado.telaBoasVindas = false;
         // reabre o painel se ele estava aberto antes do F5 (senão o admin fica logado
@@ -1505,6 +1549,7 @@ async function restaurarSessao(){
         if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
       } else {
         removerLocal('ef_admin_logado');
+      }
       }
     }
   }catch(e){ console.error(e); }
@@ -1766,11 +1811,32 @@ function modalConfirmarHTML(){
     </div>
   </div>`;
 }
+const DOCUMENTOS_MOTORISTA_LABELS = {
+  fotoMotorista: 'Foto do rosto (selfie)',
+  fotoVeiculoFrente: 'Foto da frente do veículo',
+  fotoVeiculoTras: 'Foto de trás do veículo',
+  crlv: 'CRLV',
+  cnh: 'CNH'
+};
+const DOCUMENTOS_BICICLETA_LABELS = {
+  fotoMotorista: 'Foto do rosto (selfie)',
+  fotoVeiculoFrente: 'Foto da frente da bicicleta',
+  fotoVeiculoTras: 'Foto do lado da bicicleta',
+  cnh: 'RG ou CNH'
+};
 function abrirModalReprovar(id){
-  estado.modalReprovar = { id, motivo:'' };
+  const motorista=(estado.admin.motoristas||[]).find(m=>String(m.id)===String(id));
+  estado.modalReprovar = { id, motivo:'', docs:[], ehBike: motorista?.veiculo_tipo==='bicicleta' };
   render();
 }
 function fecharModalReprovar(){ estado.modalReprovar = null; render(); }
+function alternarDocumentoReprovado(chave){
+  const m = estado.modalReprovar;
+  if(!m) return;
+  const i = m.docs.indexOf(chave);
+  if(i>=0) m.docs.splice(i,1); else m.docs.push(chave);
+  render();
+}
 function selecionarMotivoPreset(texto, botao){
   if(!estado.modalReprovar) return;
   estado.modalReprovar.motivo = texto;
@@ -1788,13 +1854,20 @@ async function confirmarReprovacao(){
   const m = estado.modalReprovar;
   if(!m) return;
   const textarea = document.getElementById('reprovar-motivo-texto');
-  const motivo = (textarea ? textarea.value : m.motivo || '').trim();
-  if(!motivo){ mostrarToast('Escolhe ou escreve um motivo antes de reprovar.'); return; }
+  let motivo = (textarea ? textarea.value : m.motivo || '').trim();
+  const labels = m.ehBike ? DOCUMENTOS_BICICLETA_LABELS : DOCUMENTOS_MOTORISTA_LABELS;
+  const docsSelecionados = (m.docs||[]).filter(d=>labels[d]);
+  if(!motivo && !docsSelecionados.length){ mostrarToast('Escolhe a foto/documento errado e escreve ou escolhe um motivo antes de reprovar.'); return; }
+  if(docsSelecionados.length){
+    const listaDocs = docsSelecionados.map(d=>'• '+labels[d]).join('\n');
+    motivo = motivo ? `Reenviar apenas:\n${listaDocs}\n\n${motivo}` : `Reenviar apenas:\n${listaDocs}`;
+  }
   const id = m.id;
   estado.modalReprovar = null; render();
-  const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'reprovado', p_motivo: motivo });
+  const { error } = await sb.rpc('entrega_admin_status_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'reprovado', p_motivo: motivo, p_documentos_reprovados: docsSelecionados.length?docsSelecionados:null });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao reprovar.', 'erro'); return; }
-  mostrarToast('Cadastro reprovado — o motorista vai ver o motivo na tela dele.', 'sucesso');
+  estado.admin.motoristaAberto = id;
+  mostrarToast('Cadastro reprovado — o motorista vai ver exatamente o que precisa reenviar.', 'sucesso');
   await carregarMotoristasAdmin();
 }
 function modalReprovarHTML(){
@@ -1807,14 +1880,25 @@ function modalReprovarHTML(){
     '📅 CNH vencida — regulariza e reenvia uma foto atualizada.',
     '📸 Fotos com baixa qualidade — reenvia fotos mais nítidas, com boa luz.'
   ];
+  const labels = m.ehBike ? DOCUMENTOS_BICICLETA_LABELS : DOCUMENTOS_MOTORISTA_LABELS;
   return `<div class="modal-fundo" style="z-index:600" onclick="if(event.target===this) fecharModalReprovar()">
     <div class="confirmar-caixa" style="text-align:left;max-width:420px">
-      <div class="confirmar-texto" style="text-align:left;font-weight:700">Motivo da reprovação</div>
-      <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Escolhe um motivo rápido ou escreve o teu. O motorista vai ver essa mensagem na tela dele e vai poder reenviar os documentos.</div>
-      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px">
+      <div class="confirmar-texto" style="text-align:left;font-weight:700">Qual foto/documento está errado?</div>
+      <div style="font-size:13px;color:var(--poeira);margin:6px 0 10px">Marca só o que está errado — o resto continua salvo. O motorista vai ver na tela dele exatamente o que precisa reenviar, sem perder o que já mandou certo.</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px">
+        ${Object.entries(labels).map(([chave,rotulo])=>{
+          const marcado = (m.docs||[]).includes(chave);
+          return `<label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border:1px solid ${marcado?'var(--chama)':'var(--linha)'};border-radius:10px;background:${marcado?'rgba(255,92,92,.08)':'transparent'};cursor:pointer">
+            <input type="checkbox" style="width:auto" ${marcado?'checked':''} onchange="alternarDocumentoReprovado('${chave}')">
+            <span style="font-weight:${marcado?800:500}">${rotulo}</span>
+          </label>`;
+        }).join('')}
+      </div>
+      <div class="confirmar-texto" style="text-align:left;font-weight:700;font-size:13.5px">Motivo (opcional se já marcou a foto acima)</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin:8px 0 10px">
         ${presets.map(p=>`<button type="button" data-motivo-reprovacao aria-pressed="false" class="btn btn-secundario btn-pequeno" style="text-align:left;white-space:normal" onclick="selecionarMotivoPreset(${JSON.stringify(p)},this)">${p}</button>`).join('')}
       </div>
-      <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve o motivo..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
+      <textarea id="reprovar-motivo-texto" rows="3" placeholder="Escreve um detalhe extra (opcional)..." style="width:100%">${(m.motivo||'').replace(/</g,'&lt;')}</textarea>
       <div class="confirmar-botoes" style="margin-top:12px">
         <button class="btn btn-secundario" onclick="fecharModalReprovar()">Cancelar</button>
         <button class="btn btn-primario" onclick="confirmarReprovacao()">❌ Reprovar e avisar</button>
@@ -1852,7 +1936,7 @@ function tocarSomAlerta(){
       osc.type='sine'; osc.frequency.value=freq;
       osc.connect(gain); gain.connect(ctx.destination);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
-      gain.gain.exponentialRampToValueAtTime(0.22, ctx.currentTime+inicio+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.03);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
       osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
     };
@@ -1870,13 +1954,32 @@ function tocarSomNovoPedido(){
       osc.type='square'; osc.frequency.value=freq;
       osc.connect(gain); gain.connect(ctx.destination);
       gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
-      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime+inicio+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.02);
       gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
       osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
     };
     tocarNota(880,0,0.1); tocarNota(880,0.16,0.1); tocarNota(880,0.32,0.1);
   }catch(e){ console.warn('audio indisponível', e); }
   if(navigator.vibrate) navigator.vibrate([90,60,90,60,90]);
+}
+// toque de "confirmação recebida" (3 notas subindo, diferente dos outros dois) — usado quando um
+// motorista confirma o teste de GPS, pra dar pra saber sem precisar olhar a tela
+function tocarSomConfirmacaoGps(){
+  try{
+    const ctx = obterAudioContext();
+    if(!ctx) return;
+    const tocarNota=(freq,inicio,duracao)=>{
+      const osc=ctx.createOscillator(), gain=ctx.createGain();
+      osc.type='triangle'; osc.frequency.value=freq;
+      osc.connect(gain); gain.connect(ctx.destination);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime+inicio);
+      gain.gain.exponentialRampToValueAtTime(0.9, ctx.currentTime+inicio+0.03);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+inicio+duracao);
+      osc.start(ctx.currentTime+inicio); osc.stop(ctx.currentTime+inicio+duracao+0.05);
+    };
+    tocarNota(523,0,0.12); tocarNota(659,0.11,0.12); tocarNota(880,0.22,0.22);
+  }catch(e){ console.warn('audio indisponível', e); }
+  if(navigator.vibrate) navigator.vibrate([60,40,60,40,140]);
 }
 function dispararAlertaMotorista(pedido){
   estado.alertaMotorista = { nome: pedido.motoristaNome||'Um entregador', pedidoId: pedido.id };
@@ -2120,7 +2223,7 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 120000; // 2 min sem sinal = offline real
+const PRESENCA_MOTORISTA_MS = 180000; // 3 min sem sinal = offline real
 function motoristaOnlineAgora(m, agora=Date.now()){
   if(!m || !m.disponivel || !STATUS_ACESSO_PAINEL.includes(m.status)) return false;
   const ultimo = Number(m.disponivel_atualizado_em||0);
@@ -4959,6 +5062,19 @@ function telaAcessoMotorista(){
     return `<div class="box-status"><span class="bs-emoji">🎉</span><div class="bs-titulo">Cadastro liberado!</div><div class="bs-texto">${cadastroBike?'Conclua seu cadastro com a selfie, fotos da bicicleta e RG ou CNH. Bicicleta não precisa de CRLV, placa nem CNH obrigatória.':'Envia os teus documentos agora pra começares a receber corridas ainda hoje.'}</div>
       <button class="btn btn-primario" style="margin-top:16px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'A carregar...':(cadastroBike?'🚲 Concluir cadastro':'📄 Enviar documentos')}</button></div>`;
   }
+  if(pm.tela==='recuperar'){
+    return `<div class="box-status" style="padding:24px 16px">
+      <span class="bs-emoji">⚡</span>
+      <div class="bs-titulo" style="font-size:22px;color:var(--mango)">Seu cadastro está quase pronto</div>
+      <div class="bs-texto" style="font-size:15.5px">Você já se cadastrou na Entrega Flash, mas ainda falta concluir ${pm.recuperacaoBike?'as fotos e o documento pessoal':'o envio da documentação'}. <b style="color:var(--osso)">Sem concluir esta etapa você não pode receber corridas.</b></div>
+      <div style="margin:18px 0;padding:14px;border-radius:14px;background:rgba(255,201,60,.10);border:1px solid rgba(255,201,60,.35);text-align:left">
+        <div style="font-weight:800;color:var(--mango);margin-bottom:6px">✓ Seus dados já estão salvos</div>
+        <div style="font-size:13.5px;color:var(--poeira);line-height:1.5">Continue de onde parou. Você não precisa fazer outro cadastro.</div>
+      </div>
+      <button class="btn btn-primario" style="margin-top:4px;font-size:17px;padding:15px" ${pm.carregandoLiberado?'disabled':''} onclick="continuarParaDocumentos()">${pm.carregandoLiberado?'Carregando...':'📄 CONTINUAR E CONCLUIR AGORA'}</button>
+      <button class="btn btn-secundario" style="margin-top:9px" onclick="irParaLogin()">Voltar</button>
+    </div>`;
+  }
   if(pm.tela==='pendente'){
     return `<div class="box-status"><span class="bs-emoji">⏳</span><div class="bs-titulo">Cadastro em análise</div><div class="bs-texto">Recebemos os seus dados e o pagamento da taxa. Vamos avisar-te por WhatsApp assim que o cadastro for aprovado.</div></div>`;
   }
@@ -6001,6 +6117,7 @@ async function alternarDisponibilidade(){
   m.disponivel = novoValor;
   salvarLocal('ef_motorista_disponivel', m.disponivel ? 'true' : 'false');
   if(m.disponivel){
+    registrarEventoPushAtivacao('online');
     iniciarRastreioMotorista(); mostrarToast('Rota iniciada! Já está a receber pedidos.', 'sucesso');
     // aproveita o momento em que ele mais precisa de avisos pra pedir notificação, se ainda não tiver decidido
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
@@ -6345,8 +6462,19 @@ async function loginMotorista(){
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone. Cadastra-te abaixo.'; render(); return; }
   if(data.senha_hash !== senhaHash){ pm.loginErro='Senha incorreta.'; render(); return; }
-  if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
+  if(data.status==='incompleto'){ pm.tela='recuperar'; pm.telefoneLiberado=data.telefone; pm.recuperacaoBike=data.veiculo_tipo==='bicicleta'; render(); return; }
   if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
+  // Cadastro básico ainda sem documentação: não joga o motorista num painel bloqueado.
+  // Leva direto para concluir o que falta.
+  if(data.status==='basico'){ pm.tela='recuperar'; pm.telefoneLiberado=data.telefone; pm.recuperacaoBike=data.veiculo_tipo==='bicicleta'; render(); return; }
+  // Se está pendente mas faltam arquivos obrigatórios, também recupera o cadastro.
+  if(data.status==='pendente'){
+    const bike=data.veiculo_tipo==='bicicleta';
+    const docsOk = bike
+      ? !!(data.foto_motorista_url && data.foto_veiculo_url && data.cnh_url)
+      : !!(data.foto_motorista_url && data.foto_veiculo_url && data.cnh_url && data.crlv_url);
+    if(!docsOk){ pm.tela='recuperar'; pm.telefoneLiberado=data.telefone; pm.recuperacaoBike=bike; render(); return; }
+  }
   if(data.status==='reprovado'){
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:senhaHash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, enviando:false };
@@ -6666,6 +6794,7 @@ function pendenciasDocumentosMotorista(m){
   if(!m.foto_veiculo_tras_url) itens.push(m.veiculo_tipo==='bicicleta'?'Foto da bicicleta (lado/trás)':'Foto do veículo (trás)');
   if(m.veiculo_tipo==='bicicleta'){
     if(!m.cnh_url) itens.push('RG ou CNH');
+    if(!m.aceita_responsabilidade_bike) itens.push('Confirmação de responsabilidade pela bicicleta');
   }else{
     if(!m.cnh_url) itens.push('CNH');
     if(!m.crlv_url) itens.push('CRLV');
@@ -6676,8 +6805,57 @@ function abrirWhatsAppPendenciaEspecifica(telefone,nome,item){
   const tel=String(telefone||'').replace(/\D/g,'');
   const numero=tel.startsWith('55')?tel:'55'+tel;
   const primeiro=String(nome||'').trim().split(' ')[0]||'Olá';
-  const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase pronto. Falta somente: ${item}. Entre novamente no app e envie/corrija esse item para concluir seu cadastro.`;
+  const linkContinuacao=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(tel)}`;
+  const msg=`Olá, ${primeiro}! 👋 Seu cadastro na Entrega Flash está quase pronto. Falta somente: ${item}.
+
+Acesse o link abaixo, entre com sua senha e envie/corrija esse item para concluir seu cadastro:
+${linkContinuacao}`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
+async function enviarPushAtivacaoMotorista(telefone,nome,cidade){
+  const ref=String(telefone||'').replace(/\D/g,'');
+  if(!ref){ mostrarToast('Telefone inválido para enviar push.','erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'motorista';
+  const cidadeTxt=normalizarCidadePainel(cidade)||'sua região';
+  const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===ref);
+  if(!(app?.notificacoes==='granted' && app?.push_ativo)){
+    mostrarToast('Esse motorista ainda não ativou notificações. Use o WhatsApp.','aviso');
+    abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade);
+    return;
+  }
+  const title='🚚 Entrega Flash · fique online';
+  const body=`${primeiro}, há oportunidade de entregas em ${cidadeTxt}. Abra o app e fique ONLINE para receber chamadas.`;
+  mostrarToast('Enviando notificação push...');
+  const r=await enviarPushServidor('motorista',ref,title,body,'/?ir=login-motorista','ativacao_online');
+  if(r?.erro){ mostrarToast('Não consegui enviar a push. Vou abrir o WhatsApp.','erro'); abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade); return; }
+  if(Number(r?.enviados||0)>0){
+    mostrarToast(`🔔 Push enviada para ${primeiro}.`,'sucesso');
+    await carregarPushEventosAdmin();
+  }else{
+    mostrarToast('Não há dispositivo push ativo para esse motorista. Abrindo WhatsApp.','aviso');
+    abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade);
+  }
+}
+async function carregarPushEventosAdmin(){
+  if(!estado.admin?.senhaDigitada) return;
+  try{
+    const {data,error}=await sb.rpc('entrega_admin_push_status',{p_senha:estado.admin.senhaDigitada,p_referencia:null});
+    if(!error){ estado.admin.pushEventos=data||[]; if(typeof agendarRenderAdmin==='function') agendarRenderAdmin(); else render(); }
+  }catch(e){ console.warn('Status de push indisponível',e); }
+}
+function ultimoPushAtivacaoMotorista(telefone){
+  const ref=String(telefone||'').replace(/\D/g,'');
+  return (estado.admin.pushEventos||[]).find(e=>String(e.referencia||'').replace(/\D/g,'')===ref && e.tipo==='ativacao_online')||null;
+}
+function statusPushAtivacaoHTML(telefone){
+  const e=ultimoPushAtivacaoMotorista(telefone);
+  if(!e) return '';
+  let txt='🔔 Push enviada', cor='var(--mango)';
+  if(Number(e.enviados||0)<1){ txt='⚠️ Push não entregue ao serviço'; cor='#ff7474'; }
+  if(e.aberto_em){ txt='👁️ Abriu a notificação'; cor='#63b3ff'; }
+  if(e.online_em){ txt='🟢 Abriu e ficou online'; cor='var(--verde)'; }
+  const quando=e.criado_em?new Date(e.criado_em).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+  return `<div style="margin-top:7px;font-size:11.5px;font-weight:800;color:${cor}">${txt}${quando?' · '+quando:''}</div>`;
 }
 function abrirWhatsAppTodasPendencias(telefone,nome,itensTexto){
   const numero=normalizarWhatsAppBR(telefone);
@@ -6685,18 +6863,23 @@ function abrirWhatsAppTodasPendencias(telefone,nome,itensTexto){
   const primeiro=String(nome||'').trim().split(' ')[0]||'tudo bem';
   const itens=String(itensTexto||'').split('|||').filter(Boolean);
   const lista=itens.map(x=>'• '+x).join('\n');
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkContinuacao=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(telefoneLogin)}`;
   const msg=`Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Seu cadastro está quase pronto, mas ainda faltam estas pendências:
 
 ${lista}
 
-Entre novamente no app com seu WhatsApp e senha e conclua tudo de uma vez para podermos analisar e ativar seu cadastro. Se precisar de ajuda, responda esta mensagem.`;
+Acesse agora o link abaixo, entre com sua senha e conclua tudo de uma vez para podermos analisar e ativar seu cadastro:
+${linkContinuacao}
+
+Se precisar de ajuda, responda esta mensagem.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
 }
 function motoristaDocumentosCompletosAdmin(m){
   if(!m) return false;
   const pixOk=!!String(m.chave_pix||'').trim();
   if(m.veiculo_tipo==='bicicleta'){
-    return pixOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.aceita_responsabilidade_bike;
+    return pixOk && !!m.foto_motorista_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url && !!m.cnh_url && !!m.aceita_responsabilidade_bike;
   }
   return pixOk && !!m.foto_motorista_url && !!m.cnh_url && !!m.crlv_url && !!m.foto_veiculo_url && !!m.foto_veiculo_tras_url;
 }
@@ -6722,7 +6905,7 @@ function motoristaCardHTML(m, emRota){
       ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
-    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
+    <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${(estado.admin.motoristaEditando===m.id || estado.admin.motoristaAberto===m.id)?'open':''} ontoggle="registrarAberturaCardAdmin('motorista','${m.id}',this.open)" onmousedown="if(!event.target.closest('summary')) estado.admin.motoristaAberto='${m.id}';" ontouchstart="if(!event.target.closest('summary')) estado.admin.motoristaAberto='${m.id}';" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">🛵</div>`}
@@ -6749,7 +6932,7 @@ function motoristaCardHTML(m, emRota){
           Incluir aviso de bônus na mensagem
         </label>
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.telefone.replace(/\D/g,'')}')">💬 Enviar boas-vindas no WhatsApp</button>
-        ${m.status==='aprovado' && !onlineAgora ? `<button class="btn btn-verde btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">🟢 CHAMAR PARA FICAR ONLINE</button>` : ''}
+        ${m.status==='aprovado' && !onlineAgora ? `<div style="display:grid;grid-template-columns:${(app?.notificacoes==='granted'&&app?.push_ativo)?'1fr 1fr':'1fr'};gap:7px;margin-top:8px">${(app?.notificacoes==='granted'&&app?.push_ativo)?`<button class="btn btn-primario btn-pequeno" style="width:100%;font-weight:900" onclick="enviarPushAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">🔔 ENVIAR PUSH</button>`:''}<button class="btn btn-verde btn-pequeno" style="width:100%;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">💬 WHATSAPP</button></div>${statusPushAtivacaoHTML(m.telefone)}` : ''}
 
         ${['basico','liberado'].includes(m.status) ? (()=>{
           const criado=Number(m.criado_em||0);
@@ -6796,24 +6979,30 @@ function motoristaCardHTML(m, emRota){
       </div>` : ''}
       ${aguardandoDocumentos ? `
       <div class="subtitulo" style="margin-top:8px">${m.veiculo_tipo==='bicicleta'?'🚲 Cadastro incompleto — aguardando o ciclista concluir selfie e fotos necessárias.':'📄 Documentação incompleta — o motorista precisa voltar ao app e concluir o envio. Ainda não pode ser aprovado.'}</div>
-      <div style="display:flex;gap:8px;margin-top:10px">
+      ${adminEhDono() ? `<div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Recusar</button>
-      </div>
+      </div>` : ''}
       <button class="btn btn-secundario btn-pequeno" style="width:100%;margin-top:8px" onclick="abrirWhatsAppDocumentosAdmin('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.veiculo_tipo||''}')">🔔 ${m.veiculo_tipo==='bicicleta'?'Lembrar de concluir cadastro':'Lembrar de enviar os documentos'}</button>` : ''}
-      ${m.status==='pendente' && docsCompletos ? `
+      ${m.status==='pendente' && docsCompletos && adminEhDono() ? `
       <div style="display:flex;gap:8px;margin-top:10px">
         <button class="btn btn-verde btn-pequeno" style="flex:1" onclick="aprovarMotoristaAdmin('${m.id}')">✅ Aprovar</button>
         <button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="abrirModalReprovar('${m.id}')">❌ Reprovar</button>
       </div>` : ''}
-      ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>` : ''}
+      ${m.status==='pendente' && docsCompletos && !adminEhDono() ? `<div class="subtitulo" style="margin-top:10px">✅ Documentação completa — aguardando o dono aprovar.</div>` : ''}
+      ${m.status==='reprovado' && m.motivo_reprovacao ? `<div class="subtitulo" style="margin-top:8px">Motivo: ${m.motivo_reprovacao}</div>
+      <button class="btn btn-pequeno" style="width:100%;margin-top:8px;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="enviarReprovacaoWhatsAppMotorista('${m.telefone}',${JSON.stringify(m.nome||'').replace(/"/g,'&quot;')},${JSON.stringify(m.motivo_reprovacao||'').replace(/"/g,'&quot;')})">💬 Avisar no WhatsApp + link de reenvio</button>` : ''}
       ${m.status==='aprovado' ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
+        <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarAprovacaoWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}')">💬 Enviar aprovação + link do app no WhatsApp</button>
+      </div>
+      ${adminEhDono() ? `<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <label style="margin:0 0 6px">Ajustar saldo manualmente (R$, use negativo pra debitar)</label>
         <div style="display:flex;gap:8px">
           <input type="number" id="ajuste-saldo-${m.telefone.replace(/\D/g,'')}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1">
           <button class="btn btn-secundario btn-pequeno" onclick="ajustarSaldoMotoristaAdmin('${m.telefone}')">Aplicar</button>
         </div>
-      </div>` : ''}
+      </div>` : ''}` : ''}
+      ${adminEhDono() ? `
       <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
         <b style="font-family:'Rajdhani';font-weight:700;font-size:12.5px;text-transform:uppercase">🔧 Gerenciar cadastro</b>
         ${estado.admin.motoristaEditando===m.id ? `
@@ -6847,7 +7036,7 @@ function motoristaCardHTML(m, emRota){
             : `<button class="btn btn-secundario btn-pequeno" style="flex:1" ${atributoDesabilitado('bloquearMotorista_'+m.id)} onclick="executarComCarregando('bloquearMotorista_${m.id}', ()=>bloquearMotoristaAdmin('${m.id}'))">${rotuloCarregando('bloquearMotorista_'+m.id,'🔒 Bloquear','Bloqueando...')}</button>`}
           <button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" ${atributoDesabilitado('excluirMotorista_'+m.id)} onclick="executarComCarregando('excluirMotorista_${m.id}', ()=>excluirMotoristaAdmin('${m.id}','${(m.nome||'').replace(/'/g,"\\'")}'))">${rotuloCarregando('excluirMotorista_'+m.id,'🗑️ Excluir','Excluindo...')}</button>
         </div>
-      </div>
+      </div>` : ''}
       </div>
     </details>`;
 }
@@ -6876,6 +7065,39 @@ async function marcarFeedbackLido(id){
   render();
 }
 function definirPapelAvisoGeral(papel){ estado.admin.avisoGeral.papel = papel; render(); }
+// ---------- teste de GPS/notificação com motoristas online ----------
+let canalTesteGpsRealtime = null;
+async function dispararTesteGpsAdmin(){
+  if(!(await confirmarAcao(`Enviar um teste de GPS agora para TODOS os motoristas online (${estado.motoristasOnline||0} agora)? Eles vão receber um aviso claro de que é só um teste.`))) return;
+  const tg = estado.admin.testeGps;
+  tg.enviando = true; render();
+  const { data: testeId, error } = await sb.rpc('entrega_admin_disparar_teste_gps', { p_senha: estado.admin.senhaDigitada });
+  tg.enviando = false;
+  if(error){
+    console.error(error);
+    mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao disparar o teste: '+(error.message||'tenta de novo'), 'erro');
+    render();
+    return;
+  }
+  tg.testeId = testeId;
+  tg.disparadoEm = Date.now();
+  tg.respostas = [];
+  tg.onlineNoDisparo = estado.motoristasOnline||0;
+  enviarPushServidor('motorista', null, '🧪 Teste de GPS', 'Isto NÃO é uma entrega real. Toque pra confirmar que seu app está enviando sua localização certinho.');
+  assinarRespostasTesteGpsRealtime();
+  mostrarToast('Teste de GPS enviado! Acompanhe as confirmações abaixo.', 'sucesso');
+  render();
+}
+function assinarRespostasTesteGpsRealtime(){
+  if(canalTesteGpsRealtime) sb.removeChannel(canalTesteGpsRealtime);
+  canalTesteGpsRealtime = sb.channel('teste-gps-respostas-'+estado.admin.testeGps.testeId)
+    .on('postgres_changes', {event:'INSERT', schema:'public', table:'entrega_testes_gps_respostas', filter:'teste_id=eq.'+estado.admin.testeGps.testeId}, (payload)=>{
+      estado.admin.testeGps.respostas.push(payload.new);
+      tocarSomConfirmacaoGps();
+      render();
+    })
+    .subscribe();
+}
 async function enviarAvisoGeralAdmin(){
   const ag = estado.admin.avisoGeral;
   const texto = (document.getElementById('aviso-geral-mensagem')?.value || ag.mensagem || '').trim();
@@ -6897,6 +7119,19 @@ async function enviarAvisoGeralAdmin(){
 }
 function adminAbaAvisosHTML(){
   const ag = estado.admin.avisoGeral;
+  const tg = estado.admin.testeGps;
+  const respostasHTML = tg.testeId ? `
+    <div style="margin-top:14px;padding:12px;border:1px solid var(--linha);border-radius:12px;background:var(--painel-alt)">
+      <div style="font-weight:700;margin-bottom:6px">📍 ${tg.respostas.length} de ${tg.onlineNoDisparo} motorista(s) que estavam online já confirmaram</div>
+      ${tg.respostas.length===0 ? `<div class="subtitulo">Aguardando confirmações... (o motorista precisa tocar no aviso que apareceu no app dele)</div>` : `
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto">
+        ${tg.respostas.map(r=>`
+          <div style="display:flex;justify-content:space-between;gap:8px;font-size:13.5px;border-bottom:1px solid var(--linha);padding-bottom:5px">
+            <div><strong>${r.motorista_nome||r.motorista_telefone}</strong> ${r.veiculo?`· ${r.veiculo}`:''}</div>
+            <div>${r.lat && r.lng ? `<a href="https://www.google.com/maps?q=${r.lat},${r.lng}" target="_blank" style="color:var(--mango,#ffc93c)">📍 ver GPS</a>` : '<span style="color:#c0392b">sem GPS</span>'}</div>
+          </div>`).join('')}
+      </div>`}
+    </div>` : '';
   return `
   <h3 style="margin:0 0 10px">📢 Alerta geral</h3>
   <div class="subtitulo" style="margin-bottom:12px">Manda um aviso que aparece na tela de todos os motoristas ou de todos os clientes cadastrados, na hora.</div>
@@ -6907,7 +7142,12 @@ function adminAbaAvisosHTML(){
   </div>
   <label style="margin-top:10px">Mensagem</label>
   <textarea id="aviso-geral-mensagem" rows="4" placeholder="Ex: Olá! O que vocês estão achando do preço da quilometragem? Deixem sua sugestão — queremos ouvir vocês!">${ag.mensagem}</textarea>
-  <button class="btn btn-primario" ${ag.enviando?'disabled':''} onclick="enviarAvisoGeralAdmin()">${ag.enviando?'A enviar...':`📢 Mandar alerta para ${ag.papel==='motorista'?'TODOS os motoristas':'TODOS os clientes'}`}</button>`;
+  <button class="btn btn-primario" ${ag.enviando?'disabled':''} onclick="enviarAvisoGeralAdmin()">${ag.enviando?'A enviar...':`📢 Mandar alerta para ${ag.papel==='motorista'?'TODOS os motoristas':'TODOS os clientes'}`}</button>
+
+  <h3 style="margin:22px 0 10px">🧪 Teste de GPS com motoristas online</h3>
+  <div class="subtitulo" style="margin-bottom:12px">Manda na hora um teste (deixando claro que NÃO é uma entrega real) pra todos os motoristas com o app aberto agora (${estado.motoristasOnline||0} online). Cada um que tocar em "confirmar" manda de volta a localização do celular dele, pra você conferir se o GPS está funcionando certinho.</div>
+  <button class="btn btn-secundario" ${tg.enviando?'disabled':''} onclick="dispararTesteGpsAdmin()">${tg.enviando?'A enviar...':'🧪 Disparar teste de GPS agora'}</button>
+  ${respostasHTML}`;
 }
 function adminAbaFeedbacksHTML(){
   const a = estado.admin;
@@ -6954,7 +7194,9 @@ async function carregarClientesAdmin(){
   // ela pra um placeholder no meio do caminho, senão o scroll da pessoa "pula" pro topo.
   const jaTinhaClientes = estado.admin.clientes.length>0;
   if(!jaTinhaClientes){ estado.admin.carregando=true; agendarRenderAdmin(); }
-  const { data, error } = await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada });
+  const { data, error } = adminEhDono()
+    ? await sb.rpc('entrega_admin_listar_clientes', { p_senha: estado.admin.senhaDigitada })
+    : await sb.rpc('entrega_funcionario_listar_clientes', { p_usuario: estado.admin.funcionarioUsuario, p_senha_hash: estado.admin.funcionarioSenhaHash });
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar clientes.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_clientes_saldos').select('telefone,saldo');
   estado.admin.carregando=false;
@@ -6998,10 +7240,10 @@ function centroOperacoesHTML(){
   const online=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)>=agora-120000);
   const gpsParado=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)<agora-120000);
   const demorando=buscando.filter(p=>agora-Number(p.criado_em||p.criadoEm||0)>240000);
-  const cards=[['📍','Motoristas online',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length],['📡','GPS desatualizado',gpsParado.length]];
+  const cards=[['📍','Motoristas online',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length],['📡','Motoristas sem sinal',gpsParado.length]];
   const alertas=[];
   demorando.slice(0,8).forEach(p=>alertas.push(`Pedido ${p.id||''} está há mais de 4 minutos procurando motorista.`));
-  gpsParado.slice(0,8).forEach(m=>alertas.push(`${m.nome||'Motorista'} aparece online, mas o GPS não atualiza há mais de 2 minutos.`));
+  gpsParado.slice(0,8).forEach(m=>alertas.push(`${m.nome||'Motorista'} aparece disponível, mas o app dele não manda sinal há mais de 2 minutos (perdeu conexão, fechou o app ou o celular travou em segundo plano).`));
   return `<div class="admin-secao-titulo"><div><h2>🎛️ Centro de Operações</h2><p>Acompanhe a operação em tempo real e veja somente o que precisa da sua atenção.</p></div><button class="btn btn-secundario btn-pequeno" onclick="carregarTudoAdmin()">↻ Atualizar</button></div>
     <div class="admin-grade-cartoes">${cards.map(c=>`<div class="admin-cartao"><div style="font-size:24px">${c[0]}</div><div class="subtitulo">${c[1]}</div><div style="font:800 32px 'Rajdhani';margin-top:4px">${c[2]}</div></div>`).join('')}</div>
     <div class="admin-cartao" style="margin-top:14px"><b>🚨 Alertas operacionais</b>${alertas.length?`<div style="margin-top:10px">${alertas.map(x=>`<div class="am-linha"><span>${x}</span><b style="color:#ffb25b">ATENÇÃO</b></div>`).join('')}</div>`:`<div class="subtitulo" style="margin-top:8px">Nenhum alerta crítico agora.</div>`}</div>
@@ -7181,6 +7423,31 @@ window.executarDiagnosticoSistema=executarDiagnosticoSistema;
 function adminCorpoHTML(){
   const a = estado.admin;
   if(!a.logado){
+    if(a.mostrarLoginFuncionario){
+      return `
+      <section class="admin-login-shell">
+        <div class="admin-login-card">
+          <div class="admin-login-brand">
+            <img class="admin-login-logo" src="entregaflash-logo-premium.png" alt="Entrega Flash">
+            <div class="admin-login-eyebrow">◆ Acesso da equipe</div>
+            <div class="admin-login-title">Login de funcionário</div>
+            <div class="admin-login-subtitle">Acesso restrito: dá pra ver motoristas/clientes, verificar documentação e responder o suporte. Aprovar, reprovar, excluir e mexer em saldo continua só com o dono.</div>
+          </div>
+          <label class="admin-login-label" for="func-usuario"><span>Usuário</span></label>
+          <div class="admin-login-input-wrap">
+            <span class="admin-login-lock" aria-hidden="true">◆</span>
+            <input type="text" id="func-usuario" autocomplete="username" placeholder="Seu usuário" oninput="digitarLoginFuncionario('usuario',this.value)" onkeydown="if(event.key==='Enter') document.getElementById('func-senha').focus()">
+          </div>
+          <label class="admin-login-label" for="func-senha" style="margin-top:10px"><span>Senha</span></label>
+          <div class="admin-login-input-wrap">
+            <span class="admin-login-lock" aria-hidden="true">▣</span>
+            <input type="password" id="func-senha" autocomplete="current-password" placeholder="Sua senha" oninput="digitarLoginFuncionario('senha',this.value)" onkeydown="if(event.key==='Enter') entrarFuncionario()">
+          </div>
+          <button class="admin-login-btn" onclick="entrarFuncionario()">Entrar &nbsp;→</button>
+          <div class="admin-login-security" style="cursor:pointer" onclick="alternarLoginFuncionario()"><span>← Sou o dono, entrar com a senha principal</span></div>
+        </div>
+      </section>`;
+    }
     return `
     <section class="admin-login-shell">
       <div class="admin-login-card">
@@ -7198,6 +7465,7 @@ function adminCorpoHTML(){
         </div>
         <button class="admin-login-btn" onclick="entrarAdmin()">Entrar no painel &nbsp;→</button>
         <div class="admin-login-security"><span class="dot"></span><span>Área restrita • conexão segura</span></div>
+        <div class="admin-login-security" style="cursor:pointer" onclick="alternarLoginFuncionario()"><span>Sou funcionário, não o dono →</span></div>
         <div class="admin-login-version">Entrega Flash Admin • MG + Grande SP</div>
       </div>
     </section>`;
@@ -7207,7 +7475,7 @@ function adminCorpoHTML(){
   const pendentesMotoristas = (a.motoristas||[]).filter(m=>m.status==='pendente'||m.status==='basico');
   const alertasNaoLidos = (a.alertas||[]).filter(x=>!x.lido);
   const feedbacksNaoLidos = (a.feedbacks||[]).filter(x=>!x.lido);
-  const abas = [
+  const abasCompletas = [
     {id:'resumo', label:'📊 Resumo'},
     {id:'operacoes', label:'🎛️ Operações'},
     {id:'diagnostico', label:'🩺 Diagnóstico'},
@@ -7219,8 +7487,15 @@ function adminCorpoHTML(){
     {id:'alertas', label:`🔔 Alertas${alertasNaoLidos.length?` (${alertasNaoLidos.length})`:''}`},
     {id:'suporte', label:`💬 Suporte${suporteAbertos.length?` (${suporteAbertos.length})`:''}`},
     {id:'avisos', label:'📢 Avisos'},
-    {id:'feedbacks', label:`💡 Feedback${feedbacksNaoLidos.length?` (${feedbacksNaoLidos.length})`:''}`}
+    {id:'feedbacks', label:`💡 Feedback${feedbacksNaoLidos.length?` (${feedbacksNaoLidos.length})`:''}`},
+    {id:'funcionarios', label:'🧑‍💼 Equipe'}
   ];
+  // funcionário só vê o que precisa pra atender: motoristas, clientes e suporte —
+  // aprovar/reprovar/excluir/saldo/config/senhas continuam exclusivos do dono.
+  const abas = adminEhDono() ? abasCompletas : abasCompletas.filter(x=>['motoristas','clientes','suporte'].includes(x.id));
+  // trava de segurança na própria tela: se por algum motivo a aba guardada for de uma seção exclusiva
+  // do dono, funcionário cai pra "motoristas" em vez de ver uma tela em branco/quebrada.
+  if(!adminEhDono() && !['motoristas','clientes','suporte'].includes(a.aba)) a.aba='motoristas';
   let corpo;
   if(a.aba==='resumo') corpo = adminAbaResumoHTML();
   else if(a.aba==='operacoes') corpo = centroOperacoesHTML();
@@ -7233,6 +7508,7 @@ function adminCorpoHTML(){
   else if(a.aba==='alertas') corpo = adminAbaAlertasHTML();
   else if(a.aba==='avisos') corpo = adminAbaAvisosHTML();
   else if(a.aba==='feedbacks') corpo = adminAbaFeedbacksHTML();
+  else if(a.aba==='funcionarios') corpo = adminAbaFuncionariosHTML();
   else corpo = adminAbaSuporteHTML();
   return `
     <div class="admin-cartao" style="margin-bottom:12px;padding:12px 14px">
@@ -7309,15 +7585,26 @@ function salvarMetaOnlineCampanhaAdmin(regiao,valor){
   render();
 }
 function abrirListaAprovadosOfflineAdmin(regiao){
-  estado.admin.filtroRegiaoMotoristas=regiao||'todos';
-  estado.admin.filtroStatusMotoristas='ativos';
-  estado.admin.aba='motoristas';
-  render();
-  setTimeout(()=>{
-    const alvo=document.getElementById('lista-motoristas-admin');
-    if(alvo) alvo.scrollIntoView({behavior:'smooth',block:'start'});
-    mostrarToast('Lista de aprovados offline aberta. Toque em “CHAMAR PARA FICAR ONLINE” para abrir o WhatsApp.','sucesso');
-  },120);
+  try{
+    // Reseta filtro de frota: se ficou travado numa categoria (ex: "motos") de uma navegação
+    // anterior, a lista de aprovados offline aparecia vazia mesmo o contador mostrando aprovados.
+    estado.admin.filtroVeiculoMotoristas='todos';
+    estado.admin.filtroRegiaoMotoristas=regiao||'todos';
+    estado.admin.filtroStatusMotoristas='ativos';
+    estado.admin.aba='motoristas';
+    salvarLocal('ef_admin_aba','motoristas');
+    render();
+    setTimeout(()=>{
+      try{
+        const alvo=document.getElementById('lista-motoristas-admin');
+        if(alvo) alvo.scrollIntoView({behavior:'smooth',block:'start'});
+      }catch(e){ console.error('Falha ao rolar até a lista de motoristas:', e); }
+      mostrarToast('Lista de aprovados offline aberta. Toque em “CHAMAR PARA FICAR ONLINE” para abrir o WhatsApp.','sucesso');
+    },150);
+  }catch(e){
+    console.error('Falha ao abrir lista de aprovados offline:', e);
+    mostrarToast('Não consegui abrir a lista agora. Tenta de novo.','erro');
+  }
 }
 function abrirWhatsAppAtivacaoMotorista(telefone,nome,cidade){
   const numero=normalizarWhatsAppBR(telefone);
@@ -7852,7 +8139,7 @@ function clienteCardAdminHTML(c){
   const idc = String(c.telefone).replace(/\D/g,'');
   const validado = !c.bloqueado;
   return `
-    <details class="admin-resumo-card" data-cliente-telefone="${idc}" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
+    <details class="admin-resumo-card" data-cliente-telefone="${idc}" ${(estado.admin.clienteEditando===c.telefone || estado.admin.clienteAberto===c.telefone)?'open':''} ontoggle="registrarAberturaCardAdmin('cliente','${c.telefone}',this.open)" onmousedown="if(!event.target.closest('summary')) estado.admin.clienteAberto='${c.telefone}';" ontouchstart="if(!event.target.closest('summary')) estado.admin.clienteAberto='${c.telefone}';" style="${c.bloqueado?'border-color:var(--chama)':validado?'':'border-color:var(--mango)'}">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           <div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">👤</div>
@@ -7871,6 +8158,7 @@ function clienteCardAdminHTML(c){
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsApp('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}','${idc}')">💬 WhatsApp</button>
         </div>
+        ${adminEhDono() ? `
         <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
           <label style="margin:0 0 6px">Ajustar saldo (R$; negativo debita)</label>
           <div style="display:flex;gap:8px"><input type="number" id="ajuste-saldo-cliente-${idc}" placeholder="Ex: 20 ou -20" step="0.01" style="flex:1"><button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('ajustarSaldo_'+c.telefone)} onclick="dispararAjusteSaldoCliente('${c.telefone}','${idc}')">${rotuloCarregando('ajustarSaldo_'+c.telefone,'Aplicar','Aplicando...')}</button></div>
@@ -7880,7 +8168,7 @@ function clienteCardAdminHTML(c){
           ${estado.admin.clienteEditando===c.telefone ? `<div style="margin-top:8px;display:flex;flex-direction:column;gap:8px"><div><label style="margin:0 0 4px">Nome</label><input type="text" id="edit-nome-cliente-${idc}" value="${(c.nome||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Telefone / login</label><input type="text" id="edit-telefone-cliente-${idc}" value="${(c.telefone||'').replace(/"/g,'&quot;')}"></div><div><label style="margin:0 0 4px">Observação administrativa</label><textarea id="edit-obs-cliente-${idc}" rows="3">${c.observacao_admin||''}</textarea></div><label style="display:flex;align-items:center;gap:8px;margin:0"><input type="checkbox" id="edit-bloqueado-cliente-${idc}" ${c.bloqueado?'checked':''}> Cliente bloqueado</label><div style="display:flex;gap:8px"><button class="btn btn-verde btn-pequeno" style="flex:1" onclick="salvarEdicaoClienteAdmin('${c.telefone}')">💾 Salvar tudo</button><button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">Cancelar</button></div></div>` : `<button class="btn btn-verde btn-pequeno" style="margin-top:8px;width:100%" onclick="alternarEdicaoClienteAdmin('${c.telefone}')">✏️ EDITAR TODOS OS DADOS</button>`}
           <div style="margin-top:8px;display:flex;gap:8px"><input type="password" id="nova-senha-cliente-${idc}" placeholder="Nova senha" style="flex:1"><button class="btn btn-secundario btn-pequeno" onclick="alterarSenhaClienteAdmin('${c.telefone}', document.getElementById('nova-senha-cliente-${idc}').value)">🔑 Trocar senha</button></div>
           <div style="display:flex;gap:8px;margin-top:8px">${c.bloqueado?`<button class="btn btn-verde btn-pequeno" style="flex:1" onclick="desbloquearClienteAdmin('${c.telefone}')">🔓 Desbloquear</button>`:`<button class="btn btn-secundario btn-pequeno" style="flex:1" onclick="bloquearClienteAdmin('${c.telefone}')">🔒 Bloquear</button>`}<button class="btn btn-pequeno" style="flex:1;background:var(--chama);color:#fff;border-color:var(--chama)" onclick="excluirClienteAdmin('${c.telefone}','${(c.nome||'').replace(/'/g,"\\'")}')">🗑️ Excluir</button></div>
-        </div>
+        </div>` : ''}
       </div>
     </details>`;
 }
@@ -7991,32 +8279,67 @@ function funilCadastroMotoristasHTML(lista){
   const etapas=[['Iniciaram cadastro',iniciaram],['Informaram PIX',pix],['Chegaram aos documentos',chegaramDocs],['Concluíram documentos',docs],['Aprovados',aprovados]];
   return `<div class="admin-cartao" style="margin-bottom:14px"><b>📊 Funil de cadastro dos motoristas</b><div style="font-size:12.5px;color:var(--poeira);margin:4px 0 10px">Mostra exatamente onde as pessoas estão desistindo.</div>${etapas.map((e,i)=>{const pct=iniciaram?Math.round(e[1]/iniciaram*100):0;return `<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:12.5px"><span>${i+1}. ${e[0]}</span><b>${e[1]} · ${pct}%</b></div><div style="height:7px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:4px"><div style="height:100%;width:${pct}%;background:var(--mango)"></div></div></div>`}).join('')}</div>`;
 }
+function centralRecuperacaoMotoristasHTML(lista){
+  const ms=(lista||[]).filter(m=>motoristaSemDocumentos(m));
+  if(!ms.length) return '';
+  const ate2=ms.filter(m=>{const d=Number(m.criado_em||0);return d && (Date.now()-d)<2*86400000}).length;
+  const de2a5=ms.filter(m=>{const d=Number(m.criado_em||0);const x=d?(Date.now()-d)/86400000:0;return d&&x>=2&&x<5}).length;
+  const vencidos=ms.filter(m=>{const d=Number(m.criado_em||0);return d&&(Date.now()-d)>=5*86400000}).length;
+  return `<div class="admin-cartao" style="margin-bottom:14px;border:2px solid rgba(255,151,16,.65);background:linear-gradient(145deg,rgba(255,151,16,.10),var(--painel))">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div><b style="font-family:'Rajdhani';font-size:18px;color:var(--mango)">🎯 CENTRAL DE RECUPERAÇÃO</b><div style="font-size:12.5px;color:var(--poeira);margin-top:3px">Esses cadastros ainda não são motoristas ativos. O objetivo é fazê-los concluir a documentação.</div></div><span class="selo" style="background:rgba(255,151,16,.16);color:var(--mango)">${ms.length} recuperar</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px;text-align:center"><div style="padding:8px;border:1px solid var(--linha);border-radius:10px"><b>${ate2}</b><div style="font-size:10.5px;color:var(--poeira)">até 2 dias</div></div><div style="padding:8px;border:1px solid var(--linha);border-radius:10px"><b>${de2a5}</b><div style="font-size:10.5px;color:var(--poeira)">2 a 5 dias</div></div><div style="padding:8px;border:1px solid rgba(255,92,92,.4);border-radius:10px"><b style="color:#ff7474">${vencidos}</b><div style="font-size:10.5px;color:var(--poeira)">+5 dias</div></div></div>
+    <button class="btn btn-primario btn-pequeno" style="width:100%;margin-top:10px" onclick="estado.admin.filtroStatusMotoristas='docs';render()">📄 Ver somente quem falta documento</button>
+  </div>`;
+}
 function adminAbaMotoristasHTML(){
   const a = estado.admin;
   if(!a.filtroRegiaoMotoristas) a.filtroRegiaoMotoristas='todos';
   if(!a.filtroStatusMotoristas) a.filtroStatusMotoristas='todos';
+  if(!a.filtroVeiculoMotoristas) a.filtroVeiculoMotoristas='todos';
   if(a.carregando) return skeletonLista(4);
   if(a.motoristas.length===0) return `<div class="vazio"><span class="emoji-grande">🛵</span>Nenhum cadastro de entregador ainda.</div>`;
   const emRotaPorTelefone = {};
   (a.todosPedidos||[]).forEach(p=>{ if(p.motorista_telefone && ['indo_coletar','coletado','a_caminho'].includes(p.status)) emRotaPorTelefone[p.motorista_telefone]=true; });
   const cardHTML=(m)=>motoristaCardHTML(m,!!emRotaPorTelefone[m.telefone]);
-  const baseMotoristas=a.motoristas.filter(m=>{
+  const regiaoMotoristas=a.motoristas.filter(m=>{
     if(a.filtroRegiaoMotoristas==='sp') return cidadeEhGrandeSP(m.cidade);
     if(a.filtroRegiaoMotoristas==='mg') return !cidadeEhGrandeSP(m.cidade);
     return true;
+  });
+  // Filtro de frota: cada tipo de veículo fica separado para facilitar o planejamento da operação/campanhas.
+  const veiculosDisponiveis = ['moto','carro','bicicleta','carroaberto','fiorino','van','caminhao'];
+  const baseMotoristas=regiaoMotoristas.filter(m=>{
+    if(a.filtroVeiculoMotoristas==='todos') return true;
+    if(a.filtroVeiculoMotoristas==='sem_veiculo') return !String(m.veiculo_tipo||'').trim();
+    if(a.filtroVeiculoMotoristas==='outros') return !!String(m.veiculo_tipo||'').trim() && !veiculosDisponiveis.includes(m.veiculo_tipo);
+    return m.veiculo_tipo===a.filtroVeiculoMotoristas;
   });
   const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m));
   const aguardandoDocs=baseMotoristas.filter(m=>motoristaSemDocumentos(m));
   const pendentes=baseMotoristas.filter(m=>motoristaEmAnalise(m));
   const ativos=baseMotoristas.filter(m=>motoristaAprovado(m) && !motoristaOnlineAgora(m));
   const bloqueados=baseMotoristas.filter(m=>m.status==='bloqueado');
-  const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m));
+  const reprovados=baseMotoristas.filter(m=>m.status==='reprovado');
+  const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m)&&!reprovados.includes(m));
+  const veiculoChips = [
+    {id:'todos', label:'🚚 Toda a frota', n:regiaoMotoristas.length},
+    {id:'moto', label:'🏍️ Motos', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='moto').length},
+    {id:'carro', label:'🚗 Carros', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='carro').length},
+    {id:'carroaberto', label:'🛻 Utilitários', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='carroaberto').length},
+    {id:'fiorino', label:'🚐 Fiorinos', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='fiorino').length},
+    {id:'van', label:'🚐 Vans', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='van').length},
+    {id:'caminhao', label:'🚚 Caminhões', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='caminhao').length},
+    {id:'bicicleta', label:'🚲 Bicicletas', n:regiaoMotoristas.filter(m=>m.veiculo_tipo==='bicicleta').length},
+    {id:'sem_veiculo', label:'⚠️ Sem veículo informado', n:regiaoMotoristas.filter(m=>!String(m.veiculo_tipo||'').trim()).length},
+    {id:'outros', label:'⚙️ Outros', n:regiaoMotoristas.filter(m=>!!String(m.veiculo_tipo||'').trim() && !veiculosDisponiveis.includes(m.veiculo_tipo)).length}
+  ];
   const chips = [
     {id:'todos', label:'Todos', n:baseMotoristas.length},
     {id:'docs', label:'🆕 Falta documento', n:aguardandoDocs.length},
     {id:'analise', label:'📄 Aguardando aprovação', n:pendentes.length},
     {id:'online', label:'🟢 Online agora', n:online.length},
     {id:'ativos', label:'✅ Aprovados', n:ativos.length},
+    {id:'reprovados', label:'❌ Reprovados', n:reprovados.length},
     {id:'bloqueados', label:'🔒 Bloqueados', n:bloqueados.length}
   ];
   const grupoFiltrado = {
@@ -8024,6 +8347,7 @@ function adminAbaMotoristasHTML(){
     analise: {titulo:'📄 Documentos enviados, aguardando aprovação', lista:pendentes},
     online: {titulo:'🟢 Online agora', lista:online},
     ativos: {titulo:'✅ Aprovados (offline)', lista:ativos},
+    reprovados: {titulo:'❌ Reprovados', lista:reprovados},
     bloqueados: {titulo:'🔒 Bloqueados', lista:bloqueados}
   }[a.filtroStatusMotoristas];
   const corpoLista = grupoFiltrado
@@ -8035,16 +8359,21 @@ function adminAbaMotoristasHTML(){
     ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🆕 Acabou de se cadastrar — falta documento</b><span class="selo" style="background:rgba(255,151,16,0.16);color:var(--mango)">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
     ${pendentes.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>📄 Documentos enviados, aguardando aprovação</b><span class="selo" style="background:rgba(111,168,220,0.18);color:var(--azul)">${pendentes.length}</span></div>${pendentes.map(cardHTML).join('')}`:''}
     ${ativos.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>✅ Aprovados (offline)</b><span class="selo selo-entregue">${ativos.length}</span></div>${ativos.map(cardHTML).join('')}`:''}
+    ${reprovados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>❌ Reprovados</b><span class="selo selo-cancelado">${reprovados.length}</span></div>${reprovados.map(cardHTML).join('')}`:''}
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
     ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
   return `
     <div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;background:rgba(255,151,16,.10);border:1px solid rgba(255,151,16,.35);font-size:12px;font-weight:800;color:var(--mango)">🚀 CENTRAL DE LANÇAMENTO ATIVA • VERSÃO 04/09</div>
     ${centralLancamentoHTML()}
+    ${centralRecuperacaoMotoristasHTML(baseMotoristas)}
     ${funilCadastroMotoristasHTML(baseMotoristas)}
     <div class="admin-filtros-grade" style="margin-bottom:10px">
       <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
       <button class="${a.filtroRegiaoMotoristas==='sp'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='sp';render()">📍 Grande São Paulo</button>
       <button class="${a.filtroRegiaoMotoristas==='mg'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='mg';render()">📍 Sul de Minas</button>
+    </div>
+    <div class="admin-filtros-grade" style="margin-bottom:10px">
+      ${veiculoChips.map(c=>`<button class="${a.filtroVeiculoMotoristas===c.id?'ativo':''}" onclick="estado.admin.filtroVeiculoMotoristas='${c.id}';render()">${c.label} (${c.n})</button>`).join('')}
     </div>
     <div class="admin-filtros-grade" style="margin-bottom:12px">
       ${chips.map(c=>`<button class="${a.filtroStatusMotoristas===c.id?'ativo':''}" onclick="estado.admin.filtroStatusMotoristas='${c.id}';render()">${c.label} (${c.n})</button>`).join('')}
@@ -8098,14 +8427,49 @@ function normalizarWhatsAppBR(telefone){
   if(n.length===10 || n.length===11) return '55'+n;
   return n;
 }
+function enviarAprovacaoWhatsAppMotorista(telefone, nome){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkApp=`https://entregaflash.app.br/?ir=login-motorista&tel=${encodeURIComponent(telefoneLogin)}`;
+  const msg=`Olá, ${primeiro}! 🎉 Seu cadastro na Entrega Flash foi APROVADO! Muito obrigado pela confiança em fazer parte da nossa equipe de entregadores 🙏
+
+Acesse o link abaixo e entre com sua senha para abrir o app:
+${linkApp}
+
+🔔 Assim que entrar, ative as notificações — é assim que você vai saber na hora exata que aparecer uma corrida disponível pra você. Sem isso, você pode perder pedidos sem perceber!
+
+Bora começar a entregar? 🚀`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
+function enviarReprovacaoWhatsAppMotorista(telefone, nome, motivo){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
+  const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkReenvio=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(telefoneLogin)}`;
+  const motivoTexto=(motivo||'').trim();
+  const msg=`Olá, ${primeiro}! Aqui é da Entrega Flash. Analisamos seu cadastro e infelizmente algo precisa ser corrigido:
+
+${motivoTexto || 'Um dos documentos enviados não pôde ser aceito.'}
+
+Acesse o link abaixo, entre com sua senha e reenvie exatamente o que está pedindo (o que já está certo continua salvo, não precisa reenviar tudo):
+${linkReenvio}
+
+Qualquer dúvida, estamos à disposição. 🙏`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
 function abrirWhatsAppDocumentosAdmin(telefone, nome, veiculoTipo){
   const numero=normalizarWhatsAppBR(telefone);
   if(!numero){ mostrarToast('Telefone inválido para WhatsApp.', 'erro'); return; }
   const primeiro=(nome||'').trim().split(' ')[0]||'tudo bem';
   const ehBike=veiculoTipo==='bicicleta';
+  const telefoneLogin=String(telefone||'').replace(/\D/g,'');
+  const linkContinuacao=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(telefoneLogin)}`;
   const msg=ehBike
-    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: entre novamente no app com seu WhatsApp e senha e continue exatamente de onde parou. Complete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
-    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Seu cadastro está quase pronto. Entre novamente no app com seu WhatsApp e senha: ele vai abrir exatamente de onde você parou. Complete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: acesse o link abaixo, entre com sua senha e continue exatamente de onde parou:\n${linkContinuacao}\n\nComplete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
+    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Seu cadastro está quase pronto. Acesse o link abaixo, entre com sua senha: ele vai abrir exatamente de onde você parou:\n${linkContinuacao}\n\nComplete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg), '_blank');
 }
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
@@ -8246,7 +8610,11 @@ let _adminRenderPendente = false;
 function adminTemInteracaoAberta(){
   if(!estado.admin?.aberto) return false;
   if(estado.modalReprovar || estado.modalConfirmar || estado.admin.motoristaEditando || estado.admin.clienteEditando || estado.admin.pedidoEditando) return true;
-  if(document.querySelector('.admin-resumo-card[open], .modal-fundo, .foto-ampliada')) return true;
+  // OBS: não bloqueia mais só por um card estar aberto pra visualização — isso travava o painel
+  // inteiro (nenhum motorista atualizava) enquanto qualquer card ficasse aberto sem edição.
+  // O estado (motoristaAberto/clienteAberto/motoristaEditando/...) já garante que o card
+  // continua aberto depois de um re-render, então não precisa mais congelar a tela pra isso.
+  if(document.querySelector('.modal-fundo, .foto-ampliada')) return true;
   const ativo=document.activeElement;
   return !!(ativo && ativo.closest && ativo.closest('.admin-conteudo') && /^(INPUT|TEXTAREA|SELECT)$/.test(ativo.tagName));
 }
@@ -8320,11 +8688,11 @@ function assinarAdminRealtime(){
       const novo=payload?.new||{};
       const atual=(estado.admin.motoristas||[]).find(m=>m.id===novo.id || (m.telefone&&m.telefone===novo.telefone));
       if(payload?.eventType==='UPDATE' && atual){
-        const camposEstruturais=['nome','cpf','telefone','cidade','veiculo_tipo','veiculo_marca','veiculo_placa','veiculo_cor','status','plano','disponivel','cnh_url','crlv_url','foto_motorista_url','foto_veiculo_url','foto_veiculo_tras_url','chave_pix'];
+        const camposEstruturais=['nome','cpf','telefone','cidade','veiculo_tipo','veiculo_marca','veiculo_placa','veiculo_cor','status','plano','cnh_url','crlv_url','foto_motorista_url','foto_veiculo_url','foto_veiculo_tras_url','chave_pix'];
         const mudouAlgoImportante=camposEstruturais.some(k=>String(atual[k]??'')!==String(novo[k]??''));
-        atual.disponivel_atualizado_em=novo.disponivel_atualizado_em;
+        atual.disponivel=novo.disponivel; atual.disponivel_atualizado_em=novo.disponivel_atualizado_em;
         atual.lat_atual=novo.lat_atual; atual.lng_atual=novo.lng_atual; atual.lat_atualizado_em=novo.lat_atualizado_em;
-        if(!mudouAlgoImportante){ carregarMotoristasOnline(); return; } // heartbeat: zero piscada
+        if(!mudouAlgoImportante){ carregarMotoristasOnline(); atualizarPresencaAdminDOM(); return; } // heartbeat/online-offline: zero piscada
       }
       debounce('admin-motoristas', carregarMotoristasAdmin);
     })
@@ -8379,7 +8747,10 @@ function assinarAdminRealtime(){
   // agora que o sinal instantâneo faz o trabalho pesado — garante que o painel não fique desatualizado pra sempre.
   if(intervaloAdminMotoristasClientesPoll) clearInterval(intervaloAdminMotoristasClientesPoll);
   intervaloAdminMotoristasClientesPoll = setInterval(() => {
-    if(estado.admin.logado) { carregarMotoristasAdmin(); if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) carregarClientesAdmin(); }
+    if(estado.admin.logado) {
+      if(!estado.admin.motoristaEditando) carregarMotoristasAdmin();
+      if(!adminOperacaoClienteEmAndamento && !estado.admin.clienteEditando) carregarClientesAdmin();
+    }
   }, 120000);
 }
 function encerrarAdminRealtime(){
@@ -8414,13 +8785,117 @@ async function entrarAdmin(){
   if(erroSenha){ console.error(erroSenha); mostrarToast('Erro ao verificar a senha. Tenta de novo.', 'erro'); return; }
   if(!senhaOk){ mostrarToast('Senha incorreta.', 'erro'); return; }
   estado.admin.logado=true;
+  estado.admin.papel='dono';
   salvarLocal('ef_admin_logado','true');
+  salvarLocal('ef_admin_papel','dono');
   salvarLocal('ef_admin_senha', senha);
-  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin()]);
+  await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin(), carregarFuncionariosAdmin()]);
   await carregarSuporteAdmin();
   assinarSuporteAdminGlobal();
   assinarAdminRealtime();
   if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
+  render();
+}
+function alternarLoginFuncionario(){
+  estado.admin.mostrarLoginFuncionario = !estado.admin.mostrarLoginFuncionario;
+  render();
+}
+function digitarLoginFuncionario(campo, v){
+  if(campo==='usuario') estado.admin.funcionarioLoginUsuario=v;
+  else estado.admin.funcionarioLoginSenha=v;
+}
+async function entrarFuncionario(){
+  const usuario = (estado.admin.funcionarioLoginUsuario||'').trim();
+  const senha = estado.admin.funcionarioLoginSenha||'';
+  if(!usuario || !senha){ mostrarToast('Preenche usuário e senha.'); return; }
+  const senhaHash = await hashSenha(senha);
+  const { data, error } = await sb.rpc('entrega_funcionario_login', { p_usuario: usuario, p_senha_hash: senhaHash });
+  if(error || !data || !data.length){ mostrarToast('Usuário ou senha incorretos.', 'erro'); return; }
+  estado.admin.logado=true;
+  estado.admin.papel='funcionario';
+  estado.admin.funcionarioUsuario=usuario;
+  estado.admin.funcionarioSenhaHash=senhaHash;
+  estado.admin.funcionarioNome=data[0].nome;
+  estado.admin.aba='motoristas';
+  salvarLocal('ef_admin_logado','true');
+  salvarLocal('ef_admin_papel','funcionario');
+  salvarLocal('ef_funcionario_usuario', usuario);
+  salvarLocal('ef_funcionario_senha_hash', senhaHash);
+  salvarLocal('ef_funcionario_nome', data[0].nome);
+  await Promise.all([carregarMotoristasAdmin(), carregarClientesAdmin()]);
+  await carregarSuporteAdmin();
+  assinarSuporteAdminGlobal();
+  assinarAdminRealtime();
+  if(estado.notificacoesStatus==='granted') inscreverPushReal('admin');
+  render();
+}
+function adminEhDono(){ return estado.admin.logado && estado.admin.papel==='dono'; }
+async function carregarFuncionariosAdmin(){
+  if(!adminEhDono()) return;
+  const { data, error } = await sb.rpc('entrega_admin_listar_funcionarios', { p_senha: estado.admin.senhaDigitada });
+  if(error){ console.error(error); return; }
+  estado.admin.funcionarios = data||[];
+}
+function adminAbaFuncionariosHTML(){
+  const lista = estado.admin.funcionarios||[];
+  return `
+  <div class="admin-secao-titulo"><div><h2>🧑‍💼 Equipe (acesso restrito)</h2><p>Crie um login pra alguém te ajudar com suporte, motoristas e clientes — sem poder aprovar, reprovar, excluir cadastro nem mexer em saldo. Só quem entra com a senha principal (você) pode fazer isso.</p></div></div>
+  <div class="admin-cartao" style="margin-bottom:14px">
+    <b>Novo funcionário</b>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+      <input type="text" id="novo-func-nome" placeholder="Nome">
+      <input type="text" id="novo-func-usuario" placeholder="Usuário de login (ex: joana)" autocomplete="off">
+      <input type="password" id="novo-func-senha" placeholder="Senha" autocomplete="new-password">
+      <button class="btn btn-primario" onclick="criarFuncionarioAdmin()">+ Criar acesso</button>
+    </div>
+  </div>
+  ${lista.length ? lista.map(f=>`
+    <div class="admin-cartao" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div><b>${f.nome||f.usuario}</b><div class="subtitulo">usuário: ${f.usuario}</div></div>
+        <span class="selo ${f.ativo?'selo-entregue':'selo-cancelado'}">${f.ativo?'ativo':'desativado'}</span>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-secundario btn-pequeno" onclick="alternarStatusFuncionarioAdmin('${f.id}',${!f.ativo})">${f.ativo?'Desativar':'Reativar'}</button>
+        <button class="btn btn-secundario btn-pequeno" onclick="trocarSenhaFuncionarioAdmin('${f.id}')">Trocar senha</button>
+        <button class="btn btn-secundario btn-pequeno" onclick="excluirFuncionarioAdmin('${f.id}')">🗑️ Excluir</button>
+      </div>
+    </div>`).join('') : `<div class="admin-cartao"><div class="subtitulo">Nenhum funcionário cadastrado ainda.</div></div>`}`;
+}
+async function criarFuncionarioAdmin(){
+  const nome=(document.getElementById('novo-func-nome')?.value||'').trim();
+  const usuario=(document.getElementById('novo-func-usuario')?.value||'').trim();
+  const senha=document.getElementById('novo-func-senha')?.value||'';
+  if(!nome || !usuario || !senha){ mostrarToast('Preenche nome, usuário e senha.'); return; }
+  if(senha.length<4){ mostrarToast('Senha muito curta (mínimo 4 caracteres).'); return; }
+  const senhaHash = await hashSenha(senha);
+  const { error } = await sb.rpc('entrega_admin_criar_funcionario', { p_senha: estado.admin.senhaDigitada, p_nome: nome, p_usuario: usuario, p_senha_hash: senhaHash });
+  if(error){ console.error(error); mostrarToast(error.message==='usuario_invalido' ? 'Informe um usuário válido.' : 'Erro ao criar (usuário já existe?).', 'erro'); return; }
+  mostrarToast('Funcionário criado!', 'sucesso');
+  await carregarFuncionariosAdmin();
+  render();
+}
+async function alternarStatusFuncionarioAdmin(id, novoAtivo){
+  const { error } = await sb.rpc('entrega_admin_definir_status_funcionario', { p_senha: estado.admin.senhaDigitada, p_id: id, p_ativo: novoAtivo });
+  if(error){ console.error(error); mostrarToast('Erro ao atualizar.', 'erro'); return; }
+  await carregarFuncionariosAdmin();
+  render();
+}
+async function trocarSenhaFuncionarioAdmin(id){
+  const nova = prompt('Nova senha para esse funcionário:');
+  if(!nova) return;
+  if(nova.length<4){ mostrarToast('Senha muito curta (mínimo 4 caracteres).'); return; }
+  const senhaHash = await hashSenha(nova);
+  const { error } = await sb.rpc('entrega_admin_trocar_senha_funcionario', { p_senha: estado.admin.senhaDigitada, p_id: id, p_senha_hash_nova: senhaHash });
+  if(error){ console.error(error); mostrarToast('Erro ao trocar a senha.', 'erro'); return; }
+  mostrarToast('Senha atualizada!', 'sucesso');
+}
+async function excluirFuncionarioAdmin(id){
+  if(!confirm('Excluir esse acesso de funcionário? Ele não vai mais conseguir entrar.')) return;
+  const { error } = await sb.rpc('entrega_admin_excluir_funcionario', { p_senha: estado.admin.senhaDigitada, p_id: id });
+  if(error){ console.error(error); mostrarToast('Erro ao excluir.', 'erro'); return; }
+  mostrarToast('Funcionário excluído.', 'sucesso');
+  await carregarFuncionariosAdmin();
   render();
 }
 async function carregarAlertasAdmin(){
@@ -8444,6 +8919,7 @@ function sairAdmin(){
   const fundo = document.querySelector('.modal-fundo-admin');
   if(fundo) fundo.remove();
   estado.admin.logado=false; estado.admin.aberto=true; estado.admin.senhaDigitada='';
+  estado.admin.papel=null; estado.admin.funcionarioUsuario=''; estado.admin.funcionarioSenhaHash=''; estado.admin.funcionarioNome=''; estado.admin.mostrarLoginFuncionario=false;
   encerrarSuporteAdminGlobal();
   encerrarAdminRealtime();
   if(mapaAdminGeral){
@@ -8454,18 +8930,27 @@ function sairAdmin(){
   salvarLocal('ef_admin_aberto','true');
   removerLocal('ef_admin_aba');
   removerLocal('ef_admin_senha');
+  removerLocal('ef_admin_papel');
+  removerLocal('ef_funcionario_usuario');
+  removerLocal('ef_funcionario_senha_hash');
+  removerLocal('ef_funcionario_nome');
   render();
 }
 async function carregarMotoristasAdmin(){
-  try{
-    const {data:apps,error:erroApps}=await sb.rpc('entrega_admin_status_apps',{p_senha:estado.admin.senhaDigitada});
-    if(!erroApps) estado.admin.appDispositivos=apps||[];
-  }catch(e){ console.warn('Status dos aplicativos indisponível',e); }
+  if(adminEhDono()){
+    try{
+      const {data:apps,error:erroApps}=await sb.rpc('entrega_admin_status_apps',{p_senha:estado.admin.senhaDigitada});
+      if(!erroApps) estado.admin.appDispositivos=apps||[];
+    try{ const {data:pe,error:ee}=await sb.rpc('entrega_admin_push_status',{p_senha:estado.admin.senhaDigitada,p_referencia:null}); if(!ee) estado.admin.pushEventos=pe||[]; }catch(e){}
+    }catch(e){ console.warn('Status dos aplicativos indisponível',e); }
+  }
   // mesma lógica do carregarClientesAdmin: só colapsa a lista pro placeholder de "carregando"
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
   if(!jaTinhaMotoristas){ estado.admin.carregando=true; agendarRenderAdmin(); }
-  const { data: dadosBrutos, error } = await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada });
+  const { data: dadosBrutos, error } = adminEhDono()
+    ? await sb.rpc('entrega_admin_listar_motoristas', { p_senha: estado.admin.senhaDigitada })
+    : await sb.rpc('entrega_funcionario_listar_motoristas', { p_usuario: estado.admin.funcionarioUsuario, p_senha_hash: estado.admin.funcionarioSenhaHash });
   const data = (dadosBrutos||[]).filter(m => m.status !== 'incompleto');
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar cadastros.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_saldos').select('telefone,saldo');
@@ -8474,7 +8959,7 @@ async function carregarMotoristasAdmin(){
   const saldoPorTelefone = {};
   (saldos||[]).forEach(s=>{ saldoPorTelefone[s.telefone] = Number(s.saldo)||0; });
   const novos = (data||[]).map(m=>({ ...m, saldo: saldoPorTelefone[m.telefone]||0 }));
-  const assinatura=(lista)=>JSON.stringify((lista||[]).map(m=>[m.id,m.nome,m.telefone,m.cidade,m.status,m.plano,m.veiculo_tipo,m.veiculo_marca,m.veiculo_placa,m.veiculo_cor,m.cnh_url,m.crlv_url,m.foto_motorista_url,m.foto_veiculo_url,m.foto_veiculo_tras_url,m.chave_pix,Number(m.saldo||0),!!motoristaOnlineAgora(m)]));
+  const assinatura=(lista)=>JSON.stringify((lista||[]).map(m=>[m.id,m.nome,m.telefone,m.cidade,m.status,m.plano,m.veiculo_tipo,m.veiculo_marca,m.veiculo_placa,m.veiculo_cor,m.cnh_url,m.crlv_url,m.foto_motorista_url,m.foto_veiculo_url,m.foto_veiculo_tras_url,m.chave_pix,Number(m.saldo||0)]));
   const mudou = assinatura(estado.admin.motoristas)!==assinatura(novos);
   estado.admin.motoristas = novos;
   if(mudou || !jaTinhaMotoristas) agendarRenderAdmin();
@@ -8513,6 +8998,16 @@ async function lembrarEnviarDocumentosAdmin(telefone, nome){
 function alternarEdicaoMotoristaAdmin(id){
   estado.admin.motoristaEditando = estado.admin.motoristaEditando===id ? null : id;
   render();
+}
+function registrarAberturaCardAdmin(tipo, chave, aberto){
+  // Guarda qual card o admin deixou expandido manualmente (clique no <summary>), pra sobreviver
+  // a qualquer atualização de fundo (realtime, polling) que recrie a lista inteira do zero.
+  // Só fecha de fato quando o próprio admin fecha esse card ou abre outro (não sozinho).
+  if(tipo==='motorista'){
+    estado.admin.motoristaAberto = aberto ? chave : (estado.admin.motoristaAberto===chave ? null : estado.admin.motoristaAberto);
+  }else if(tipo==='cliente'){
+    estado.admin.clienteAberto = aberto ? chave : (estado.admin.clienteAberto===chave ? null : estado.admin.clienteAberto);
+  }
 }
 async function salvarEdicaoMotoristaAdmin(id){
   const ler=(suf)=>document.getElementById('edit-'+suf+'-'+id)?.value?.trim()||'';
@@ -8583,18 +9078,18 @@ window.escolherPlano=escolherPlano;
 window.processarDocumentoSelecionado=processarDocumentoSelecionado; window.copiarPix=copiarPix;
 window.finalizarCadastroMotorista=finalizarCadastroMotorista; window.alternarTermos=alternarTermos;
 window.abrirAdmin=abrirAdmin; window.fecharAdmin=fecharAdmin; window.digitarSenhaAdmin=digitarSenhaAdmin;
-window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao;
+window.entrarAdmin=entrarAdmin; window.sairAdmin=sairAdmin; window.trocarSenhaAdminPainel=trocarSenhaAdminPainel; window.aprovarMotoristaAdmin=aprovarMotoristaAdmin; window.liberarDocumentosMotoristaAdmin=liberarDocumentosMotoristaAdmin; window.continuarParaDocumentos=continuarParaDocumentos; window.abrirModalReprovar=abrirModalReprovar; window.fecharModalReprovar=fecharModalReprovar; window.selecionarMotivoPreset=selecionarMotivoPreset; window.confirmarReprovacao=confirmarReprovacao; window.alternarDocumentoReprovado=alternarDocumentoReprovado;
 window.alternarEdicaoMotoristaAdmin=alternarEdicaoMotoristaAdmin; window.salvarEdicaoMotoristaAdmin=salvarEdicaoMotoristaAdmin;
 window.alternarEdicaoClienteAdmin=alternarEdicaoClienteAdmin; window.salvarEdicaoClienteAdmin=salvarEdicaoClienteAdmin;
 window.alterarSenhaClienteAdmin=alterarSenhaClienteAdmin; window.bloquearClienteAdmin=bloquearClienteAdmin;
 window.desbloquearClienteAdmin=desbloquearClienteAdmin; window.excluirClienteAdmin=excluirClienteAdmin;
 window.alternarEdicaoPedidoAdmin=alternarEdicaoPedidoAdmin; window.salvarEdicaoPedidoAdmin=salvarEdicaoPedidoAdmin; window.excluirPedidoAdmin=excluirPedidoAdmin;
 window.alterarSenhaMotoristaAdmin=alterarSenhaMotoristaAdmin; window.bloquearMotoristaAdmin=bloquearMotoristaAdmin;
-window.abrirWhatsAppAtivacaoMotorista=abrirWhatsAppAtivacaoMotorista; window.abrirListaAprovadosOfflineAdmin=abrirListaAprovadosOfflineAdmin; window.salvarMetaOnlineCampanhaAdmin=salvarMetaOnlineCampanhaAdmin; window.copiarTextoCampanhaClientesAdmin=copiarTextoCampanhaClientesAdmin; window.abrirMetaAdsAdmin=abrirMetaAdsAdmin; window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin;
+window.abrirWhatsAppAtivacaoMotorista=abrirWhatsAppAtivacaoMotorista; window.abrirListaAprovadosOfflineAdmin=abrirListaAprovadosOfflineAdmin; window.salvarMetaOnlineCampanhaAdmin=salvarMetaOnlineCampanhaAdmin; window.copiarTextoCampanhaClientesAdmin=copiarTextoCampanhaClientesAdmin; window.abrirMetaAdsAdmin=abrirMetaAdsAdmin; window.abrirWhatsAppPendenciaEspecifica=abrirWhatsAppPendenciaEspecifica; window.abrirWhatsAppTodasPendencias=abrirWhatsAppTodasPendencias; window.desbloquearMotoristaAdmin=desbloquearMotoristaAdmin; window.excluirMotoristaAdmin=excluirMotoristaAdmin; window.abrirWhatsAppDocumentosAdmin=abrirWhatsAppDocumentosAdmin; window.enviarReprovacaoWhatsAppMotorista=enviarReprovacaoWhatsAppMotorista;
 window.atualizarPainelAdmin=atualizarPainelAdmin;
 window.mudarAbaAdmin=mudarAbaAdmin; window.definirFiltroPedidosAdmin=definirFiltroPedidosAdmin; window.digitarBuscaPedidosAdmin=digitarBuscaPedidosAdmin;
 window.marcarAlertaLido=marcarAlertaLido; window.marcarTodosAlertasLidos=marcarTodosAlertasLidos;
-window.definirPapelAvisoGeral=definirPapelAvisoGeral; window.enviarAvisoGeralAdmin=enviarAvisoGeralAdmin; window.marcarFeedbackLido=marcarFeedbackLido;
+window.definirPapelAvisoGeral=definirPapelAvisoGeral; window.enviarAvisoGeralAdmin=enviarAvisoGeralAdmin; window.marcarFeedbackLido=marcarFeedbackLido; window.dispararTesteGpsAdmin=dispararTesteGpsAdmin;
 window.salvarConfigGeralAdmin=salvarConfigGeralAdmin; window.ajustarSaldoMotoristaAdmin=ajustarSaldoMotoristaAdmin;
 window.ajustarSaldoClienteAdmin=ajustarSaldoClienteAdmin; window.dispararAjusteSaldoCliente=dispararAjusteSaldoCliente; window.enviarBoasVindasWhatsApp=enviarBoasVindasWhatsApp; window.enviarBoasVindasWhatsAppMotorista=enviarBoasVindasWhatsAppMotorista; window.marcarTaxaProPagaAdmin=marcarTaxaProPagaAdmin;
 window.alterarPlanoMotoristaAdmin=alterarPlanoMotoristaAdmin;
@@ -8624,6 +9119,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   render();
   carregarConfigGeral().then(render);
   registrarServiceWorker();
+  registrarEventoPushAtivacao('aberto');
   assinarPedidosRealtime();
   assinarMotoristasOnlineRealtime();
   assinarChatGlobalRealtime();
