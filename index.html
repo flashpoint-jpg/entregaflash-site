@@ -1842,7 +1842,7 @@ function dispararAnimacaoPlano(chave){
 let estado = {
   modo:'cliente',
   telaBoasVindas: true,
-  form:{ etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', destinoFotoUrl:null, destinoReferencia:'', roca:false, extras:extrasVazios() },
+  form:{ etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', roca:false, extras:extrasVazios() },
   semEndereco:{ aberto:false, campo:'origem', mapsLink:'', plusCode:'', erro:'', enviandoFoto:false },
   calculando:false, falhaCalculo:false,
   transicaoPedido:{ ativa:false, alvo:null },
@@ -2826,8 +2826,8 @@ function paraCamposApp(row){
     motoristaAmigoSolicitante: row.motorista_amigo_solicitante || null, motoristaAmigoPercentual: row.motorista_amigo_percentual!=null ? Number(row.motorista_amigo_percentual) : null,
     origem:row.origem, destino:row.destino,
     origemCoord:(row.origem_lat!=null&&row.origem_lng!=null)?{lat:row.origem_lat,lon:row.origem_lng}:null,
-    origemFotoUrl: row.origem_foto_url || null, origemReferencia: row.origem_referencia || '',
-    destinoFotoUrl: row.destino_foto_url || null, destinoReferencia: row.destino_referencia || '',
+    origemFotoUrl: row.origem_foto_url || null, origemReferencia: row.origem_referencia || '', origemComplemento: row.origem_complemento || '',
+    destinoFotoUrl: row.destino_foto_url || null, destinoReferencia: row.destino_referencia || '', destinoComplemento: row.destino_complemento || '',
     destinoCoord:(row.destino_lat!=null&&row.destino_lng!=null)?{lat:row.destino_lat,lon:row.destino_lng}:null,
     motoristaCoord:(row.motorista_lat!=null&&row.motorista_lng!=null)?{lat:row.motorista_lat,lon:row.motorista_lng}:null,
     fotoAntesUrl: row.foto_antes_url || null, fotoDepoisUrl: row.foto_depois_url || null,
@@ -2869,8 +2869,8 @@ function paraCamposDB(p){
     motorista_nome:p.motoristaNome||null, motorista_telefone:p.motoristaTelefone||null,
     origem:p.origem, destino:p.destino,
     origem_lat:p.origemCoord?p.origemCoord.lat:null, origem_lng:p.origemCoord?p.origemCoord.lon:null,
-    origem_foto_url:p.origemFotoUrl||null, origem_referencia:p.origemReferencia||null,
-    destino_foto_url:p.destinoFotoUrl||null, destino_referencia:p.destinoReferencia||null,
+    origem_foto_url:p.origemFotoUrl||null, origem_referencia:p.origemReferencia||null, origem_complemento:p.origemComplemento||null,
+    destino_foto_url:p.destinoFotoUrl||null, destino_referencia:p.destinoReferencia||null, destino_complemento:p.destinoComplemento||null,
     destino_lat:p.destinoCoord?p.destinoCoord.lat:null, destino_lng:p.destinoCoord?p.destinoCoord.lon:null,
     veiculo:p.veiculo, descricao:p.descricao||null, distancia:p.distancia, preco:p.preco,
     status:p.status, criado_em:p.criadoEm, atualizado_em:p.atualizadoEm,
@@ -4053,8 +4053,8 @@ async function criarPedido(){
     id:'p'+agora+Math.floor(Math.random()*1000),
     clienteNome:f.nome, clienteTelefone:f.telefone,
     origem:f.origem, destino:f.destino, origemCoord:f.origemCoord, destinoCoord:f.destinoCoord,
-    origemFotoUrl:f.origemFotoUrl||null, origemReferencia:f.origemReferencia||'',
-    destinoFotoUrl:f.destinoFotoUrl||null, destinoReferencia:f.destinoReferencia||'',
+    origemFotoUrl:f.origemFotoUrl||null, origemReferencia:f.origemReferencia||'', origemComplemento:f.origemComplemento||'',
+    destinoFotoUrl:f.destinoFotoUrl||null, destinoReferencia:f.destinoReferencia||'', destinoComplemento:f.destinoComplemento||'',
     paradas:paradasValidas, paradasCoords:paradasCoordsValidas, paradaAtual:0, tipoRetirada:f.tipoRetirada, horarioAgendado:f.tipoRetirada==='agendado'?f.horarioAgendado:null,
     editado:false, canceladoEm:null, taxaCancelamento:0, prioridade:(f.prioridadeValor||0)>0, prioridadeValor:f.prioridadeValor||0,
     veiculo:f.veiculo, descricao:f.descricao, distancia:f.distancia, distanciaGPS:f.distanciaGPS, distanciaDivergente:!!f.distanciaDivergente, preco:preco,
@@ -4085,7 +4085,7 @@ async function criarPedido(){
   estado.pedidoBuscandoId = pedido.id;
   estado.abaPedidosCliente = 'ativos';
   removerLocal(CHAVE_RASCUNHO_PEDIDO_PAGAMENTO);
-  estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', destinoFotoUrl:null, destinoReferencia:'', roca:false, extras:extrasVazios() };
+  estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', roca:false, extras:extrasVazios() };
   // Mostra uma tela persistente de busca. Ela só sai quando o cliente escolher ver os pedidos
   // ou quando o realtime informar que um motorista aceitou.
   estado.pedidos = [pedido, ...estado.pedidos.filter(x=>x.id!==pedido.id)];
@@ -5401,7 +5401,7 @@ function cartaoPedidoAtivo(p){
   return `
   <div class="pedido">
     <div class="linha-topo">
-      <div class="end"><b>Recolha</b>${p.origem}<b style="margin-top:8px">Entrega</b>${p.destino}</div>
+      <div class="end"><b>Recolha</b>${p.origem}${p.origemComplemento?` <span style="color:var(--mango)">(${p.origemComplemento})</span>`:''}<b style="margin-top:8px">Entrega</b>${p.destino}${p.destinoComplemento?` <span style="color:var(--mango)">(${p.destinoComplemento})</span>`:''}</div>
       <div class="preco">R$ ${p.preco.toFixed(2)}<span class="ganho">você recebe R$ ${ganhoMotorista(p.preco,p).toFixed(2)}</span></div>
     </div>
     ${p.acrescimoValor>0 ? `<div class="subtitulo" style="margin-top:4px;color:var(--mango)"> Acréscimo Pro aplicado: <b>R$ ${p.acrescimoValor.toFixed(2)}</b>${(p.acrescimoMotivos&&p.acrescimoMotivos.length)?` (${p.acrescimoMotivos.join(', ')})`:''}</div>` : ''}
@@ -5959,6 +5959,7 @@ function telaCliente(){
     <div class="voz-endereco-ajuda"> <b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.</div><label style="margin-top:0">Endereço de recolha</label>
     ${campoEnderecoComVoz('c-origem', f.origem, 'Rua, número, bairro ou ponto de referência', 'origem')}
     <div class="sugestoes" id="sugestoes-origem"></div>
+    <input type="text" id="c-origem-complemento" value="${(f.origemComplemento||'').replace(/"/g,'&quot;')}" oninput="estado.form.origemComplemento=this.value" placeholder="Número da casa, bloco, apartamento (opcional)" style="margin-top:-2px;margin-bottom:10px">
     <div style="font-size:14px;margin-top:-4px;margin-bottom:10px">
       <a onclick="abrirSemEndereco('origem')" class="btn-sitio-roca"> Sítio/zona rural sem endereço?</a>
     </div>
@@ -5969,6 +5970,7 @@ function telaCliente(){
     <label>Endereço de entrega</label>
     ${campoEnderecoComVoz('c-destino', f.destino, 'Rua, número, bairro ou ponto de referência', 'destino')}
     <div class="sugestoes" id="sugestoes-destino"></div>
+    <input type="text" id="c-destino-complemento" value="${(f.destinoComplemento||'').replace(/"/g,'&quot;')}" oninput="estado.form.destinoComplemento=this.value" placeholder="Número da casa, bloco, apartamento (opcional)" style="margin-top:-2px;margin-bottom:10px">
     <div style="font-size:14px;margin-top:-4px;margin-bottom:10px">
       <a onclick="abrirSemEndereco('destino')" class="btn-sitio-roca"> Sítio/zona rural sem endereço?</a>
     </div>
@@ -7984,7 +7986,7 @@ function sairCliente(){
   estado.cliente = { nome:'', telefone:'', logado:false, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   estado.filtroTelefoneCliente = '';
   removerLocal('ef_cliente_telefone');
-  estado.form = { etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', destinoFotoUrl:null, destinoReferencia:'', roca:false, extras:extrasVazios() };
+  estado.form = { etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', roca:false, extras:extrasVazios() };
   estado.edicaoPedido = null;
   estado.abaPedidosCliente = 'ativos';
   estado.painelCliente.tela='entrar';
