@@ -3103,6 +3103,13 @@ function assinarAvisosGeraisRealtime(){
     .subscribe();
 }
 function fecharAvisoGeral(){ estado.avisoGeralExibido=null; render(); }
+// Escapa HTML e transforma links "https://..." em <a> clicável — o aviso geral guardava
+// o texto puro, então um link colado ali (ex: pra pedir pro motorista instalar o app)
+// aparecia só como texto, sem dar pra tocar.
+function linkificarAviso(texto){
+  const escapado = String(texto||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return escapado.replace(/(https?:\/\/[^\s<]+)/g, '<a href="$1" target="_blank" rel="noopener" style="color:inherit;text-decoration:underline">$1</a>');
+}
 async function confirmarTesteGps(){
   const av = estado.avisoGeralExibido;
   if(!av || !av.testeGpsId) return;
@@ -7307,7 +7314,7 @@ function render(){
       <div class="alerta-emoji">${estado.avisoGeralExibido.testeGpsId ? '🧪' : ''}</div>
       <div class="alerta-texto">
         <div class="alerta-titulo">${estado.avisoGeralExibido.testeGpsId ? 'Teste de GPS (não é entrega real)' : 'Aviso do Entrega Flash'}</div>
-        <div class="alerta-sub">${estado.avisoGeralExibido.mensagem}</div>
+        <div class="alerta-sub">${linkificarAviso(estado.avisoGeralExibido.mensagem)}</div>
         ${estado.avisoGeralExibido.testeGpsId ? `<button class="btn btn-primario btn-pequeno" style="margin-top:8px" onclick="event.stopPropagation();confirmarTesteGps()">📍 Confirmar recebimento</button>` : ''}
       </div>
       <button class="alerta-fechar" onclick="event.stopPropagation();fecharAvisoGeral()">&times;</button>
