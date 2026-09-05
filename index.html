@@ -2130,13 +2130,21 @@ async function enviarPushServidor(papel, referencia, title, body, url, tipo){
   }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); return {erro:String(e)}; }
 }
 async function registrarEventoPushAtivacao(evento){
-  let eventId='';
+  let eventId='', jaRegistrouAberto=false;
   try{
     const params=new URLSearchParams(window.location.search);
-    eventId=params.get('ef_push_evento')||localStorage.getItem('ef_push_evento_ativacao')||'';
-    if(params.get('ef_push_evento')) salvarLocal('ef_push_evento_ativacao',eventId);
+    const novoId=params.get('ef_push_evento');
+    if(novoId){
+      eventId=novoId;
+      salvarLocal('ef_push_evento_ativacao',JSON.stringify({id:novoId,aberto:false}));
+    } else {
+      const salvo=JSON.parse(localStorage.getItem('ef_push_evento_ativacao')||'null');
+      if(salvo && salvo.id){ eventId=salvo.id; jaRegistrouAberto=!!salvo.aberto; }
+    }
   }catch(e){}
   if(!eventId) return false;
+  // já registramos 'abriu a notificação' pra esse evento antes; evita reenviar toda vez que o app é reaberto
+  if(evento!=='online' && jaRegistrouAberto) return false;
   try{
     const resp=await fetch(`${FUNCOES_URL}/enviar-push`,{
       method:'POST',
@@ -2144,6 +2152,7 @@ async function registrarEventoPushAtivacao(evento){
       body:JSON.stringify({action:'event',event_id:eventId,evento:evento==='online'?'online':'aberto'})
     });
     if(resp.ok && evento==='online') removerLocal('ef_push_evento_ativacao');
+    else if(resp.ok) salvarLocal('ef_push_evento_ativacao',JSON.stringify({id:eventId,aberto:true}));
     return resp.ok;
   }catch(e){ console.warn('Falha ao registrar evento da push',e); return false; }
 }
