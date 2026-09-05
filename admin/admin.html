@@ -1435,13 +1435,21 @@ async function enviarPushServidor(papel, referencia, title, body, url, tipo){
   }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); return {erro:String(e)}; }
 }
 async function registrarEventoPushAtivacao(evento){
-  let eventId='';
+  let eventId='', jaRegistrouAberto=false;
   try{
     const params=new URLSearchParams(window.location.search);
-    eventId=params.get('ef_push_evento')||localStorage.getItem('ef_push_evento_ativacao')||'';
-    if(params.get('ef_push_evento')) salvarLocal('ef_push_evento_ativacao',eventId);
+    const novoId=params.get('ef_push_evento');
+    if(novoId){
+      eventId=novoId;
+      salvarLocal('ef_push_evento_ativacao',JSON.stringify({id:novoId,aberto:false}));
+    } else {
+      const salvo=JSON.parse(localStorage.getItem('ef_push_evento_ativacao')||'null');
+      if(salvo && salvo.id){ eventId=salvo.id; jaRegistrouAberto=!!salvo.aberto; }
+    }
   }catch(e){}
   if(!eventId) return false;
+  // já registramos 'abriu a notificação' pra esse evento antes; evita reenviar toda vez que o app é reaberto
+  if(evento!=='online' && jaRegistrouAberto) return false;
   try{
     const resp=await fetch(`${FUNCOES_URL}/enviar-push`,{
       method:'POST',
@@ -1449,6 +1457,7 @@ async function registrarEventoPushAtivacao(evento){
       body:JSON.stringify({action:'event',event_id:eventId,evento:evento==='online'?'online':'aberto'})
     });
     if(resp.ok && evento==='online') removerLocal('ef_push_evento_ativacao');
+    else if(resp.ok) salvarLocal('ef_push_evento_ativacao',JSON.stringify({id:eventId,aberto:true}));
     return resp.ok;
   }catch(e){ console.warn('Falha ao registrar evento da push',e); return false; }
 }
@@ -5876,7 +5885,7 @@ function render(){
     ${estado.admin.aberto ? `
     <div class="modal-fundo modal-fundo-admin">
       <div class="modal-chat modal-admin">
-        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL ULTRA • CENTRAL LANÇAMENTO • VERSÃO 04/09</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
+        <div class="chat-topo"><div><h3 style="margin:0">Painel administrativo</h3><div style="font-size:10px;font-weight:800;letter-spacing:.8px;color:var(--mango);margin-top:2px">PAINEL ULTRA • CENTRAL LANÇAMENTO • VERSÃO 05/09 • PUSH</div></div><div style="display:flex;align-items:center;gap:10px">${estado.admin.logado?`<span class="refresh" style="margin:0" onclick="atualizarPainelAdmin()">↻ atualizar</span><span class="refresh" style="margin:0" onclick="sairAdmin()">sair</span>`:''}</div></div>
         ${estado.admin.logado && estado.notificacoesStatus!=='granted' ? `
         <div class="faixa-instalar" style="margin:0;border-radius:0">
           <span class="icone">🔔</span>
@@ -6932,7 +6941,7 @@ function motoristaCardHTML(m, emRota){
           Incluir aviso de bônus na mensagem
         </label>
         <button class="btn btn-verde btn-pequeno" style="width:100%" onclick="enviarBoasVindasWhatsAppMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\\'")}','${m.telefone.replace(/\D/g,'')}')">💬 Enviar boas-vindas no WhatsApp</button>
-        ${m.status==='aprovado' && !onlineAgora ? `<div style="display:grid;grid-template-columns:${(app?.notificacoes==='granted'&&app?.push_ativo)?'1fr 1fr':'1fr'};gap:7px;margin-top:8px">${(app?.notificacoes==='granted'&&app?.push_ativo)?`<button class="btn btn-primario btn-pequeno" style="width:100%;font-weight:900" onclick="enviarPushAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">🔔 ENVIAR PUSH</button>`:''}<button class="btn btn-verde btn-pequeno" style="width:100%;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">💬 WHATSAPP</button></div>${statusPushAtivacaoHTML(m.telefone)}` : ''}
+        ${m.status==='aprovado' && !onlineAgora ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px">${(app?.notificacoes==='granted'&&app?.push_ativo)?`<button class="btn btn-primario btn-pequeno" style="width:100%;font-weight:900" onclick="enviarPushAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">🔔 ENVIAR PUSH</button>`:`<div class="btn btn-pequeno" style="width:100%;font-weight:900;background:rgba(169,168,156,.14);color:var(--poeira);border-color:var(--linha);cursor:default;display:flex;align-items:center;justify-content:center;gap:5px" title="Este motorista ainda não ativou notificações no aparelho dele">🔕 PUSH NÃO ATIVO</div>`}<button class="btn btn-verde btn-pequeno" style="width:100%;background:#25D366;color:#07140b;border-color:#25D366;font-weight:900" onclick="abrirWhatsAppAtivacaoMotorista('${m.telefone}','${(m.nome||'').replace(/'/g,"\'")}','${(m.cidade||'').replace(/'/g,"\'")}')">💬 WHATSAPP</button></div>${statusPushAtivacaoHTML(m.telefone)}` : ''}
 
         ${['basico','liberado'].includes(m.status) ? (()=>{
           const criado=Number(m.criado_em||0);
@@ -8363,7 +8372,7 @@ function adminAbaMotoristasHTML(){
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
     ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
   return `
-    <div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;background:rgba(255,151,16,.10);border:1px solid rgba(255,151,16,.35);font-size:12px;font-weight:800;color:var(--mango)">🚀 CENTRAL DE LANÇAMENTO ATIVA • VERSÃO 04/09</div>
+    <div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;background:rgba(255,151,16,.10);border:1px solid rgba(255,151,16,.35);font-size:12px;font-weight:800;color:var(--mango)">🚀 CENTRAL DE LANÇAMENTO ATIVA • VERSÃO 05/09 • PUSH</div>
     ${centralLancamentoHTML()}
     ${centralRecuperacaoMotoristasHTML(baseMotoristas)}
     ${funilCadastroMotoristasHTML(baseMotoristas)}
