@@ -2439,17 +2439,24 @@ async function verificarCoberturaInicial(){
   }
 }
 // Busca no Nominatim (reforço/fallback; exige texto mais parecido com o endereço completo)
+// CORREÇÃO: antes só reconhecia "cidade já digitada" se o texto tivesse uma de ~8 palavras-chave
+// (mg, sp, campinas, limeira, suzano, muzambinho, "são paulo", brasil) — qualquer outra cidade
+// atendida (Santo André, Diadema, Guarulhos, Poços de Caldas etc.) não era reconhecida como
+// cidade válida, e o código tentava "grudar" outra cidade errada no final do texto, quebrando
+// a busca. Agora reconhece qualquer uma das cidades realmente atendidas pelo sistema.
+function textoJaTemCidadeAtendida(texto){
+  const norm = normalizarTexto(texto||'');
+  if(/\b(brasil|mg|sp)\b/.test(norm)) return true;
+  return CIDADES_PERMITIDAS_NORM.some(c=>norm.includes(c));
+}
 async function buscarNominatim(texto, limite){
   // Se o usuário digitar só rua+número, tenta as praças conhecidas explicitamente.
   // CORREÇÃO: antes cada tentativa de cidade era uma chamada sequencial (até 6 uma atrás da
   // outra) — se a cidade certa fosse a última da lista, ou se o Nominatim demorasse, a busca
   // inteira travava por vários segundos. Agora todas saem em paralelo, com prazo máximo.
-  const temCidadeOuUF = /\b(brasil|mg|sp|são paulo|sao paulo|muzambinho|campinas|limeira|suzano)\b/i.test(texto);
-  // CORREÇÃO: os "chutes" de cidade só cobriam Campinas/Limeira/Suzano/São Paulo/Muzambinho —
-  // uma rua em qualquer outra cidade atendida (Santo André, Diadema, Guarulhos, Poços de
-  // Caldas etc.) nunca batia com nenhum chute e a busca por nome falhava, mesmo a cidade
-  // sendo coberta. Agora sempre tenta também o texto puro (sem cidade nenhuma) — com o
-  // viewbox já restringindo à região atendida, isso cobre as cidades fora da lista de chutes.
+  const temCidadeOuUF = textoJaTemCidadeAtendida(texto);
+  // Continua tentando também alguns chutes de cidade quando o texto não menciona nenhuma —
+  // e sempre inclui o texto puro (sem chute nenhum), com o viewbox restringindo à região.
   const consultas = temCidadeOuUF
     ? [texto]
     : [texto, texto+', Campinas, SP, Brasil', texto+', Limeira, SP, Brasil', texto+', Suzano, SP, Brasil', texto+', São Paulo, SP, Brasil', texto+', Muzambinho, MG, Brasil', texto+', Brasil'];
