@@ -2485,7 +2485,25 @@ async function buscarNominatim(texto, limite){
 // dobrava o tempo de espera à toa, já que um não depende do outro. Agora saem juntos.
 async function buscarEnderecos(texto, limite){
   texto=(texto||'').trim();if(!texto)return [];const norm=t=>normalizarTexto(t);
-  if(/^\s*\d{5}-?\d{3}\s*$/.test(texto)){const cep=await resolverCEP(texto);if(cep){if(cep.fora)return [];if(Number.isFinite(cep.lat)&&Number.isFinite(cep.lon)&&dentroDaRegiao(cep.lat,cep.lon))return [{lat:cep.lat,lon:cep.lon,cidade:cep.cidade,nome:cep.endereco}];try{let via=await buscarNominatim(cep.endereco,limite*3);via=via.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(via.length)return via.slice(0,limite);}catch(e){}try{let ph=await buscarPhoton(cep.endereco,limite*3);ph=ph.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(ph.length)return ph.slice(0,limite);}catch(e){}}}
+  // CORREÇÃO: antes só reconhecia CEP quando o campo tinha SÓ o CEP e mais nada. Quando o
+  // campo já vinha com o endereço completo (rua, bairro, cidade, UF, CEP, Brasil — o que
+  // acontece sempre que uma edição invalida a coordenada salva e o app tenta achar de novo
+  // sozinho ao calcular a corrida), o CEP embutido no meio do texto era ignorado, e a busca
+  // caía só na tentativa por nome de rua — que pode falhar pra ruas que o OpenStreetMap não
+  // indexa bem, mesmo o CEP sendo perfeitamente válido e conhecido. Agora extrai o CEP de
+  // qualquer lugar do texto (não só quando é só ele) e tenta por ele primeiro.
+  const cepEmbutido = texto.match(/(?<!\d)(\d{5})-?(\d{3})(?!\d)/);
+  const soCep = /^\s*\d{5}-?\d{3}\s*$/.test(texto);
+  if(soCep || cepEmbutido){
+    const cepTexto = soCep ? texto : (cepEmbutido[1]+cepEmbutido[2]);
+    const cep=await resolverCEP(cepTexto);
+    if(cep){
+      if(cep.fora)return [];
+      if(Number.isFinite(cep.lat)&&Number.isFinite(cep.lon)&&dentroDaRegiao(cep.lat,cep.lon))return [{lat:cep.lat,lon:cep.lon,cidade:cep.cidade,nome:cep.endereco}];
+      try{let via=await buscarNominatim(cep.endereco,limite*3);via=via.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(via.length)return via.slice(0,limite);}catch(e){}
+      try{let ph=await buscarPhoton(cep.endereco,limite*3);ph=ph.filter(r=>dentroDaRegiao(r.lat,r.lon)&&r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade)));if(ph.length)return ph.slice(0,limite);}catch(e){}
+    }
+  }
   const [viaResult, phResult] = await Promise.allSettled([buscarNominatim(texto,limite*3), buscarPhoton(texto,limite*3)]);
   let permitidos=[];
   if(viaResult.status==='fulfilled'){ permitidos = viaResult.value.filter(r=>dentroDaRegiao(r.lat,r.lon)).filter(r=>r.cidade&&CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade))); }
