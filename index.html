@@ -3847,9 +3847,16 @@ async function processarFotoSemEnderecoSelecionado(inputEl){
   if(!file) return;
   const campo = estado.semEndereco.campo;
   if(campoEhParada(campo)){ mostrarToast('Foto do local só está disponível para recolha e entrega principal por enquanto.'); return; }
+  if(!arquivoEhImagemMotorista(file)){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
   estado.semEndereco.enviandoFoto = true; render();
+  const preparado = await prepararImagemDocumento(file);
+  if(!preparado){
+    estado.semEndereco.enviandoFoto = false;
+    mostrarToast('Não consegui abrir esta foto. Tente escolher outra foto da galeria ou tirar uma nova agora.', 'erro');
+    render(); return;
+  }
   const nomeArquivo = `${campo}-ref-${Date.now()}.jpg`;
-  const { error: erroUp } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, file, { upsert:true, contentType:file.type||'image/jpeg' });
+  const { error: erroUp } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, preparado, { upsert:true, contentType:'image/jpeg' });
   estado.semEndereco.enviandoFoto = false;
   if(erroUp){ mostrarToast('Erro ao enviar a foto. Tenta novamente.', 'erro'); render(); return; }
   const { data: pub } = sb.storage.from('entrega-fotos').getPublicUrl(nomeArquivo);
@@ -4829,9 +4836,12 @@ async function processarFotoSelecionada(input){
   input.value = '';
   if(!file || !fotoPendente) return;
   const pendente = fotoPendente; fotoPendente = null;
+  if(!arquivoEhImagemMotorista(file)){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
   mostrarToast('Enviando foto...');
+  const preparado = await prepararImagemDocumento(file);
+  if(!preparado){ mostrarToast('Não consegui abrir esta foto. Tente escolher outra foto da galeria ou tirar uma nova agora.', 'erro'); return; }
   const nomeArquivo = `${pendente.pedidoId}-${pendente.tipo}-${Date.now()}.jpg`;
-  const { error: erroUpload } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, file, { upsert:true, contentType: file.type || 'image/jpeg' });
+  const { error: erroUpload } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, preparado, { upsert:true, contentType: 'image/jpeg' });
   if(erroUpload){ console.error(erroUpload); mostrarToast('Erro ao enviar a foto. Tenta novamente.', 'erro'); return; }
   const { data: pub } = sb.storage.from('entrega-fotos').getPublicUrl(nomeArquivo);
   const campo = pendente.tipo==='antes' ? 'foto_antes_url' : 'foto_depois_url';
@@ -7475,7 +7485,7 @@ async function entrarComoMotorista(){
   await carregarPedidos();
   render();
 }
-function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); if(estado.motorista.telefone) atualizarDisponibilidadeDB(estado.motorista.telefone,false); estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
+function sairMotorista(){ pararRastreioMotorista(); liberarWakeLockMotorista(); encerrarMotoristaLogadoRealtime(); if(estado.motorista.telefone) atualizarDisponibilidadeDB(estado.motorista.telefone,false); estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
 async function trocarMinhaSenhaMotorista(){
   const atual = document.getElementById('ef-senha-atual-motorista')?.value||'';
   const nova = document.getElementById('ef-senha-nova-motorista')?.value||'';
@@ -7504,6 +7514,29 @@ async function atualizarDisponibilidadeDB(telefone, disponivel){
 }
 
 let intervaloHeartbeatMotoristaPresenca = null;
+// Mantém a tela acesa enquanto o motorista está online: em muitos celulares, a tela
+// apaga sozinha depois de um tempo parado, o navegador pausa o app em segundo plano
+// e o sinal de presença/GPS para de ser enviado — fazendo o painel achar que ele
+// "sumiu" mesmo continuando online de verdade. O wake lock evita isso na maioria dos
+// casos (não cobre quando o motorista troca de app manualmente, ex: abre o Waze).
+let wakeLockMotorista = null;
+async function ativarWakeLockMotorista(){
+  try{
+    if(!('wakeLock' in navigator)) return;
+    wakeLockMotorista = await navigator.wakeLock.request('screen');
+    wakeLockMotorista.addEventListener('release', ()=>{ wakeLockMotorista=null; });
+  }catch(e){ console.warn('wake_lock_falhou', e); }
+}
+function liberarWakeLockMotorista(){
+  try{ if(wakeLockMotorista){ wakeLockMotorista.release(); } }catch(e){}
+  wakeLockMotorista=null;
+}
+// O wake lock é liberado automaticamente pelo navegador quando a aba fica oculta;
+// reativa sozinho se o motorista voltar pro app e continuar online.
+document.addEventListener('visibilitychange', ()=>{
+  if(document.visibilityState==='visible' && estado.motorista?.disponivel && !wakeLockMotorista) ativarWakeLockMotorista();
+});
+
 async function heartbeatMotoristaPresenca(){
   const m=estado.motorista;
   if(!m?.ativo || !m.telefone || !m.disponivel || m.status!=='aprovado') return;
@@ -7544,6 +7577,7 @@ async function ativarOnlineAutomaticamenteMotorista(){
     m.disponivel=true;
     salvarLocal('ef_motorista_disponivel','true');
     iniciarRastreioMotorista();
+    ativarWakeLockMotorista();
     await enviarPosicaoMotorista();
     heartbeatMotoristaPresenca();
     render();
@@ -7579,6 +7613,7 @@ async function alternarDisponibilidade(){
   if(m.disponivel){
     registrarEventoPushAtivacao('online');
     iniciarRastreioMotorista();
+    ativarWakeLockMotorista();
     // redundância intencional: confirma imediatamente a coordenada no banco,
     // além do watchPosition que continuará atualizando enquanto estiver online.
     await enviarPosicaoMotorista();
@@ -7586,7 +7621,7 @@ async function alternarDisponibilidade(){
     // aproveita o momento em que ele mais precisa de avisos pra pedir notificação, se ainda não tiver decidido
     if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
   }
-  else { pararRastreioMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
+  else { pararRastreioMotorista(); liberarWakeLockMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
   render();
 }
 
