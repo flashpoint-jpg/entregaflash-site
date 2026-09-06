@@ -2101,7 +2101,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260906-PUSH-BRAND-1';
+  const versaoApp = '20260906-APROVACAO-REALTIME-1';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -3430,6 +3430,87 @@ async function carregarChamadosAmigo(){
 }
 function encerrarMotoristaLogadoRealtime(){
   if(canalMotoristaLogadoRealtime){ sb.removeChannel(canalMotoristaLogadoRealtime); canalMotoristaLogadoRealtime=null; }
+}
+
+
+// ---------- aprovação do cadastro em tempo real (sem precisar sair e entrar) ----------
+let canalAprovacaoCadastroRealtime = null;
+let timerAprovacaoCadastro = null;
+let consultandoAprovacaoCadastro = false;
+
+function telefoneCadastroEmAnalise(){
+  const pm = estado.painelMotorista || {};
+  const c = pm.cadastro || {};
+  return String(c.telefone || pm.telefoneLiberado || pm.loginTelefone || '').replace(/\D/g,'');
+}
+
+function encerrarAcompanhamentoAprovacaoCadastro(){
+  if(canalAprovacaoCadastroRealtime){
+    try{ sb.removeChannel(canalAprovacaoCadastroRealtime); }catch(e){}
+    canalAprovacaoCadastroRealtime = null;
+  }
+  if(timerAprovacaoCadastro){ clearInterval(timerAprovacaoCadastro); timerAprovacaoCadastro=null; }
+  consultandoAprovacaoCadastro = false;
+}
+
+async function sincronizarAprovacaoCadastro(telefone){
+  telefone = String(telefone || telefoneCadastroEmAnalise()).replace(/\D/g,'');
+  if(!telefone || consultandoAprovacaoCadastro || estado.motorista?.ativo) return false;
+  consultandoAprovacaoCadastro = true;
+  try{
+    const {data:dados,error} = await sb.rpc('entrega_motorista_meu_perfil',{p_telefone:telefone});
+    const perfil = Array.isArray(dados) ? (dados[0]||null) : dados;
+    if(error || !perfil) return false;
+    if(perfil.status==='aprovado'){
+      encerrarAcompanhamentoAprovacaoCadastro();
+      await entrarNoPainelMotorista(perfil);
+      // A aprovação administrativa já deixa o motorista disponível; reforça a tela online na mesma hora.
+      estado.motorista.status='aprovado';
+      estado.motorista.disponivel=true;
+      salvarLocal('ef_motorista_disponivel','true');
+      render();
+      iniciarRastreioMotorista();
+      setTimeout(()=>heartbeatMotoristaPresenca(),500);
+      mostrarToast('Cadastro aprovado! Você já está ONLINE e pode receber pedidos.', 'sucesso');
+      return true;
+    }
+    if(perfil.status==='reprovado'){
+      encerrarAcompanhamentoAprovacaoCadastro();
+      const pm=estado.painelMotorista;
+      pm.tela='reprovado';
+      pm.motivoReprovacao=perfil.motivo_reprovacao||'Confira os documentos e envie novamente.';
+      render();
+      return true;
+    }
+    if(perfil.status==='bloqueado'){
+      encerrarAcompanhamentoAprovacaoCadastro();
+      mostrarToast('Seu cadastro foi bloqueado. Fale com o suporte.', 'erro');
+      return true;
+    }
+    return false;
+  }catch(e){ console.warn('Sincronização da aprovação',e); return false; }
+  finally{ consultandoAprovacaoCadastro=false; }
+}
+
+function acompanharAprovacaoCadastroEmTempoReal(telefone){
+  telefone = String(telefone || telefoneCadastroEmAnalise()).replace(/\D/g,'');
+  encerrarAcompanhamentoAprovacaoCadastro();
+  if(!telefone) return;
+  // Realtime dá a troca praticamente instantânea quando a linha é aprovada.
+  canalAprovacaoCadastroRealtime = sb.channel('aprovacao-cadastro:'+telefone+':'+Date.now())
+    .on('postgres_changes',{event:'UPDATE',schema:'public',table:'entrega_motoristas',filter:'telefone=eq.'+telefone},()=>{
+      sincronizarAprovacaoCadastro(telefone);
+    })
+    .subscribe();
+  // Fallback: se o aparelho/rede perder um evento realtime, confere sozinho a cada 2 s.
+  timerAprovacaoCadastro = setInterval(()=>{
+    if(estado.painelMotorista?.tela!=='pendente' || estado.motorista?.ativo){
+      encerrarAcompanhamentoAprovacaoCadastro(); return;
+    }
+    sincronizarAprovacaoCadastro(telefone);
+  },2000);
+  // Confere já ao entrar na tela para cobrir aprovação simultânea ao envio.
+  setTimeout(()=>sincronizarAprovacaoCadastro(telefone),150);
 }
 
 // ---------- chat ----------
@@ -7954,6 +8035,7 @@ async function enviarReenvioDocumentos(){
   if(error){ console.error(error); mostrarToast('Erro ao reenviar: '+(error.message||''), 'erro'); render(); return; }
   mostrarToast('Documentos reenviados! O seu cadastro está em análise novamente.', 'sucesso');
   estado.painelMotorista.tela = 'pendente';
+  acompanharAprovacaoCadastroEmTempoReal(r.telefone);
   render();
 }
 
@@ -8885,6 +8967,7 @@ async function finalizarCadastroMotorista(){
   c.enviando=false;
   if(ok){
     estado.painelMotorista.tela='pendente';
+    acompanharAprovacaoCadastroEmTempoReal(c.telefone);
     await registrarConclusaoFunilAnuncio('motorista');
     registrarConversaoMetaCadastro('motorista', c.telefone);
     registrarAlertaAdmin('novo_motorista', `Novo motorista cadastrado, aguardando aprovação: ${c.nome||''} (${c.telefone||''}).`);

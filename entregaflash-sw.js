@@ -1,7 +1,7 @@
-// build: entregaflash-push-brand-20260906-v1
+// build: entregaflash-aprovacao-realtime-20260906-v1
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260906-PUSH-BRAND-1
-const EF_VERSION = '20260906-PUSH-BRAND-1';
+// Versão: 20260906-APROVACAO-REALTIME-1
+const EF_VERSION = '20260906-APROVACAO-REALTIME-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
