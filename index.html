@@ -2071,7 +2071,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260906-ENDERECO-2';
+  const versaoApp = '20260906-ENDERECO-SERVER-3';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2473,11 +2473,34 @@ async function buscarNominatim(texto, limite){
 // Junta os dois provedores e mantém só resultados nas cidades atendidas.
 // CORREÇÃO: antes o Nominatim rodava, esperava terminar, só depois o Photon começava —
 // dobrava o tempo de espera à toa, já que um não depende do outro. Agora saem juntos.
+
+async function buscarEnderecoServidor(texto, limite){
+  try{
+    const url='https://rgcclordmqjmwuzrrfbd.supabase.co/functions/v1/entregaflash-geocode';
+    const resp=await fetchComPrazo(url,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+      body:JSON.stringify({q:texto,limit:limite})
+    },7000);
+    if(!resp.ok) return [];
+    const d=await resp.json();
+    return Array.isArray(d?.results)?d.results:[];
+  }catch(e){
+    console.warn('Geocode servidor indisponível:',e);
+    return [];
+  }
+}
+
 async function buscarEnderecos(texto, limite){
   texto=(texto||'').trim();
   if(!texto) return [];
-  const norm=t=>normalizarTexto(t);
 
+  // 1) PRINCIPAL: servidor da Entrega Flash. Evita bloqueios do celular/navegador
+  // aos serviços públicos de geocodificação.
+  const servidor = await buscarEnderecoServidor(texto, limite);
+  if(servidor && servidor.length) return servidor.slice(0,limite);
+
+  // 2) CEP continua com APIs específicas como contingência.
   const cepEmbutido = texto.match(/(?<!\d)(\d{5})-?(\d{3})(?!\d)/);
   const soCep = /^\s*\d{5}-?\d{3}\s*$/.test(texto);
   if(soCep || cepEmbutido){
@@ -2487,17 +2510,15 @@ async function buscarEnderecos(texto, limite){
       if(cep && !cep.fora){
         if(Number.isFinite(cep.lat)&&Number.isFinite(cep.lon)&&dentroDaRegiao(cep.lat,cep.lon))
           return [{lat:cep.lat,lon:cep.lon,cidade:cep.cidade,nome:cep.endereco}];
-        const porCep = await buscarNominatim(cep.endereco, limite);
-        if(porCep.length) return porCep.slice(0,limite);
       }
-    }catch(e){ console.warn('Falha ao resolver CEP:',e); }
+    }catch(e){}
   }
 
+  // 3) Último fallback: chamadas diretas do navegador.
   const resultados = await Promise.allSettled([
     buscarNominatim(texto, limite),
     buscarPhoton(texto, limite)
   ]);
-
   const todos=[];
   for(const r of resultados){
     if(r.status!=='fulfilled') continue;
@@ -2506,16 +2527,7 @@ async function buscarEnderecos(texto, limite){
       if(!todos.some(x=>Math.abs(x.lat-item.lat)<.00001 && Math.abs(x.lon-item.lon)<.00001)) todos.push(item);
     }
   }
-
-  // Prioriza cidades oficialmente atendidas, mas não apaga todos os resultados quando
-  // o provedor devolve município/county em formato diferente.
-  const permitidos = todos.filter(r=>{
-    const cidadeOk = r.cidade && CIDADES_PERMITIDAS_NORM.includes(norm(r.cidade));
-    const nomeNorm = norm(r.nome||'');
-    const nomeTemCidade = CIDADES_PERMITIDAS_NORM.some(c=>nomeNorm.includes(c));
-    return cidadeOk || nomeTemCidade;
-  });
-  return (permitidos.length ? permitidos : todos).slice(0,limite);
+  return todos.slice(0,limite);
 }
 async function geocodificar(endereco){
   try{
