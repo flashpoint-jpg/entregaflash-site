@@ -2068,9 +2068,10 @@ function aguardarPromptInstalacao(timeoutMs){
   });
 }
 
+console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260904-8';
+  const versaoApp = '20260906-ENDERECO-2';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2623,7 +2624,7 @@ function falarNoCampo(campo){
   catch(e){ mostrarToast('Não consegui abrir o microfone. Verifique a permissão do navegador.', 'erro'); }
 }
 function campoEnderecoComVoz(id, valor, placeholder, campo){
-  return `<div class="campo-com-voz"><input type="text" id="${id}" value="${valor||''}" placeholder="${placeholder}" autocomplete="street-address" inputmode="text" aria-label="${placeholder}"><button type="button" class="btn-voz" data-voz-campo="${campo}" onclick="falarNoCampo('${campo}')" aria-label="Preencher por voz" title="Falar endereço"></button></div>`;
+  return `<div class="campo-com-voz"><input type="text" id="${id}" value="${valor||''}" placeholder="${placeholder}" autocomplete="off" inputmode="text" aria-label="${placeholder}" oninput="(function(el,c){if(c==='origem'||c==='destino'){estado.form[c]=el.value;estado.form[c+'Coord']=null;}else if(c.indexOf('parada-')===0){var i=parseInt(c.split('-')[1],10);if(Number.isFinite(i)){estado.form.paradas[i]=el.value;if(estado.form.paradasCoords)estado.form.paradasCoords[i]=null;}}debounce('inline-'+c,function(){buscarSugestoes(c)},500)})(this,'${campo}')"><button type="button" class="btn-voz" data-voz-campo="${campo}" onclick="falarNoCampo('${campo}')" aria-label="Preencher por voz" title="Falar endereço"></button></div>`;
 }
 
 function selecionarSugestao(campo, idx){
@@ -7462,8 +7463,8 @@ function render(){
   ['origem','destino'].forEach(campo=>{
     const el = document.getElementById('c-'+campo);
     if(el){
-      el.addEventListener('input', ()=> debounce(campo, ()=>buscarSugestoes(campo)));
-      el.addEventListener('blur', ()=> setTimeout(()=>{ const c=document.getElementById('sugestoes-'+campo); if(c) c.innerHTML=''; }, 200));
+      // autocomplete já é disparado inline no próprio campo; aqui fica só o fechamento das sugestões.
+      el.addEventListener('blur', ()=> setTimeout(()=>{ const c=document.getElementById('sugestoes-'+campo); if(c) c.innerHTML=''; }, 350));
     }
   });
 
