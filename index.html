@@ -8548,12 +8548,14 @@ function tirarSelfieCameraNativa(){
   uploadPendente='fotoMotorista';
   const input=document.getElementById('input-selfie-camera');
   if(!input){ abrirTelaSelfieMotorista(); return; }
+  input.dataset.tipo='fotoMotorista';
   try{ input.value=''; input.click(); }
   catch(e){ console.warn('camera_nativa_selfie',e); abrirTelaSelfieMotorista(); }
 }
 async function processarSelfieCameraSelecionada(input){
-  if(!input?.files?.length){ uploadPendente=null; return; }
+  if(!input?.files?.length){ uploadPendente=null; if(input?.dataset) delete input.dataset.tipo; return; }
   uploadPendente='fotoMotorista';
+  if(input?.dataset) input.dataset.tipo='fotoMotorista';
   await processarDocumentoSelecionado(input);
 }
 function escolherSelfieGaleria(){
@@ -8561,6 +8563,7 @@ function escolherSelfieGaleria(){
   uploadPendente='fotoMotorista';
   const input=document.getElementById('input-doc-motorista');
   if(!input){ mostrarToast('Não consegui abrir as fotos. Atualize a página e tente novamente.','erro'); return; }
+  input.dataset.tipo='fotoMotorista'; input.value='';
   input.click();
 }
 function fecharTelaSelfieMotorista(){
@@ -8626,7 +8629,23 @@ async function tirarSelfieMotorista(){
   const {data:pub}=sb.storage.from('motorista-documentos').getPublicUrl(nomeArquivo); c.fotoMotoristaUrl=pub.publicUrl; await salvarEtapaCadastro({foto_motorista_url:c.fotoMotoristaUrl});
   fecharTelaSelfieMotorista(); mostrarToast('Selfie salva com sucesso!'); render();
 }
-function solicitarUploadDocumento(tipo){ if(tipo==='fotoMotorista'){ abrirOpcoesSelfieMotorista(); return; } uploadPendente = tipo; document.getElementById('input-doc-motorista').click(); }
+function solicitarUploadDocumento(tipo){
+  // Cada toque define explicitamente o campo de destino. Isso evita que um upload
+  // cancelado anteriormente deixe uma foto presa ao campo errado.
+  if(tipo==='fotoMotorista'){
+    uploadPendente='fotoMotorista';
+    const selfie=document.getElementById('input-selfie-camera');
+    if(selfie){ selfie.dataset.tipo='fotoMotorista'; selfie.value=''; try{ selfie.click(); return; }catch(e){ console.warn('selfie_click',e); } }
+    abrirOpcoesSelfieMotorista();
+    return;
+  }
+  uploadPendente=tipo;
+  const input=document.getElementById('input-doc-motorista');
+  if(!input){ mostrarToast('Não consegui abrir a câmera/galeria. Atualize a página e tente novamente.','erro'); return; }
+  input.dataset.tipo=tipo;
+  input.value='';
+  try{ input.click(); }catch(e){ console.warn('doc_click',e); mostrarToast('Não consegui abrir a câmera/galeria. Tente novamente.','erro'); }
+}
 function arquivoEhImagemMotorista(file){
   if(!file) return false;
   const tipo=String(file.type||'').toLowerCase();
@@ -8693,9 +8712,12 @@ async function prepararImagemDocumento(file){
 
 async function processarDocumentoSelecionado(input){
   const file = input.files && input.files[0];
+  // Prioriza o tipo gravado no próprio input; uploadPendente fica apenas como fallback.
+  const tipo = input?.dataset?.tipo || uploadPendente;
   input.value='';
-  if(!file || !uploadPendente) return;
-  const tipo = uploadPendente; uploadPendente = null;
+  if(input?.dataset) delete input.dataset.tipo;
+  uploadPendente = null;
+  if(!file || !tipo) return;
   const c = estado.painelMotorista.cadastro;
   if(!arquivoEhImagemMotorista(file)){ mostrarToast('Escolha uma foto da câmera ou galeria.', 'erro'); return; }
   mostrarToast('Salvando foto...');
