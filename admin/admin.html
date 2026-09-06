@@ -4514,7 +4514,6 @@ function cartaoPedidoCliente(p){
   </div>`;
 }
 function cartaoPedidoDisponivel(p){
-  const rkm = p.distancia>0 ? (p.preco/p.distancia) : null;
   const maiorNivel = niveisPrioridade()[niveisPrioridade().length-1].valor;
   const destaqueAlto = p.prioridade && (p.prioridadeValor||0)>=maiorNivel;
   return `
@@ -4533,7 +4532,7 @@ function cartaoPedidoDisponivel(p){
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 6px">
       ${seloPrioridadeHTML(p)}
       <span class="tempo-pedido" id="tempo-desde-${p.id}" data-criado="${p.criadoEm}" style="font-size:11.5px;color:var(--poeira)">⏱️ ${tempoDecorrido(p.criadoEm)}</span>
-      ${rkm!=null ? `<span style="font-size:11.5px;color:var(--poeira)">· ≈ R$ ${rkm.toFixed(2)}/km</span>` : ''}
+      ${p.distanciaAteMim!=null ? `<span style="font-size:11.5px;color:var(--poeira)">· ${p.distanciaAteMim.toFixed(1)} km até a recolha</span>` : ''}
     </div>
     ${extrasHTML(p)}
     <div style="font-size:14px;color:var(--poeira);margin-bottom:8px">${VEICULOS[p.veiculo].emoji} ${VEICULOS[p.veiculo].label}${p.descricao?' · '+p.descricao:''}</div>
