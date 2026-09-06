@@ -2843,6 +2843,9 @@ const INFO_TIPO_ALERTA = {
   novo_cliente: { emoji:'👤', titulo:'Novo cliente cadastrado' },
   novo_motorista: { emoji:'🛵', titulo:'Novo motorista cadastrado' },
   novo_pedido: { emoji:'🆕', titulo:'Novo pedido criado' },
+  pedido_push_disparado: { emoji:'🔔', titulo:'Chamada enviada aos motoristas' },
+  pedido_recebido_motorista: { emoji:'📲', titulo:'Motorista recebeu a chamada no app' },
+  pedido_visualizado_motorista: { emoji:'👁️', titulo:'Motorista visualizou a chamada' },
   pedido_aceito: { emoji:'✅', titulo:'Pedido aceito por um motorista' },
   pedido_entregue: { emoji:'📦', titulo:'Pedido entregue' },
   pedido_cancelado_cliente: { emoji:'❌', titulo:'Pedido cancelado pelo cliente' },
@@ -7734,6 +7737,20 @@ function resumoSituacaoMotoristasHTML(){
     <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800">${aprovados}</div><div style="font-size:12px">✅ Aprovados</div></div>
   </div>`;
 }
+function rastreamentoChamadasAdminHTML(){
+  const alertas=estado.admin.alertas||[];
+  const pedidos=(estado.admin.todosPedidos||[]).filter(p=>['buscando','indo_coletar','coletado','a_caminho'].includes(p.status)).slice(0,8);
+  if(!pedidos.length) return '';
+  return `<div class="admin-cartao" style="margin-bottom:14px;border:1px solid rgba(99,179,255,.4)"><b style="font-family:'Rajdhani';font-size:17px">📡 Rastreamento das chamadas · AO VIVO</b><div class="subtitulo" style="margin-top:4px">Saída da notificação, chegada ao app, visualização e aceite.</div>${pedidos.map(p=>{
+    const ev=alertas.filter(a=>String(a.pedido_id||'')===String(p.id));
+    const push=ev.find(a=>a.tipo==='pedido_push_disparado');
+    const recebidos=new Set(ev.filter(a=>a.tipo==='pedido_recebido_motorista').map(a=>String(a.mensagem||'').match(/\((\d{8,})\)/)?.[1]).filter(Boolean));
+    const vistos=new Set(ev.filter(a=>a.tipo==='pedido_visualizado_motorista').map(a=>String(a.mensagem||'').match(/\((\d{8,})\)/)?.[1]).filter(Boolean));
+    const enviados=Number(String(push?.mensagem||'').match(/para (\d+) dispositivo/)?.[1]||0);
+    const aceito=!!p.motorista_telefone||ev.some(a=>a.tipo==='pedido_aceito');
+    return `<div style="padding:10px;border:1px solid var(--linha);border-radius:10px;margin-top:8px"><b style="font-size:12.5px">${p.origem||'Origem'} → ${p.destino||'Destino'}</b><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;text-align:center;margin-top:8px"><div><b style="display:block;color:var(--mango);font-size:18px">${enviados}</b><small>push</small></div><div><b style="display:block;color:#63b3ff;font-size:18px">${recebidos.size}</b><small>no app</small></div><div><b style="display:block;color:#c99cff;font-size:18px">${vistos.size}</b><small>viram</small></div><div><b style="display:block;color:var(--verde);font-size:18px">${aceito?'1':'0'}</b><small>aceitou</small></div></div></div>`;
+  }).join('')}<div style="font-size:10.5px;color:var(--poeira);margin-top:8px">Push = serviço de notificação aceitou o envio. “No app” = aplicativo do motorista realmente detectou o pedido.</div></div>`;
+}
 function adminAbaResumoHTML(){
   const a = estado.admin;
   if(a.motoristas.length===0 && a.carregando) return skeletonLista(4);
@@ -7759,6 +7776,7 @@ function adminAbaResumoHTML(){
       <button class="${a.filtroRegiaoMotoristas==='mg'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='mg';render()">📍 Sul de Minas</button>
     </div>
     ${centralLancamentoHTML()}
+    ${rastreamentoChamadasAdminHTML()}
     ${resumoSituacaoMotoristasHTML()}
     ${resumoMotoristasPorCidadeHTML()}
     <div class="admin-cartao" style="background:linear-gradient(135deg, var(--painel-alt), var(--painel));border:2px solid var(--mango);margin-bottom:14px">
