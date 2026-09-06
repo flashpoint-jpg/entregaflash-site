@@ -2155,6 +2155,37 @@ async function enviarPushServidor(papel, referencia, title, body, url, tipo){
     return data;
   }catch(e){ console.warn('Falha ao enviar push pelo servidor', e); return {erro:String(e)}; }
 }
+
+// Despacho de push por proximidade: evita chamar motorista de outra região logo de saída.
+async function enviarPushPedidoMotoristasProximos(pedido, raioKm=15){
+  const origem=pedido && pedido.origemCoord;
+  if(!origem || origem.lat==null || origem.lon==null){
+    return enviarPushServidor('motorista', null, '🆕 Novo pedido disponível!', `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
+  }
+  try{
+    const limiteAtualizacao=Date.now()-(30*60*1000);
+    const {data, error}=await sb.from('entrega_motoristas')
+      .select('telefone,veiculo,disponivel,lat_atual,lng_atual,lat_atualizado_em')
+      .eq('disponivel',true)
+      .eq('veiculo',pedido.veiculo);
+    if(error) throw error;
+    const proximos=(data||[]).filter(m=>{
+      if(m.lat_atual==null || m.lng_atual==null) return false;
+      if(m.lat_atualizado_em && Number(m.lat_atualizado_em)<limiteAtualizacao) return false;
+      return distanciaKm(Number(m.lat_atual),Number(m.lng_atual),Number(origem.lat),Number(origem.lon))<=raioKm;
+    });
+    let enviados=0;
+    for(const m of proximos){
+      const r=await enviarPushServidor('motorista', String(m.telefone||'').replace(/\D/g,''), '🆕 Pedido perto de você!', `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
+      enviados+=Math.max(0,Number(r?.enviados||0));
+    }
+    return {enviados, motoristas_proximos:proximos.length, raio_km:raioKm};
+  }catch(e){
+    console.warn('Falha no filtro de proximidade do push; usando chamada geral como contingência.',e);
+    return enviarPushServidor('motorista', null, '🆕 Novo pedido disponível!', `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
+  }
+}
+
 async function registrarEventoPushAtivacao(evento){
   let eventId='';
   try{
@@ -4249,7 +4280,7 @@ async function criarPedido(){
   estado.filtroTelefoneCliente = f.telefone;
   registrarAlertaAdmin('novo_pedido', `Novo pedido de ${f.nome} (${f.telefone}): ${f.origem} → ${f.destino} · R$ ${preco.toFixed(2)}.`, pedido.id);
   if(f.tipoRetirada!=='agendado'){
-    const rPush=await enviarPushServidor('motorista', null, '🆕 Novo pedido disponível!', `${f.origem} → ${f.destino} · R$ ${preco.toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
+    const rPush=await enviarPushPedidoMotoristasProximos(pedido, 15);
     const enviados=Math.max(0,Number(rPush?.enviados||0));
     await registrarAlertaAdmin('pedido_push_disparado', `Chamada enviada ao serviço de notificação para ${enviados} dispositivo${enviados===1?'':'s'} de motorista.`, pedido.id);
   }
