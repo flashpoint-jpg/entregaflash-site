@@ -1390,6 +1390,36 @@ const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Migração de identidade do push: instalações antigas abertas em domínio FlashCred
+// são desinscritas e redirecionadas para o domínio oficial do Entrega Flash.
+(async function migrarPushFlashCredParaEntregaFlash(){
+  try{
+    const host=String(location.hostname||'').toLowerCase();
+    if(!host.includes('flashcred')) return;
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      for(const reg of regs){
+        try{
+          const sub=await reg.pushManager?.getSubscription?.();
+          if(sub){
+            try{ await sb.from('push_subscriptions').delete().eq('endpoint',sub.endpoint); }catch(e){}
+            try{ await sub.unsubscribe(); }catch(e){}
+          }
+          try{ await reg.unregister(); }catch(e){}
+        }catch(e){}
+      }
+    }
+    try{
+      if('caches' in window){
+        const nomes=await caches.keys();
+        await Promise.all(nomes.map(n=>caches.delete(n)));
+      }
+    }catch(e){}
+    const destino='https://entregaflash.app.br/'+String(location.pathname||'/').replace(/^\/+/, '')+String(location.search||'')+String(location.hash||'');
+    location.replace(destino);
+  }catch(e){ console.warn('Migração de identidade Entrega Flash indisponível',e); }
+})();
+
 // ---- Presença em tempo real do site (contador no painel admin) ----
 const EF_PRESENCA_CANAL = 'entregaflash_site_online_v1';
 const EF_SESSAO_ID = (crypto?.randomUUID ? crypto.randomUUID() : ('ef-'+Date.now()+'-'+Math.random().toString(36).slice(2)));
@@ -2071,7 +2101,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260906-ENDERECO-SERVER-3';
+  const versaoApp = '20260906-PUSH-BRAND-1';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -5554,7 +5584,6 @@ function cartaoPedidoCliente(p){
   </div>`;
 }
 function cartaoPedidoDisponivel(p){
-  const rkm = p.distancia>0 ? (p.preco/p.distancia) : null;
   const maiorNivel = niveisPrioridade()[niveisPrioridade().length-1].valor;
   const destaqueAlto = p.prioridade && (p.prioridadeValor||0)>=maiorNivel;
   return `
@@ -5573,7 +5602,7 @@ function cartaoPedidoDisponivel(p){
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:2px 0 6px">
       ${seloPrioridadeHTML(p)}
       <span class="tempo-pedido" id="tempo-desde-${p.id}" data-criado="${p.criadoEm}" style="font-size:11.5px;color:var(--poeira)">⏱ ${tempoDecorrido(p.criadoEm)}</span>
-      ${rkm!=null ? `<span style="font-size:11.5px;color:var(--poeira)">· ≈ R$ ${rkm.toFixed(2)}/km</span>` : ''}
+      ${p.distanciaAteMim!=null ? `<span style="font-size:11.5px;color:var(--poeira)">· ${p.distanciaAteMim.toFixed(1)} km até a recolha</span>` : ''}
     </div>
     ${extrasHTML(p)}
     <div style="font-size:14px;color:var(--poeira);margin-bottom:8px">${VEICULOS[p.veiculo].emoji} ${VEICULOS[p.veiculo].label}${p.descricao?' · '+p.descricao:''}</div>
@@ -6767,12 +6796,12 @@ function telaMotorista(){
   const disponiveis = m.disponivel ? estado.pedidos
     .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
-    // Despacho inteligente: começa perto e amplia automaticamente enquanto ninguém aceita.
-    // 0-2 min: 5 km | 2-4 min: 15 km | 4-7 min: 30 km | 7-10 min: 60 km | 10-15 min: 120 km | depois: 200 km.
+    // Despacho de lançamento: libera imediatamente para todos os motoristas online do veículo correto em até 30 km.
+    // Se ninguém aceitar: após 2 min amplia para 60 km; após 5 min para 120 km; após 10 min para 200 km.
     .filter(p=>{
       if(p.distanciaAteMim==null) return true; // sem coordenada: não bloqueia o pedido
       const idadeMin=Math.max(0,(agoraTs-Number(p.criadoEm||agoraTs))/60000);
-      const raioAuto=idadeMin<2?5:idadeMin<4?15:idadeMin<7?30:idadeMin<10?60:idadeMin<15?120:200;
+      const raioAuto=idadeMin<2?30:idadeMin<5?60:idadeMin<10?120:200;
       const limite=m.raioAtendimentoKm?Math.min(raioAuto,Number(m.raioAtendimentoKm)):raioAuto;
       return p.distanciaAteMim<=limite;
     })

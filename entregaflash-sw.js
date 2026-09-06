@@ -1,7 +1,7 @@
-// build: corrige-heartbeat-online-20260904-v8
+// build: entregaflash-push-brand-20260906-v1
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260904-8
-const EF_VERSION = '20260904-8';
+// Versão: 20260906-PUSH-BRAND-1
+const EF_VERSION = '20260906-PUSH-BRAND-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
@@ -68,7 +68,8 @@ self.addEventListener('push', (event) => {
     renotify: !!dados.tag
   };
 
-  event.waitUntil(self.registration.showNotification(dados.title || 'Entrega Flash', opcoes));
+  const titulo = String(dados.title || 'Entrega Flash').includes('Entrega Flash') ? String(dados.title || 'Entrega Flash') : `Entrega Flash · ${dados.title || 'Aviso'}`;
+  event.waitUntil(self.registration.showNotification(titulo, opcoes));
 });
 
 self.addEventListener('notificationclick', (event) => {
