@@ -3362,22 +3362,40 @@ function definirPrioridade(valor){
 async function aumentarPrioridadeBusca(id, novoValor){
   const p = estado.pedidos.find(x=>x.id===id);
   if(!p || p.status!=='buscando') return;
-  const valorAtual = p.prioridadeValor||0;
+  const valorAtual = Number(p.prioridadeValor)||0;
   if(novoValor<=valorAtual) return;
   const diferenca = Math.round((novoValor-valorAtual)*100)/100;
   if(!(await confirmarAcao(`Adicionar R$ ${diferenca.toFixed(2)} a mais de prioridade nesta entrega, pra ela ganhar mais destaque pros entregadores?`))) return;
-  const { data, error: erroDebito } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: -diferenca });
-  if(erroDebito){ console.error(erroDebito); mostrarToast('Saldo insuficiente para aumentar a prioridade.', 'erro'); return; }
-  estado.cliente.carteira.saldo = Number(data)||0;
-  const novoPreco = Math.round((p.preco+diferenca)*100)/100;
-  const { error } = await sb.from('entrega_pedidos').update({ prioridade:true, prioridade_valor:novoValor, preco:novoPreco, atualizado_em:Date.now() }).eq('id', id);
+
+  // Prioridade + cobrança são confirmadas juntas no banco.
+  // Se qualquer etapa falhar, a transação inteira é desfeita e nada é cobrado.
+  const { data, error } = await sb.rpc('entrega_aumentar_prioridade_pedido', {
+    p_id: id,
+    p_telefone: estado.cliente.telefone,
+    p_novo_valor: novoValor
+  });
+
   if(error){
-    console.error(error);
-    // devolve o valor debitado, já que a atualização do pedido falhou
-    const { data: dataEstorno } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: diferenca });
-    estado.cliente.carteira.saldo = Number(dataEstorno)||estado.cliente.carteira.saldo;
-    mostrarToast('Erro ao aumentar a prioridade.', 'erro');
+    console.error('Falha ao aumentar prioridade:', error);
+    const msg = String(error.message||error.details||'');
+    if(msg.includes('saldo_insuficiente')){
+      mostrarToast('Saldo insuficiente para aumentar a prioridade.', 'erro');
+    }else if(msg.includes('pedido_nao_esta_buscando') || msg.includes('pedido_alterado_durante_operacao')){
+      mostrarToast('Esse pedido já mudou de status. Atualizando a tela...', 'erro');
+      await carregarPedidos();
+    }else{
+      mostrarToast('Não foi possível aumentar a prioridade agora. Nenhum valor foi cobrado.', 'erro');
+    }
     return;
+  }
+
+  const r = data || {};
+  p.prioridade = true;
+  p.prioridadeValor = Number(r.prioridade_valor ?? novoValor);
+  p.preco = Number(r.preco ?? (Number(p.preco)+diferenca));
+  p.atualizadoEm = Date.now();
+  if(estado.cliente && estado.cliente.carteira && r.saldo!=null){
+    estado.cliente.carteira.saldo = Number(r.saldo)||0;
   }
   mostrarToast('Prioridade aumentada! Sua entrega ganhou mais destaque pros entregadores.', 'sucesso');
   await carregarPedidos();
@@ -4319,7 +4337,7 @@ function iniciarTickRadarBusca(){
       const minutosBuscando = (Date.now() - criado) / 60000;
       const raioKm = Math.min(15, 2 + Math.floor(minutosBuscando));
       const ampliando = minutosBuscando >= 1;
-      el.textContent = `${ampliando ? 'Ampliando a área de busca' : 'Buscando na área'} — ${raioKm} km`;
+      el.textContent = `${raioKm<=30 ? 'Buscando motoristas em até' : 'Ampliando a área de busca para'} ${raioKm} km`;
     });
   }, 20000);
 }
@@ -4476,7 +4494,7 @@ function cartaoPedidoCliente(p){
           <span class="radar-anel"></span><span class="radar-anel"></span><span class="radar-anel"></span>
           <span class="radar-centro">📡</span>
         </div>
-        <div class="radar-raio-texto">${ampliando ? 'Ampliando a área de busca' : 'Buscando na área'} — ${raioKm} km</div>
+        <div class="radar-raio-texto">${raioKm<=30 ? 'Buscando motoristas em até' : 'Ampliando a área de busca para'} ${raioKm} km</div>
         <div class="radar-raio-sub">${foiCanceladoPeloMotorista ? 'Estamos a buscar o entregador disponível mais próximo de ti' : 'Isto pode levar alguns minutos'}</div>
       </div>
       ${prioridadeBoostHTML(p)}
