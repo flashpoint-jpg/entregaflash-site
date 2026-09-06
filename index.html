@@ -2479,7 +2479,7 @@ async function buscarEnderecoServidor(texto, limite){
     const url='https://rgcclordmqjmwuzrrfbd.supabase.co/functions/v1/entregaflash-geocode';
     const resp=await fetchComPrazo(url,{
       method:'POST',
-      headers:{'Content-Type':'application/json','apikey':SUPABASE_ANON_KEY},
+      headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
       body:JSON.stringify({q:texto,limit:limite})
     },7000);
     if(!resp.ok) return [];
