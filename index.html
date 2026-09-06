@@ -2918,12 +2918,30 @@ function detectarMotoristaEncontrado(novos){
     estado.statusAnterior[np.id] = np.status;
   });
 }
+async function registrarTelemetriaChamadaPedido(pedido, etapa){
+  if(!pedido || !pedido.id || estado.modo!=='entregador' || !estado.motorista?.telefone) return;
+  const tel=String(estado.motorista.telefone||'').replace(/\D/g,'');
+  if(!tel) return;
+  const chave=`ef_chamada_${etapa}_${pedido.id}_${tel}`;
+  if(localStorage.getItem(chave)) return;
+  localStorage.setItem(chave,String(Date.now()));
+  const tipo=etapa==='visualizado'?'pedido_visualizado_motorista':'pedido_recebido_motorista';
+  const rotulo=etapa==='visualizado'?'visualizou a chamada':'recebeu a chamada no app';
+  try{ await registrarAlertaAdmin(tipo, `Motorista ${estado.motorista.nome||tel} (${tel}) ${rotulo}.`, pedido.id); }
+  catch(e){ console.warn('telemetria da chamada indisponível',e); }
+}
+function registrarVisualizacoesPedidosVisiveis(){
+  if(estado.modo!=='entregador' || !estado.motorista?.ativo || !estado.motorista?.disponivel) return;
+  const ids=new Set(Array.from(document.querySelectorAll('[data-pedido-disponivel-id]')).map(el=>el.getAttribute('data-pedido-disponivel-id')));
+  ids.forEach(id=>{ const p=estado.pedidos.find(x=>String(x.id)===String(id)); if(p) registrarTelemetriaChamadaPedido(p,'visualizado'); });
+}
 function detectarNovosPedidosMotorista(novos){
   if(estado.modo!=='entregador' || !estado.motorista.ativo || !estado.motorista.disponivel) return;
   novos.forEach(np=>{
     if(np.status!=='buscando') return;
     if(estado.statusAnteriorMotorista[np.id]) return;
     estado.statusAnteriorMotorista[np.id] = true;
+    registrarTelemetriaChamadaPedido(np,'recebido');
     tocarSomNovoPedido();
     notificar('🆕 Novo pedido disponível!', `${np.origem} → ${np.destino} · R$ ${Number(np.preco).toFixed(2)}`, 'novo-'+np.id);
   });
@@ -3786,6 +3804,9 @@ const INFO_TIPO_ALERTA = {
   novo_cliente: { emoji:'', titulo:'Novo cliente cadastrado' },
   novo_motorista: { emoji:'', titulo:'Novo motorista cadastrado' },
   novo_pedido: { emoji:'🆕', titulo:'Novo pedido criado' },
+  pedido_push_disparado: { emoji:'🔔', titulo:'Chamada enviada aos motoristas' },
+  pedido_recebido_motorista: { emoji:'📲', titulo:'Motorista recebeu a chamada no app' },
+  pedido_visualizado_motorista: { emoji:'👁️', titulo:'Motorista visualizou a chamada' },
   pedido_aceito: { emoji:'', titulo:'Pedido aceito por um motorista' },
   pedido_entregue: { emoji:'', titulo:'Pedido entregue' },
   pedido_cancelado_cliente: { emoji:'', titulo:'Pedido cancelado pelo cliente' },
@@ -4228,7 +4249,9 @@ async function criarPedido(){
   estado.filtroTelefoneCliente = f.telefone;
   registrarAlertaAdmin('novo_pedido', `Novo pedido de ${f.nome} (${f.telefone}): ${f.origem} → ${f.destino} · R$ ${preco.toFixed(2)}.`, pedido.id);
   if(f.tipoRetirada!=='agendado'){
-    enviarPushServidor('motorista', null, '🆕 Novo pedido disponível!', `${f.origem} → ${f.destino} · R$ ${preco.toFixed(2)}`);
+    const rPush=await enviarPushServidor('motorista', null, '🆕 Novo pedido disponível!', `${f.origem} → ${f.destino} · R$ ${preco.toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
+    const enviados=Math.max(0,Number(rPush?.enviados||0));
+    await registrarAlertaAdmin('pedido_push_disparado', `Chamada enviada ao serviço de notificação para ${enviados} dispositivo${enviados===1?'':'s'} de motorista.`, pedido.id);
   }
   // Em vez de já voltar pro formulário vazio (etapa 1) e só depois rolar a tela até o
   // cartão do pedido — o que fazia parecer que o fluxo "voltava pro início" — usamos a
@@ -5504,7 +5527,7 @@ function cartaoPedidoDisponivel(p){
   const maiorNivel = niveisPrioridade()[niveisPrioridade().length-1].valor;
   const destaqueAlto = p.prioridade && (p.prioridadeValor||0)>=maiorNivel;
   return `
-  <div class="pedido${destaqueAlto?' pedido-prioridade-alta':''}">
+  <div class="pedido${destaqueAlto?' pedido-prioridade-alta':''}" data-pedido-disponivel-id="${p.id}">
     <div class="vitais">
       <div class="vital vital-ganho"><div class="vital-num">R$ ${ganhoMotorista(p.preco,p).toFixed(0)}</div><div class="vital-rot">Você ganha</div></div>
       ${p.distanciaAteMim!=null ? `<div class="vital"><div class="vital-num">${p.distanciaAteMim.toFixed(1)}km</div><div class="vital-rot">Até a recolha</div></div>` : ''}
@@ -7502,6 +7525,7 @@ function render(){
   restaurarScroll(_scroll);
   restaurarFocoAtivo(_foco);
   restaurarValoresInputs(_valores);
+  setTimeout(registrarVisualizacoesPedidosVisiveis,0);
   salvarRascunhosCadastro();
 }
 
@@ -9202,6 +9226,31 @@ function adminCorpoHTML(){
     <div class="admin-aba-corpo">${corpo}</div>`;
 }
 
+function rastreamentoChamadasAdminHTML(){
+  const alertas=estado.admin.alertas||[];
+  const pedidos=(estado.admin.todosPedidos||[]).filter(p=>['buscando','indo_coletar','coletado','a_caminho'].includes(p.status)).slice(0,8);
+  if(!pedidos.length) return '';
+  const cards=pedidos.map(p=>{
+    const ev=alertas.filter(a=>String(a.pedido_id||'')===String(p.id));
+    const push=ev.find(a=>a.tipo==='pedido_push_disparado');
+    const recebidos=new Set(ev.filter(a=>a.tipo==='pedido_recebido_motorista').map(a=>String(a.mensagem||'').match(/\((\d{8,})\)/)?.[1]).filter(Boolean));
+    const vistos=new Set(ev.filter(a=>a.tipo==='pedido_visualizado_motorista').map(a=>String(a.mensagem||'').match(/\((\d{8,})\)/)?.[1]).filter(Boolean));
+    const aceito=!!p.motorista_telefone || ev.some(a=>a.tipo==='pedido_aceito');
+    const enviados=Number(String(push?.mensagem||'').match(/para (\d+) dispositivo/)?.[1]||0);
+    const idade=Math.max(0,Math.floor((Date.now()-Number(p.criado_em||Date.now()))/1000));
+    return `<div style="padding:11px;border:1px solid var(--linha);border-radius:10px;background:var(--painel);margin-top:8px">
+      <div style="display:flex;justify-content:space-between;gap:8px"><b style="font-size:13px">${p.origem||'Origem'} → ${p.destino||'Destino'}</b><span style="font-size:11px;color:var(--poeira)">${idade<60?idade+'s':Math.floor(idade/60)+'min'}</span></div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:9px;text-align:center">
+        <div><b style="display:block;color:var(--mango);font-size:18px">${enviados}</b><small>push enviados</small></div>
+        <div><b style="display:block;color:#63b3ff;font-size:18px">${recebidos.size}</b><small>receberam no app</small></div>
+        <div><b style="display:block;color:#c99cff;font-size:18px">${vistos.size}</b><small>visualizaram</small></div>
+        <div><b style="display:block;color:var(--verde);font-size:18px">${aceito?'1':'0'}</b><small>aceitou</small></div>
+      </div>
+      <div style="font-size:10.5px;color:var(--poeira);margin-top:7px">“Push enviado” confirma aceite pelo serviço de notificação. “Recebeu no app” confirma que o aplicativo do motorista detectou a corrida.</div>
+    </div>`;
+  }).join('');
+  return `<div class="admin-cartao" style="margin-bottom:14px;border:1px solid rgba(99,179,255,.4)"><div style="display:flex;justify-content:space-between;gap:8px;align-items:center"><b style="font-family:'Rajdhani';font-size:17px">📡 Rastreamento das chamadas</b><span style="font-size:11px;color:var(--verde)">AO VIVO</span></div><div class="subtitulo" style="margin-top:4px">Agora dá para saber se a chamada saiu, chegou ao app, foi vista e aceita.</div>${cards}</div>`;
+}
 function adminAbaResumoHTML(){
   const a = estado.admin;
   if(a.motoristas.length===0 && a.carregando) return skeletonLista(4);
@@ -9221,6 +9270,7 @@ function adminAbaResumoHTML(){
     (m.lat_atual==null || m.lng_atual==null || (agoraTs - Number(m.lat_atualizado_em||0)) >= POSICAO_MOTORISTA_MAX_IDADE_MS)
   );
   return `
+    ${rastreamentoChamadasAdminHTML()}
     <div class="admin-cartao" style="background:linear-gradient(135deg, var(--painel-alt), var(--painel));border:2px solid var(--mango);margin-bottom:14px">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px">
         <div style="display:flex;align-items:center;gap:8px"><span class="ponto-pulsante" style="background:var(--chama)"></span><b style="font-family:'Rajdhani';font-weight:800;font-size:16px;text-transform:uppercase;letter-spacing:0.3px;color:var(--mango)">AO VIVO — Operação agora</b></div>
