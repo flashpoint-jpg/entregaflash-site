@@ -1,7 +1,7 @@
-// build: entregaflash-funil-anuncio-20260906-v1
+// build: 20260907-ICONE-MODERNO-1
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260906-FUNIL-ANUNCIO-1
-const EF_VERSION = '20260906-FUNIL-ANUNCIO-1';
+// Versão: 20260907-ICONE-MODERNO-1
+const EF_VERSION = '20260907-ICONE-MODERNO-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
@@ -60,8 +60,8 @@ self.addEventListener('push', (event) => {
 
   const opcoes = {
     body: dados.body || '',
-    icon: 'icon-192.png',
-    badge: 'icon-192.png',
+    icon: 'icon-192-modern.png',
+    badge: 'icon-192-modern.png',
     vibrate: [120, 60, 120],
     data: { url: normalizarUrl(dados.url) },
     tag: dados.tag || undefined,
