@@ -7912,7 +7912,7 @@ function adminAbaConfigHTML(){
       <input type="checkbox" id="cfg-sp-taxa-auto" ${TAXA_AUTOMATICA_GRANDE_SP_ATIVA?'checked':''} style="width:20px;height:20px;margin:0">
       Usar porcentagem automática na Grande São Paulo
     </label>
-    <div class="cf-ajuda">Ligado: usa a porcentagem abaixo nas corridas de SP. Desligado: volta automaticamente para a taxa normal do plano Free/Pro. A promoção das 10 primeiras entregas sem comissão continua separada.</div>
+    <div class="cf-ajuda">Ligado: usa a porcentagem abaixo nas corridas de SP. Desligado: volta automaticamente para a taxa normal do plano Free/Pro.</div>
     <label>% da plataforma na Grande São Paulo</label>
     <input type="number" id="cfg-sp-taxa-pct" value="${Math.round(TAXA_PLATAFORMA_GRANDE_SP*1000)/10}" step="0.1" min="0" max="100">
     <div style="margin-top:8px;font-weight:800;color:var(--mango)">Atual: Plataforma ${Math.round(TAXA_PLATAFORMA_GRANDE_SP*1000)/10}% • Motorista ${Math.round((1-TAXA_PLATAFORMA_GRANDE_SP)*1000)/10}%</div>
@@ -8551,8 +8551,8 @@ function abrirWhatsAppDocumentosAdmin(telefone, nome, veiculoTipo){
   const telefoneLogin=String(telefone||'').replace(/\D/g,'');
   const linkContinuacao=`https://entregaflash.app.br/?ir=continuar-documentos&tel=${encodeURIComponent(telefoneLogin)}`;
   const msg=ehBike
-    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: acesse o link abaixo, entre com sua senha e continue exatamente de onde parou:\n${linkContinuacao}\n\nComplete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
-    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Seu cadastro está quase pronto. Acesse o link abaixo, entre com sua senha: ele vai abrir exatamente de onde você parou:\n${linkContinuacao}\n\nComplete agora para garantir o benefício de fundador nas 10 primeiras entregas elegíveis. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
+    ? `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir seu cadastro de ciclista. Para bicicleta, não pedimos CRLV, placa nem CNH obrigatória: acesse o link abaixo, entre com sua senha e continue exatamente de onde parou:\n${linkContinuacao}\n\nComplete agora para ativar seu cadastro e começar a receber entregas. ⚠️ Se o cadastro não for concluído em até 5 dias, ele poderá ser excluído e será necessário refazê-lo. Se precisar de ajuda, estamos à disposição.`
+    : `Olá, ${primeiro}! 👋 Aqui é da Entrega Flash. Vimos que ainda falta concluir o envio dos seus documentos para ativar seu cadastro de entregador. Seu cadastro está quase pronto. Acesse o link abaixo, entre com sua senha: ele vai abrir exatamente de onde você parou:\n${linkContinuacao}\n\nComplete agora para ativar seu cadastro e começar a receber entregas. ⚠️ Se a documentação não for enviada em até 5 dias após o cadastro, o cadastro poderá ser excluído e será necessário refazê-lo desde o início. Se precisar de ajuda, estamos à disposição.`;
   window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg), '_blank');
 }
 function enviarBoasVindasWhatsAppMotorista(telefone, nome, idm){
