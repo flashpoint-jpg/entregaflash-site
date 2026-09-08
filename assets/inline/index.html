@@ -888,13 +888,10 @@ h1,h2,h3,.titulo,.bv-titulo{font-family:Inter,system-ui,sans-serif!important;fon
 .ef-conv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0}
 .ef-conv-item{padding:14px;border-radius:14px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);font-size:13px;line-height:1.4}
 .ef-conv-item b{display:block;color:#fff;margin-bottom:4px;font-size:13.5px}.ef-conv-item span{color:#aeb2ba}
-.ef-founder-box{position:relative;overflow:hidden;margin:14px 0;padding:16px;border-radius:16px;background:linear-gradient(135deg,rgba(255,177,38,.20),rgba(255,122,0,.08));border:1px solid rgba(255,177,38,.55)}
-.ef-founder-box:before{content:'FUNDADOR';position:absolute;right:-22px;top:13px;transform:rotate(35deg);font-size:10px;font-weight:900;letter-spacing:.12em;color:#111;background:#ffb126;padding:5px 26px}
-.ef-founder-title{font-weight:900;color:#fff;font-size:17px;padding-right:70px}.ef-founder-value{font-size:24px;font-weight:950;color:#ffb126;line-height:1.05;margin-top:4px}.ef-founder-sub{font-size:13px;color:#d4d6da;line-height:1.45;margin-top:6px;max-width:620px}
 .ef-trust-mini{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.ef-trust-mini span{font-size:11.5px;font-weight:750;color:#e9ebee;padding:7px 9px;border-radius:999px;background:#171a20;border:1px solid rgba(255,255,255,.09)}
 .ef-steps-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}.ef-step-mini{padding:10px;border-radius:12px;background:#15181d;border:1px solid rgba(255,255,255,.09);font-size:12px;color:#c5c8ce}.ef-step-mini b{color:#ffb126;display:block;margin-bottom:2px}
 .ef-cta-note{text-align:center;font-size:11.5px;color:#a8acb3;margin-top:7px}
-@media(max-width:700px){.ef-conv-grid,.ef-steps-mini{grid-template-columns:1fr}.ef-founder-value{font-size:21px}.ef-live-proof{align-items:flex-start}.ef-founder-box{padding:14px}}
+@media(max-width:700px){.ef-conv-grid,.ef-steps-mini{grid-template-columns:1fr}.ef-live-proof{align-items:flex-start}}
 </style>
 
 
@@ -1446,37 +1443,6 @@ let PLANOS = {
   free:{ label:'Free', preco:0, taxaPlataforma:0.42, limiteMensal:null, saqueDias:7, prioridade:false, limiteCancelamentosDia:3, limiteSimultaneo:3 },
   pro:{ label:'Pro', preco:19.99, taxaPlataforma:0.30, limiteMensal:null, saqueDias:0, prioridade:true, limiteCancelamentosDia:10, limiteSimultaneo:15 }
 };
-// ---------- campanha Motorista Fundador ----------
-// Todos os motoristas reais, inclusive os já cadastrados, recebem o selo Fundador.
-// A partir de 27/08/2026, cada motorista tem 10 entregas com 100% do valor (sem comissão da plataforma).
-// Depois das 10 entregas promocionais, a comissão normal do plano volta automaticamente.
-const MOTORISTA_FUNDADOR_INICIO = Date.parse('2026-08-27T00:00:00-03:00');
-const MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA = 10;
-
-function motoristaEhFundador(m=estado.motorista){
-  return !!(m && m.ativo && !m.visitante && m.telefone);
-}
-function entregasConcluidasMotorista(telefone){
-  return estado.pedidos.filter(p=>p.status==='entregue' && p.motoristaTelefone===telefone && Number(p.atualizadoEm || p.criadoEm || 0) >= MOTORISTA_FUNDADOR_INICIO);
-}
-function ordemEntregaMotorista(pedido, m=estado.motorista){
-  if(!pedido || !m || !m.telefone) return entregasConcluidasMotorista(m?.telefone||'').length + 1;
-  const ref = Number(pedido.atualizadoEm || pedido.criadoEm || Date.now());
-  const antes = estado.pedidos.filter(x=>
-    x.id!==pedido.id && x.status==='entregue' && x.motoristaTelefone===m.telefone &&
-    Number(x.atualizadoEm || x.criadoEm || 0) < ref
-  ).length;
-  return antes + 1;
-}
-function pedidoTemBeneficioFundador(pedido, m=estado.motorista){
-  if(!motoristaEhFundador(m)) return false;
-  if(pedido) return ordemEntregaMotorista(pedido,m) <= MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA;
-  return entregasConcluidasMotorista(m.telefone).length < MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA;
-}
-function corridasFundadorRestantes(m=estado.motorista){
-  if(!motoristaEhFundador(m)) return 0;
-  return Math.max(0, MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA - entregasConcluidasMotorista(m.telefone).length);
-}
 
 let ATRASO_PRIORIDADE_PRO_MS = 45000; // motoristas Free só veem o pedido 45s depois dos Pro
 let RAIO_GEOFENCE_KM = 0.15; // 150m — distância máxima do endereço para poder coletar/finalizar
@@ -2186,8 +2152,6 @@ function precoDeDistancia(veiculo, km, roca){
   return Math.round(Math.max(v.minimo||0, taxaKm*km)*100)/100;
 }
 function ganhoMotorista(preco, pedido=null){
-  // Fundador recebe 100% nas 10 primeiras entregas; depois volta à comissão normal da praça/plano.
-  if(pedidoTemBeneficioFundador(pedido, estado.motorista)) return Math.round(Number(preco||0)*100)/100;
   const taxa = taxaPlataformaParaPedido(pedido, estado.motorista);
   return Math.round(Number(preco||0)*(1-taxa)*100)/100;
 }
@@ -5342,11 +5306,6 @@ function telaBoasVindas(){
         <div class="bv-kicker">Seja um entregador parceiro</div>
         <h2>Ganhe fazendo <span>entregas</span></h2>
         <div class="subtitulo">Trabalhe na sua região usando bicicleta, moto, carro, van ou caminhão.</div>
-        <div class="ef-founder-box">
-          <div class="ef-founder-title">Benefício Motorista Fundador</div>
-          <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
-          <div class="ef-founder-sub">Durante as 10 primeiras entregas elegíveis do benefício fundador, a plataforma não desconta comissão. Depois, valem as regras normais do plano escolhido.</div>
-        </div>
         <div class="bv-driver-benefits">
           <div> Faça seu próprio horário</div><div> Receba por entrega</div><div> Bicicleta também é aceita</div><div> Plano Free sem mensalidade</div>
         </div>
@@ -5861,11 +5820,6 @@ function telaCadastroMotorista(){
     <div style="font-size:14.5px;color:var(--poeira);line-height:1.55">
       O <b style="color:var(--osso)">Entrega Flash</b> conecta você a quem precisa de uma entrega na sua região — você aceita as corridas que quiser, no seu tempo livre, com bicicleta, moto, carro ou caminhão.
     </div>
-    <div class="ef-founder-box" style="margin-top:12px">
-      <div class="ef-founder-title">Seu benefício de fundador</div>
-      <div class="ef-founder-value">10 primeiras entregas com 100% do valor</div>
-      <div class="ef-founder-sub">Nas entregas elegíveis do benefício fundador, não há comissão da plataforma nas 10 primeiras. Depois, passa a valer a taxa normal do seu plano.</div>
-    </div>
     <div style="margin-top:12px;padding:14px;border-radius:12px;background:linear-gradient(135deg,rgba(127,174,114,0.18),rgba(127,174,114,0.08));border:1px solid var(--verde)">
       <div style="font-weight:700;color:var(--osso);font-size:15px"> Plano Free — sem mensalidade</div>
       <div style="font-size:14px;color:var(--poeira);margin-top:4px">Você pode começar pelo Free. O Pro é opcional e oferece vantagens adicionais conforme as configurações atuais do app.</div>
@@ -6214,9 +6168,6 @@ function telaMotorista(){
   const entreguesHojeArr = estado.pedidos.filter(p=>p.status==='entregue' && p.motoristaTelefone===m.telefone && p.atualizadoEm>=hoje.getTime());
   const ganhosHoje = entreguesHojeArr.reduce((s,p)=>s+ganhoMotorista(p.preco,p),0);
   const entregasMes = entregasDoMesAtual(m.telefone);
-  const fundador = motoristaEhFundador(m);
-  const fundadorRestantes = corridasFundadorRestantes(m);
-  const fundadorUsadas = fundador ? Math.min(MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA, MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA-fundadorRestantes) : 0;
   const aba = estado.abaPrincipalMotorista || 'pedidos';
 
   const blocoAvisoAnalise = m.status!=='aprovado' ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,171,0,.13),rgba(255,107,0,.07));text-align:center;padding:22px 18px">
@@ -6237,23 +6188,8 @@ function telaMotorista(){
 
   const blocoPrimeiroDia = (m.status==='aprovado' && entregasMes===0) ? `<div class="cartao ef-app20-guide"><div style="font-family:'Rajdhani';font-size:19px;font-weight:900">🚀 SEU PRIMEIRO DIA</div><div class="subtitulo" style="margin-top:3px">É simples: fique online e siga o fluxo da primeira entrega.</div><div class="ef-app20-steps"><div class="ef-app20-step"><i>1</i>Online</div><div class="ef-app20-step"><i>2</i>Receba</div><div class="ef-app20-step"><i>3</i>Aceite</div><div class="ef-app20-step"><i>4</i>Receba</div></div></div>` : '';
 
-  const blocoFundador = fundador ? `<div class="cartao" style="border:1px solid var(--mango);background:linear-gradient(135deg,rgba(255,190,61,.14),rgba(111,207,106,.08))">
-    <div style="display:flex;gap:12px;align-items:flex-start">
-      <span style="font-size:30px"></span>
-      <div style="flex:1">
-        <div style="font-family:'Rajdhani';font-weight:800;font-size:20px;color:var(--mango)">MOTORISTA FUNDADOR</div>
-        ${fundadorRestantes>0
-          ? `<div style="font-size:14px;color:var(--osso);line-height:1.45;margin-top:3px">Nas suas primeiras <b>${MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA} entregas</b>, a Entrega Flash não desconta comissão da plataforma. Você recebe <b>100% do valor da corrida</b>.</div>
-             <div style="margin-top:10px;font-size:13px;color:var(--poeira)">Benefício usado: <b style="color:var(--osso)">${fundadorUsadas}/${MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA}</b> · Restam <b style="color:var(--verde)">${fundadorRestantes}</b> entregas sem taxa.</div>
-             <div style="height:7px;background:var(--painel-alt);border-radius:999px;overflow:hidden;margin-top:7px"><div style="height:100%;width:${Math.round((fundadorUsadas/MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA)*100)}%;background:var(--mango);border-radius:999px"></div></div>`
-          : `<div style="font-size:14px;color:var(--osso);line-height:1.45;margin-top:3px">Você já aproveitou as ${MOTORISTA_FUNDADOR_CORRIDAS_SEM_TAXA} entregas sem comissão. A partir de agora vale a taxa normal do seu plano. O selo de Fundador continua no seu perfil.</div>`}
-      </div>
-    </div>
-  </div>` : '';
-
   const blocoPedidos = `
   <div class="link-taxas-topo" onclick="abrirComoFunciona('taxas')"> Ver todas as taxas e regras</div>
-  ${blocoFundador}
   ${blocoAvisoAnalise}
   ${treinamentoMotoristaHTML()}
   ${blocoPrimeiroDia}
@@ -6282,7 +6218,6 @@ function telaMotorista(){
   </div>`;
 
   const blocoPerfil = `
-  ${blocoFundador}
   ${perfilMotoristaHTML(m)}
   <div class="cartao">
     <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
