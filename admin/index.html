@@ -2263,11 +2263,12 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 180000; // 3 min sem sinal = offline real
+const PRESENCA_MOTORISTA_MS = 180000; // mantido apenas para diagnósticos de sinal/GPS
 function motoristaOnlineAgora(m, agora=Date.now()){
-  if(!m || !m.disponivel || !STATUS_ACESSO_PAINEL.includes(m.status)) return false;
-  const ultimo = Number(m.disponivel_atualizado_em||0);
-  return ultimo>0 && (agora-ultimo) <= PRESENCA_MOTORISTA_MS;
+  // REGRA OFICIAL DO PAINEL: se o motorista está marcado como disponível, aparece online.
+  // Não derruba o contador por GPS, app fechado ou tempo sem heartbeat.
+  // Ele só deixa de aparecer online quando `disponivel` for alterado para false.
+  return !!(m && m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
 }
 // Regras únicas de situação do motorista usadas em TODO o painel.
 // Evita o resumo geral mostrar um número e o resumo por cidade mostrar outro.
@@ -2282,8 +2283,11 @@ function motoristaEmAnalise(m){ return !!m && m.status==='pendente' && motorista
 function motoristaAprovado(m){ return !!m && m.status==='aprovado'; }
 async function carregarMotoristasOnline(){
   try{
-    // Usa a lista já carregada pelo RPC do admin e aplica presença real de 2 minutos.
-    // Assim não depende do antigo campo `disponivel` sozinho e não precisa renderizar a tela.
+    // Atualiza a fonte do contador mesmo se o Realtime estiver bloqueado/atrasado.
+    // O RPC do admin traz o valor atual de `disponivel` salvo no banco.
+    if(estado.admin?.logado){
+      try{ await carregarMotoristasAdmin(); }catch(e){ console.warn('Falha ao atualizar lista antes do contador online',e); }
+    }
     const novo=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m)).length;
     estado.motoristasOnline=novo;
     document.querySelectorAll('[data-admin-online-count]').forEach(el=>{ el.textContent=String(novo); });
@@ -7851,7 +7855,6 @@ function adminAbaResumoHTML(){
           <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">✅ Pedidos aceitos, em andamento</div>
         </div>
       </div>
-      <div class="mapa-admin-geral" id="admin-mapa-geral" style="margin-top:14px"></div>
       <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra ao vivo: 🟢 motoristas disponíveis, 🟠 motoristas em corrida e 🔵 clientes aguardando. Toque numa bolinha pra ver quem é.</div>
       ${motoristasSemLocalizacao.length>0 ? `
       <div class="cf-nota" style="background:rgba(255,147,48,0.12);border:1px solid rgba(255,147,48,0.35);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-top:10px">

@@ -1,5 +1,5 @@
 // build: sp-cep-controles-20260830
-const CACHE='entrega-flash-admin-v13-20260904-central-lancamento';
+const CACHE='entrega-flash-admin-v15-20260908-online-contador';
 const APP_SHELL=['/admin/admin.html?v=20260904-central-lancamento-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
 self.addEventListener('install',event=>{
   self.skipWaiting();
