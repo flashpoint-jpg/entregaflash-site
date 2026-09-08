@@ -1437,10 +1437,11 @@ async function enviarPushServidor(papel, referencia, title, body, url, tipo){
 
 // Despacho de push por proximidade: evita chamar motorista de outra região logo de saída.
 async function enviarPushPedidoMotoristasProximos(pedido, raioKm=15){
+  // IMPORTANTE: motorista ONLINE não deixa de receber pedido só porque o app
+  // está fechado, o GPS está desligado ou a localização ficou antiga.
+  // A localização serve apenas para identificar quem está perto; ela não é
+  // mais requisito para o push. Mantemos o filtro por ONLINE + tipo de veículo.
   const origem=pedido && pedido.origemCoord;
-  if(!origem || origem.lat==null || origem.lon==null){
-    return enviarPushServidor('motorista', null, '🆕 Novo pedido disponível!', `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
-  }
   try{
     const limiteAtualizacao=Date.now()-(30*60*1000);
     const {data, error}=await sb.from('entrega_motoristas')
@@ -1448,20 +1449,44 @@ async function enviarPushPedidoMotoristasProximos(pedido, raioKm=15){
       .eq('disponivel',true)
       .eq('veiculo',pedido.veiculo);
     if(error) throw error;
-    const proximos=(data||[]).filter(m=>{
-      if(m.lat_atual==null || m.lng_atual==null) return false;
-      if(m.lat_atualizado_em && Number(m.lat_atualizado_em)<limiteAtualizacao) return false;
-      return distanciaKm(Number(m.lat_atual),Number(m.lng_atual),Number(origem.lat),Number(origem.lon))<=raioKm;
-    });
-    let enviados=0;
-    for(const m of proximos){
-      const r=await enviarPushServidor('motorista', String(m.telefone||'').replace(/\D/g,''), '🆕 Pedido perto de você!', `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
+
+    const online=(data||[]).filter(m=>String(m.telefone||'').replace(/\D/g,'').length>0);
+    let enviados=0, proximos=0, semLocalizacaoRecente=0;
+
+    for(const m of online){
+      let perto=false;
+      const temOrigem=origem && origem.lat!=null && origem.lon!=null;
+      const temLocalizacao=m.lat_atual!=null && m.lng_atual!=null;
+      const localizacaoRecente=temLocalizacao && (!m.lat_atualizado_em || Number(m.lat_atualizado_em)>=limiteAtualizacao);
+
+      if(temOrigem && localizacaoRecente){
+        perto=distanciaKm(Number(m.lat_atual),Number(m.lng_atual),Number(origem.lat),Number(origem.lon))<=raioKm;
+      }
+      if(perto) proximos++;
+      if(!localizacaoRecente) semLocalizacaoRecente++;
+
+      const titulo=perto ? '🆕 Pedido perto de você!' : '🆕 Novo pedido disponível!';
+      const r=await enviarPushServidor(
+        'motorista',
+        String(m.telefone||'').replace(/\D/g,''),
+        titulo,
+        `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`,
+        `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`,
+        'pedido_chamada'
+      );
       enviados+=Math.max(0,Number(r?.enviados||0));
     }
-    return {enviados, motoristas_proximos:proximos.length, raio_km:raioKm};
+
+    return {
+      enviados,
+      motoristas_online:online.length,
+      motoristas_proximos:proximos,
+      sem_localizacao_recente:semLocalizacaoRecente,
+      raio_km:raioKm
+    };
   }catch(e){
-    console.warn('Falha no filtro de proximidade do push; usando chamada geral como contingência.',e);
-    return enviarPushServidor('motorista', null, '🆕 Novo pedido disponível!', `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`, `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`, 'pedido_chamada');
+    console.warn('Falha ao buscar motoristas online para o push.',e);
+    return {erro:String(e), enviados:0};
   }
 }
 
