@@ -1,7 +1,7 @@
-// build: 20260907-ICONE-MODERNO-1
+// build: 20260909-RESET-SENHA-1
 // Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260907-ICONE-MODERNO-1
-const EF_VERSION = '20260907-ICONE-MODERNO-1';
+// Versão: 20260909-RESET-SENHA-1
+const EF_VERSION = '20260909-RESET-SENHA-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {

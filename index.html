@@ -1508,6 +1508,7 @@ window.addEventListener('beforeunload',()=>{ try{ efPresencaChannel?.untrack(); 
 document.addEventListener('visibilitychange',()=>{ if(!document.hidden) atualizarPresencaSite(tipoPresencaAtual()); });
 
 const FUNCOES_URL = SUPABASE_URL + '/functions/v1';
+const RESET_SENHA_URL = FUNCOES_URL + '/entregaflash-reset-senha';
 const VAPID_PUBLIC_KEY = 'BBBzZ91h6R8yKe4HJSsYcC8IXaTVNtlAXNb_dQPENNGI0f9zKebPq2JKl49pjTFnNHA9Ki4mvMxTQTI3wPv6Dds';
 function esconderSplash(){
   const el = document.getElementById('splash');
@@ -1872,6 +1873,7 @@ let estado = {
   chatAberto:null, mensagens:[], canalChat:null, naoLidas:0, chatNaoLidas:{},
   suporteAberto:false, suporteMensagens:[], canalSuporte:null, suporteNaoLidas:0, suporteContexto:{telefone:'',nome:''},
   contatoRapido:{ aberto:false, nome:'', telefone:'', contexto:'cliente', erro:'', enviando:false },
+  resetSenha:{ aberto:false, token:'', enviando:false, concluido:false, tipo:null, erro:'' },
   sugestoesTemp:{ origem:[], destino:[] },
   alertaMotorista:null, avisoGeralExibido:null, fotoAmpliada:null, statusAnterior:{}, statusAnteriorMotorista:{}, statusAnteriorEntregaMotorista:{},
   podeInstalar:false, appInstalado:false, comoInstalarAberto:false, editarDistanciaAberto:false, extrasAberto:false, popupInstalarAberto:false, avisoNavegadorEmbutidoAberto:false,
@@ -3598,15 +3600,51 @@ function renderChat(){
     : estado.mensagens.map(m=>{
         const minha = m.remetente_tipo===eu;
         const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${m.texto}<span>${hora}</span></div>`;
+        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${formatarMensagemSuporteSegura(m.texto)}<span>${hora}</span></div>`;
       }).join('');
   caixa.scrollTop = caixa.scrollHeight;
 }
 
 // ---------- suporte (motorista <-> admin) ----------
+// Evita mensagens duplicadas no suporte (toque duplo, retry/realtime ou envio repetido em poucos segundos).
+function filtrarMensagensSuporteDuplicadas(lista){
+  const ultimos = new Map();
+  const saida = [];
+  for(const m of (lista||[])){
+    const texto = String(m.texto||'').trim();
+    const chave = `${m.motorista_telefone||''}|${m.remetente_tipo||''}|${texto}`;
+    const quando = Number(m.criado_em)||0;
+    const anterior = ultimos.get(chave);
+    if(anterior!=null && Math.abs(anterior-quando) <= 8000) continue;
+    ultimos.set(chave, quando);
+    saida.push(m);
+  }
+  return saida;
+}
+async function inserirMensagemSuporteUnica(payload){
+  try{
+    const tel = payload.motorista_telefone;
+    const tipo = payload.remetente_tipo;
+    const texto = String(payload.texto||'').trim();
+    const agora = Number(payload.criado_em)||Date.now();
+    const { data: ultimas, error: erroBusca } = await sb.from('entrega_suporte')
+      .select('id,texto,remetente_tipo,criado_em')
+      .eq('motorista_telefone',tel).eq('remetente_tipo',tipo)
+      .order('criado_em',{ascending:false}).limit(1);
+    const ultima = !erroBusca && ultimas && ultimas[0];
+    if(ultima && String(ultima.texto||'').trim()===texto && Math.abs(agora-(Number(ultima.criado_em)||0))<=8000){
+      return { data: ultima, error:null, duplicada:true };
+    }
+    const { error } = await sb.from('entrega_suporte').insert({...payload, texto, criado_em:agora});
+    return { data:null, error, duplicada:false };
+  }catch(error){
+    console.error('Falha ao inserir mensagem de suporte', error);
+    return { data:null, error, duplicada:false };
+  }
+}
 async function carregarMensagensSuporte(telefone){
   const {data} = await sb.from('entrega_suporte').select('*').eq('motorista_telefone',telefone).order('criado_em',{ascending:true});
-  return data||[];
+  return filtrarMensagensSuporteDuplicadas(data||[]);
 }
 async function atualizarBadgeSuporteMotorista(){
   const m = estado.motorista;
@@ -3657,11 +3695,27 @@ function abrirContatoRapido(contexto){
   estado.contatoRapido = { aberto:true, nome:nomeAtual||'', telefone:telAtual||'', contexto, erro:'', enviando:false };
   render();
 }
-// "esqueci minha senha": reaproveita o formulário de contato rápido, já preenchendo o telefone
-// digitado na tela de login, e manda uma mensagem específica pro suporte pedir a redefinição.
+// ---------- recuperação de senha por link seguro ----------
+async function chamarResetSenha(acao,payload={}){
+  const resp = await fetch(RESET_SENHA_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+    body:JSON.stringify({acao,...payload})
+  });
+  let dados={};
+  try{ dados=await resp.json(); }catch(e){}
+  if(!resp.ok || !dados?.ok){
+    const erro=new Error(dados?.erro||'erro_reset_senha');
+    erro.codigo=dados?.erro||'erro_reset_senha';
+    erro.status=resp.status;
+    throw erro;
+  }
+  return dados;
+}
 function abrirEsqueciSenha(tipo){
   const idTelefone = tipo==='motorista' ? 'lm-telefone' : 'lc-telefone';
-  const telAtual = document.getElementById(idTelefone)?.value.trim() || '';
+  const telAtual = document.getElementById(idTelefone)?.value.trim()
+    || (tipo==='motorista' ? (estado.painelMotorista?.loginTelefone||'') : (estado.painelCliente?.loginTelefone||''));
   estado.contatoRapido = { aberto:true, nome:'', telefone:telAtual, contexto: tipo==='motorista' ? 'esqueci-senha-motorista' : 'esqueci-senha-cliente', erro:'', enviando:false };
   render();
 }
@@ -3673,26 +3727,49 @@ async function enviarContatoRapido(){
   const cr = estado.contatoRapido;
   const nome = (document.getElementById('cr-nome')?.value || cr.nome || '').trim();
   const telefone = (document.getElementById('cr-telefone')?.value || cr.telefone || '').trim();
-  if(!nome || !telefone){ cr.erro = 'Preenche o nome e o telefone.'; render(); return; }
+  const ehEsqueciSenha = (cr.contexto||'').startsWith('esqueci-senha');
+
+  if(!telefone || (!ehEsqueciSenha && !nome)){
+    cr.erro = ehEsqueciSenha ? 'Informe o telefone da sua conta.' : 'Preenche o nome e o telefone.';
+    render(); return;
+  }
+
   cr.erro=''; cr.enviando=true; render();
+
+  if(ehEsqueciSenha){
+    const tipo = cr.contexto.includes('motorista') ? 'motorista' : 'cliente';
+    try{
+      await chamarResetSenha('solicitar',{telefone,tipo,nome});
+      cr.enviando=false; cr.aberto=false;
+      if(tipo==='motorista'){ estado.painelMotorista.cadastro.telefone=telefone; if(nome) estado.painelMotorista.cadastro.nome=nome; }
+      else { estado.painelCliente.cadastro.telefone=telefone; if(nome) estado.painelCliente.cadastro.nome=nome; }
+      mostrarToast('Pedido recebido. O suporte vai enviar um link seguro para redefinir sua senha.','sucesso');
+      await abrirSuporte(telefone,nome||'');
+      return;
+    }catch(e){
+      console.error(e);
+      cr.enviando=false;
+      cr.erro='Não consegui abrir o pedido agora. Verifica sua internet e tenta de novo.';
+      render();
+      return;
+    }
+  }
+
   const mensagensPorContexto = {
     motorista: 'Olá! Quero saber mais antes de terminar meu cadastro de entregador.',
     cliente: 'Olá! Quero saber mais antes de terminar meu cadastro de cliente.',
-    parceria: 'Olá! Quero conversar sobre uma parceria comercial com o Entrega Flash.',
-    'esqueci-senha-motorista': 'Olá! Esqueci a minha senha de entregador e preciso redefinir.',
-    'esqueci-senha-cliente': 'Olá! Esqueci a minha senha de cliente e preciso redefinir.'
+    parceria: 'Olá! Quero conversar sobre uma parceria comercial com o Entrega Flash.'
   };
   const mensagemInicial = mensagensPorContexto[cr.contexto] || mensagensPorContexto.cliente;
-  const { error } = await sb.from('entrega_suporte').insert({ motorista_telefone:telefone, motorista_nome:nome, remetente_tipo:'motorista', texto:mensagemInicial, lido:false, criado_em:Date.now() });
+  const { error } = await inserirMensagemSuporteUnica({ motorista_telefone:telefone, motorista_nome:nome, remetente_tipo:'motorista', texto:mensagemInicial, lido:false, criado_em:Date.now() });
   cr.enviando=false;
   if(error){ console.error(error); cr.erro='Não consegui enviar. Verifica sua internet e tenta de novo.'; render(); return; }
   await sb.from('entrega_suporte_status').upsert({ motorista_telefone:telefone, status:'aberto', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
-  if(cr.contexto.includes('motorista')){ estado.painelMotorista.cadastro.nome=nome; estado.painelMotorista.cadastro.telefone=telefone; }
-  else if(cr.contexto==='cliente' || cr.contexto==='esqueci-senha-cliente'){ estado.painelCliente.cadastro.nome=nome; estado.painelCliente.cadastro.telefone=telefone; }
+  if(cr.contexto==='motorista'){ estado.painelMotorista.cadastro.nome=nome; estado.painelMotorista.cadastro.telefone=telefone; }
+  else if(cr.contexto==='cliente'){ estado.painelCliente.cadastro.nome=nome; estado.painelCliente.cadastro.telefone=telefone; }
   cr.aberto=false;
-  const ehEsqueciSenha = cr.contexto.startsWith('esqueci-senha');
-  mostrarToast(ehEsqueciSenha ? 'Recebemos seu pedido! Nossa equipe já vai redefinir a sua senha. ' : 'Recebemos seu contato! Nossa equipe já vai te chamar. ');
-  await abrirSuporte(telefone, nome);
+  mostrarToast('Recebemos seu contato! Nossa equipe já vai te chamar.','sucesso');
+  await abrirSuporte(telefone,nome);
 }
 function contatoRapidoModalHTML(){
   const cr = estado.contatoRapido;
@@ -3702,16 +3779,89 @@ function contatoRapidoModalHTML(){
     <div class="modal-chat" style="max-height:none">
       <div class="chat-topo"><h3>${ehEsqueciSenha ? 'Esqueci minha senha' : (cr.contexto==='parceria' ? 'Parcerias comerciais' : 'Falar antes de se cadastrar')}</h3><button class="chat-fechar" onclick="fecharContatoRapido()">&times;</button></div>
       <div style="padding:16px">
-        <div style="font-size:14px;color:var(--poeira);margin-bottom:14px">${ehEsqueciSenha ? 'Deixa seu nome e o telefone da sua conta que a nossa equipe redefine a sua senha.' : (cr.contexto==='parceria' ? 'Informe seu nome e telefone. Nossa equipe entra em contato para entender a parceria.' : 'Deixa seu nome e telefone que a nossa equipe te chama.')}</div>
-        <label>O seu nome</label>
+        <div style="font-size:14px;color:var(--poeira);margin-bottom:14px">${ehEsqueciSenha ? 'Informe o telefone da sua conta. O suporte vai gerar um link seguro para você criar uma nova senha. Seu nome é opcional.' : (cr.contexto==='parceria' ? 'Informe seu nome e telefone. Nossa equipe entra em contato para entender a parceria.' : 'Deixa seu nome e telefone que a nossa equipe te chama.')}</div>
+        <label>${ehEsqueciSenha?'Seu nome (opcional)':'O seu nome'}</label>
         <input type="text" id="cr-nome" value="${cr.nome}" placeholder="Ex: Ana Souza">
-        <label>Telefone</label>
+        <label>Telefone da conta</label>
         <input type="tel" id="cr-telefone" value="${cr.telefone}" placeholder="(35) 90000-0000">
         ${cr.erro?`<div class="erro-campo">${cr.erro}</div>`:''}
-        <button class="btn btn-primario" ${cr.enviando?'disabled':''} onclick="enviarContatoRapido()">${cr.enviando?'A enviar...':'Enviar'}</button>
+        <button class="btn btn-primario" ${cr.enviando?'disabled':''} onclick="enviarContatoRapido()">${cr.enviando?'Enviando...':(ehEsqueciSenha?'PEDIR LINK DE REDEFINIÇÃO':'Enviar')}</button>
       </div>
     </div>
   </div>`;
+}
+
+function inicializarResetSenhaPeloLink(){
+  try{
+    const token=(new URLSearchParams(window.location.search).get('redefinir')||'').trim();
+    if(!token) return;
+    estado.resetSenha={aberto:true,token,enviando:false,concluido:false,tipo:null,erro:''};
+    estado.telaBoasVindas=false;
+    estado.sessaoCarregando=false;
+  }catch(e){}
+}
+function telaRedefinirSenha(){
+  const r=estado.resetSenha||{};
+  if(r.concluido){
+    return `<div style="min-height:100vh;background:var(--fundo);display:flex;align-items:center;justify-content:center;padding:22px">
+      <div class="card" style="width:min(440px,100%);padding:24px;text-align:center">
+        <div style="font-size:48px;margin-bottom:8px">✅</div>
+        <h2 style="margin:0 0 8px">Senha alterada</h2>
+        <div class="subtitulo" style="margin-bottom:18px">Sua nova senha já está ativa. Este link não pode mais ser usado.</div>
+        <button class="btn btn-primario" onclick="irParaLoginAposReset()">ENTRAR COM A NOVA SENHA</button>
+      </div>
+    </div>`;
+  }
+  return `<div style="min-height:100vh;background:var(--fundo);display:flex;align-items:center;justify-content:center;padding:22px">
+    <div class="card" style="width:min(440px,100%);padding:24px">
+      <div style="text-align:center;margin-bottom:18px"><div style="font-size:42px">🔑</div><h2 style="margin:5px 0 6px">Criar nova senha</h2><div class="subtitulo">Este é um link seguro do Entrega Flash. Ele vence em 30 minutos e só funciona uma vez.</div></div>
+      <label>Nova senha</label>
+      <input type="password" id="reset-senha-1" placeholder="Mínimo 4 caracteres" autocomplete="new-password">
+      <label>Confirmar nova senha</label>
+      <input type="password" id="reset-senha-2" placeholder="Digite novamente" autocomplete="new-password" onkeydown="if(event.key==='Enter') confirmarRedefinicaoSenha()">
+      ${r.erro?`<div class="erro-campo">${r.erro}</div>`:''}
+      <button class="btn btn-primario" ${r.enviando?'disabled':''} onclick="confirmarRedefinicaoSenha()">${r.enviando?'ALTERANDO...':'ALTERAR MINHA SENHA'}</button>
+      <div style="font-size:11.5px;color:var(--poeira);margin-top:12px;text-align:center">O suporte não vê a senha que você escolher.</div>
+    </div>
+  </div>`;
+}
+async function confirmarRedefinicaoSenha(){
+  const r=estado.resetSenha;
+  if(!r?.token) return;
+  const s1=document.getElementById('reset-senha-1')?.value||'';
+  const s2=document.getElementById('reset-senha-2')?.value||'';
+  if(s1.length<4){ r.erro='A senha precisa ter pelo menos 4 caracteres.'; render(); return; }
+  if(s1!==s2){ r.erro='As duas senhas estão diferentes.'; render(); return; }
+  r.erro=''; r.enviando=true; render();
+  try{
+    const senhaHashNova=await hashSenha(s1);
+    const dados=await chamarResetSenha('redefinir',{token:r.token,senhaHashNova});
+    r.enviando=false; r.concluido=true; r.tipo=dados.tipo||null;
+    try{
+      const u=new URL(window.location.href);
+      u.searchParams.delete('redefinir');
+      history.replaceState({},'',u.pathname+(u.search||'')+(u.hash||''));
+    }catch(e){}
+    render();
+  }catch(e){
+    console.error(e);
+    r.enviando=false;
+    r.erro=(e.codigo==='link_invalido_ou_expirado' || e.status===410)
+      ? 'Este link já foi usado ou venceu. Peça um novo link ao suporte.'
+      : 'Não consegui alterar a senha agora. Tente novamente.';
+    render();
+  }
+}
+function irParaLoginAposReset(){
+  const tipo=estado.resetSenha?.tipo;
+  estado.resetSenha={aberto:false,token:'',enviando:false,concluido:false,tipo:null,erro:''};
+  estado.telaBoasVindas=false;
+  if(tipo==='motorista'){
+    estado.modo='entregador'; salvarLocal('ef_modo','entregador'); irParaLogin();
+  }else{
+    estado.modo='cliente'; salvarLocal('ef_modo','cliente'); irParaLoginCliente();
+  }
+  render();
 }
 
 // ---------- Sugestões e Reclamações (feedback livre do cliente/motorista) ----------
@@ -3778,11 +3928,21 @@ async function enviarMensagemSuporte(){
   input.value='';
   const tel = estado.motorista.telefone || (estado.suporteContexto&&estado.suporteContexto.telefone) || '';
   const nome = estado.motorista.nome || (estado.suporteContexto&&estado.suporteContexto.nome) || '';
-  const { error: erroMsg } = await sb.from('entrega_suporte').insert({ motorista_telefone:tel, motorista_nome:nome, remetente_tipo:'motorista', texto, lido:false, criado_em:Date.now() });
+  const { error: erroMsg } = await inserirMensagemSuporteUnica({ motorista_telefone:tel, motorista_nome:nome, remetente_tipo:'motorista', texto, lido:false, criado_em:Date.now() });
   if(erroMsg){ console.error(erroMsg); mostrarErro('Não consegui enviar. Verifica sua internet e tenta de novo.'); input.value = texto; return; }
   const { error: erroStatus } = await sb.from('entrega_suporte_status').upsert({ motorista_telefone:tel, status:'aberto', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
   if(erroStatus) console.error(erroStatus);
   enviarPushServidor('admin', null, ' Nova mensagem de suporte', `${nome||'Um motorista'}: ${texto}`);
+}
+function formatarMensagemSuporteSegura(texto){
+  const seguro=String(texto||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const comQuebras=seguro.replace(/\n/g,'<br>');
+  return comQuebras.replace(
+    /(https:\/\/(?:www\.)?entregaflash\.app\.br\/\?redefinir=[0-9a-fA-F-]{36})/g,
+    '<a href="$1" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;padding:9px 12px;border-radius:10px;background:#ff9810;color:#151515;font-weight:900;text-decoration:none">🔑 REDEFINIR MINHA SENHA</a>'
+  );
 }
 function renderSuporteChat(){
   const caixa = document.getElementById('suporte-mensagens');
@@ -3792,7 +3952,7 @@ function renderSuporteChat(){
     : estado.suporteMensagens.map(m=>{
         const minha = m.remetente_tipo==='motorista';
         const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${m.texto}<span>${hora}</span></div>`;
+        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${formatarMensagemSuporteSegura(m.texto)}<span>${hora}</span></div>`;
       }).join('');
   caixa.scrollTop = caixa.scrollHeight;
 }
@@ -3803,7 +3963,7 @@ async function carregarSuporteAdmin(){
   const { data: status } = await sb.from('entrega_suporte_status').select('*').order('atualizado_em', { ascending:true });
   const statusMap = {}; (status||[]).forEach(s=>{ statusMap[s.motorista_telefone]=s.status; }); // ordenado por data: se houver linha duplicada antiga no banco, a mais recente sempre vence
   const porTelefone = {};
-  (msgs||[]).forEach(m=>{
+  filtrarMensagensSuporteDuplicadas(msgs||[]).forEach(m=>{
     if(!porTelefone[m.motorista_telefone]) porTelefone[m.motorista_telefone] = { telefone:m.motorista_telefone, nome:m.motorista_nome, ultimaEm:m.criado_em, naoLidas:0 };
     if(m.remetente_tipo==='motorista' && !m.lido) porTelefone[m.motorista_telefone].naoLidas++;
   });
@@ -3863,7 +4023,7 @@ async function enviarMensagemSuporteAdmin(){
   const conversa = (estado.admin.suporteConversas||[]).find(c=>c.telefone===tel);
   const motoristaCadastro = (estado.admin.motoristas||[]).find(m=>m.telefone===tel);
   const nomeMotorista = (conversa&&conversa.nome) || (motoristaCadastro&&motoristaCadastro.nome) || estado.admin.suporteNomeAberto || '';
-  const { error } = await sb.from('entrega_suporte').insert({ motorista_telefone:tel, motorista_nome:nomeMotorista, remetente_tipo:'admin', texto, lido:false, criado_em:Date.now() });
+  const { error } = await inserirMensagemSuporteUnica({ motorista_telefone:tel, motorista_nome:nomeMotorista, remetente_tipo:'admin', texto, lido:false, criado_em:Date.now() });
   if(error){ console.error(error); mostrarErro('Não consegui enviar. Tenta de novo.'); input.value = texto; return; }
   enviarPushServidor('motorista', tel, ' Resposta do suporte', texto);
 }
@@ -3881,7 +4041,7 @@ function renderSuporteAdminChat(){
     : estado.admin.suporteMensagensAdmin.map(m=>{
         const minha = m.remetente_tipo==='admin';
         const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${!minha?`<b style="display:block;font-size:11.5px;opacity:0.7">${m.motorista_nome||'Motorista'}</b>`:''}${m.texto}<span>${hora}</span></div>`;
+        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${!minha?`<b style="display:block;font-size:11.5px;opacity:0.7">${m.motorista_nome||'Motorista'}</b>`:''}${formatarMensagemSuporteSegura(m.texto)}<span>${hora}</span></div>`;
       }).join('');
   caixa.scrollTop = caixa.scrollHeight;
 }
@@ -7386,6 +7546,10 @@ function render(){
     return;
   }
   const app = document.getElementById('app');
+  if(estado.resetSenha && estado.resetSenha.aberto){
+    app.innerHTML=telaRedefinirSenha();
+    return;
+  }
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
   const _valores = capturarValoresInputs();
@@ -10361,7 +10525,7 @@ window.alternarDisponibilidade=alternarDisponibilidade; window.solicitarSaque=so
 window.salvarRaioAtendimento=salvarRaioAtendimento; window.abrirChamadoAmigo=abrirChamadoAmigo; window.fecharChamadoAmigo=fecharChamadoAmigo; window.enviarChamadoAmigo=enviarChamadoAmigo; window.cancelarChamadoAmigo=cancelarChamadoAmigo; window.ajudarChamadoAmigo=ajudarChamadoAmigo;
 window.abrirSOSFlutuante=abrirSOSFlutuante; window.acionarSOSCliente=acionarSOSCliente; window.fecharSOSCliente=fecharSOSCliente;
 window.abrirSuporte=abrirSuporte; window.fecharSuporte=fecharSuporte; window.enviarMensagemSuporte=enviarMensagemSuporte; window.abrirSuporteGeral=abrirSuporteGeral;
-window.abrirContatoRapido=abrirContatoRapido; window.fecharContatoRapido=fecharContatoRapido; window.enviarContatoRapido=enviarContatoRapido;
+window.abrirContatoRapido=abrirContatoRapido; window.fecharContatoRapido=fecharContatoRapido; window.enviarContatoRapido=enviarContatoRapido; window.abrirEsqueciSenha=abrirEsqueciSenha; window.confirmarRedefinicaoSenha=confirmarRedefinicaoSenha; window.irParaLoginAposReset=irParaLoginAposReset;
 window.abrirFeedback=abrirFeedback; window.fecharFeedback=fecharFeedback; window.definirCategoriaFeedback=definirCategoriaFeedback; window.enviarFeedback=enviarFeedback;
 window.fecharAvisoGeral=fecharAvisoGeral;
 window.confirmarTesteGps=confirmarTesteGps;
@@ -10381,6 +10545,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   esconderSplash();
 } else {
   aplicarEstadoInicialSincrono();
+  inicializarResetSenhaPeloLink();
   render();
   carregarConfigGeral().then(render);
   registrarServiceWorker();

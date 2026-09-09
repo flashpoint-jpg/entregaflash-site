@@ -1,0 +1,23 @@
+ENTREGA FLASH - RESET DE SENHA SEGURO - 09/09/2026
+
+O que mudou:
+1. "Esqueci minha senha" agora abre um pedido de recuperação sem exigir login.
+2. O suporte administrativo ganhou o botão "GERAR LINK + ABRIR WHATSAPP".
+3. O administrador não escolhe nem vê a nova senha do usuário.
+4. O link de recuperação vence em 30 minutos e fica inválido depois do uso.
+5. O mesmo link também aparece dentro da conversa de suporte como botão clicável.
+6. Ao abrir o link, o usuário vê uma tela própria para criar e confirmar a nova senha.
+7. Depois da troca, o chamado é marcado como resolvido pelo backend.
+8. Service Workers tiveram a versão atualizada para forçar a atualização do app instalado.
+9. Edge Function adicionada: supabase/functions/entregaflash-reset-senha/index.ts
+10. Estrutura de tokens adicionada: entrega_reset_senha (RLS ativo).
+
+Fluxo:
+USUÁRIO -> Esqueci minha senha -> informa telefone -> chamado aparece no suporte
+ADMIN -> abre chamado -> GERAR LINK + ABRIR WHATSAPP
+USUÁRIO -> toca no link -> cria nova senha -> entra normalmente
+
+Importante:
+- Não envie senha pronta por WhatsApp.
+- Não informe a senha escolhida pelo usuário no chat.
+- Se o link vencer, gere outro; o anterior é invalidado.
