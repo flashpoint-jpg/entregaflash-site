@@ -3046,11 +3046,18 @@ async function suporteAlternarDisponibilidadeAdmin(telefone){
   const {motorista}=localizarContaSuporteAdmin(telefone);
   if(!motorista){ mostrarToast('Motorista não localizado.','erro'); return; }
   if(motorista.status!=='aprovado'){ mostrarToast('O motorista precisa estar aprovado antes de ficar online.','erro'); return; }
-  const novo=!motoristaOnlineAgora(motorista);
+  const estaMarcadoOnline=motoristaOnlineAgora(motorista);
+  const novo=!estaMarcadoOnline;
+  // Segurança operacional: o admin só consegue COLOCAR ONLINE quem realmente
+  // pode receber a chamada do pedido. Para tirar do online, o botão continua livre.
+  if(novo && !motoristaTemPushAtivoAdmin(motorista)){
+    mostrarToast('Não posso colocar online: este motorista ainda não tem PUSH/notificações ativas no aparelho.','erro');
+    return;
+  }
   const ok=await atualizarDisponibilidadeDB(motorista.telefone,novo);
   if(!ok){ mostrarToast('Não consegui alterar o status online.','erro'); return; }
   motorista.disponivel=novo;
-  mostrarToast(novo?'Motorista colocado ONLINE.':'Motorista colocado OFFLINE.','sucesso');
+  mostrarToast(novo?'Motorista ONLINE e apto a receber pedidos.':'Motorista colocado OFFLINE.','sucesso');
   render();
 }
 function abrirCadastroDoSuporteAdmin(tipo,telefone){
@@ -3088,9 +3095,11 @@ function suportePainelResolucaoAdminHTML(telefone){
   const contaMotorista=motorista?(()=>{
     const pend=pendenciasDocumentosMotorista(motorista);
     const online=motoristaOnlineAgora(motorista);
+    const pushAtivo=motoristaTemPushAtivoAdmin(motorista);
+    const podeReceber=motoristaPodeReceberPedido(motorista);
     const st=ROTULO_STATUS_MOTORISTA[motorista.status]?.texto||motorista.status||'—';
     return `<div style="padding:12px;border:1px solid rgba(255,151,16,.35);background:rgba(255,151,16,.06);border-radius:14px;margin-top:10px">
-      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>🛵 MOTORISTA · ${motorista.nome||'Sem nome'}</b><span class="selo ${online?'selo-entregue':''}">${online?'🟢 ONLINE':'⚪ OFFLINE'}</span></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>🛵 MOTORISTA · ${motorista.nome||'Sem nome'}</b><span class="selo ${podeReceber?'selo-entregue':''}">${podeReceber?'🟢 PODE RECEBER PEDIDO':(!pushAtivo&&motorista.status==='aprovado'?'🔕 NÃO PODE RECEBER':'⚪ OFFLINE')}</span></div>
       <div class="am-linha"><span>Status</span><b>${st}</b></div>
       <div class="am-linha"><span>Cidade / veículo</span><b style="text-align:right">${motorista.cidade||'—'} · ${VEICULOS[motorista.veiculo_tipo]?.label||motorista.veiculo_tipo||'—'}</b></div>
       <div class="am-linha"><span>Documentos</span><b style="text-align:right">${pend.length?`⚠️ ${pend.length} pendência(s)`: '✅ completos'}</b></div>
@@ -3101,7 +3110,7 @@ function suportePainelResolucaoAdminHTML(telefone){
         ${pend.length?`<button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="abrirWhatsAppTodasPendencias('${motorista.telefone}','${String(motorista.nome||'').replace(/'/g,"\\'")}','${pend.join('|||').replace(/'/g,"\\'")}')">📄 Cobrar documentos</button>`:''}
         ${dono && motorista.status==='pendente' && pend.length===0?`<button class="btn btn-verde btn-pequeno" style="margin:0" onclick="aprovarMotoristaAdmin('${motorista.id}')">✅ Aprovar</button>`:''}
         ${dono && motorista.status==='bloqueado'?`<button class="btn btn-verde btn-pequeno" style="margin:0" onclick="suporteDesbloquearAdmin('motorista','${motorista.id}','${motorista.telefone}','${String(motorista.nome||'').replace(/'/g,"\\'")}')">🔓 Desbloquear</button>`:''}
-        ${dono && motorista.status==='aprovado'?`<button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="suporteAlternarDisponibilidadeAdmin('${motorista.telefone}')">${online?'⚪ Colocar offline':'🟢 Colocar online'}</button>`:''}
+        ${dono && motorista.status==='aprovado'?(online?`<button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="suporteAlternarDisponibilidadeAdmin('${motorista.telefone}')">⚪ Colocar offline</button>`:(pushAtivo?`<button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="suporteAlternarDisponibilidadeAdmin('${motorista.telefone}')">🟢 Colocar online</button>`:`<button class="btn btn-secundario btn-pequeno" style="margin:0;opacity:.6;cursor:not-allowed" disabled title="Ative as notificações PUSH no aparelho do motorista antes de colocá-lo online">🔕 Não pode receber pedido</button>`)):''}
       </div>
       ${dono?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)"><button class="btn btn-primario btn-pequeno" style="width:100%;margin:0;font-weight:900" onclick="suporteEnviarLinkResetSenhaAdmin('motorista','${motorista.telefone}','${String(motorista.nome||'').replace(/'/g,"\'")}')">🔑 GERAR LINK + ABRIR WHATSAPP</button><div style="font-size:11px;color:var(--poeira);margin-top:6px">A pessoa cria a própria senha. O link expira em 30 minutos e só funciona uma vez.</div></div>`:''}
     </div>`;
