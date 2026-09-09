@@ -828,6 +828,11 @@ body.ef-admin-logado .admin-topo{position:sticky;top:0;z-index:30;backdrop-filte
   .chat-mensagens{overscroll-behavior:contain}
   .admin-lista-secao{margin-left:2px;margin-right:2px}
 }
+
+/* Central de resolução do suporte */
+body.ef-admin-logado .modal-chat:has(#suporte-admin-mensagens){width:min(720px,100%);}
+body.ef-admin-logado #suporte-admin-mensagens{flex:1;min-height:150px;}
+@media(max-width:700px){body.ef-admin-logado .modal-chat:has(#suporte-admin-mensagens){height:92dvh!important;max-height:92dvh!important;border-radius:18px 18px 0 0;}body.ef-admin-logado #suporte-admin-mensagens{min-height:130px;}}
 </style>
 <!-- build: Entrega Flash Admin PWA dedicado -->
 </head>
@@ -874,6 +879,7 @@ const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const FUNCOES_URL = SUPABASE_URL + '/functions/v1';
+const RESET_SENHA_URL = FUNCOES_URL + '/entregaflash-reset-senha';
 
 /* ============================================================
    ACESSO SEGURO — entrega_clientes / entrega_motoristas agora só
@@ -1209,6 +1215,7 @@ let estado = {
   chatAberto:null, mensagens:[], canalChat:null, naoLidas:0, chatNaoLidas:{},
   suporteAberto:false, suporteMensagens:[], canalSuporte:null, suporteNaoLidas:0, suporteContexto:{telefone:'',nome:''},
   contatoRapido:{ aberto:false, nome:'', telefone:'', contexto:'cliente', erro:'', enviando:false },
+  resetSenha:{ aberto:false, token:'', enviando:false, concluido:false, tipo:null, erro:'' },
   sugestoesTemp:{ origem:[], destino:[] },
   alertaMotorista:null, avisoGeralExibido:null, fotoAmpliada:null, statusAnterior:{}, statusAnteriorMotorista:{}, statusAnteriorEntregaMotorista:{},
   podeInstalar:false, appInstalado:false, comoInstalarAberto:false, editarDistanciaAberto:false, extrasAberto:false, popupInstalarAberto:false,
@@ -2569,15 +2576,51 @@ function renderChat(){
     : estado.mensagens.map(m=>{
         const minha = m.remetente_tipo===eu;
         const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${m.texto}<span>${hora}</span></div>`;
+        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${formatarMensagemSuporteSegura(m.texto)}<span>${hora}</span></div>`;
       }).join('');
   caixa.scrollTop = caixa.scrollHeight;
 }
 
 // ---------- suporte (motorista <-> admin) ----------
+// Evita mensagens duplicadas no suporte (toque duplo, retry/realtime ou envio repetido em poucos segundos).
+function filtrarMensagensSuporteDuplicadas(lista){
+  const ultimos = new Map();
+  const saida = [];
+  for(const m of (lista||[])){
+    const texto = String(m.texto||'').trim();
+    const chave = `${m.motorista_telefone||''}|${m.remetente_tipo||''}|${texto}`;
+    const quando = Number(m.criado_em)||0;
+    const anterior = ultimos.get(chave);
+    if(anterior!=null && Math.abs(anterior-quando) <= 8000) continue;
+    ultimos.set(chave, quando);
+    saida.push(m);
+  }
+  return saida;
+}
+async function inserirMensagemSuporteUnica(payload){
+  try{
+    const tel = payload.motorista_telefone;
+    const tipo = payload.remetente_tipo;
+    const texto = String(payload.texto||'').trim();
+    const agora = Number(payload.criado_em)||Date.now();
+    const { data: ultimas, error: erroBusca } = await sb.from('entrega_suporte')
+      .select('id,texto,remetente_tipo,criado_em')
+      .eq('motorista_telefone',tel).eq('remetente_tipo',tipo)
+      .order('criado_em',{ascending:false}).limit(1);
+    const ultima = !erroBusca && ultimas && ultimas[0];
+    if(ultima && String(ultima.texto||'').trim()===texto && Math.abs(agora-(Number(ultima.criado_em)||0))<=8000){
+      return { data: ultima, error:null, duplicada:true };
+    }
+    const { error } = await sb.from('entrega_suporte').insert({...payload, texto, criado_em:agora});
+    return { data:null, error, duplicada:false };
+  }catch(error){
+    console.error('Falha ao inserir mensagem de suporte', error);
+    return { data:null, error, duplicada:false };
+  }
+}
 async function carregarMensagensSuporte(telefone){
   const {data} = await sb.from('entrega_suporte').select('*').eq('motorista_telefone',telefone).order('criado_em',{ascending:true});
-  return data||[];
+  return filtrarMensagensSuporteDuplicadas(data||[]);
 }
 async function atualizarBadgeSuporteMotorista(){
   const m = estado.motorista;
@@ -2628,11 +2671,27 @@ function abrirContatoRapido(contexto){
   estado.contatoRapido = { aberto:true, nome:nomeAtual||'', telefone:telAtual||'', contexto, erro:'', enviando:false };
   render();
 }
-// "esqueci minha senha": reaproveita o formulário de contato rápido, já preenchendo o telefone
-// digitado na tela de login, e manda uma mensagem específica pro suporte pedir a redefinição.
+// ---------- recuperação de senha por link seguro ----------
+async function chamarResetSenha(acao,payload={}){
+  const resp = await fetch(RESET_SENHA_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+    body:JSON.stringify({acao,...payload})
+  });
+  let dados={};
+  try{ dados=await resp.json(); }catch(e){}
+  if(!resp.ok || !dados?.ok){
+    const erro=new Error(dados?.erro||'erro_reset_senha');
+    erro.codigo=dados?.erro||'erro_reset_senha';
+    erro.status=resp.status;
+    throw erro;
+  }
+  return dados;
+}
 function abrirEsqueciSenha(tipo){
   const idTelefone = tipo==='motorista' ? 'lm-telefone' : 'lc-telefone';
-  const telAtual = document.getElementById(idTelefone)?.value.trim() || '';
+  const telAtual = document.getElementById(idTelefone)?.value.trim()
+    || (tipo==='motorista' ? (estado.painelMotorista?.loginTelefone||'') : (estado.painelCliente?.loginTelefone||''));
   estado.contatoRapido = { aberto:true, nome:'', telefone:telAtual, contexto: tipo==='motorista' ? 'esqueci-senha-motorista' : 'esqueci-senha-cliente', erro:'', enviando:false };
   render();
 }
@@ -2644,25 +2703,49 @@ async function enviarContatoRapido(){
   const cr = estado.contatoRapido;
   const nome = (document.getElementById('cr-nome')?.value || cr.nome || '').trim();
   const telefone = (document.getElementById('cr-telefone')?.value || cr.telefone || '').trim();
-  if(!nome || !telefone){ cr.erro = 'Preenche o nome e o telefone.'; render(); return; }
+  const ehEsqueciSenha = (cr.contexto||'').startsWith('esqueci-senha');
+
+  if(!telefone || (!ehEsqueciSenha && !nome)){
+    cr.erro = ehEsqueciSenha ? 'Informe o telefone da sua conta.' : 'Preenche o nome e o telefone.';
+    render(); return;
+  }
+
   cr.erro=''; cr.enviando=true; render();
+
+  if(ehEsqueciSenha){
+    const tipo = cr.contexto.includes('motorista') ? 'motorista' : 'cliente';
+    try{
+      await chamarResetSenha('solicitar',{telefone,tipo,nome});
+      cr.enviando=false; cr.aberto=false;
+      if(tipo==='motorista'){ estado.painelMotorista.cadastro.telefone=telefone; if(nome) estado.painelMotorista.cadastro.nome=nome; }
+      else { estado.painelCliente.cadastro.telefone=telefone; if(nome) estado.painelCliente.cadastro.nome=nome; }
+      mostrarToast('Pedido recebido. O suporte vai enviar um link seguro para redefinir sua senha.','sucesso');
+      await abrirSuporte(telefone,nome||'');
+      return;
+    }catch(e){
+      console.error(e);
+      cr.enviando=false;
+      cr.erro='Não consegui abrir o pedido agora. Verifica sua internet e tenta de novo.';
+      render();
+      return;
+    }
+  }
+
   const mensagensPorContexto = {
     motorista: 'Olá! Quero saber mais antes de terminar meu cadastro de entregador.',
     cliente: 'Olá! Quero saber mais antes de terminar meu cadastro de cliente.',
-    'esqueci-senha-motorista': 'Olá! Esqueci a minha senha de entregador e preciso redefinir.',
-    'esqueci-senha-cliente': 'Olá! Esqueci a minha senha de cliente e preciso redefinir.'
+    parceria: 'Olá! Quero conversar sobre uma parceria comercial com o Entrega Flash.'
   };
   const mensagemInicial = mensagensPorContexto[cr.contexto] || mensagensPorContexto.cliente;
-  const { error } = await sb.from('entrega_suporte').insert({ motorista_telefone:telefone, motorista_nome:nome, remetente_tipo:'motorista', texto:mensagemInicial, lido:false, criado_em:Date.now() });
+  const { error } = await inserirMensagemSuporteUnica({ motorista_telefone:telefone, motorista_nome:nome, remetente_tipo:'motorista', texto:mensagemInicial, lido:false, criado_em:Date.now() });
   cr.enviando=false;
   if(error){ console.error(error); cr.erro='Não consegui enviar. Verifica sua internet e tenta de novo.'; render(); return; }
   await sb.from('entrega_suporte_status').upsert({ motorista_telefone:telefone, status:'aberto', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
-  if(cr.contexto.includes('motorista')){ estado.painelMotorista.cadastro.nome=nome; estado.painelMotorista.cadastro.telefone=telefone; }
-  else { estado.painelCliente.cadastro.nome=nome; estado.painelCliente.cadastro.telefone=telefone; }
+  if(cr.contexto==='motorista'){ estado.painelMotorista.cadastro.nome=nome; estado.painelMotorista.cadastro.telefone=telefone; }
+  else if(cr.contexto==='cliente'){ estado.painelCliente.cadastro.nome=nome; estado.painelCliente.cadastro.telefone=telefone; }
   cr.aberto=false;
-  const ehEsqueciSenha = cr.contexto.startsWith('esqueci-senha');
-  mostrarToast(ehEsqueciSenha ? 'Recebemos seu pedido! Nossa equipe já vai redefinir a sua senha. 💬' : 'Recebemos seu contato! Nossa equipe já vai te chamar. 💬');
-  await abrirSuporte(telefone, nome);
+  mostrarToast('Recebemos seu contato! Nossa equipe já vai te chamar.','sucesso');
+  await abrirSuporte(telefone,nome);
 }
 function contatoRapidoModalHTML(){
   const cr = estado.contatoRapido;
@@ -2670,18 +2753,91 @@ function contatoRapidoModalHTML(){
   return `
   <div class="modal-fundo" onclick="if(event.target===this) fecharContatoRapido()">
     <div class="modal-chat" style="max-height:none">
-      <div class="chat-topo"><h3>${ehEsqueciSenha ? 'Esqueci minha senha' : 'Falar antes de se cadastrar'}</h3><button class="chat-fechar" onclick="fecharContatoRapido()">&times;</button></div>
+      <div class="chat-topo"><h3>${ehEsqueciSenha ? 'Esqueci minha senha' : (cr.contexto==='parceria' ? 'Parcerias comerciais' : 'Falar antes de se cadastrar')}</h3><button class="chat-fechar" onclick="fecharContatoRapido()">&times;</button></div>
       <div style="padding:16px">
-        <div style="font-size:14px;color:var(--poeira);margin-bottom:14px">${ehEsqueciSenha ? 'Deixa seu nome e o telefone da sua conta que a nossa equipe redefine a sua senha.' : 'Deixa seu nome e telefone que a nossa equipe te chama.'}</div>
-        <label>O seu nome</label>
+        <div style="font-size:14px;color:var(--poeira);margin-bottom:14px">${ehEsqueciSenha ? 'Informe o telefone da sua conta. O suporte vai gerar um link seguro para você criar uma nova senha. Seu nome é opcional.' : (cr.contexto==='parceria' ? 'Informe seu nome e telefone. Nossa equipe entra em contato para entender a parceria.' : 'Deixa seu nome e telefone que a nossa equipe te chama.')}</div>
+        <label>${ehEsqueciSenha?'Seu nome (opcional)':'O seu nome'}</label>
         <input type="text" id="cr-nome" value="${cr.nome}" placeholder="Ex: Ana Souza">
-        <label>Telefone</label>
+        <label>Telefone da conta</label>
         <input type="tel" id="cr-telefone" value="${cr.telefone}" placeholder="(35) 90000-0000">
         ${cr.erro?`<div class="erro-campo">${cr.erro}</div>`:''}
-        <button class="btn btn-primario" ${cr.enviando?'disabled':''} onclick="enviarContatoRapido()">${cr.enviando?'A enviar...':'Enviar'}</button>
+        <button class="btn btn-primario" ${cr.enviando?'disabled':''} onclick="enviarContatoRapido()">${cr.enviando?'Enviando...':(ehEsqueciSenha?'PEDIR LINK DE REDEFINIÇÃO':'Enviar')}</button>
       </div>
     </div>
   </div>`;
+}
+
+function inicializarResetSenhaPeloLink(){
+  try{
+    const token=(new URLSearchParams(window.location.search).get('redefinir')||'').trim();
+    if(!token) return;
+    estado.resetSenha={aberto:true,token,enviando:false,concluido:false,tipo:null,erro:''};
+    estado.telaBoasVindas=false;
+    estado.sessaoCarregando=false;
+  }catch(e){}
+}
+function telaRedefinirSenha(){
+  const r=estado.resetSenha||{};
+  if(r.concluido){
+    return `<div style="min-height:100vh;background:var(--fundo);display:flex;align-items:center;justify-content:center;padding:22px">
+      <div class="card" style="width:min(440px,100%);padding:24px;text-align:center">
+        <div style="font-size:48px;margin-bottom:8px">✅</div>
+        <h2 style="margin:0 0 8px">Senha alterada</h2>
+        <div class="subtitulo" style="margin-bottom:18px">Sua nova senha já está ativa. Este link não pode mais ser usado.</div>
+        <button class="btn btn-primario" onclick="irParaLoginAposReset()">ENTRAR COM A NOVA SENHA</button>
+      </div>
+    </div>`;
+  }
+  return `<div style="min-height:100vh;background:var(--fundo);display:flex;align-items:center;justify-content:center;padding:22px">
+    <div class="card" style="width:min(440px,100%);padding:24px">
+      <div style="text-align:center;margin-bottom:18px"><div style="font-size:42px">🔑</div><h2 style="margin:5px 0 6px">Criar nova senha</h2><div class="subtitulo">Este é um link seguro do Entrega Flash. Ele vence em 30 minutos e só funciona uma vez.</div></div>
+      <label>Nova senha</label>
+      <input type="password" id="reset-senha-1" placeholder="Mínimo 4 caracteres" autocomplete="new-password">
+      <label>Confirmar nova senha</label>
+      <input type="password" id="reset-senha-2" placeholder="Digite novamente" autocomplete="new-password" onkeydown="if(event.key==='Enter') confirmarRedefinicaoSenha()">
+      ${r.erro?`<div class="erro-campo">${r.erro}</div>`:''}
+      <button class="btn btn-primario" ${r.enviando?'disabled':''} onclick="confirmarRedefinicaoSenha()">${r.enviando?'ALTERANDO...':'ALTERAR MINHA SENHA'}</button>
+      <div style="font-size:11.5px;color:var(--poeira);margin-top:12px;text-align:center">O suporte não vê a senha que você escolher.</div>
+    </div>
+  </div>`;
+}
+async function confirmarRedefinicaoSenha(){
+  const r=estado.resetSenha;
+  if(!r?.token) return;
+  const s1=document.getElementById('reset-senha-1')?.value||'';
+  const s2=document.getElementById('reset-senha-2')?.value||'';
+  if(s1.length<4){ r.erro='A senha precisa ter pelo menos 4 caracteres.'; render(); return; }
+  if(s1!==s2){ r.erro='As duas senhas estão diferentes.'; render(); return; }
+  r.erro=''; r.enviando=true; render();
+  try{
+    const senhaHashNova=await hashSenha(s1);
+    const dados=await chamarResetSenha('redefinir',{token:r.token,senhaHashNova});
+    r.enviando=false; r.concluido=true; r.tipo=dados.tipo||null;
+    try{
+      const u=new URL(window.location.href);
+      u.searchParams.delete('redefinir');
+      history.replaceState({},'',u.pathname+(u.search||'')+(u.hash||''));
+    }catch(e){}
+    render();
+  }catch(e){
+    console.error(e);
+    r.enviando=false;
+    r.erro=(e.codigo==='link_invalido_ou_expirado' || e.status===410)
+      ? 'Este link já foi usado ou venceu. Peça um novo link ao suporte.'
+      : 'Não consegui alterar a senha agora. Tente novamente.';
+    render();
+  }
+}
+function irParaLoginAposReset(){
+  const tipo=estado.resetSenha?.tipo;
+  estado.resetSenha={aberto:false,token:'',enviando:false,concluido:false,tipo:null,erro:''};
+  estado.telaBoasVindas=false;
+  if(tipo==='motorista'){
+    estado.modo='entregador'; salvarLocal('ef_modo','entregador'); irParaLogin();
+  }else{
+    estado.modo='cliente'; salvarLocal('ef_modo','cliente'); irParaLoginCliente();
+  }
+  render();
 }
 
 // ---------- Sugestões e Reclamações (feedback livre do cliente/motorista) ----------
@@ -2748,11 +2904,21 @@ async function enviarMensagemSuporte(){
   input.value='';
   const tel = estado.motorista.telefone || (estado.suporteContexto&&estado.suporteContexto.telefone) || '';
   const nome = estado.motorista.nome || (estado.suporteContexto&&estado.suporteContexto.nome) || '';
-  const { error: erroMsg } = await sb.from('entrega_suporte').insert({ motorista_telefone:tel, motorista_nome:nome, remetente_tipo:'motorista', texto, lido:false, criado_em:Date.now() });
+  const { error: erroMsg } = await inserirMensagemSuporteUnica({ motorista_telefone:tel, motorista_nome:nome, remetente_tipo:'motorista', texto, lido:false, criado_em:Date.now() });
   if(erroMsg){ console.error(erroMsg); mostrarErro('Não consegui enviar. Verifica sua internet e tenta de novo.'); input.value = texto; return; }
   const { error: erroStatus } = await sb.from('entrega_suporte_status').upsert({ motorista_telefone:tel, status:'aberto', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
   if(erroStatus) console.error(erroStatus);
   enviarPushServidor('admin', null, '💬 Nova mensagem de suporte', `${nome||'Um motorista'}: ${texto}`);
+}
+function formatarMensagemSuporteSegura(texto){
+  const seguro=String(texto||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const comQuebras=seguro.replace(/\n/g,'<br>');
+  return comQuebras.replace(
+    /(https:\/\/(?:www\.)?entregaflash\.app\.br\/\?redefinir=[0-9a-fA-F-]{36})/g,
+    '<a href="$1" target="_blank" rel="noopener" style="display:inline-block;margin-top:8px;padding:9px 12px;border-radius:10px;background:#ff9810;color:#151515;font-weight:900;text-decoration:none">🔑 REDEFINIR MINHA SENHA</a>'
+  );
 }
 function renderSuporteChat(){
   const caixa = document.getElementById('suporte-mensagens');
@@ -2762,19 +2928,195 @@ function renderSuporteChat(){
     : estado.suporteMensagens.map(m=>{
         const minha = m.remetente_tipo==='motorista';
         const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${m.texto}<span>${hora}</span></div>`;
+        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${formatarMensagemSuporteSegura(m.texto)}<span>${hora}</span></div>`;
       }).join('');
   caixa.scrollTop = caixa.scrollHeight;
 }
 
 // ---------- suporte admin ----------
+
+function suporteTelefoneNormalizado(v){
+  let d=String(v||'').replace(/\D/g,'');
+  if(d.startsWith('55') && (d.length===12 || d.length===13)) d=d.slice(2);
+  return d;
+}
+function suporteTelefoneIgual(a,b){ return !!suporteTelefoneNormalizado(a) && suporteTelefoneNormalizado(a)===suporteTelefoneNormalizado(b); }
+function localizarContaSuporteAdmin(telefone){
+  const motorista=(estado.admin.motoristas||[]).find(m=>suporteTelefoneIgual(m.telefone,telefone))||null;
+  const cliente=(estado.admin.clientes||[]).find(c=>suporteTelefoneIgual(c.telefone,telefone))||null;
+  return {motorista,cliente};
+}
+function suporteStatusInfo(status){
+  return ({
+    aberto:{rotulo:'ABERTO',cor:'var(--mango)'},
+    em_atendimento:{rotulo:'EM ATENDIMENTO',cor:'#63b3ff'},
+    aguardando_usuario:{rotulo:'AGUARDANDO USUÁRIO',cor:'#d9b56d'},
+    resolvido:{rotulo:'RESOLVIDO',cor:'var(--verde)'}
+  })[status]||{rotulo:String(status||'ABERTO').replace(/_/g,' ').toUpperCase(),cor:'var(--mango)'};
+}
+function diagnosticarAssuntoSuporte(texto){
+  const t=String(texto||'').toLowerCase();
+  if(/senha|login|entrar|acesso/.test(t)) return {icone:'🔑',titulo:'Acesso / senha',orientacao:'Gere um link seguro e envie pelo WhatsApp. A pessoa cria a própria senha sem você precisar saber qual é.'};
+  if(/document|cnh|crlv|selfie|foto|cadastro/.test(t)) return {icone:'📄',titulo:'Cadastro / documentos',orientacao:'Confira as pendências do cadastro e use as ações rápidas para cobrar ou aprovar.'};
+  if(/bloque|trav|não consigo|nao consigo/.test(t)) return {icone:'🔓',titulo:'Acesso bloqueado',orientacao:'Confira o status da conta e desbloqueie, se for o caso.'};
+  if(/online|pedido|corrida|entrega|notifica/.test(t)) return {icone:'🟢',titulo:'Operação / pedidos',orientacao:'Confira se o motorista está aprovado, online e com notificações ativas.'};
+  if(/pix|saldo|saque|pagamento/.test(t)) return {icone:'💰',titulo:'Financeiro',orientacao:'Abra o cadastro para conferir PIX, saldo e situação da conta.'};
+  return {icone:'🛠️',titulo:'Atendimento geral',orientacao:'Use as ações rápidas abaixo para resolver sem sair do chamado.'};
+}
+function abrirWhatsAppSuporteAdmin(telefone,nome,assunto){
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.','erro'); return; }
+  const primeiro=String(nome||'').trim().split(' ')[0]||'tudo bem';
+  const msg=`Olá, ${primeiro}! Aqui é do suporte Entrega Flash. Estou atendendo seu chamado${assunto?` sobre ${assunto}`:''} agora. Se precisar, pode responder por aqui que resolvemos juntos.`;
+  window.open('https://wa.me/'+numero+'?text='+encodeURIComponent(msg),'_blank');
+}
+async function definirStatusSuporteAdmin(telefone,status,fechar=false){
+  const { error } = await sb.from('entrega_suporte_status').upsert({ motorista_telefone:telefone, status, atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
+  if(error){ console.error(error); mostrarToast('Não consegui alterar o status do chamado.','erro'); return false; }
+  const c=(estado.admin.suporteConversas||[]).find(x=>suporteTelefoneIgual(x.telefone,telefone));
+  if(c) c.status=status;
+  mostrarToast(`Chamado: ${suporteStatusInfo(status).rotulo}.`,'sucesso');
+  if(fechar){ fecharSuporteAdmin(); return true; }
+  await carregarSuporteAdmin();
+  return true;
+}
+async function registrarAcaoResolvidaNoChat(telefone,nome,texto){
+  const { error } = await inserirMensagemSuporteUnica({motorista_telefone:telefone,motorista_nome:nome||'',remetente_tipo:'admin',texto,lido:false,criado_em:Date.now()});
+  if(!error) enviarPushServidor('motorista',telefone,'🛠️ Atualização do suporte',texto);
+  estado.admin.suporteMensagensAdmin=await carregarMensagensSuporte(telefone);
+  renderSuporteAdminChat();
+}
+async function suporteEnviarLinkResetSenhaAdmin(tipo,telefone,nome){
+  if(!adminEhDono()){ mostrarToast('Somente o administrador principal pode gerar link de redefinição.','erro'); return; }
+  const numero=normalizarWhatsAppBR(telefone);
+  if(!numero){ mostrarToast('Telefone inválido para WhatsApp.','erro'); return; }
+  let popup=null;
+  try{ popup=window.open('about:blank','_blank'); }catch(e){}
+  try{
+    mostrarToast('Gerando link seguro...','info');
+    const dados=await chamarResetSenha('gerar',{adminSenha:estado.admin.senhaDigitada,telefone,tipo});
+    const link=window.location.origin+'/?redefinir='+encodeURIComponent(dados.token);
+    const primeiro=String(nome||'').trim().split(' ')[0]||'tudo bem';
+    const textoSuporte=`🔑 Link seguro para redefinir sua senha:\n${link}\n\nO link vence em 30 minutos e funciona uma única vez. Abra, crie sua nova senha e depois entre normalmente no app.`;
+    await registrarAcaoResolvidaNoChat(telefone,nome,textoSuporte);
+    await definirStatusSuporteAdmin(telefone,'aguardando_usuario');
+    try{ await navigator.clipboard?.writeText(link); }catch(e){}
+    const textoWhats=`Olá, ${primeiro}! Aqui é do suporte Entrega Flash.\n\nVocê pediu para redefinir sua senha. Use este link seguro:\n${link}\n\nEle vence em 30 minutos e funciona uma única vez. Você mesmo cria a nova senha; o suporte não vê qual senha você escolheu.`;
+    const destino='https://wa.me/'+numero+'?text='+encodeURIComponent(textoWhats);
+    if(popup && !popup.closed){ popup.location.href=destino; }
+    else window.open(destino,'_blank');
+    mostrarToast('Link gerado, copiado e aberto no WhatsApp. O chamado ficou aguardando o usuário.','sucesso');
+  }catch(e){
+    console.error(e);
+    try{ if(popup && !popup.closed) popup.close(); }catch(_){}
+    const cod=e?.codigo||'';
+    mostrarToast(cod==='senha_admin_invalida'?'Sessão de admin expirada. Saia e entre de novo.':(cod==='conta_nao_encontrada'?'Conta não localizada para esse telefone.':'Não consegui gerar o link agora.'),'erro');
+  }
+}
+async function suporteRedefinirSenhaAdmin(tipo,chave,telefone,nome){
+  if(!adminEhDono()){ mostrarToast('Somente o administrador principal pode trocar senha.','erro'); return; }
+  const id='suporte-nova-senha-'+tipo+'-'+suporteTelefoneNormalizado(telefone);
+  const input=document.getElementById(id);
+  const novaSenha=input?.value||'';
+  if(novaSenha.length<4){ mostrarToast('Digite uma nova senha com pelo menos 4 caracteres.','erro'); input?.focus(); return; }
+  const senhaHash=await hashSenha(novaSenha);
+  const rpc = tipo==='motorista'
+    ? await sb.rpc('entrega_admin_trocar_senha_motorista',{p_senha:estado.admin.senhaDigitada,p_id:chave,p_senha_hash_nova:senhaHash})
+    : await sb.rpc('entrega_admin_trocar_senha_cliente',{p_senha:estado.admin.senhaDigitada,p_telefone:telefone,p_senha_hash_nova:senhaHash});
+  if(rpc.error){ console.error(rpc.error); mostrarToast(rpc.error.message==='senha_invalida'?'Sessão de admin expirada. Sai e entra de novo.':'Erro ao redefinir a senha.','erro'); return; }
+  if(input) input.value='';
+  await registrarAcaoResolvidaNoChat(telefone,nome,'🔑 Sua senha foi redefinida pelo suporte. Tente entrar novamente. Se ainda aparecer erro, responda aqui.');
+  mostrarToast('Senha redefinida. Agora peça para a pessoa testar o acesso.','sucesso');
+}
+async function suporteAlternarDisponibilidadeAdmin(telefone){
+  if(!adminEhDono()){ mostrarToast('Somente o administrador principal pode alterar o status operacional.','erro'); return; }
+  const {motorista}=localizarContaSuporteAdmin(telefone);
+  if(!motorista){ mostrarToast('Motorista não localizado.','erro'); return; }
+  if(motorista.status!=='aprovado'){ mostrarToast('O motorista precisa estar aprovado antes de ficar online.','erro'); return; }
+  const novo=!motoristaOnlineAgora(motorista);
+  const ok=await atualizarDisponibilidadeDB(motorista.telefone,novo);
+  if(!ok){ mostrarToast('Não consegui alterar o status online.','erro'); return; }
+  motorista.disponivel=novo;
+  mostrarToast(novo?'Motorista colocado ONLINE.':'Motorista colocado OFFLINE.','sucesso');
+  render();
+}
+function abrirCadastroDoSuporteAdmin(tipo,telefone){
+  const {motorista,cliente}=localizarContaSuporteAdmin(telefone);
+  if(estado.admin.canalSuporte){ sb.removeChannel(estado.admin.canalSuporte); estado.admin.canalSuporte=null; }
+  estado.admin.suporteAbertoTelefone=null;
+  estado.admin.suporteMensagensAdmin=[];
+  if(tipo==='motorista' && motorista){
+    estado.admin.aba='motoristas'; estado.admin.filtroRegiaoMotoristas='todos'; estado.admin.filtroVeiculoMotoristas='todos'; estado.admin.filtroStatusMotoristas='todos'; estado.admin.motoristaAberto=motorista.id;
+    salvarLocal('ef_admin_aba','motoristas'); render();
+    setTimeout(()=>document.querySelector(`[data-motorista-telefone="${suporteTelefoneNormalizado(motorista.telefone)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),120);
+  }else if(tipo==='cliente' && cliente){
+    estado.admin.aba='clientes'; estado.admin.filtroStatusClientes='todos'; estado.admin.clienteAberto=cliente.telefone;
+    salvarLocal('ef_admin_aba','clientes'); render();
+    setTimeout(()=>document.querySelector(`[data-cliente-telefone="${suporteTelefoneNormalizado(cliente.telefone)}"]`)?.scrollIntoView({behavior:'smooth',block:'center'}),120);
+  }
+}
+async function suporteDesbloquearAdmin(tipo,chave,telefone,nome){
+  if(!adminEhDono()){ mostrarToast('Somente o administrador principal pode desbloquear contas.','erro'); return; }
+  if(tipo==='motorista') await desbloquearMotoristaAdmin(chave); else await desbloquearClienteAdmin(telefone);
+  await registrarAcaoResolvidaNoChat(telefone,nome,'🔓 Seu acesso foi desbloqueado pelo suporte. Pode tentar entrar novamente.');
+}
+async function suporteBloquearAdmin(tipo,chave,telefone){
+  if(!adminEhDono()){ mostrarToast('Somente o administrador principal pode bloquear contas.','erro'); return; }
+  if(tipo==='motorista') await bloquearMotoristaAdmin(chave); else await bloquearClienteAdmin(telefone);
+}
+function suportePainelResolucaoAdminHTML(telefone){
+  const conversa=(estado.admin.suporteConversas||[]).find(c=>suporteTelefoneIgual(c.telefone,telefone));
+  const msgs=estado.admin.suporteMensagensAdmin||[];
+  const ultima=[...msgs].reverse().find(m=>m.remetente_tipo==='motorista')||msgs[msgs.length-1]||{};
+  const diag=diagnosticarAssuntoSuporte(ultima.texto||conversa?.ultimaMensagem||'');
+  const {motorista,cliente}=localizarContaSuporteAdmin(telefone);
+  const status=suporteStatusInfo(conversa?.status==='resolvido'?'resolvido':'em_atendimento');
+  const dono=adminEhDono();
+  const contaMotorista=motorista?(()=>{
+    const pend=pendenciasDocumentosMotorista(motorista);
+    const online=motoristaOnlineAgora(motorista);
+    const st=ROTULO_STATUS_MOTORISTA[motorista.status]?.texto||motorista.status||'—';
+    return `<div style="padding:12px;border:1px solid rgba(255,151,16,.35);background:rgba(255,151,16,.06);border-radius:14px;margin-top:10px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>🛵 MOTORISTA · ${motorista.nome||'Sem nome'}</b><span class="selo ${online?'selo-entregue':''}">${online?'🟢 ONLINE':'⚪ OFFLINE'}</span></div>
+      <div class="am-linha"><span>Status</span><b>${st}</b></div>
+      <div class="am-linha"><span>Cidade / veículo</span><b style="text-align:right">${motorista.cidade||'—'} · ${VEICULOS[motorista.veiculo_tipo]?.label||motorista.veiculo_tipo||'—'}</b></div>
+      <div class="am-linha"><span>Documentos</span><b style="text-align:right">${pend.length?`⚠️ ${pend.length} pendência(s)`: '✅ completos'}</b></div>
+      ${pend.length?`<div style="font-size:11.5px;color:var(--poeira);margin-top:5px">Falta: ${pend.join(', ')}</div>`:''}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px">
+        <button class="btn btn-verde btn-pequeno" style="margin:0;background:#25D366;color:#07140b;border-color:#25D366" onclick="abrirWhatsAppSuporteAdmin('${motorista.telefone}','${String(motorista.nome||'').replace(/'/g,"\\'")}','${diag.titulo.replace(/'/g,"\\'")}')">💬 WhatsApp</button>
+        <button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="abrirCadastroDoSuporteAdmin('motorista','${motorista.telefone}')">👤 Ver cadastro</button>
+        ${pend.length?`<button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="abrirWhatsAppTodasPendencias('${motorista.telefone}','${String(motorista.nome||'').replace(/'/g,"\\'")}','${pend.join('|||').replace(/'/g,"\\'")}')">📄 Cobrar documentos</button>`:''}
+        ${dono && motorista.status==='pendente' && pend.length===0?`<button class="btn btn-verde btn-pequeno" style="margin:0" onclick="aprovarMotoristaAdmin('${motorista.id}')">✅ Aprovar</button>`:''}
+        ${dono && motorista.status==='bloqueado'?`<button class="btn btn-verde btn-pequeno" style="margin:0" onclick="suporteDesbloquearAdmin('motorista','${motorista.id}','${motorista.telefone}','${String(motorista.nome||'').replace(/'/g,"\\'")}')">🔓 Desbloquear</button>`:''}
+        ${dono && motorista.status==='aprovado'?`<button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="suporteAlternarDisponibilidadeAdmin('${motorista.telefone}')">${online?'⚪ Colocar offline':'🟢 Colocar online'}</button>`:''}
+      </div>
+      ${dono?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)"><button class="btn btn-primario btn-pequeno" style="width:100%;margin:0;font-weight:900" onclick="suporteEnviarLinkResetSenhaAdmin('motorista','${motorista.telefone}','${String(motorista.nome||'').replace(/'/g,"\'")}')">🔑 GERAR LINK + ABRIR WHATSAPP</button><div style="font-size:11px;color:var(--poeira);margin-top:6px">A pessoa cria a própria senha. O link expira em 30 minutos e só funciona uma vez.</div></div>`:''}
+    </div>`;
+  })():'';
+  const contaCliente=cliente?`<div style="padding:12px;border:1px solid rgba(99,179,255,.32);background:rgba(99,179,255,.05);border-radius:14px;margin-top:10px">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><b>👤 CLIENTE · ${cliente.nome||'Sem nome'}</b><span class="selo ${cliente.bloqueado?'selo-cancelado':'selo-entregue'}">${cliente.bloqueado?'🔒 BLOQUEADO':'✅ ATIVO'}</span></div>
+      <div class="am-linha"><span>Telefone</span><b>${formatarTelefoneExibicao(cliente.telefone)}</b></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px">
+        <button class="btn btn-verde btn-pequeno" style="margin:0;background:#25D366;color:#07140b;border-color:#25D366" onclick="abrirWhatsAppSuporteAdmin('${cliente.telefone}','${String(cliente.nome||'').replace(/'/g,"\\'")}','${diag.titulo.replace(/'/g,"\\'")}')">💬 WhatsApp</button>
+        <button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="abrirCadastroDoSuporteAdmin('cliente','${cliente.telefone}')">👤 Ver cadastro</button>
+        ${dono && cliente.bloqueado?`<button class="btn btn-verde btn-pequeno" style="margin:0" onclick="suporteDesbloquearAdmin('cliente','${cliente.telefone}','${cliente.telefone}','${String(cliente.nome||'').replace(/'/g,"\\'")}')">🔓 Desbloquear</button>`:''}
+      </div>
+      ${dono?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)"><button class="btn btn-primario btn-pequeno" style="width:100%;margin:0;font-weight:900" onclick="suporteEnviarLinkResetSenhaAdmin('cliente','${cliente.telefone}','${String(cliente.nome||'').replace(/'/g,"\'")}')">🔑 GERAR LINK + ABRIR WHATSAPP</button><div style="font-size:11px;color:var(--poeira);margin-top:6px">A pessoa cria a própria senha. O link expira em 30 minutos e só funciona uma vez.</div></div>`:''}
+    </div>`:'';
+  return `<div style="padding:12px 14px;border-bottom:1px solid var(--linha);background:var(--painel-alt)">
+    <div style="display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap"><div><b style="font-size:13px">🛠️ CENTRAL DE RESOLUÇÃO</b><div style="font-size:11.5px;color:var(--poeira);margin-top:2px">Resolva o problema antes de encerrar o chamado.</div></div><span class="selo" style="border:1px solid ${status.cor};color:${status.cor}">${status.rotulo}</span></div>
+    <div style="margin-top:9px;padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.035);font-size:12.5px"><b>${diag.icone} ${diag.titulo}</b><div style="color:var(--poeira);margin-top:3px">${diag.orientacao}</div></div>
+    ${contaMotorista}${contaCliente}${!motorista&&!cliente?`<div style="margin-top:10px;padding:10px;border:1px dashed var(--linha);border-radius:12px;font-size:12.5px;color:var(--poeira)">⚠️ Nenhum cadastro foi localizado automaticamente para este telefone. Você ainda pode responder pelo chat ou abrir o WhatsApp.</div>`:''}
+    <div style="font-size:11.5px;color:var(--poeira);margin-top:10px;padding:8px 10px;border-radius:9px;background:rgba(255,255,255,.025)">O chamado continua aberto até você confirmar em <b>✅ Resolvido</b>.</div>
+  </div>`;
+}
 async function carregarSuporteAdmin(){
   const { data: msgs } = await sb.from('entrega_suporte').select('*').order('criado_em',{ascending:false});
   const { data: status } = await sb.from('entrega_suporte_status').select('*').order('atualizado_em', { ascending:true });
   const statusMap = {}; (status||[]).forEach(s=>{ statusMap[s.motorista_telefone]=s.status; }); // ordenado por data: se houver linha duplicada antiga no banco, a mais recente sempre vence
   const porTelefone = {};
-  (msgs||[]).forEach(m=>{
-    if(!porTelefone[m.motorista_telefone]) porTelefone[m.motorista_telefone] = { telefone:m.motorista_telefone, nome:m.motorista_nome, ultimaEm:m.criado_em, naoLidas:0 };
+  filtrarMensagensSuporteDuplicadas(msgs||[]).forEach(m=>{
+    if(!porTelefone[m.motorista_telefone]) porTelefone[m.motorista_telefone] = { telefone:m.motorista_telefone, nome:m.motorista_nome, ultimaEm:m.criado_em, ultimaMensagem:m.texto||'', naoLidas:0 };
     if(m.remetente_tipo==='motorista' && !m.lido) porTelefone[m.motorista_telefone].naoLidas++;
   });
   const planoPorTelefone = {};
@@ -2831,15 +3173,15 @@ async function enviarMensagemSuporteAdmin(){
   if(!texto || !tel) return;
   input.value='';
   const conversa = (estado.admin.suporteConversas||[]).find(c=>c.telefone===tel);
-  const { error } = await sb.from('entrega_suporte').insert({ motorista_telefone:tel, motorista_nome:conversa?conversa.nome:'', remetente_tipo:'admin', texto, lido:false, criado_em:Date.now() });
+  const { error } = await inserirMensagemSuporteUnica({ motorista_telefone:tel, motorista_nome:conversa?conversa.nome:'', remetente_tipo:'admin', texto, lido:false, criado_em:Date.now() });
   if(error){ console.error(error); mostrarErro('Não consegui enviar. Tenta de novo.'); input.value = texto; return; }
   enviarPushServidor('motorista', tel, '💬 Resposta do suporte', texto);
 }
 async function marcarSuporteResolvido(telefone){
   const { error } = await sb.from('entrega_suporte_status').upsert({ motorista_telefone:telefone, status:'resolvido', atualizado_em:Date.now() }, { onConflict:'motorista_telefone' });
   if(error){ console.error(error); mostrarErro('Não consegui marcar como resolvida. Tenta de novo.'); return; }
-  mostrarToast('Conversa marcada como resolvida.', 'sucesso');
-  await carregarSuporteAdmin();
+  mostrarToast('Chamado resolvido e encerrado.', 'sucesso');
+  fecharSuporteAdmin();
 }
 function renderSuporteAdminChat(){
   const caixa = document.getElementById('suporte-admin-mensagens');
@@ -2849,18 +3191,23 @@ function renderSuporteAdminChat(){
     : estado.admin.suporteMensagensAdmin.map(m=>{
         const minha = m.remetente_tipo==='admin';
         const hora = new Date(m.criado_em).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${!minha?`<b style="display:block;font-size:11.5px;opacity:0.7">${m.motorista_nome||'Motorista'}</b>`:''}${m.texto}<span>${hora}</span></div>`;
+        return `<div class="bolha ${minha?'bolha-eu':'bolha-outro'}">${!minha?`<b style="display:block;font-size:11.5px;opacity:0.7">${m.motorista_nome||'Motorista'}</b>`:''}${formatarMensagemSuporteSegura(m.texto)}<span>${hora}</span></div>`;
       }).join('');
   caixa.scrollTop = caixa.scrollHeight;
 }
 function suporteConversaCardHTML(c){
+  const st=suporteStatusInfo(c.status);
+  const diag=diagnosticarAssuntoSuporte(c.ultimaMensagem||'');
+  const contas=localizarContaSuporteAdmin(c.telefone);
+  const tipo=contas.motorista?'🛵 Motorista':contas.cliente?'👤 Cliente':'❔ Não identificado';
   return `
-  <div class="admin-cartao" style="cursor:pointer" onclick="abrirSuporteAdmin('${c.telefone}')">
-    <div style="display:flex;justify-content:space-between;align-items:center">
+  <div class="admin-cartao" style="cursor:pointer;border-color:${c.naoLidas>0?'var(--mango)':'var(--linha)'}" onclick="abrirSuporteAdmin('${c.telefone}')">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
       <b>${c.plano==='pro'?'⭐ ':''}${c.nome||c.telefone}</b>
-      <span class="selo ${c.status==='resolvido'?'selo-entregue':'selo-andamento'}">${c.status}</span>
+      <span class="selo" style="color:${st.cor};border:1px solid ${st.cor}">${st.rotulo}</span>
     </div>
-    <div class="am-linha"><span>Telefone</span><b>${c.telefone}</b></div>
+    <div class="am-linha"><span>${tipo}</span><b>${formatarTelefoneExibicao(c.telefone)}</b></div>
+    <div style="font-size:12px;margin-top:7px"><b>${diag.icone} ${diag.titulo}</b><div style="color:var(--poeira);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${c.ultimaMensagem||'Sem mensagem'}</div></div>
     ${c.naoLidas>0 ? `<div class="am-linha"><span>Novas mensagens</span><b>🔴 ${c.naoLidas}</b></div>` : ''}
   </div>`;
 }
@@ -5873,6 +6220,10 @@ function render(){
     return;
   }
   const app = document.getElementById('app');
+  if(estado.resetSenha && estado.resetSenha.aberto){
+    app.innerHTML=telaRedefinirSenha();
+    return;
+  }
   const _foco = capturarFocoAtivo();
   const _scroll = capturarScroll();
   const _valores = capturarValoresInputs();
@@ -6038,13 +6389,15 @@ function render(){
     </div>` : ''}
     ${estado.admin.suporteAbertoTelefone ? `
     <div class="modal-fundo" onclick="if(event.target===this) fecharSuporteAdmin()">
-      <div class="modal-chat">
-        <div class="chat-topo"><h3>Suporte · ${estado.admin.suporteAbertoTelefone}</h3><div style="display:flex;align-items:center;gap:10px"><span class="refresh" style="margin:0" onclick="marcarSuporteResolvido('${estado.admin.suporteAbertoTelefone}')">✅ resolvido</span><button class="chat-fechar" onclick="fecharSuporteAdmin()">&times;</button></div></div>
-        <div class="chat-mensagens" id="suporte-admin-mensagens"></div>
+      <div class="modal-chat" style="max-height:92dvh;height:min(92dvh,850px)">
+        <div class="chat-topo"><div><h3 style="margin:0">Suporte · ${formatarTelefoneExibicao(estado.admin.suporteAbertoTelefone)}</h3><div style="font-size:11px;opacity:.72;margin-top:2px">Atendimento com ações de resolução</div></div><button class="chat-fechar" onclick="fecharSuporteAdmin()">&times;</button></div>
+        ${suportePainelResolucaoAdminHTML(estado.admin.suporteAbertoTelefone)}
+        <div class="chat-mensagens" id="suporte-admin-mensagens" style="min-height:150px"></div>
         <div class="chat-envio">
           <input type="text" id="suporte-admin-input" placeholder="Escreve uma resposta..." onkeydown="if(event.key==='Enter') executarComCarregando('enviarMensagemSuporteAdmin', enviarMensagemSuporteAdmin)">
           <button ${atributoDesabilitado('enviarMensagemSuporteAdmin')} onclick="executarComCarregando('enviarMensagemSuporteAdmin', enviarMensagemSuporteAdmin)">${rotuloCarregando('enviarMensagemSuporteAdmin','Enviar','')}</button>
         </div>
+        <div style="padding:0 14px 14px;display:grid;grid-template-columns:1fr 1fr;gap:8px;background:var(--painel)"><button class="btn btn-secundario btn-pequeno" style="margin:0" onclick="fecharSuporteAdmin()">Fechar sem resolver</button><button class="btn btn-verde btn-pequeno" style="margin:0" onclick="marcarSuporteResolvido('${estado.admin.suporteAbertoTelefone}')">✅ Resolvido</button></div>
       </div>
     </div>` : ''}
     <input type="file" id="input-foto" accept="image/*" capture="environment" style="display:none" onchange="processarFotoSelecionada(this)">
@@ -9208,11 +9561,11 @@ window.alternarDisponibilidade=alternarDisponibilidade; window.solicitarSaque=so
 window.salvarRaioAtendimento=salvarRaioAtendimento; window.abrirChamadoAmigo=abrirChamadoAmigo; window.fecharChamadoAmigo=fecharChamadoAmigo; window.enviarChamadoAmigo=enviarChamadoAmigo; window.cancelarChamadoAmigo=cancelarChamadoAmigo; window.ajudarChamadoAmigo=ajudarChamadoAmigo;
 window.abrirSOSFlutuante=abrirSOSFlutuante;
 window.abrirSuporte=abrirSuporte; window.fecharSuporte=fecharSuporte; window.enviarMensagemSuporte=enviarMensagemSuporte; window.abrirSuporteGeral=abrirSuporteGeral;
-window.abrirContatoRapido=abrirContatoRapido; window.fecharContatoRapido=fecharContatoRapido; window.enviarContatoRapido=enviarContatoRapido;
+window.abrirContatoRapido=abrirContatoRapido; window.fecharContatoRapido=fecharContatoRapido; window.enviarContatoRapido=enviarContatoRapido; window.abrirEsqueciSenha=abrirEsqueciSenha; window.confirmarRedefinicaoSenha=confirmarRedefinicaoSenha; window.irParaLoginAposReset=irParaLoginAposReset;
 window.abrirFeedback=abrirFeedback; window.fecharFeedback=fecharFeedback; window.definirCategoriaFeedback=definirCategoriaFeedback; window.enviarFeedback=enviarFeedback;
 window.fecharAvisoGeral=fecharAvisoGeral;
 window.abrirSuporteAdmin=abrirSuporteAdmin; window.fecharSuporteAdmin=fecharSuporteAdmin; window.enviarMensagemSuporteAdmin=enviarMensagemSuporteAdmin;
-window.marcarSuporteResolvido=marcarSuporteResolvido;
+window.marcarSuporteResolvido=marcarSuporteResolvido; window.suporteEnviarLinkResetSenhaAdmin=suporteEnviarLinkResetSenhaAdmin;
 window.falarNoCampo=falarNoCampo; window.irParaCadastroCliente=irParaCadastroCliente; window.irParaLoginCliente=irParaLoginCliente;
 window.cadastrarCliente=cadastrarCliente; window.loginCliente=loginCliente; window.sairCliente=sairCliente;
 window.moverParada=moverParada; window.moverParadaEdicao=moverParadaEdicao;
@@ -9227,6 +9580,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   esconderSplash();
 } else {
   aplicarEstadoInicialSincrono();
+  inicializarResetSenhaPeloLink();
   render();
   carregarConfigGeral().then(render);
   registrarServiceWorker();
