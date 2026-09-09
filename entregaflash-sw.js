@@ -1,8 +1,8 @@
-// build: 20260909-RESET-SENHA-1
-// Entrega Flash - Service Worker com atualização forçada
-// Versão: 20260909-RESET-SENHA-1
-const EF_VERSION = '20260909-RESET-SENHA-1';
+// build: 20260909-PUSH-REPAIR-TESTE-1
+// Entrega Flash - Service Worker com atualização forçada + reparo de Push
+const EF_VERSION = '20260909-PUSH-REPAIR-TESTE-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
+const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();
@@ -17,11 +17,13 @@ self.addEventListener('activate', (event) => {
 
     await self.clients.claim();
 
-    // Força quem estiver com uma instalação antiga aberta a entrar no index atual.
     const clientes = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     for (const cliente of clientes) {
       try {
-        await cliente.navigate(new URL(EF_HOME, self.registration.scope).href);
+        const u = new URL(cliente.url);
+        if (u.origin === self.location.origin && !u.pathname.startsWith('/admin/')) {
+          await cliente.navigate(new URL(EF_HOME, self.registration.scope).href);
+        }
       } catch (e) {}
     }
   })());
@@ -38,14 +40,35 @@ function normalizarUrl(url) {
   }
 }
 
-// Toda navegação antiga conhecida é redirecionada para o index atual.
-// Para o index normal, deixa a rede responder, evitando servir HTML antigo de cache.
+async function injetarReparoPush(resp) {
+  try {
+    if (!resp || !resp.ok) return resp;
+    const tipo = String(resp.headers.get('content-type') || '');
+    if (!tipo.includes('text/html')) return resp;
+    let html = await resp.text();
+    if (!html.includes('push-repair.js')) {
+      const tag = `<script src="${EF_PUSH_REPAIR}"></script>`;
+      html = html.includes('</body>') ? html.replace('</body>', `${tag}</body>`) : html + tag;
+    }
+    const headers = new Headers(resp.headers);
+    headers.delete('content-length');
+    return new Response(html, { status: resp.status, statusText: resp.statusText, headers });
+  } catch (_) {
+    return resp;
+  }
+}
+
 self.addEventListener('fetch', (event) => {
   if (event.request.mode !== 'navigate') return;
   try {
     const url = new URL(event.request.url);
+    if (url.origin !== self.location.origin || url.pathname.startsWith('/admin/')) return;
     if (url.pathname.endsWith('/entregaflash.html')) {
       event.respondWith(Response.redirect(new URL(EF_HOME, self.registration.scope).href, 302));
+      return;
+    }
+    if (url.pathname === '/' || url.pathname.endsWith('/index.html')) {
+      event.respondWith(fetch(event.request).then(injetarReparoPush));
     }
   } catch (e) {}
 });
@@ -68,7 +91,9 @@ self.addEventListener('push', (event) => {
     renotify: !!dados.tag
   };
 
-  const titulo = String(dados.title || 'Entrega Flash').includes('Entrega Flash') ? String(dados.title || 'Entrega Flash') : `Entrega Flash · ${dados.title || 'Aviso'}`;
+  const titulo = String(dados.title || 'Entrega Flash').includes('Entrega Flash')
+    ? String(dados.title || 'Entrega Flash')
+    : `Entrega Flash · ${dados.title || 'Aviso'}`;
   event.waitUntil(self.registration.showNotification(titulo, opcoes));
 });
 
