@@ -1,6 +1,8 @@
-// build: sp-cep-controles-20260830
-const CACHE='entrega-flash-admin-v18-20260909-online-push-seguro';
-const APP_SHELL=['/admin/admin.html?v=20260909-online-push-seguro-1','/admin/index.html?v=20260909-online-push-seguro-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
+// build: 20260909-TESTE-MOTORISTAS-1
+const CACHE='entrega-flash-admin-v19-20260909-teste-motoristas';
+const TESTE_JS='/admin/teste-motoristas-online.js?v=20260909-teste-motoristas-1';
+const APP_SHELL=['/admin/admin.html?v=20260909-teste-motoristas-1','/admin/index.html?v=20260909-teste-motoristas-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
+
 self.addEventListener('install',event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(APP_SHELL)).catch(()=>{}));
@@ -11,16 +13,39 @@ self.addEventListener('activate',event=>{
     self.clients.claim()
   ]));
 });
+
+async function injetarTeste(resp){
+  try{
+    if(!resp) return resp;
+    const tipo=String(resp.headers.get('content-type')||'');
+    if(!tipo.includes('text/html')) return resp;
+    let html=await resp.text();
+    if(!html.includes('teste-motoristas-online.js')){
+      const tag=`<script src="${TESTE_JS}"></script>`;
+      html=html.includes('</body>')?html.replace('</body>',`${tag}</body>`):html+tag;
+    }
+    const headers=new Headers(resp.headers); headers.delete('content-length');
+    return new Response(html,{status:resp.status,statusText:resp.statusText,headers});
+  }catch(e){ return resp; }
+}
+
 self.addEventListener('fetch',event=>{
   if(event.request.method!=='GET') return;
   const url=new URL(event.request.url);
   if(url.origin!==self.location.origin) return;
-  event.respondWith(fetch(event.request).then(resp=>{
-    const copy=resp.clone();
-    caches.open(CACHE).then(cache=>cache.put(event.request,copy)).catch(()=>{});
-    return resp;
-  }).catch(()=>caches.match(event.request).then(cached=>cached||caches.match('./admin.html'))));
+  event.respondWith((async()=>{
+    try{
+      const resp=await fetch(event.request);
+      const copy=resp.clone();
+      caches.open(CACHE).then(cache=>cache.put(event.request,copy)).catch(()=>{});
+      return await injetarTeste(resp);
+    }catch(e){
+      const cached=await caches.match(event.request) || await caches.match('./admin.html');
+      return cached ? await injetarTeste(cached) : new Response('Offline',{status:503});
+    }
+  })());
 });
+
 self.addEventListener('push',event=>{
   let data={};
   try{ data=event.data?event.data.json():{}; }catch(e){ data={body:event.data?event.data.text():''}; }
