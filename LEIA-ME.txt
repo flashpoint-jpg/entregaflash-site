@@ -1,0 +1,20 @@
+ENTREGA FLASH — CORREÇÃO DA CHAMADA POR RAIO
+
+Substitua/adicone na RAIZ do site:
+1. entregaflash-sw.js  (SUBSTITUIR)
+2. push-despacho-raio.js  (ADICIONAR)
+
+Não mexe no painel admin.
+
+Regras após a atualização:
+- aprovado + online + mesmo veículo
+- Pro: chamada imediata
+- Free: respeita o atraso configurado
+- 0 a 2 min: 30 km
+- 2 a 5 min: 60 km
+- 5 a 10 min: 120 km
+- 10 min ou mais: 200 km
+- respeita o raio máximo escolhido pelo motorista
+- evita mandar PUSH para motorista longe que não consegue ver/aceitar a corrida
+
+O push-repair.js anterior deve continuar na raiz do site.
