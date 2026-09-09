@@ -2302,6 +2302,19 @@ function motoristaOnlineAgora(m, agora=Date.now()){
   // Ele só deixa de aparecer online quando `disponivel` for alterado para false.
   return !!(m && m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
 }
+function motoristaTemPushAtivoAdmin(m){
+  const ref=String(m?.telefone||'').replace(/\D/g,'');
+  if(!ref) return false;
+  return (estado.admin?.appDispositivos||[]).some(app=>
+    String(app.referencia||'').replace(/\D/g,'')===ref &&
+    app.notificacoes==='granted' && !!app.push_ativo
+  );
+}
+function motoristaPodeReceberPedido(m){
+  // CONTADOR OPERACIONAL REAL: só entra quem está aprovado, marcado disponível
+  // e tem push ativo no aparelho. GPS/localização não entra nessa conta.
+  return !!(m && m.status==='aprovado' && m.disponivel && motoristaTemPushAtivoAdmin(m));
+}
 // Regras únicas de situação do motorista usadas em TODO o painel.
 // Evita o resumo geral mostrar um número e o resumo por cidade mostrar outro.
 function motoristaTemDocumentosCompletos(m){
@@ -2320,7 +2333,7 @@ async function carregarMotoristasOnline(){
     if(estado.admin?.logado){
       try{ await carregarMotoristasAdmin(); }catch(e){ console.warn('Falha ao atualizar lista antes do contador online',e); }
     }
-    const novo=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m)).length;
+    const novo=(estado.admin.motoristas||[]).filter(m=>motoristaPodeReceberPedido(m)).length;
     estado.motoristasOnline=novo;
     document.querySelectorAll('[data-admin-online-count]').forEach(el=>{ el.textContent=String(novo); });
   }catch(e){ console.error(e); }
@@ -4543,7 +4556,7 @@ function montarMapaAdminGeral(){
     const agora = Date.now();
     // motoristas online com acesso ao painel, com posição conhecida e recente, e que não estejam já contados como "em corrida"
     const disponiveis = (estado.admin.motoristas||[]).filter(m=>
-      motoristaOnlineAgora(m) && m.lat_atual!=null && m.lng_atual!=null &&
+      motoristaPodeReceberPedido(m) && m.lat_atual!=null && m.lng_atual!=null &&
       !telefonesEmCorrida.has(m.telefone) && (agora - Number(m.lat_atualizado_em||0)) < POSICAO_MOTORISTA_MAX_IDADE_MS
     );
     // clientes aguardando: pedidos ainda buscando motorista, com endereço de origem já geolocalizado
@@ -7345,10 +7358,10 @@ function motoristaAguardandoDocumentosAdmin(m){
 function motoristaCardHTML(m, emRota){
   const docsCompletos = motoristaDocumentosCompletosAdmin(m);
   const aguardandoDocumentos = motoristaAguardandoDocumentosAdmin(m);
-  const onlineAgora = motoristaOnlineAgora(m);
+  const onlineAgora = motoristaPodeReceberPedido(m);
   const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
   const appStatus=app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
-  const pushStatus=app?.notificacoes==='granted'&&app?.push_ativo?'🔔 Notificações ativas':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 Notificações não ativadas';
+  const pushStatus=motoristaTemPushAtivoAdmin(m)?'🔔 Notificações ativas':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 Notificações não ativadas';
   const ultimoApp=app?.ultimo_acesso?new Date(app.ultimo_acesso).toLocaleString('pt-BR'):'Nunca registrado';
   let infoStatus = ROTULO_STATUS_MOTORISTA[m.status] || { texto:m.status, selo:'', cor:'' };
   if(aguardandoDocumentos){
@@ -7357,14 +7370,14 @@ function motoristaCardHTML(m, emRota){
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span>🚚 Em rota</span>`
     : onlineAgora
-      ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Online</span>`
+      ? `<span class="selo selo-entregue" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante"></span>Pode receber</span>`
       : `<span class="selo" style="display:inline-flex;align-items:center;gap:5px;background:rgba(169,168,156,0.18);color:var(--poeira)"><span style="width:9px;height:9px;border-radius:50%;background:#a9a89c;flex-shrink:0"></span>Offline</span>`;
   return `
     <details class="admin-resumo-card" data-motorista-telefone="${String(m.telefone||'').replace(/\D/g,'')}" ${(estado.admin.motoristaEditando===m.id || estado.admin.motoristaAberto===m.id)?'open':''} ontoggle="registrarAberturaCardAdmin('motorista','${m.id}',this.open)" onmousedown="if(!event.target.closest('summary')) estado.admin.motoristaAberto='${m.id}';" ontouchstart="if(!event.target.closest('summary')) estado.admin.motoristaAberto='${m.id}';" style="border-color:${emRota?'var(--mango)':onlineAgora?'var(--verde)':infoStatus.cor||'var(--linha)'};border-width:2px">
       <summary>
         <div class="avatar-linha" style="min-width:0">
           ${m.foto_motorista_url?`<img class="avatar-circulo" src="${m.foto_motorista_url}" onclick="event.preventDefault();event.stopPropagation();ampliarFoto('${m.foto_motorista_url}')">`:`<div class="avatar-circulo" style="display:grid;place-items:center;background:var(--painel-alt);font-size:20px">🛵</div>`}
-          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${onlineAgora?'🟢 Online':'⚪ Offline'}${emRota?' · 🚚 Em rota':''}</span></div>
+          <div style="min-width:0"><b style="display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nome}</b><span style="font-size:12px;color:var(--poeira)">${onlineAgora?'📲 Pode receber pedido':'⚪ Não recebe agora'}${emRota?' · 🚚 Em rota':''}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span class="selo ${infoStatus.selo||''}" ${infoStatus.estilo?`style="${infoStatus.estilo}"`:''}>${infoStatus.texto}</span>
@@ -7692,17 +7705,15 @@ function centroOperacoesHTML(){
   const pedidos=a.todosPedidos||[], motors=a.motoristas||[];
   const buscando=pedidos.filter(p=>p.status==='buscando');
   const andamento=pedidos.filter(p=>!['buscando','entregue','cancelado'].includes(p.status));
-  const online=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)>=agora-PRESENCA_MOTORISTA_MS);
-  const gpsParado=motors.filter(m=>m.disponivel && Number(m.disponivel_atualizado_em||0)<agora-PRESENCA_MOTORISTA_MS);
+  const online=motors.filter(m=>motoristaPodeReceberPedido(m));
   const demorando=buscando.filter(p=>agora-Number(p.criado_em||p.criadoEm||0)>240000);
-  const cards=[['📍','Motoristas online',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length],['📡','Motoristas sem sinal',gpsParado.length]];
+  const cards=[['📲','Podem receber pedido',online.length],['🔎','Buscando motorista',buscando.length],['🛵','Em andamento',andamento.length],['⚠️','Busca > 4 min',demorando.length]];
   const alertas=[];
   demorando.slice(0,8).forEach(p=>alertas.push(`Pedido ${p.id||''} está há mais de 4 minutos procurando motorista.`));
-  gpsParado.slice(0,8).forEach(m=>alertas.push(`${m.nome||'Motorista'} aparece disponível, mas o app dele não manda sinal há mais de 2 minutos (perdeu conexão, fechou o app ou o celular travou em segundo plano).`));
   return `<div class="admin-secao-titulo"><div><h2>🎛️ Centro de Operações</h2><p>Acompanhe a operação em tempo real e veja somente o que precisa da sua atenção.</p></div><button class="btn btn-secundario btn-pequeno" onclick="carregarTudoAdmin()">↻ Atualizar</button></div>
     <div class="admin-grade-cartoes">${cards.map(c=>`<div class="admin-cartao"><div style="font-size:24px">${c[0]}</div><div class="subtitulo">${c[1]}</div><div style="font:800 32px 'Rajdhani';margin-top:4px">${c[2]}</div></div>`).join('')}</div>
     <div class="admin-cartao" style="margin-top:14px"><b>🚨 Alertas operacionais</b>${alertas.length?`<div style="margin-top:10px">${alertas.map(x=>`<div class="am-linha"><span>${x}</span><b style="color:#ffb25b">ATENÇÃO</b></div>`).join('')}</div>`:`<div class="subtitulo" style="margin-top:8px">Nenhum alerta crítico agora.</div>`}</div>
-    <div class="admin-cartao" style="margin-top:14px"><b>📡 Despacho inteligente</b><div class="subtitulo" style="margin-top:7px;line-height:1.5">Pedidos novos são avisados aos <b>motoristas online do mesmo tipo de veículo</b>, mesmo quando a localização recente não está disponível. O GPS continua sendo usado para mostrar posição, distância e priorizar quem está mais próximo, mas <b>não bloqueia o aviso do pedido</b>.</div></div>
+    <div class="admin-cartao" style="margin-top:14px"><b>📲 Recebimento de pedidos</b><div class="subtitulo" style="margin-top:7px;line-height:1.5">O número operacional considera somente motorista <b>aprovado + disponível + com notificações push ativas</b>. GPS e mapa não entram nessa conta.</div></div>
     <div class="admin-cartao" style="margin-top:14px"><b>🧪 Simular entrega</b><div class="subtitulo" style="margin-top:7px">Teste visual do fluxo sem criar pedido real e sem cobrar ninguém.</div><button class="btn btn-primario" style="margin-top:10px;width:auto" onclick="iniciarSimulacaoEntrega()">▶ Iniciar simulação</button><div id="simulacaoEntregaBox" style="margin-top:10px"></div></div>`;
 }
 function iniciarSimulacaoEntrega(){
@@ -8081,8 +8092,8 @@ function centralLancamentoHTML(){
   const regiao=estado.admin.filtroRegiaoMotoristas||'todos';
   const ms=motoristasDaRegiaoAdmin(regiao);
   const aprovados=ms.filter(m=>motoristaAprovado(m));
-  const online=aprovados.filter(m=>motoristaOnlineAgora(m));
-  const offline=aprovados.filter(m=>!motoristaOnlineAgora(m));
+  const online=aprovados.filter(m=>motoristaPodeReceberPedido(m));
+  const offline=aprovados.filter(m=>!motoristaPodeReceberPedido(m));
   const meta=metaOnlineCampanhaAdmin(regiao);
   const pct=meta?Math.min(100,Math.round(online.length/meta*100)):0;
   let nivel='critico', cor='#ff6666', fundo='rgba(255,92,92,.10)', titulo='SEM COBERTURA', orientacao='Não abra campanha para clientes ainda.';
@@ -8098,13 +8109,13 @@ function centralLancamentoHTML(){
     <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">
       <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px">${ms.length}</b><div style="font-size:11.5px;color:var(--poeira)">Cadastrados</div></div>
       <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px">${aprovados.length}</b><div style="font-size:11.5px;color:var(--poeira)">✅ Aprovados</div></div>
-      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px;color:var(--verde)">${online.length}</b><div style="font-size:11.5px;color:var(--poeira)">🟢 Online aprovados</div></div>
-      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px;color:var(--mango)">${offline.length}</b><div style="font-size:11.5px;color:var(--poeira)">📲 Aprovados offline</div></div>
+      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px;color:var(--verde)">${online.length}</b><div style="font-size:11.5px;color:var(--poeira)">📲 Aptos a receber</div></div>
+      <div style="padding:10px;border-radius:10px;background:var(--painel-alt);text-align:center"><b style="font-family:'Rajdhani';font-size:25px;color:var(--mango)">${offline.length}</b><div style="font-size:11.5px;color:var(--poeira)">⚪ Não aptos agora</div></div>
     </div>
     <div style="margin-top:12px;padding:10px;border-radius:10px;background:rgba(0,0,0,.12)">
-      <div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px"><b>Meta de cobertura</b><b>${online.length}/${meta} online · ${pct}%</b></div>
+      <div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px"><b>Meta de cobertura</b><b>${online.length}/${meta} aptos · ${pct}%</b></div>
       <div style="height:8px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-top:6px"><div style="height:100%;width:${pct}%;background:${cor}"></div></div>
-      <div style="display:flex;gap:7px;align-items:center;margin-top:9px"><label style="margin:0;font-size:12px;flex:1">Mínimo de motoristas online para liberar campanha</label><input type="number" min="1" max="99" value="${meta}" onchange="salvarMetaOnlineCampanhaAdmin('${regiao}',this.value)" style="width:68px;padding:7px"></div>
+      <div style="display:flex;gap:7px;align-items:center;margin-top:9px"><label style="margin:0;font-size:12px;flex:1">Mínimo de motoristas aptos a receber para liberar campanha</label><input type="number" min="1" max="99" value="${meta}" onchange="salvarMetaOnlineCampanhaAdmin('${regiao}',this.value)" style="width:68px;padding:7px"></div>
     </div>
     <div style="margin-top:10px;padding:10px;border-radius:10px;background:${fundo};border:1px solid ${cor};font-size:12.5px"><b style="color:${cor}">${titulo}</b><div style="margin-top:3px">${orientacao}</div></div>
     <div style="display:grid;grid-template-columns:1fr;gap:8px;margin-top:12px">
@@ -8112,7 +8123,7 @@ function centralLancamentoHTML(){
       <button class="btn btn-secundario btn-pequeno" onclick="copiarTextoCampanhaClientesAdmin('${regiao}')">📋 COPIAR TEXTO DA CAMPANHA DE CLIENTES</button>
       <button class="btn btn-pequeno" ${nivel==='pronto'?'':'disabled style="opacity:.45;cursor:not-allowed"'} onclick="abrirMetaAdsAdmin()" style="${nivel==='pronto'?'background:var(--mango);color:#171717;font-weight:900':''}">📣 ABRIR META ADS ${nivel==='pronto'?'':'— BLOQUEADO ATÉ ATINGIR A META'}</button>
     </div>
-    <div style="font-size:11.5px;color:var(--poeira);margin-top:9px">O bloqueio do botão é operacional: você pode alterar a meta acima conforme sua estratégia. A campanha deve ser concentrada na mesma região em que os motoristas estiverem online.</div>
+    <div style="font-size:11.5px;color:var(--poeira);margin-top:9px">O bloqueio do botão é operacional: você pode alterar a meta acima conforme sua estratégia. A campanha deve ser concentrada na mesma região em que os motoristas estiverem aptos a receber pedidos.</div>
   </div>`;
 }
 function resumoMotoristasPorCidadeHTML(){
@@ -8122,7 +8133,7 @@ function resumoMotoristasPorCidadeHTML(){
     const cidade = normalizarCidadePainel(m.cidade) || 'Cidade não informada';
     if(!mapa[cidade]) mapa[cidade]={total:0,online:0,aguardando:0,aprovados:0};
     mapa[cidade].total++;
-    if(motoristaOnlineAgora(m)) mapa[cidade].online++;
+    if(motoristaPodeReceberPedido(m)) mapa[cidade].online++;
     if(motoristaSemDocumentos(m) || motoristaEmAnalise(m)) mapa[cidade].aguardando++;
     if(motoristaAprovado(m)) mapa[cidade].aprovados++;
   });
@@ -8145,7 +8156,7 @@ function resumoMotoristasPorCidadeHTML(){
             <b style="font-family:'Rajdhani';font-size:22px;color:var(--mango)">${d.total}</b>
           </div>
           <div style="font-size:11.5px;color:var(--poeira);margin-top:5px;display:flex;gap:9px;flex-wrap:wrap">
-            <span style="color:var(--verde)">● ${d.online} online</span>
+            <span style="color:var(--verde)">● ${d.online} aptos</span>
             <span>✅ ${d.aprovados} aprovados</span>
             ${d.aguardando?`<span style="color:var(--chama)">⏳ ${d.aguardando} pend.</span>`:''}
           </div>
@@ -8155,7 +8166,7 @@ function resumoMotoristasPorCidadeHTML(){
 }
 function resumoSituacaoMotoristasHTML(){
   const ms=estado.admin.motoristas||[];
-  const online=ms.filter(m=>motoristaOnlineAgora(m)).length;
+  const online=ms.filter(m=>motoristaPodeReceberPedido(m)).length;
   const semDocs=ms.filter(m=>motoristaSemDocumentos(m)).length;
   const docsVencidos=ms.filter(m=>{
     if(!motoristaSemDocumentos(m)) return false;
@@ -8167,7 +8178,7 @@ function resumoSituacaoMotoristasHTML(){
   return `
   ${docsVencidos?`<div class="admin-cartao" style="margin-bottom:12px;border-color:#ff5c5c;background:rgba(255,92,92,.08)"><b style="color:#ff7474">⚠️ Cadastros atrasados</b><div class="am-linha"><span>Passaram de 5 dias sem concluir o cadastro</span><b style="color:#ff7474">${docsVencidos}</b></div><div class="subtitulo" style="margin:6px 0 0">Abra Motoristas e use o botão de WhatsApp para lembrar antes de excluir.</div></div>`:''}
   <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-bottom:14px">
-    <div class="admin-cartao" style="margin:0;text-align:center"><div data-admin-online-count style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--verde)">${online}</div><div style="font-size:12px">🟢 Online agora</div></div>
+    <div class="admin-cartao" style="margin:0;text-align:center"><div data-admin-online-count style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--verde)">${online}</div><div style="font-size:12px">📲 Podem receber</div></div>
     <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--chama)">${semDocs}</div><div style="font-size:12px">📝 Cadastro incompleto</div></div>
     <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800;color:var(--mango)">${analise}</div><div style="font-size:12px">⏳ Em análise</div></div>
     <div class="admin-cartao" style="margin:0;text-align:center"><div style="font-family:'Rajdhani';font-size:30px;font-weight:800">${aprovados}</div><div style="font-size:12px">✅ Aprovados</div></div>
@@ -8179,18 +8190,10 @@ function adminAbaResumoHTML(){
   const emAndamentoStatuses = ['indo_coletar','coletado','a_caminho'];
   const todosPedidos = a.todosPedidos||[];
   const pedidosEmAndamento = todosPedidos.filter(p=>emAndamentoStatuses.includes(p.status));
-  const motoristasOnlineAgora = estado.motoristasOnline||0;
+  const motoristasOnlineAgora = (a.motoristas||[]).filter(m=>motoristaPodeReceberPedido(m)).length;
   const motoristasEmEntregaAgora = new Set(pedidosEmAndamento.map(p=>p.motorista_telefone).filter(Boolean)).size;
   const clientesAguardando = todosPedidos.filter(p=>p.status==='buscando').length;
   const pedidosAceitosAndamento = pedidosEmAndamento.length;
-  // motoristas que contam como "online" mas não aparecem no mapa (sem localização recente) —
-  // avisa o admin do porquê, em vez de simplesmente sumir do mapa sem explicação
-  const agoraTs = Date.now();
-  const telefonesEmEntregaAgora = new Set(pedidosEmAndamento.map(p=>p.motorista_telefone).filter(Boolean));
-  const motoristasSemLocalizacao = (a.motoristas||[]).filter(m=>
-    motoristaOnlineAgora(m) && !telefonesEmEntregaAgora.has(m.telefone) &&
-    (m.lat_atual==null || m.lng_atual==null || (agoraTs - Number(m.lat_atualizado_em||0)) >= POSICAO_MOTORISTA_MAX_IDADE_MS)
-  );
   return `
     <div class="admin-filtros-grade" style="margin-bottom:12px">
       <button class="${a.filtroRegiaoMotoristas==='todos'?'ativo':''}" onclick="estado.admin.filtroRegiaoMotoristas='todos';render()">Todas as regiões</button>
@@ -8208,7 +8211,7 @@ function adminAbaResumoHTML(){
       <div class="admin-grade-cartoes" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px">
         <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px">
           <div data-admin-online-count style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--verde);line-height:1">${motoristasOnlineAgora}</div>
-          <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">🟢 Motoristas online</div>
+          <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">📲 Podem receber pedido</div>
         </div>
         <div style="text-align:center;background:var(--painel);border-radius:6px;padding:14px 8px">
           <div style="font-family:'Rajdhani';font-weight:800;font-size:34px;color:var(--mango);line-height:1">${motoristasEmEntregaAgora}</div>
@@ -8223,12 +8226,7 @@ function adminAbaResumoHTML(){
           <div style="font-size:12.5px;color:var(--poeira);margin-top:4px">✅ Pedidos aceitos, em andamento</div>
         </div>
       </div>
-      <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O mapa mostra ao vivo: 🟢 motoristas disponíveis, 🟠 motoristas em corrida e 🔵 clientes aguardando. Toque numa bolinha pra ver quem é.</div>
-      ${motoristasSemLocalizacao.length>0 ? `
-      <div class="cf-nota" style="background:rgba(255,147,48,0.12);border:1px solid rgba(255,147,48,0.35);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-top:10px">
-        ⚠️ ${motoristasSemLocalizacao.length} motorista${motoristasSemLocalizacao.length>1?'s estão':' está'} online mas não aparece${motoristasSemLocalizacao.length>1?'m':''} no mapa por falta de localização recente (app fechado, GPS desligado ou permissão de localização negada no telemóvel):<br>
-        ${motoristasSemLocalizacao.map(m=>`• ${m.nome||m.telefone}${m.telefone?` (${m.telefone})`:''}`).join('<br>')}
-      </div>` : ''}
+      <div class="subtitulo" style="margin-top:8px;margin-bottom:0">O número verde mostra somente quem pode receber pedido agora. O mapa é apenas referência de localização.</div>
     </div>
     <div class="cf-nota" style="background:rgba(127,174,114,0.1);border:1px solid rgba(127,174,114,0.3);border-radius:4px;padding:10px 12px;font-style:normal;color:var(--osso);margin-bottom:14px">
       ✅ A carteira do cliente agora é 100% automática: o cliente gera o Pix, paga, e o saldo cai sozinho (via webhook do Mercado Pago) — sem precisar de nada manual. Se algum caso específico der problema, ainda dá pra creditar na mão pela aba "👤 Clientes".
@@ -8768,10 +8766,10 @@ function adminAbaMotoristasHTML(){
     if(a.filtroVeiculoMotoristas==='outros') return !!String(m.veiculo_tipo||'').trim() && !veiculosDisponiveis.includes(m.veiculo_tipo);
     return m.veiculo_tipo===a.filtroVeiculoMotoristas;
   });
-  const online=baseMotoristas.filter(m=>motoristaOnlineAgora(m));
+  const online=baseMotoristas.filter(m=>motoristaPodeReceberPedido(m));
   const aguardandoDocs=baseMotoristas.filter(m=>motoristaSemDocumentos(m));
   const pendentes=baseMotoristas.filter(m=>motoristaEmAnalise(m));
-  const ativos=baseMotoristas.filter(m=>motoristaAprovado(m) && !motoristaOnlineAgora(m));
+  const ativos=baseMotoristas.filter(m=>motoristaAprovado(m) && !motoristaPodeReceberPedido(m));
   const bloqueados=baseMotoristas.filter(m=>m.status==='bloqueado');
   const reprovados=baseMotoristas.filter(m=>m.status==='reprovado');
   const outros=baseMotoristas.filter(m=>!online.includes(m)&&!aguardandoDocs.includes(m)&&!pendentes.includes(m)&&!ativos.includes(m)&&!bloqueados.includes(m)&&!reprovados.includes(m));
@@ -8791,7 +8789,7 @@ function adminAbaMotoristasHTML(){
     {id:'todos', label:'Todos', n:baseMotoristas.length},
     {id:'docs', label:'🆕 Falta documento', n:aguardandoDocs.length},
     {id:'analise', label:'📄 Aguardando aprovação', n:pendentes.length},
-    {id:'online', label:'🟢 Online agora', n:online.length},
+    {id:'online', label:'📲 Podem receber', n:online.length},
     {id:'ativos', label:'✅ Aprovados', n:ativos.length},
     {id:'reprovados', label:'❌ Reprovados', n:reprovados.length},
     {id:'bloqueados', label:'🔒 Bloqueados', n:bloqueados.length}
@@ -8799,8 +8797,8 @@ function adminAbaMotoristasHTML(){
   const grupoFiltrado = {
     docs: {titulo:'🆕 Falta documento — acabou de se cadastrar', lista:aguardandoDocs},
     analise: {titulo:'📄 Documentos enviados, aguardando aprovação', lista:pendentes},
-    online: {titulo:'🟢 Online agora', lista:online},
-    ativos: {titulo:'✅ Aprovados (offline)', lista:ativos},
+    online: {titulo:'📲 Podem receber pedido agora', lista:online},
+    ativos: {titulo:'✅ Aprovados sem recebimento agora', lista:ativos},
     reprovados: {titulo:'❌ Reprovados', lista:reprovados},
     bloqueados: {titulo:'🔒 Bloqueados', lista:bloqueados}
   }[a.filtroStatusMotoristas];
@@ -8808,11 +8806,11 @@ function adminAbaMotoristasHTML(){
     ? `<div class="admin-lista-secao"><b>${grupoFiltrado.titulo}</b><span class="selo">${grupoFiltrado.lista.length}</span></div>
        ${grupoFiltrado.lista.length?grupoFiltrado.lista.map(cardHTML).join(''):`<div class="subtitulo">Ninguém nesse grupo agora.</div>`}`
     : `
-    <div class="admin-lista-secao"><b>🟢 Motoristas online</b><span class="selo selo-entregue">${online.length}</span></div>
-    ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista online agora.</div>`}
+    <div class="admin-lista-secao"><b>📲 Podem receber pedido agora</b><span class="selo selo-entregue">${online.length}</span></div>
+    ${online.length?online.map(cardHTML).join(''):`<div class="subtitulo">Nenhum motorista apto a receber pedido agora.</div>`}
     ${aguardandoDocs.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🆕 Acabou de se cadastrar — falta documento</b><span class="selo" style="background:rgba(255,151,16,0.16);color:var(--mango)">${aguardandoDocs.length}</span></div>${aguardandoDocs.map(cardHTML).join('')}`:''}
     ${pendentes.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>📄 Documentos enviados, aguardando aprovação</b><span class="selo" style="background:rgba(111,168,220,0.18);color:var(--azul)">${pendentes.length}</span></div>${pendentes.map(cardHTML).join('')}`:''}
-    ${ativos.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>✅ Aprovados (offline)</b><span class="selo selo-entregue">${ativos.length}</span></div>${ativos.map(cardHTML).join('')}`:''}
+    ${ativos.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>✅ Aprovados sem recebimento agora</b><span class="selo selo-entregue">${ativos.length}</span></div>${ativos.map(cardHTML).join('')}`:''}
     ${reprovados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>❌ Reprovados</b><span class="selo selo-cancelado">${reprovados.length}</span></div>${reprovados.map(cardHTML).join('')}`:''}
     ${bloqueados.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>🔒 Bloqueados</b><span class="selo selo-cancelado">${bloqueados.length}</span></div>${bloqueados.map(cardHTML).join('')}`:''}
     ${outros.length?`<div class="admin-lista-secao" style="margin-top:20px"><b>⚙️ Outros cadastros</b><span class="selo">${outros.length}</span></div>${outros.map(cardHTML).join('')}`:''}`;
@@ -9111,21 +9109,21 @@ document.addEventListener('toggle', (event)=>{
 }, true);
 function atualizarPresencaAdminDOM(){
   if(!estado.admin?.aberto) return;
-  const online=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m) && STATUS_ACESSO_PAINEL.includes(m.status));
+  const online=(estado.admin.motoristas||[]).filter(m=>motoristaPodeReceberPedido(m));
   document.querySelectorAll('[data-admin-online-count]').forEach(el=>{ el.textContent=String(online.length); });
   document.querySelectorAll('[data-motorista-telefone]').forEach(card=>{
     const tel=card.getAttribute('data-motorista-telefone');
     const m=(estado.admin.motoristas||[]).find(x=>String(x.telefone||'').replace(/\D/g,'')===tel);
     if(!m) return;
-    const on=motoristaOnlineAgora(m);
+    const on=motoristaPodeReceberPedido(m);
     const span=card.querySelector('summary .avatar-linha span');
-    if(span && !span.textContent.includes('Em rota')) span.textContent=on?'🟢 Online':'⚪ Offline';
+    if(span && !span.textContent.includes('Em rota')) span.textContent=on?'📲 Pode receber pedido':'⚪ Não recebe agora';
   });
 }
 let assinaturaPresencaAdmin='';
 function verificarMudancaPresencaAdmin(){
   if(!estado.admin?.logado || !(estado.admin.motoristas||[]).length) return;
-  const nova=(estado.admin.motoristas||[]).filter(m=>motoristaOnlineAgora(m)).map(m=>m.id||m.telefone).sort().join('|');
+  const nova=(estado.admin.motoristas||[]).filter(m=>motoristaPodeReceberPedido(m)).map(m=>m.id||m.telefone).sort().join('|');
   if(!assinaturaPresencaAdmin){ assinaturaPresencaAdmin=nova; return; }
   if(nova!==assinaturaPresencaAdmin){
     assinaturaPresencaAdmin=nova;
