@@ -2355,7 +2355,7 @@ async function restaurarSessao(){
     // Na raiz pública ignoramos completamente a sessão do admin.
     const estaNaAreaAdmin = /^\/admin(?:\/|$)/i.test(window.location.pathname);
     if(estaNaAreaAdmin && localStorage.getItem('ef_admin_logado')==='true'){
-      const senhaSalva = localStorage.getItem('ef_admin_senha');
+      const senhaSalva = sessionStorage.getItem('ef_admin_senha');
       if(senhaSalva){
         estado.admin.logado = true;
         estado.admin.senhaDigitada = senhaSalva;
@@ -10286,7 +10286,7 @@ async function entrarAdmin(){
   if(!senhaOk){ mostrarToast('Senha incorreta.', 'erro'); return; }
   estado.admin.logado=true;
   salvarLocal('ef_admin_logado','true');
-  salvarLocal('ef_admin_senha', senha);
+  try{ sessionStorage.setItem('ef_admin_senha', senha); localStorage.removeItem('ef_admin_senha'); }catch(e){}
   await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin()]);
   await carregarSuporteAdmin();
   assinarSuporteAdminGlobal();
@@ -10324,7 +10324,7 @@ function sairAdmin(){
   removerLocal('ef_admin_logado');
   removerLocal('ef_admin_aberto');
   removerLocal('ef_admin_aba');
-  removerLocal('ef_admin_senha');
+  try{ sessionStorage.removeItem('ef_admin_senha'); localStorage.removeItem('ef_admin_senha'); }catch(e){}
   render();
 }
 async function carregarMotoristasAdmin(){
