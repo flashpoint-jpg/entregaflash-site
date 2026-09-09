@@ -1605,7 +1605,7 @@ async function restaurarSessao(){
           removerLocal('ef_admin_logado');
         }
       } else {
-      const senhaSalva = localStorage.getItem('ef_admin_senha');
+      const senhaSalva = sessionStorage.getItem('ef_admin_senha');
       if(senhaSalva){
         estado.admin.logado = true;
         estado.admin.papel = 'dono';
@@ -9252,7 +9252,7 @@ async function entrarAdmin(){
   estado.admin.papel='dono';
   salvarLocal('ef_admin_logado','true');
   salvarLocal('ef_admin_papel','dono');
-  salvarLocal('ef_admin_senha', senha);
+  try{ sessionStorage.setItem('ef_admin_senha', senha); localStorage.removeItem('ef_admin_senha'); }catch(e){}
   await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin(), carregarTodosPedidosAdmin(), carregarClientesAdmin(), carregarAlertasAdmin(), carregarFuncionariosAdmin()]);
   await carregarSuporteAdmin();
   assinarSuporteAdminGlobal();
@@ -9393,7 +9393,7 @@ function sairAdmin(){
   removerLocal('ef_admin_logado');
   salvarLocal('ef_admin_aberto','true');
   removerLocal('ef_admin_aba');
-  removerLocal('ef_admin_senha');
+  try{ sessionStorage.removeItem('ef_admin_senha'); localStorage.removeItem('ef_admin_senha'); }catch(e){}
   removerLocal('ef_admin_papel');
   removerLocal('ef_funcionario_usuario');
   removerLocal('ef_funcionario_senha_hash');
