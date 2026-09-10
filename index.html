@@ -1555,6 +1555,54 @@ function registrarConversaoMetaCadastro(papel, identificador=''){
   }catch(e){ console.warn('Meta CompleteRegistration:',e); return false; }
 }
 
+// Funil Meta do cliente: mede intenção, bloqueio por saldo e pedido realmente criado.
+// Não altera a lógica da corrida. Os eventos são disparados apenas para analytics.
+function registrarEventoMetaPedido(etapa, dados={}){
+  try{
+    if(typeof fbq!=='function') return false;
+    const params = new URLSearchParams(location.search);
+    const origem = params.get('utm_source') || (params.get('fbclid') ? 'meta' : 'site');
+    const base = {
+      content_category: 'pedido_entrega',
+      currency: 'BRL',
+      origem,
+      ...dados
+    };
+
+    if(etapa==='inicio'){
+      const chave='ef_meta_pedido_inicio_sessao';
+      if(sessionStorage.getItem(chave)==='1') return false;
+      fbq('track','InitiateCheckout',{...base,content_name:'inicio_pedido'});
+      fbq('trackCustom','PedidoIniciado',{...base,content_name:'inicio_pedido'});
+      sessionStorage.setItem(chave,'1');
+      return true;
+    }
+
+    if(etapa==='sem_saldo'){
+      const chave='ef_meta_pedido_sem_saldo_sessao';
+      if(sessionStorage.getItem(chave)==='1') return false;
+      fbq('trackCustom','PedidoSemSaldo',{...base,content_name:'saldo_insuficiente'});
+      sessionStorage.setItem(chave,'1');
+      return true;
+    }
+
+    if(etapa==='criado'){
+      const pedidoId=String(dados.pedido_id||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80) || String(Date.now());
+      const chave=`ef_meta_pedido_criado_${pedidoId}`;
+      if(localStorage.getItem(chave)==='1') return false;
+      const eventID=`ef-pedido-${pedidoId}`;
+      const valor=Number(dados.value)||0;
+      const payload={...base,content_name:'pedido_criado',value:valor,pedido_id:pedidoId};
+      // Lead aparece diretamente nos relatórios da Meta como conversão de pedido.
+      fbq('track','Lead',payload,{eventID});
+      fbq('trackCustom','PedidoCriado',payload);
+      localStorage.setItem(chave,'1');
+      return true;
+    }
+  }catch(e){ console.warn('Meta funil pedido:',etapa,e); return false; }
+  return false;
+}
+
 // Conta a abertura do site. A deduplicação por sessão evita somar vários renders/reloads internos.
 registrarVisitaFunilAnuncio();
 
@@ -4425,6 +4473,7 @@ async function exigirLocalizacaoOperacional(tipo){
 }
 
 async function criarPedido(){
+  registrarEventoMetaPedido('inicio');
   // Quem ainda não tem conta pode montar e calcular o pedido inteiro normalmente.
   // Ao confirmar, NÃO apagamos nada: mostramos um aviso claro com botão para cadastrar.
   if(estado.cliente.visitante || !estado.cliente.logado){
@@ -4482,6 +4531,7 @@ async function criarPedido(){
   }catch(e){ console.error(e); mostrarToast('Não consegui checar seu saldo. Tenta novamente.', 'erro'); return; }
   w.saldo = saldoAtualCliente;
   if(saldoAtualCliente < preco){
+    registrarEventoMetaPedido('sem_saldo',{ value:preco, saldo_atual:saldoAtualCliente });
     salvarPedidoAguardandoSaldo(preco);
     w.valorInput = (Math.ceil((preco-saldoAtualCliente)*100)/100).toFixed(2);
     mostrarToast('Pedido guardado. Adicione o saldo e continue sem digitar os endereços novamente.', 'erro');
@@ -4497,6 +4547,7 @@ async function criarPedido(){
     const { data, error: erroDebito } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: -preco });
     if(erroDebito){
       if(erroDebito.message==='saldo_insuficiente'){
+        registrarEventoMetaPedido('sem_saldo',{ value:preco, saldo_atual:Number(w.saldo)||0 });
         salvarPedidoAguardandoSaldo(preco);
         w.valorInput = (Math.ceil(Math.max(0.01,preco-(Number(w.saldo)||0))*100)/100).toFixed(2);
         mostrarToast('Pedido guardado. Adicione o saldo e continue sem digitar os endereços novamente.', 'erro');
@@ -4536,6 +4587,8 @@ async function criarPedido(){
     mostrarToast('Não consegui criar o pedido. O valor debitado foi estornado.', 'erro');
     return;
   }
+  // Só conta conversão depois que o Supabase confirmou a gravação do pedido.
+  registrarEventoMetaPedido('criado',{ pedido_id:pedido.id, value:preco, veiculo:f.veiculo });
   estado.ultimoPedidosJSON='';
   estado.filtroTelefoneCliente = f.telefone;
   registrarAlertaAdmin('novo_pedido', `Novo pedido de ${f.nome} (${f.telefone}): ${f.origem} → ${f.destino} · R$ ${preco.toFixed(2)}.`, pedido.id);
