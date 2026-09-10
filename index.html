@@ -2996,6 +2996,7 @@ function paraCamposApp(row){
     motoristaCoord:(row.motorista_lat!=null&&row.motorista_lng!=null)?{lat:row.motorista_lat,lon:row.motorista_lng}:null,
     fotoAntesUrl: row.foto_antes_url || null, fotoDepoisUrl: row.foto_depois_url || null,
     veiculo:row.veiculo, descricao:row.descricao||'',
+    tipoEntrega: row.tipo_entrega || 'padrao',
     distancia:Number(row.distancia)||0, preco:Number(row.preco)||0,
     status:row.status, criadoEm:Number(row.criado_em), atualizadoEm:Number(row.atualizado_em),
     motoristaFotoUrl: row.motorista_foto_url || null,
@@ -3036,7 +3037,7 @@ function paraCamposDB(p){
     origem_foto_url:p.origemFotoUrl||null, origem_referencia:p.origemReferencia||null, origem_complemento:p.origemComplemento||null,
     destino_foto_url:p.destinoFotoUrl||null, destino_referencia:p.destinoReferencia||null, destino_complemento:p.destinoComplemento||null,
     destino_lat:p.destinoCoord?p.destinoCoord.lat:null, destino_lng:p.destinoCoord?p.destinoCoord.lon:null,
-    veiculo:p.veiculo, descricao:p.descricao||null, distancia:p.distancia, preco:p.preco,
+    veiculo:p.veiculo, descricao:p.descricao||null, tipo_entrega:p.tipoEntrega||'padrao', distancia:p.distancia, preco:p.preco,
     status:p.status, criado_em:p.criadoEm, atualizado_em:p.atualizadoEm,
     foto_antes_url:p.fotoAntesUrl||null, foto_depois_url:p.fotoDepoisUrl||null,
     motorista_foto_url:p.motoristaFotoUrl||null, motorista_veiculo_tipo:p.motoristaVeiculoTipo||null,
@@ -5007,7 +5008,8 @@ async function aceitarPedido(id){
   }
   const mo = estado.motorista;
   // ---- acréscimo noturno/feriado/chuva: só se aplica a motoristas Pro, e só quando alguma condição está ativa agora ----
-  const motivosAcrescimo = (plano===PLANOS.pro) ? motivosAcrescimoAtivos() : [];
+  const pedidoVendai = p.tipoEntrega === 'vendai_marketplace';
+  const motivosAcrescimo = (!pedidoVendai && plano===PLANOS.pro) ? motivosAcrescimoAtivos() : [];
   let acrescimoValor = motivosAcrescimo.length>0 ? Math.round(p.preco * ACRESCIMO_NOTURNO_PCT * 100)/100 : 0;
   // Primeiro o motorista precisa vencer a corrida. Só depois o banco tenta o acréscimo,
   // evitando debitar e precisar estornar quando dois motoristas aceitam ao mesmo tempo.
@@ -5061,6 +5063,10 @@ async function cancelarPedidoMotorista(id){
   const p = estado.pedidos.find(x=>x.id===id);
   if(!p || p.motoristaTelefone!==estado.motorista.telefone) return;
   if(!['indo_coletar','coletado','a_caminho'].includes(p.status)) return;
+  if(p.tipoEntrega==='vendai_marketplace' && ['coletado','a_caminho'].includes(p.status)){
+    mostrarToast('Pedido do Vendaí já coletado. Para proteger o produto, não é possível devolver a corrida para a lista. Acione o suporte se houver um problema.');
+    return;
+  }
   const plano = PLANOS[estado.motorista.plano] || PLANOS.free;
   await carregarCancelamentosMotorista();
   const usados = estado.motorista.cancelamentosHoje||0;
@@ -5126,8 +5132,10 @@ async function avancarStatus(id){
     const agora = Date.now();
     // ---- taxa de espera: se demorou mais que a tolerância desde que o motorista chegou no local, cobra o excedente ----
     let taxaEspera = 0, campoTaxaEspera = null;
+    const pedidoVendai = p.tipoEntrega === 'vendai_marketplace';
     const chegadaRelevante = novoStatus==='coletado' ? p.chegadaColetaEm : (novoStatus==='entregue' ? p.chegadaEntregaEm : null);
-    if(chegadaRelevante){
+    // Pedido do Vendaí já foi pago no checkout. Não gera cobrança adicional ao comprador.
+    if(!pedidoVendai && chegadaRelevante){
       const minutosEspera = Math.floor((agora - chegadaRelevante)/60000);
       if(minutosEspera > TAXA_ESPERA_TOLERANCIA_MIN){
         taxaEspera = Math.round((minutosEspera - TAXA_ESPERA_TOLERANCIA_MIN) * TAXA_ESPERA_VALOR_MIN * 100)/100;
