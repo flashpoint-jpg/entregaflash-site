@@ -3177,10 +3177,10 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 180000; // usado apenas para indicar se o GPS está recente
+const PRESENCA_MOTORISTA_MS = 180000; // GPS recente; o servidor limpa disponibilidade fantasma sem push após 15 min
 function motoristaOnlineAgora(m, agora=Date.now()){
-  // Regra operacional do lançamento: aprovado permanece ONLINE até tocar em FICAR OFFLINE.
-  // A ausência de heartbeat/GPS não muda sozinho o campo disponivel para false.
+  // O servidor mantém disponível quem tem push válido mesmo com o app fechado.
+  // Sem push e sem sinal por 15 min, a rotina automática remove o online fantasma.
   return !!(m && m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
 }
 async function carregarMotoristasOnline(){
@@ -4675,6 +4675,55 @@ function infoCancelamento(p){
 function podeCancelar(p){
   return p.status==='buscando' || p.status==='indo_coletar';
 }
+function carregarPedidoCanceladoNoFormulario(p, etapa=2){
+  if(!p) return;
+  const copiarCoord = c => c && c.lat!=null && c.lon!=null ? {lat:Number(c.lat), lon:Number(c.lon)} : null;
+  estado.form = {
+    etapaPedido: etapa,
+    nome: estado.cliente.nome || p.clienteNome || '',
+    telefone: estado.cliente.telefone || p.clienteTelefone || '',
+    origem: p.origem || '',
+    destino: p.destino || '',
+    paradas: [...(p.paradas||[])],
+    paradasCoords: (p.paradasCoords||[]).map(c=>copiarCoord(c)),
+    tipoRetirada: p.tipoRetirada || 'agora',
+    horarioAgendado: p.horarioAgendado || '',
+    veiculo: p.veiculo || 'moto',
+    descricao: p.descricao || '',
+    distancia: p.distancia!=null ? Number(p.distancia) : null,
+    duracaoMin: null,
+    distanciaGPS: p.distanciaGPS!=null ? Number(p.distanciaGPS) : null,
+    distanciaDivergente: !!p.distanciaDivergente,
+    origemCoord: copiarCoord(p.origemCoord),
+    destinoCoord: copiarCoord(p.destinoCoord),
+    prioridade: false,
+    prioridadeValor: 0,
+    origemFotoUrl: p.origemFotoUrl || null,
+    origemReferencia: p.origemReferencia || '',
+    origemComplemento: p.origemComplemento || '',
+    destinoFotoUrl: p.destinoFotoUrl || null,
+    destinoReferencia: p.destinoReferencia || '',
+    destinoComplemento: p.destinoComplemento || '',
+    roca: false,
+    extras: {...extrasVazios(), ...(p.extras||{})}
+  };
+  estado.pedidoBuscandoId = null;
+  estado.transicaoPedido = { ativa:false, alvo:null };
+  estado.abaPedidosCliente = 'ativos';
+  estado.falhaCalculo = false;
+  render();
+  setTimeout(()=>{
+    const alvo = etapa===2 ? document.getElementById('escolha-veiculo-pedido') : document.querySelector('.etapa-conteudo');
+    alvo?.scrollIntoView({behavior:'smooth', block:'start'});
+  }, 80);
+}
+function refazerPedidoCancelado(id){
+  const p = estado.pedidos.find(x=>x.id===id);
+  if(!p || p.status!=='cancelado') return;
+  carregarPedidoCanceladoNoFormulario(p, 2);
+  mostrarToast('Endereços mantidos. Escolha o veículo e confirme a nova corrida.', 'sucesso');
+}
+
 async function cancelarPedido(id){
   const p = estado.pedidos.find(x=>x.id===id);
   if(!p || !podeCancelar(p)) return;
@@ -4695,8 +4744,12 @@ async function cancelarPedido(id){
 
   registrarAlertaAdmin('pedido_cancelado_cliente', `Pedido de ${p.clienteNome||'?'} (${p.clienteTelefone||''}) cancelado pelo cliente.${taxaServidor>0?` Taxa de R$ ${taxaServidor.toFixed(2)} aplicada.`:''}`, id);
   if(p.motoristaTelefone) enviarPushServidor('motorista', p.motoristaTelefone, 'Entrega Flash', 'O cliente cancelou a corrida.');
-  mostrarToast(taxaServidor<=0 ? `Pedido cancelado sem custo. R$ ${devolvidoServidor.toFixed(2)} voltou para a sua carteira.` : `Pedido cancelado. Taxa de R$ ${taxaServidor.toFixed(2)} aplicada e R$ ${devolvidoServidor.toFixed(2)} voltou para a sua carteira.`, 'sucesso');
   await carregarPedidos();
+  const pedidoCanceladoAtual = estado.pedidos.find(x=>x.id===id) || {...p, status:'cancelado'};
+  carregarPedidoCanceladoNoFormulario(pedidoCanceladoAtual, 2);
+  mostrarToast(taxaServidor<=0
+    ? `Pedido cancelado sem custo. R$ ${devolvidoServidor.toFixed(2)} voltou para a carteira. Endereços mantidos: escolha outro veículo se quiser pedir novamente.`
+    : `Pedido cancelado. Taxa de R$ ${taxaServidor.toFixed(2)} aplicada. Endereços mantidos: escolha outro veículo se quiser pedir novamente.`, 'sucesso');
 }
 
 // ---------- edição de pedido (permitida uma única vez) ----------
@@ -5701,6 +5754,7 @@ function cartaoPedidoCliente(p){
       ${paradasHTML(p)}
       <span class="selo selo-cancelado">Cancelado</span>
       ${p.taxaCancelamento>0 ? `<div class="subtitulo">Taxa de cancelamento cobrada: R$ ${p.taxaCancelamento.toFixed(2)}. O restante foi devolvido à sua carteira.</div>` : `<div class="subtitulo">Cancelado sem custo. Valor devolvido à sua carteira.</div>`}
+      <button class="btn btn-primario btn-pequeno" style="margin-top:10px" onclick="refazerPedidoCancelado('${p.id}')">Refazer / trocar veículo</button>
     </div>`;
   }
   if(p.status==='buscando'){
