@@ -1,0 +1,22 @@
+ENTREGA FLASH - CORRECAO CARTEIRA / PIX - 10/09/2026
+
+CORRECOES NO SITE:
+- Corrigido duplo disparo na geracao de PIX (w.pix.gerando).
+- Adicionado requestId idempotente por tentativa de recarga.
+- Limite de recarga no cliente: R$ 1 a R$ 5.000.
+- Pedido passa a ser gravado como aguardando_pagamento antes do debito.
+- Debito + liberacao do pedido para motoristas passa a ser atomico no banco.
+- Cancelamento + devolucao de saldo passa a ser atomico no banco.
+- Acrescimo de corrida so e debitado depois que o motorista realmente vence o aceite.
+- Service Worker atualizado para forcar a nova versao do site.
+
+CORRECOES JA APLICADAS NO SUPABASE:
+- Migracao corrigir_carteira_pix_cliente_segura aplicada.
+- Criado ledger privado de movimentacoes de saldo.
+- Credito positivo direto pela RPC antiga foi bloqueado.
+- Credito de PIX ficou restrito ao service_role/webhook.
+- Webhook PIX agora credita saldo de forma atomica e idempotente.
+- Funcao criar-cobranca-pix-carteira atualizada com idempotencia contra cobranca duplicada.
+
+IMPORTANTE:
+O backend Supabase acima ja foi atualizado. Para alinhar a interface, publique os arquivos deste pacote, principalmente index.html e entregaflash-sw.js.

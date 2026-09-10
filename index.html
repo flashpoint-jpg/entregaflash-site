@@ -1555,54 +1555,6 @@ function registrarConversaoMetaCadastro(papel, identificador=''){
   }catch(e){ console.warn('Meta CompleteRegistration:',e); return false; }
 }
 
-// Funil Meta do cliente: mede intenção, bloqueio por saldo e pedido realmente criado.
-// Não altera a lógica da corrida. Os eventos são disparados apenas para analytics.
-function registrarEventoMetaPedido(etapa, dados={}){
-  try{
-    if(typeof fbq!=='function') return false;
-    const params = new URLSearchParams(location.search);
-    const origem = params.get('utm_source') || (params.get('fbclid') ? 'meta' : 'site');
-    const base = {
-      content_category: 'pedido_entrega',
-      currency: 'BRL',
-      origem,
-      ...dados
-    };
-
-    if(etapa==='inicio'){
-      const chave='ef_meta_pedido_inicio_sessao';
-      if(sessionStorage.getItem(chave)==='1') return false;
-      fbq('track','InitiateCheckout',{...base,content_name:'inicio_pedido'});
-      fbq('trackCustom','PedidoIniciado',{...base,content_name:'inicio_pedido'});
-      sessionStorage.setItem(chave,'1');
-      return true;
-    }
-
-    if(etapa==='sem_saldo'){
-      const chave='ef_meta_pedido_sem_saldo_sessao';
-      if(sessionStorage.getItem(chave)==='1') return false;
-      fbq('trackCustom','PedidoSemSaldo',{...base,content_name:'saldo_insuficiente'});
-      sessionStorage.setItem(chave,'1');
-      return true;
-    }
-
-    if(etapa==='criado'){
-      const pedidoId=String(dados.pedido_id||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,80) || String(Date.now());
-      const chave=`ef_meta_pedido_criado_${pedidoId}`;
-      if(localStorage.getItem(chave)==='1') return false;
-      const eventID=`ef-pedido-${pedidoId}`;
-      const valor=Number(dados.value)||0;
-      const payload={...base,content_name:'pedido_criado',value:valor,pedido_id:pedidoId};
-      // Lead aparece diretamente nos relatórios da Meta como conversão de pedido.
-      fbq('track','Lead',payload,{eventID});
-      fbq('trackCustom','PedidoCriado',payload);
-      localStorage.setItem(chave,'1');
-      return true;
-    }
-  }catch(e){ console.warn('Meta funil pedido:',etapa,e); return false; }
-  return false;
-}
-
 // Conta a abertura do site. A deduplicação por sessão evita somar vários renders/reloads internos.
 registrarVisitaFunilAnuncio();
 
@@ -2117,7 +2069,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260907-ICONE-MODERNO-1';
+  const versaoApp = '20260910-DESPACHO-GLOBAL-1';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2143,10 +2095,11 @@ async function pedirPermissaoNotificacao(){
   }
 }
 async function inscreverPushReal(papelForcado){
-  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+  if(!('serviceWorker' in navigator) || !('PushManager' in window)) return false;
   const papel = papelForcado || (estado.modo==='entregador' ? 'motorista' : 'cliente');
-  const referencia = papel==='motorista' ? estado.motorista.telefone : papel==='admin' ? 'admin' : estado.cliente.telefone;
-  if(!referencia) return;
+  const referenciaBruta = papel==='motorista' ? estado.motorista.telefone : papel==='admin' ? 'admin' : estado.cliente.telefone;
+  const referencia = papel==='admin' ? 'admin' : String(referenciaBruta||'').replace(/\D/g,'');
+  if(!referencia || typeof Notification==='undefined' || Notification.permission!=='granted') return false;
   try{
     const reg = await navigator.serviceWorker.ready;
     let sub = await reg.pushManager.getSubscription();
@@ -2154,11 +2107,21 @@ async function inscreverPushReal(papelForcado){
       sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
     }
     const json = sub.toJSON();
-    await sb.from('push_subscriptions').upsert({
-      papel, referencia, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth, criado_em: new Date().toISOString()
-    }, { onConflict:'endpoint' });
+    if(!json?.endpoint || !json?.keys?.p256dh || !json?.keys?.auth) throw new Error('assinatura_push_incompleta');
+    const resp = await fetch(`${FUNCOES_URL}/registrar-push-seguro`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({papel,referencia,subscription:json})
+    });
+    const out = await resp.json().catch(()=>({}));
+    if(!resp.ok || !out?.ok) throw new Error(out?.erro||('HTTP '+resp.status));
     await registrarStatusAplicativo(papel, referencia, true);
-  }catch(e){ console.warn('Falha ao inscrever push', e); }
+    return true;
+  }catch(e){
+    console.warn('Falha ao inscrever/reparar push', e);
+    try{ await registrarStatusAplicativo(papel, referencia, false); }catch(_){ }
+    return false;
+  }
 }
 
 function entregaFlashInstalado(){
@@ -2203,58 +2166,10 @@ async function enviarPushServidor(papel, referencia, title, body, url, tipo){
 }
 
 // Despacho de push por proximidade: evita chamar motorista de outra região logo de saída.
-async function enviarPushPedidoMotoristasProximos(pedido, raioKm=15){
-  // IMPORTANTE: motorista ONLINE não deixa de receber pedido só porque o app
-  // está fechado, o GPS está desligado ou a localização ficou antiga.
-  // A localização serve apenas para identificar quem está perto; ela não é
-  // mais requisito para o push. Mantemos o filtro por ONLINE + tipo de veículo.
-  const origem=pedido && pedido.origemCoord;
-  try{
-    const limiteAtualizacao=Date.now()-(30*60*1000);
-    const {data, error}=await sb.from('entrega_motoristas')
-      .select('telefone,veiculo,disponivel,lat_atual,lng_atual,lat_atualizado_em')
-      .eq('disponivel',true)
-      .eq('veiculo',pedido.veiculo);
-    if(error) throw error;
-
-    const online=(data||[]).filter(m=>String(m.telefone||'').replace(/\D/g,'').length>0);
-    let enviados=0, proximos=0, semLocalizacaoRecente=0;
-
-    for(const m of online){
-      let perto=false;
-      const temOrigem=origem && origem.lat!=null && origem.lon!=null;
-      const temLocalizacao=m.lat_atual!=null && m.lng_atual!=null;
-      const localizacaoRecente=temLocalizacao && (!m.lat_atualizado_em || Number(m.lat_atualizado_em)>=limiteAtualizacao);
-
-      if(temOrigem && localizacaoRecente){
-        perto=distanciaKm(Number(m.lat_atual),Number(m.lng_atual),Number(origem.lat),Number(origem.lon))<=raioKm;
-      }
-      if(perto) proximos++;
-      if(!localizacaoRecente) semLocalizacaoRecente++;
-
-      const titulo=perto ? '🆕 Pedido perto de você!' : '🆕 Novo pedido disponível!';
-      const r=await enviarPushServidor(
-        'motorista',
-        String(m.telefone||'').replace(/\D/g,''),
-        titulo,
-        `${pedido.origem} → ${pedido.destino} · R$ ${Number(pedido.preco||0).toFixed(2)}`,
-        `/?ir=login-motorista&pedido=${encodeURIComponent(pedido.id)}`,
-        'pedido_chamada'
-      );
-      enviados+=Math.max(0,Number(r?.enviados||0));
-    }
-
-    return {
-      enviados,
-      motoristas_online:online.length,
-      motoristas_proximos:proximos,
-      sem_localizacao_recente:semLocalizacaoRecente,
-      raio_km:raioKm
-    };
-  }catch(e){
-    console.warn('Falha ao buscar motoristas online para o push.',e);
-    return {erro:String(e), enviados:0};
-  }
+async function enviarPushPedidoMotoristasProximos(pedido, raioKm=10){
+  // O banco inicia e amplia o despacho automaticamente quando o pedido entra em "buscando".
+  // Não precisa manter a tela do cliente aberta e o navegador não tem permissão de disparo interno.
+  return {enviados:0,automatico:true,servidor:true};
 }
 
 async function registrarEventoPushAtivacao(evento){
@@ -4473,7 +4388,6 @@ async function exigirLocalizacaoOperacional(tipo){
 }
 
 async function criarPedido(){
-  registrarEventoMetaPedido('inicio');
   // Quem ainda não tem conta pode montar e calcular o pedido inteiro normalmente.
   // Ao confirmar, NÃO apagamos nada: mostramos um aviso claro com botão para cadastrar.
   if(estado.cliente.visitante || !estado.cliente.logado){
@@ -4531,7 +4445,6 @@ async function criarPedido(){
   }catch(e){ console.error(e); mostrarToast('Não consegui checar seu saldo. Tenta novamente.', 'erro'); return; }
   w.saldo = saldoAtualCliente;
   if(saldoAtualCliente < preco){
-    registrarEventoMetaPedido('sem_saldo',{ value:preco, saldo_atual:saldoAtualCliente });
     salvarPedidoAguardandoSaldo(preco);
     w.valorInput = (Math.ceil((preco-saldoAtualCliente)*100)/100).toFixed(2);
     mostrarToast('Pedido guardado. Adicione o saldo e continue sem digitar os endereços novamente.', 'erro');
@@ -4540,30 +4453,8 @@ async function criarPedido(){
     return;
   }
 
-  // ---- debita o saldo do cliente de forma atômica no banco ANTES de criar o pedido ----
-  // (evita saldo negativo por concorrência: duas abas/pedidos ao mesmo tempo)
-  let saldoAposDebito;
-  try{
-    const { data, error: erroDebito } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: -preco });
-    if(erroDebito){
-      if(erroDebito.message==='saldo_insuficiente'){
-        registrarEventoMetaPedido('sem_saldo',{ value:preco, saldo_atual:Number(w.saldo)||0 });
-        salvarPedidoAguardandoSaldo(preco);
-        w.valorInput = (Math.ceil(Math.max(0.01,preco-(Number(w.saldo)||0))*100)/100).toFixed(2);
-        mostrarToast('Pedido guardado. Adicione o saldo e continue sem digitar os endereços novamente.', 'erro');
-        abrirAdicionarSaldo();
-        setTimeout(()=>{ document.querySelector('.pix-box')?.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
-      } else {
-        console.error(erroDebito);
-        mostrarToast('Não consegui debitar o saldo. Tenta novamente.', 'erro');
-      }
-      return;
-    }
-    saldoAposDebito = Number(data)||0;
-  }catch(e){ console.error(e); mostrarToast('Não consegui debitar o saldo. Tenta novamente.', 'erro'); return; }
-  w.saldo = saldoAposDebito;
-  estado.cliente.carteira.saldo = saldoAposDebito;
-
+  // ---- cria primeiro como aguardando pagamento e só então o banco debita + libera em UMA transação ----
+  // Se a gravação falhar, nenhum centavo sai da carteira. Se o débito falhar, o pedido nunca fica visível aos motoristas.
   const agora = Date.now();
   const pedido = {
     id:'p'+agora+Math.floor(Math.random()*1000),
@@ -4575,27 +4466,52 @@ async function criarPedido(){
     editado:false, canceladoEm:null, taxaCancelamento:0, prioridade:(f.prioridadeValor||0)>0, prioridadeValor:f.prioridadeValor||0,
     veiculo:f.veiculo, descricao:f.descricao, distancia:f.distancia, distanciaGPS:f.distanciaGPS, distanciaDivergente:!!f.distanciaDivergente, preco:preco,
     extras: {...f.extras},
-    status:'buscando', motoristaNome:'', motoristaTelefone:'', criadoEm:agora, atualizadoEm:agora
+    status:'aguardando_pagamento', motoristaNome:'', motoristaTelefone:'', criadoEm:agora, atualizadoEm:agora
   };
-  const { error: erroSalvar } = await sb.from('entrega_pedidos').upsert(paraCamposDB(pedido));
+  const { error: erroSalvar } = await sb.from('entrega_pedidos').insert(paraCamposDB(pedido));
   if(erroSalvar){
-    // não conseguiu criar o pedido: estorna o valor já debitado, senão o cliente perde o dinheiro sem receber nada
     console.error(erroSalvar);
-    const { error: erroEstorno } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: estado.cliente.telefone, p_delta: preco });
-    if(erroEstorno){ console.error(erroEstorno); }
-    else{ w.saldo = w.saldo + preco; estado.cliente.carteira.saldo = w.saldo; }
-    mostrarToast('Não consegui criar o pedido. O valor debitado foi estornado.', 'erro');
+    mostrarToast('Não consegui criar o pedido. Nenhum valor foi debitado da sua carteira.', 'erro');
     return;
   }
-  // Só conta conversão depois que o Supabase confirmou a gravação do pedido.
-  registrarEventoMetaPedido('criado',{ pedido_id:pedido.id, value:preco, veiculo:f.veiculo });
+
+  let saldoAposDebito = null;
+  let erroDebito = null;
+  for(let tentativa=0; tentativa<2 && saldoAposDebito===null; tentativa++){
+    const r = await sb.rpc('entrega_cliente_confirmar_pedido_saldo', { p_pedido_id:pedido.id, p_telefone:estado.cliente.telefone });
+    if(!r.error){ saldoAposDebito = Number(r.data)||0; erroDebito=null; break; }
+    erroDebito = r.error;
+    if(tentativa===0) await new Promise(resolve=>setTimeout(resolve,250));
+  }
+  if(saldoAposDebito===null){
+    console.error(erroDebito);
+    const { data:pedidoServidor } = await sb.from('entrega_pedidos').select('status').eq('id',pedido.id).maybeSingle();
+    if(pedidoServidor?.status==='buscando'){
+      await carregarCarteiraCliente();
+      saldoAposDebito = estado.cliente.carteira.saldo;
+    }else{
+      await sb.from('entrega_pedidos').update({status:'cancelado',cancelado_por:'sistema',cancelado_em:Date.now(),atualizado_em:Date.now()}).eq('id',pedido.id).eq('status','aguardando_pagamento');
+      if(String(erroDebito?.message||'').includes('saldo_insuficiente')){
+        salvarPedidoAguardandoSaldo(preco);
+        w.valorInput = (Math.ceil(Math.max(0.01,preco-(Number(w.saldo)||0))*100)/100).toFixed(2);
+        mostrarToast('Pedido guardado. Adicione o saldo e continue sem digitar os endereços novamente.', 'erro');
+        abrirAdicionarSaldo();
+        setTimeout(()=>{ document.querySelector('.pix-box')?.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
+      }else{
+        mostrarToast('Não consegui confirmar o pagamento do pedido. Nenhum valor ficou preso.', 'erro');
+      }
+      return;
+    }
+  }
+  pedido.status='buscando';
+  w.saldo = Number(saldoAposDebito)||0;
+  estado.cliente.carteira.saldo = w.saldo;
   estado.ultimoPedidosJSON='';
   estado.filtroTelefoneCliente = f.telefone;
   registrarAlertaAdmin('novo_pedido', `Novo pedido de ${f.nome} (${f.telefone}): ${f.origem} → ${f.destino} · R$ ${preco.toFixed(2)}.`, pedido.id);
   if(f.tipoRetirada!=='agendado'){
-    const rPush=await enviarPushPedidoMotoristasProximos(pedido, 15);
-    const enviados=Math.max(0,Number(rPush?.enviados||0));
-    await registrarAlertaAdmin('pedido_push_disparado', `Chamada enviada ao serviço de notificação para ${enviados} dispositivo${enviados===1?'':'s'} de motorista.`, pedido.id);
+    await enviarPushPedidoMotoristasProximos(pedido, 15);
+    await registrarAlertaAdmin('pedido_push_disparado', 'Despacho automático iniciado: 10 km → 20 km → 40 km → todos os motoristas online do mesmo veículo em até 3 minutos.', pedido.id);
   }
   // Em vez de já voltar pro formulário vazio (etapa 1) e só depois rolar a tela até o
   // cartão do pedido — o que fazia parecer que o fluxo "voltava pro início" — usamos a
@@ -4768,35 +4684,18 @@ async function cancelarPedido(id){
     ? 'Cancelar esta corrida agora? Não haverá cobrança e o valor volta para a sua carteira.'
     : `Já passaram mais de ${minutosJanela} minutos desde que o motorista aceitou a corrida. Cancelar agora vai cobrar uma taxa de R$ ${taxa.toFixed(2)} (${Math.round(TAXA_CANCELAMENTO_TARDIO*100)}% do valor) — o restante volta para a sua carteira. Confirmar?`;
   if(!(await confirmarAcao(mensagem))) return;
-  const agora = Date.now();
-  const { error } = await sb.from('entrega_pedidos').update({
-    status:'cancelado', atualizado_em:agora, cancelado_em:agora, taxa_cancelamento: dentroDaJanela?0:taxa, cancelado_por:'cliente'
-  }).eq('id', id);
-  if(error){ console.error(error); mostrarToast('Erro ao cancelar o pedido.', 'erro'); return; }
+  const { data:resultado, error } = await sb.rpc('entrega_cliente_cancelar_pedido_saldo', {
+    p_pedido_id:id,
+    p_telefone:p.clienteTelefone
+  });
+  if(error){ console.error(error); mostrarToast('Não consegui cancelar e devolver o saldo com segurança. Tente novamente.', 'erro'); return; }
+  const taxaServidor = Number(resultado?.taxa)||0;
+  const devolvidoServidor = Number(resultado?.valor_devolvido)||0;
+  if(estado.cliente.telefone===p.clienteTelefone){ estado.cliente.carteira.saldo = Number(resultado?.saldo)||0; }
 
-  // ---- devolve o valor (menos a taxa, se houver) para a carteira do cliente ----
-  const valorDevolver = Math.round((p.preco - (dentroDaJanela?0:taxa))*100)/100;
-  if(valorDevolver>0){
-    try{
-      const { data, error: erroEstorno } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: p.clienteTelefone, p_delta: valorDevolver });
-      if(erroEstorno){
-        console.error(erroEstorno);
-        mostrarToast('Pedido cancelado, mas houve um erro ao devolver o valor à carteira. Contacta o suporte.', 'erro');
-        await carregarPedidos();
-        return;
-      }
-      if(estado.cliente.telefone===p.clienteTelefone){ estado.cliente.carteira.saldo = Number(data)||0; }
-    }catch(e){
-      console.error(e);
-      mostrarToast('Pedido cancelado, mas houve um erro ao devolver o valor à carteira. Contacta o suporte.', 'erro');
-      await carregarPedidos();
-      return;
-    }
-  }
-
-  registrarAlertaAdmin('pedido_cancelado_cliente', `Pedido de ${p.clienteNome||'?'} (${p.clienteTelefone||''}) cancelado pelo cliente.${dentroDaJanela?'':` Taxa de R$ ${taxa.toFixed(2)} aplicada.`}`, id);
+  registrarAlertaAdmin('pedido_cancelado_cliente', `Pedido de ${p.clienteNome||'?'} (${p.clienteTelefone||''}) cancelado pelo cliente.${taxaServidor>0?` Taxa de R$ ${taxaServidor.toFixed(2)} aplicada.`:''}`, id);
   if(p.motoristaTelefone) enviarPushServidor('motorista', p.motoristaTelefone, 'Entrega Flash', 'O cliente cancelou a corrida.');
-  mostrarToast(dentroDaJanela ? 'Pedido cancelado sem custo. Valor devolvido à sua carteira.' : `Pedido cancelado. Taxa de R$ ${taxa.toFixed(2)} aplicada, o restante voltou para a sua carteira.`, 'sucesso');
+  mostrarToast(taxaServidor<=0 ? `Pedido cancelado sem custo. R$ ${devolvidoServidor.toFixed(2)} voltou para a sua carteira.` : `Pedido cancelado. Taxa de R$ ${taxaServidor.toFixed(2)} aplicada e R$ ${devolvidoServidor.toFixed(2)} voltou para a sua carteira.`, 'sucesso');
   await carregarPedidos();
 }
 
@@ -4869,14 +4768,18 @@ function fecharAdicionarSaldo(){
 }
 async function confirmarValorCarteira(){
   const w = estado.cliente.carteira;
-  const valor = parseFloat(document.getElementById('carteira-valor')?.value);
-  if(!valor || valor<=0){ mostrarToast('Informa um valor válido.'); return; }
+  if(w.pix.gerando || w.pix.qrCode) return;
+  const valor = Math.round(parseFloat(document.getElementById('carteira-valor')?.value)*100)/100;
+  if(!Number.isFinite(valor) || valor<1 || valor>5000){ mostrarToast('Informe um valor entre R$ 1 e R$ 5.000.'); return; }
   w.valorInput = String(valor);
-  w.gerando = true; w.pix.erro=''; render();
+  if(!w.pix.requestId){
+    w.pix.requestId = (globalThis.crypto && typeof crypto.randomUUID==='function') ? crypto.randomUUID() : `pix-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }
+  w.pix.gerando = true; w.pix.erro=''; render();
   try{
     const resp = await fetch(`${FUNCOES_URL}/criar-cobranca-pix-carteira`, {
       method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
-      body: JSON.stringify({ telefone:estado.cliente.telefone, nome:estado.cliente.nome, valor })
+      body: JSON.stringify({ telefone:estado.cliente.telefone, nome:estado.cliente.nome, valor, requestId:w.pix.requestId })
     });
     const dados = await resp.json();
     if(!resp.ok || dados.erro){ throw new Error(dados.erro || 'Falha ao gerar cobrança PIX.'); }
@@ -5052,34 +4955,34 @@ async function aceitarPedido(id){
   const mo = estado.motorista;
   // ---- acréscimo noturno/feriado/chuva: só se aplica a motoristas Pro, e só quando alguma condição está ativa agora ----
   const motivosAcrescimo = (plano===PLANOS.pro) ? motivosAcrescimoAtivos() : [];
-  let acrescimoValor = 0;
-  if(motivosAcrescimo.length>0){
-    acrescimoValor = Math.round(p.preco * ACRESCIMO_NOTURNO_PCT * 100)/100;
-    // debita o acréscimo do saldo do cliente; se não tiver saldo suficiente, simplesmente não aplica o acréscimo desta vez
-    try{
-      const { data:dadosDebito, error:erroDebito } = await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: p.clienteTelefone, p_delta: -acrescimoValor });
-      if(erroDebito){ acrescimoValor = 0; }
-    }catch(e){ console.error(e); acrescimoValor = 0; }
-  }
-  // .eq('status','buscando') garante que a aceitação só vale se NINGUÉM pegou o pedido antes —
-  // se dois motoristas tocarem "aceitar" ao mesmo tempo, só o primeiro consegue: o banco resolve
-  // isso sozinho, sem risco de dois motoristas ficarem com o mesmo pedido.
+  let acrescimoValor = motivosAcrescimo.length>0 ? Math.round(p.preco * ACRESCIMO_NOTURNO_PCT * 100)/100 : 0;
+  // Primeiro o motorista precisa vencer a corrida. Só depois o banco tenta o acréscimo,
+  // evitando debitar e precisar estornar quando dois motoristas aceitam ao mesmo tempo.
   const { data, error } = await sb.from('entrega_pedidos').update({
     status:'indo_coletar', motorista_nome: mo.nome, motorista_telefone: mo.telefone, atualizado_em: Date.now(),
     motorista_foto_url: mo.fotoMotoristaUrl||null, motorista_veiculo_tipo: mo.veiculo||null,
     motorista_marca: mo.marca||null, motorista_cor: mo.cor||null, motorista_placa: mo.placa||null,
     motorista_nota_media: mo.notaMedia!=null?mo.notaMedia:5, motorista_total_avaliacoes: mo.totalAvaliacoes||0,
     iniciado_em: null, aceito_em: Date.now(),
-    acrescimo_valor: acrescimoValor, acrescimo_motivos: JSON.stringify(motivosAcrescimo.map(m=>m.label)),
-    preco: p.preco + acrescimoValor
+    acrescimo_valor: 0, acrescimo_motivos: JSON.stringify([]),
+    preco: p.preco
   }).eq('id', id).eq('status','buscando').select('id');
   if(error){ console.error(error); mostrarToast('Erro ao aceitar o pedido.', 'erro'); return; }
   if(!data || data.length===0){
-    // ninguém ficou com o pedido: se já tinha debitado o acréscimo do cliente, estorna
-    if(acrescimoValor>0){ try{ await sb.rpc('entrega_ajustar_saldo_cliente_pedido', { p_telefone: p.clienteTelefone, p_delta: acrescimoValor }); }catch(e){ console.error(e); } }
     mostrarErro('Esse pedido acabou de ser aceito por outro motorista. Escolhe outro da lista.');
     estado.ultimoPedidosJSON=''; await carregarPedidos();
     return;
+  }
+  if(acrescimoValor>0){
+    try{
+      const { error:erroAcrescimo } = await sb.rpc('entrega_aplicar_acrescimo_saldo_pedido', {
+        p_pedido_id:id,
+        p_telefone:p.clienteTelefone,
+        p_valor:acrescimoValor,
+        p_motivos:motivosAcrescimo.map(m=>m.label)
+      });
+      if(erroAcrescimo){ console.warn('Acréscimo não aplicado:', erroAcrescimo.message); acrescimoValor=0; }
+    }catch(e){ console.error(e); acrescimoValor=0; }
   }
   estado.ultimoPedidosJSON='';
   vibrarLeve(30);
@@ -7070,14 +6973,13 @@ function telaMotorista(){
   const disponiveis = m.disponivel ? estado.pedidos
     .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
-    // Despacho de lançamento: libera imediatamente para todos os motoristas online do veículo correto em até 30 km.
-    // Se ninguém aceitar: após 2 min amplia para 60 km; após 5 min para 120 km; após 10 min para 200 km.
+    // Distribuição automática global: o motorista não escolhe mais um raio que possa esconder corridas.
+    // 10 km imediato → 20 km aos 30 s → 40 km aos 90 s → todos do veículo aos 3 min.
     .filter(p=>{
-      if(p.distanciaAteMim==null) return true; // sem coordenada: não bloqueia o pedido
-      const idadeMin=Math.max(0,(agoraTs-Number(p.criadoEm||agoraTs))/60000);
-      const raioAuto=idadeMin<2?30:idadeMin<5?60:idadeMin<10?120:200;
-      const limite=m.raioAtendimentoKm?Math.min(raioAuto,Number(m.raioAtendimentoKm)):raioAuto;
-      return p.distanciaAteMim<=limite;
+      const idadeSeg=Math.max(0,(agoraTs-Number(p.criadoEm||agoraTs))/1000);
+      const raioAuto=idadeSeg<30?10:idadeSeg<90?20:idadeSeg<180?40:Infinity;
+      if(p.distanciaAteMim==null) return !Number.isFinite(raioAuto); // sem GPS só entra na liberação total
+      return p.distanciaAteMim<=raioAuto;
     })
     .sort((a,b)=> (b.prioridadeValor||0) - (a.prioridadeValor||0) || (a.distanciaAteMim!=null && b.distanciaAteMim!=null ? a.distanciaAteMim-b.distanciaAteMim : a.criadoEm-b.criadoEm)) : [];
   // pedidos de OUTROS tipos de veículo, só pra avisar o motorista que existem (ele não pode aceitá-los, pois o veículo é diferente do dele)
@@ -7247,15 +7149,10 @@ function montarMapaMotoristaHome(){
 }
 
 function raioAtendimentoHTML(m){
-  const opcoes = [5,10,15,20,30,50,80,120,200];
   return `
   <div style="margin-top:12px;padding:12px 14px;border-radius:12px;background:var(--painel-alt);border:1px solid var(--linha)">
-    <div style="font-weight:700;color:var(--osso);font-size:14px"> Raio de atendimento</div>
-    <div style="font-size:12.5px;color:var(--poeira);margin:4px 0 8px">Disponível nos planos Free e Pro. Você recebe pedidos até a distância escolhida.</div>
-    <select id="sel-raio-atendimento" onchange="salvarRaioAtendimento(this.value)" style="width:100%">
-      <option value="" ${!m.raioAtendimentoKm?'selected':''}>Sem limite</option>
-      ${opcoes.map(km=>`<option value="${km}" ${m.raioAtendimentoKm==km?'selected':''}>Até ${km} km</option>`).join('')}
-    </select>
+    <div style="font-weight:800;color:var(--osso);font-size:14px">⚡ Distribuição automática de pedidos</div>
+    <div style="font-size:12.5px;color:var(--poeira);margin-top:5px;line-height:1.5">Não precisa escolher raio. O Entrega Flash começa pelos motoristas mais próximos e amplia sozinho: <b>10 km</b>, <b>20 km</b>, <b>40 km</b> e depois libera para todos os motoristas online do mesmo veículo.</div>
   </div>`;
 }
 
@@ -7304,7 +7201,7 @@ function direitosPlanoHTML(planoAtual, chave){
     ` Até ${planoAtual.limiteCancelamentosDia} cancelamentos por dia`,
     ` Vê os pedidos novos ${atrasoSeg}s depois dos motoristas Pro`,
     ` Saque em até ${planoAtual.saqueDias} dias`,
-    ' Escolhe o raio de atendimento — de 5 km até 200 km'
+    ' Distribuição automática — começa perto e amplia até encontrar motorista'
   ];
   return `
   <div style="margin-top:14px;padding:12px 14px;border-radius:12px;background:var(--painel-alt);border:1px solid var(--linha)">
@@ -8027,21 +7924,19 @@ async function alternarDisponibilidade(){
     // além do watchPosition que continuará atualizando enquanto estiver online.
     await enviarPosicaoMotorista();
     mostrarToast('Rota iniciada! Você já aparece no mapa e está recebendo pedidos.', 'sucesso');
-    // aproveita o momento em que ele mais precisa de avisos pra pedir notificação, se ainda não tiver decidido
-    if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
+    // Ao ficar online, repara/renova o push imediatamente. Se ainda não decidiu, pede a permissão.
+    if(typeof Notification!=='undefined' && Notification.permission==='granted') await inscreverPushReal();
+    else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
   }
   else { pararRastreioMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
   render();
 }
 
-// ---------- raio de atendimento (Free e Pro) ----------
+// ---------- distribuição automática (raio pessoal removido) ----------
 async function salvarRaioAtendimento(valor){
-  const m = estado.motorista;
-  const km = valor ? Number(valor) : null;
-  const { error } = await sb.from('entrega_motoristas').update({ raio_atendimento_km: km }).eq('telefone', m.telefone);
-  if(error){ console.error(error); mostrarToast('Erro ao gravar o raio de atendimento.', 'erro'); return; }
-  m.raioAtendimentoKm = km;
-  mostrarToast(km ? `Raio de atendimento ajustado pra ${km} km.` : 'Raio de atendimento removido — voltas a ver todos os pedidos.', 'sucesso');
+  estado.motorista.raioAtendimentoKm = null;
+  try{ await sb.rpc('entrega_motorista_definir_raio_atendimento',{p_telefone:estado.motorista.telefone,p_km:null}); }catch(e){}
+  mostrarToast('O raio agora é automático para todos os motoristas.', 'sucesso');
   render();
 }
 

@@ -1,6 +1,6 @@
-// build: 20260909-PUSH-RAIO-2
-// Entrega Flash - Service Worker com atualização forçada + reparo de Push + despacho por raio
-const EF_VERSION = '20260909-PUSH-RAIO-2';
+// build: 20260910-DESPACHO-GLOBAL-1
+// Entrega Flash - Service Worker com atualização forçada + reparo de Push + despacho progressivo global
+const EF_VERSION = '20260910-DESPACHO-GLOBAL-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;

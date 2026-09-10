@@ -1,0 +1,26 @@
+ENTREGA FLASH — DESPACHO GLOBAL PROGRESSIVO — 10/09/2026
+
+Correções aplicadas no servidor (Supabase):
+- Raio pessoal do motorista deixou de bloquear pedidos.
+- Distribuição automática por distância:
+  * 0–30 s: até 10 km
+  * 30–90 s: até 20 km
+  * 90–180 s: até 40 km
+  * após 180 s: todos os motoristas online do mesmo tipo de veículo
+- Motorista recebe no máximo uma chamada individual por pedido.
+- Cron do servidor roda a cada 15 segundos, sem depender da tela do cliente aberta.
+- Pedidos que entram em status "buscando" iniciam despacho no próprio banco.
+- Função interna de despacho não pode ser chamada por anon/authenticated.
+
+Correções no app/site:
+- Filtro visual segue as mesmas faixas progressivas do servidor.
+- Campo de raio pessoal foi removido/substituído por informação de distribuição automática.
+- Ao ficar online, o app tenta reparar/registrar a assinatura Push.
+- push-repair.js mantém a assinatura Push atualizada ao abrir/voltar ao app.
+- Service Worker atualizado para forçar a nova versão.
+
+Arquivos principais alterados:
+- index.html
+- entregaflash-sw.js
+- push-repair.js
+- push-despacho-raio.js
