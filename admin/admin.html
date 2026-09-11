@@ -7564,21 +7564,7 @@ function editarLiderAdmin(id){
   render();
 }
 function novoLiderAdmin(){ estado.admin.liderEditando=null; render(); }
-async function excluirLiderAdmin(id,nome){
-  if(!confirm(`Excluir o líder ${nome||''}?
 
-O cadastro dele como MOTORISTA continuará no sistema. Apenas o acesso e o vínculo de Líder da Cidade serão removidos.`)) return;
-  try{
-    const {error}=await sb.rpc('entrega_admin_excluir_lider',{p_senha:estado.admin.senhaDigitada,p_id:id});
-    if(error) throw error;
-    if(String(estado.admin.liderEditando?.id||'')===String(id)) estado.admin.liderEditando=null;
-    mostrarToast('Líder excluído. O cadastro de motorista foi mantido ✓','sucesso');
-    await carregarLideresAdmin();
-  }catch(e){
-    console.error(e);
-    mostrarToast('Não consegui excluir o líder.','erro');
-  }
-}
 function motoristaLiderSelecionado(){
   const id=document.getElementById('lider-motorista')?.value||'';
   return (estado.admin.motoristasLider||[]).find(m=>String(m.id)===String(id))||null;
@@ -7649,7 +7635,7 @@ function adminAbaLideresHTML(){
     <div class="lider-actions"><button class="btn btn-primario" onclick="salvarLiderAdmin()">${ed.id?'SALVAR ALTERAÇÕES':'PROMOVER A LÍDER'}</button>${ed.id?'<button class="btn btn-secundario" onclick="novoLiderAdmin()">Cancelar edição</button>':''}</div>
     <div style="font-size:12px;color:var(--poeira);margin-top:12px">Painel do líder: <b>/lider.html</b> · o próprio líder poderá instalar como app e ativar notificações.</div>
   </div>
-  <div class="admin-cartao"><h3 style="margin-top:0">Líderes cadastrados</h3>${lista.length?lista.map(l=>`<div class="lider-row"><div class="lider-row-main"><b>${l.nome}</b><div class="meta">${l.cidade} · ${l.telefone}<br>${Number(l.percentual_comissao||0).toFixed(1)}% da comissão · ${l.dias_comissao} dias · meta ${l.meta_entregas_mensal}/mês · bônus motorista ${Number(l.bonus_ativacao||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} · bônus meta ${Number(l.bonus_meta_valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div><span style="font-size:11px;font-weight:800;color:${l.ativo?'#52d888':'#ff7a72'}">${l.ativo?'ATIVO':'PAUSADO'}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-secundario btn-pequeno" onclick="editarLiderAdmin(${l.id})">✏️ Editar</button><button class="btn btn-pequeno" style="background:#8f2430;color:#fff;border-color:#8f2430" onclick='excluirLiderAdmin(${l.id},${JSON.stringify(l.nome||"Líder")})'>🗑️ Excluir líder</button></div></div>`).join(''):'<div class="vazio">Nenhum líder cadastrado ainda.</div>'}</div>`;
+  <div class="admin-cartao"><h3 style="margin-top:0">Líderes cadastrados</h3>${lista.length?lista.map(l=>`<div class="lider-row"><div class="lider-row-main"><b>${l.nome}</b><div class="meta">${l.cidade} · ${l.telefone}<br>${Number(l.percentual_comissao||0).toFixed(1)}% da comissão · ${l.dias_comissao} dias · meta ${l.meta_entregas_mensal}/mês · bônus motorista ${Number(l.bonus_ativacao||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} · bônus meta ${Number(l.bonus_meta_valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div><span style="font-size:11px;font-weight:800;color:${l.ativo?'#52d888':'#ff7a72'}">${l.ativo?'ATIVO':'PAUSADO'}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-secundario btn-pequeno" onclick="editarLiderAdmin(${l.id})">✏️ Editar</button></div></div>`).join(''):'<div class="vazio">Nenhum líder cadastrado ainda.</div>'}</div>`;
 }
 
 async function carregarIndicacoesAdmin(){
