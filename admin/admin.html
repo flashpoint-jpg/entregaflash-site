@@ -473,6 +473,10 @@ fbq('track', 'PageView');
   .link-taxas-topo:hover{background:rgba(255,201,60,0.14);}
   .link-instalar{text-align:center;font-size:14px;color:var(--poeira);margin:14px 0 4px;cursor:pointer;user-select:none;text-decoration:underline;}
   .admin-cartao{background:var(--painel-alt);border:1px solid var(--linha);border-radius:16px;padding:14px;margin-bottom:12px;box-shadow:var(--sombra-card);}
+  .admin-mini-stat{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:10px 14px;flex:1;min-width:120px;}
+  .admin-mini-stat small{display:block;font-size:11px;color:var(--poeira);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+  .admin-mini-stat b{font-size:19px;font-family:'Rajdhani',sans-serif;}
+  .admin-linha-item{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;background:var(--painel);border:1px solid var(--linha);border-radius:10px;padding:10px 12px;margin-bottom:8px;}
   .admin-cartao .am-linha{display:flex;justify-content:space-between;font-size:14px;color:var(--poeira);margin-top:4px;}
   .admin-cartao .am-linha b{color:var(--osso);}
   .admin-docs{display:flex;gap:8px;margin:10px 0;}
@@ -1237,7 +1241,7 @@ let estado = {
       enviando:false, erroEtapa:''
     }
   },
-  admin:{ aberto:false, logado:false, senhaDigitada:'', papel:null, funcionarioUsuario:'', funcionarioSenhaHash:'', funcionarioNome:'', funcionarioLoginUsuario:'', funcionarioLoginSenha:'', mostrarLoginFuncionario:false, aba:'resumo', motoristas:[], appDispositivos:[], pushEventos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null, clienteAberto:null, funcionarios:[],
+  admin:{ aberto:false, logado:false, senhaDigitada:'', papel:null, funcionarioUsuario:'', funcionarioSenhaHash:'', funcionarioNome:'', funcionarioLoginUsuario:'', funcionarioLoginSenha:'', mostrarLoginFuncionario:false, aba:'resumo', motoristas:[], appDispositivos:[], pushEventos:[], pedidosEntregues:[], todosPedidos:[], clientes:[], filtroPedidos:'todos', buscaPedidos:'', buscaRapida:'', saques:[], suporteConversas:[], suporteAbertoTelefone:null, suporteMensagensAdmin:[], canalSuporte:null, canalSuporteGlobal:null, carregando:false, alertas:[], motoristaEditando:null, clienteEditando:null, pedidoEditando:null, motoristaAberto:null, clienteAberto:null, funcionarios:[], indicacoes:[], lideres:[], liderEditando:null,
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false,
     testeGps:{ enviando:false, testeId:null, disparadoEm:null, respostas:[], onlineNoDisparo:0 } },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
@@ -7525,6 +7529,165 @@ function mudarAbaAdmin(aba){
   if(aba==='pedidos' && estado.admin.todosPedidos.length===0) carregarTodosPedidosAdmin();
   if(aba==='clientes' && estado.admin.clientes.length===0) carregarClientesAdmin();
   if(aba==='feedbacks' && !estado.admin.feedbacksCarregados) carregarFeedbacksAdmin();
+  if(aba==='indicacoes') carregarIndicacoesAdmin();
+  if(aba==='lideres') carregarLideresAdmin();
+}
+
+async function carregarLideresAdmin(){
+  try{
+    const {data,error}=await sb.rpc('entrega_admin_listar_lideres',{p_senha:estado.admin.senhaDigitada});
+    if(error) throw error;
+    estado.admin.lideres=data||[];
+    render();
+  }catch(e){ console.error(e); mostrarToast('Erro ao carregar líderes.','erro'); }
+}
+function editarLiderAdmin(id){
+  estado.admin.liderEditando=(estado.admin.lideres||[]).find(x=>String(x.id)===String(id))||null;
+  render();
+  setTimeout(()=>document.getElementById('lider-nome')?.focus(),30);
+}
+function novoLiderAdmin(){ estado.admin.liderEditando=null; render(); setTimeout(()=>document.getElementById('lider-nome')?.focus(),30); }
+async function salvarLiderAdmin(){
+  const ed=estado.admin.liderEditando||{};
+  const nome=document.getElementById('lider-nome')?.value.trim()||'';
+  const telefone=document.getElementById('lider-telefone')?.value.replace(/\D/g,'')||'';
+  const cidade=document.getElementById('lider-cidade')?.value.trim()||'';
+  const senha=document.getElementById('lider-senha')?.value||'';
+  const pct=Number(document.getElementById('lider-pct')?.value||7);
+  const dias=Number(document.getElementById('lider-dias')?.value||90);
+  const meta=Number(document.getElementById('lider-meta')?.value||50);
+  const bonus=Number(document.getElementById('lider-bonus')?.value||0);
+  const ativo=document.getElementById('lider-ativo')?.checked!==false;
+  if(nome.length<2||telefone.length<10||cidade.length<2){ mostrarToast('Preencha nome, telefone e cidade.','erro'); return; }
+  if(!ed.id && senha.length<4){ mostrarToast('Defina uma senha para o novo líder.','erro'); return; }
+  const senhaHash=senha?await hashSenha(senha):'';
+  const {error}=await sb.rpc('entrega_admin_salvar_lider',{p_senha:estado.admin.senhaDigitada,p_id:ed.id||null,p_nome:nome,p_telefone:telefone,p_cidade:cidade,p_senha_hash:senhaHash,p_percentual_comissao:pct,p_dias_comissao:dias,p_meta_entregas_mensal:meta,p_bonus_ativacao:bonus,p_ativo:ativo});
+  if(error){ console.error(error); mostrarToast('Não consegui salvar o líder.','erro'); return; }
+  mostrarToast(ed.id?'Líder atualizado ✓':'Líder criado ✓','sucesso'); estado.admin.liderEditando=null; await carregarLideresAdmin();
+}
+function adminAbaLideresHTML(){
+  const lista=estado.admin.lideres||[],ed=estado.admin.liderEditando||{};
+  return `<div class="admin-secao-titulo"><div><h2>🏙️ Líderes da cidade</h2><p>Crie um responsável por cidade. Ele acompanha a equipe local, online, metas e indicações — sem acesso ao financeiro geral nem às configurações do admin.</p></div></div>
+  <div class="admin-cartao" style="margin-bottom:14px">
+    <h3 style="margin-top:0">${ed.id?'Editar líder':'Novo líder'}</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div><label>Nome</label><input id="lider-nome" value="${(ed.nome||'').replace(/"/g,'&quot;')}" placeholder="Ex: João Silva"></div>
+      <div><label>Telefone</label><input id="lider-telefone" type="tel" value="${ed.telefone||''}" placeholder="DDD + número"></div>
+      <div><label>Cidade</label><input id="lider-cidade" value="${(ed.cidade||'').replace(/"/g,'&quot;')}" placeholder="Ex: Muzambinho"></div>
+      <div><label>${ed.id?'Nova senha (opcional)':'Senha de acesso'}</label><input id="lider-senha" type="password" placeholder="mínimo 4 caracteres"></div>
+      <div><label>% da comissão da plataforma</label><input id="lider-pct" type="number" step="0.1" value="${ed.percentual_comissao??7}"></div>
+      <div><label>Dias de comissão por indicado</label><input id="lider-dias" type="number" value="${ed.dias_comissao??90}"></div>
+      <div><label>Meta mensal de entregas</label><input id="lider-meta" type="number" value="${ed.meta_entregas_mensal??50}"></div>
+      <div><label>Bônus de ativação</label><input id="lider-bonus" type="number" step="0.01" value="${ed.bonus_ativacao??0}"></div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input id="lider-ativo" type="checkbox" ${ed.ativo===false?'':'checked'} style="width:auto"> Líder ativo</label>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primario" onclick="salvarLiderAdmin()">Salvar líder</button>${ed.id?'<button class="btn btn-secundario" onclick="novoLiderAdmin()">Cancelar edição</button>':''}</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:10px">Painel do líder: <b>/lider.html</b></div>
+  </div>
+  <div class="admin-cartao"><h3 style="margin-top:0">Líderes cadastrados</h3>${lista.length?lista.map(l=>`<div style="padding:12px 0;border-bottom:1px solid var(--linha);display:flex;align-items:center;gap:10px"><div style="flex:1"><b>${l.nome}</b><div style="font-size:12px;color:var(--poeira)">${l.cidade} · ${l.telefone}</div><div style="font-size:11.5px;color:var(--poeira)">${Number(l.percentual_comissao||0).toFixed(1)}% da comissão da plataforma · ${l.dias_comissao} dias · meta ${l.meta_entregas_mensal}/mês</div></div><span style="font-size:11px;font-weight:800;color:${l.ativo?'#52d888':'#ff7a72'}">${l.ativo?'ATIVO':'PAUSADO'}</span><button class="btn btn-secundario btn-pequeno" onclick="editarLiderAdmin(${l.id})">Editar</button></div>`).join(''):'<div class="vazio">Nenhum líder cadastrado ainda.</div>'}</div>`;
+}
+
+async function carregarIndicacoesAdmin(){
+  estado.admin.carregando = true; render();
+  try{
+    const { data, error } = await sb.rpc('entrega_admin_listar_indicacoes', { p_senha: estado.admin.senhaDigitada });
+    if(error) throw error;
+    estado.admin.indicacoes = data || [];
+  }catch(e){ console.error(e); mostrarToast('Erro ao carregar indicações.','erro'); }
+  estado.admin.carregando = false; render();
+}
+async function pagarIndicacaoAdmin(id){
+  if(!confirm('Confirmar que o bônus foi pago (Pix/manual) e marcar essa indicação como paga?')) return;
+  try{
+    await sb.rpc('entrega_admin_pagar_indicacao', { p_senha: estado.admin.senhaDigitada, p_id: id });
+    mostrarToast('Indicação marcada como paga ✓','sucesso');
+    await carregarIndicacoesAdmin();
+  }catch(e){ mostrarToast('Não consegui marcar como paga.','erro'); }
+}
+async function aprovarIndicacaoAdmin(id){
+  try{
+    await sb.rpc('entrega_admin_atualizar_indicacao', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'aprovado' });
+    mostrarToast('Indicação aprovada.','sucesso');
+    await carregarIndicacoesAdmin();
+  }catch(e){ mostrarToast('Não consegui aprovar.','erro'); }
+}
+async function cancelarIndicacaoAdmin(id){
+  if(!confirm('Cancelar essa indicação?')) return;
+  try{
+    await sb.rpc('entrega_admin_atualizar_indicacao', { p_senha: estado.admin.senhaDigitada, p_id: id, p_status: 'cancelado' });
+    mostrarToast('Indicação cancelada.','sucesso');
+    await carregarIndicacoesAdmin();
+  }catch(e){ mostrarToast('Não consegui cancelar.','erro'); }
+}
+async function criarIndicacaoManualAdmin(){
+  const indicadorTel = document.getElementById('ind-indicador-tel').value;
+  const nome = document.getElementById('ind-indicado-nome').value;
+  const tel = document.getElementById('ind-indicado-tel').value;
+  const valor = document.getElementById('ind-valor').value;
+  if(!indicadorTel || !nome || !tel){ mostrarToast('Preencha telefone de quem indicou, nome e telefone do indicado.','erro'); return; }
+  try{
+    await sb.rpc('entrega_admin_criar_indicacao_por_telefone', {
+      p_senha: estado.admin.senhaDigitada, p_indicador_telefone: indicadorTel,
+      p_indicado_nome: nome, p_indicado_telefone: tel, p_bonus_valor: valor?Number(valor):null
+    });
+    mostrarToast('Indicação registrada ✓','sucesso');
+    document.getElementById('ind-indicador-tel').value='';
+    document.getElementById('ind-indicado-nome').value='';
+    document.getElementById('ind-indicado-tel').value='';
+    document.getElementById('ind-valor').value='';
+    await carregarIndicacoesAdmin();
+  }catch(e){
+    const m=String(e.message||'');
+    mostrarToast(m.includes('indicador_nao_encontrado')?'Não achei motorista com esse telefone.':'Não consegui registrar.','erro');
+  }
+}
+function adminAbaIndicacoesHTML(){
+  const lista = estado.admin.indicacoes || [];
+  const pendentes = lista.filter(i=>i.status==='indicado'||i.status==='cadastrado');
+  const totalAPagar = lista.filter(i=>i.status==='aprovado').reduce((s,i)=>s+Number(i.bonus_valor||0),0);
+  const rotulo = { indicado:'Aguardando cadastro', cadastrado:'Cadastro em análise', aprovado:'Aprovado — falta pagar', pago:'Pago', cancelado:'Cancelado' };
+  const cor = { indicado:'#999', cadastrado:'#e0a800', aprovado:'#1a9c4a', pago:'#1a9c4a', cancelado:'#c0392b' };
+  return `
+    <div class="admin-cartao" style="margin-bottom:14px">
+      <h3 style="margin-top:0">Programa "Indique e ganhe"</h3>
+      <div style="font-size:13px;color:var(--poeira);margin-bottom:10px">Motoristas indicam outros motoristas direto pelo app deles. Aqui você aprova o bônus e marca como pago quando transferir.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <div class="admin-mini-stat"><small>Aguardando ação</small><b>${pendentes.length}</b></div>
+        <div class="admin-mini-stat"><small>A pagar (aprovados)</small><b>R$ ${totalAPagar.toFixed(2)}</b></div>
+        <div class="admin-mini-stat"><small>Total de indicações</small><b>${lista.length}</b></div>
+      </div>
+    </div>
+    <div class="admin-cartao" style="margin-bottom:14px">
+      <h3 style="margin-top:0">Registrar indicação manualmente</h3>
+      <label>Telefone de quem indicou (motorista já cadastrado)</label>
+      <input type="tel" id="ind-indicador-tel" placeholder="(31) 99999-9999">
+      <label>Nome de quem foi indicado</label>
+      <input type="text" id="ind-indicado-nome" placeholder="Nome completo">
+      <label>Telefone de quem foi indicado</label>
+      <input type="tel" id="ind-indicado-tel" placeholder="(31) 99999-9999">
+      <label>Valor do bônus (opcional — deixe em branco pra usar o padrão)</label>
+      <input type="number" id="ind-valor" placeholder="30.00">
+      <button class="btn btn-secundario" style="margin-top:8px" onclick="criarIndicacaoManualAdmin()">Registrar</button>
+    </div>
+    <div class="admin-cartao">
+      <h3 style="margin-top:0">Todas as indicações</h3>
+      ${estado.admin.carregando ? '<div class="vazio">Carregando...</div>' :
+        lista.length===0 ? '<div class="vazio">Nenhuma indicação ainda.</div>' :
+        lista.map(i=>`
+        <div class="admin-linha-item" style="border-left:3px solid ${cor[i.status]||'#999'}">
+          <div style="flex:1">
+            <div><b>${i.indicado_nome}</b> · ${i.indicado_telefone}${i.indicado_motorista_id?` <span style="color:var(--poeira);font-size:12px">(cadastro: ${i.indicado_motorista_id})</span>`:''}</div>
+            <div style="font-size:12.5px;color:var(--poeira)">Indicado por <b>${i.indicador_nome}</b> · ${i.indicador_telefone}</div>
+            <div style="font-size:12px;font-weight:700;color:${cor[i.status]||'#999'};margin-top:2px">${rotulo[i.status]||i.status} · R$ ${Number(i.bonus_valor||0).toFixed(2)}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap">
+            ${i.status==='indicado'||i.status==='cadastrado' ? `<button class="btn btn-secundario btn-pequeno" onclick="aprovarIndicacaoAdmin(${i.id})">Aprovar</button>` : ''}
+            ${i.status==='aprovado' ? `<button class="btn btn-primario btn-pequeno" onclick="pagarIndicacaoAdmin(${i.id})">Marcar pago</button>` : ''}
+            ${i.status!=='pago'&&i.status!=='cancelado' ? `<button class="btn btn-pequeno" style="background:none;border:1px solid var(--linha);color:var(--chama)" onclick="cancelarIndicacaoAdmin(${i.id})">Cancelar</button>` : ''}
+          </div>
+        </div>`).join('')
+      }
+    </div>`;
 }
 async function carregarFeedbacksAdmin(){
   estado.admin.carregando=true; render();
@@ -7959,6 +8122,8 @@ function adminCorpoHTML(){
     {id:'motoristas', label:`🛵 Motoristas${pendentesMotoristas.length?` (${pendentesMotoristas.length})`:''}`},
     {id:'clientes', label:'👤 Clientes'},
     {id:'saques', label:`💰 Saques${saquesPendentes.length?` (${saquesPendentes.length})`:''}`},
+    {id:'indicacoes', label:`🤝 Indicações${(estado.admin.indicacoes||[]).filter(i=>i.status==='indicado'||i.status==='cadastrado').length?` (${(estado.admin.indicacoes||[]).filter(i=>i.status==='indicado'||i.status==='cadastrado').length})`:''}`},
+    {id:'lideres', label:`🏙️ Líderes${(estado.admin.lideres||[]).filter(l=>l.ativo).length?` (${(estado.admin.lideres||[]).filter(l=>l.ativo).length})`:''}`},
     {id:'alertas', label:`🔔 Alertas${alertasNaoLidos.length?` (${alertasNaoLidos.length})`:''}`},
     {id:'suporte', label:`💬 Suporte${suporteAbertos.length?` (${suporteAbertos.length})`:''}`},
     {id:'avisos', label:'📢 Avisos'},
@@ -7980,6 +8145,8 @@ function adminCorpoHTML(){
   else if(a.aba==='motoristas') corpo = adminAbaMotoristasHTML();
   else if(a.aba==='clientes') corpo = adminAbaClientesHTML();
   else if(a.aba==='saques') corpo = adminAbaSaquesHTML();
+  else if(a.aba==='indicacoes') corpo = adminAbaIndicacoesHTML();
+  else if(a.aba==='lideres') corpo = adminAbaLideresHTML();
   else if(a.aba==='alertas') corpo = adminAbaAlertasHTML();
   else if(a.aba==='avisos') corpo = adminAbaAvisosHTML();
   else if(a.aba==='feedbacks') corpo = adminAbaFeedbacksHTML();
