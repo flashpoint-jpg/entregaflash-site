@@ -1899,6 +1899,7 @@ let estado = {
     avisoGeral:{ papel:'motorista', mensagem:'', enviando:false }, feedbacks:[], feedbacksCarregados:false },
   feedback:{ aberto:false, categoria:'sugestao', mensagem:'', enviando:false },
   comoFunciona:{ aberto:false, aba:'cliente' },
+  indicacoes:{ aberto:false, carregando:false, enviando:false, lista:[], novo:{ nome:'', telefone:'' } },
   parceiro:{
     aberto:false, enviado:false, enviando:false, erro:'',
     form:{ estabelecimento:'', responsavel:'', whatsapp:'', cidade:'', endereco:'', tipoNegocio:'farmacia', entregasDia:'0-5', mensagem:'' }
@@ -6191,6 +6192,7 @@ function telaBoasVindas(){
       </div>
       <div class="bv-partner-cta">
         <button class="btn btn-primario" onclick="abrirContatoRapido('parceria')">QUERO SER PARCEIRO</button>
+        <button class="btn btn-secundario" style="margin-top:8px" onclick="location.href='lider.html'">🏙️ SOU LÍDER DA CIDADE</button>
         <div style="font-size:12px;color:#92949a;margin-top:9px;text-align:center">Deixe seu contato e nossa equipe retorna.</div>
       </div>
     </section>
@@ -7129,6 +7131,11 @@ function telaMotorista(){
     ${direitosPlanoHTML(planoAtual, m.plano)}
   </div>
   <div class="cartao">
+    <h2>🤝 Indique e ganhe</h2>
+    <div class="subtitulo">Conhece outro motorista? Indique e ganhe um bônus quando ele for aprovado no Entrega Flash.</div>
+    <button class="btn btn-primario btn-pequeno" style="margin-top:10px" onclick="abrirIndicacoes()">Indicar motorista</button>
+  </div>
+  <div class="cartao">
     <h2> Trocar minha senha</h2>
     <label>Senha atual</label>
     <input type="text" id="ef-senha-atual-motorista" style="-webkit-text-security:disc;text-security:disc;">
@@ -7278,6 +7285,43 @@ function direitosPlanoHTML(planoAtual, chave){
 // ---------- Como funciona ----------
 async function abrirComoFunciona(aba){ await carregarConfigGeral(); estado.comoFunciona.aberto=true; if(aba) estado.comoFunciona.aba=aba; render(); }
 function fecharComoFunciona(){ estado.comoFunciona.aberto=false; render(); }
+
+async function abrirIndicacoes(){
+  estado.indicacoes.aberto = true; render();
+  await carregarMinhasIndicacoes();
+}
+function fecharIndicacoes(){ estado.indicacoes.aberto=false; render(); }
+async function carregarMinhasIndicacoes(){
+  estado.indicacoes.carregando = true; render();
+  try{
+    const { data, error } = await sb.rpc('entrega_motorista_minhas_indicacoes', { p_telefone: estado.motorista.telefone });
+    if(!error) estado.indicacoes.lista = data || [];
+  }catch(e){}
+  estado.indicacoes.carregando = false; render();
+}
+function statusIndicacaoLabel(s){
+  return ({ indicado:'Aguardando cadastro', cadastrado:'Cadastro em análise', aprovado:'Aprovado — bônus a caminho', pago:'Bônus pago ✓', cancelado:'Cancelado' })[s] || s;
+}
+function statusIndicacaoCor(s){
+  return ({ indicado:'var(--poeira)', cadastrado:'var(--mango)', aprovado:'var(--verde)', pago:'var(--verde)', cancelado:'var(--chama)' })[s] || 'var(--poeira)';
+}
+async function enviarIndicacao(){
+  const nome = (estado.indicacoes.novo.nome||'').trim();
+  const telDigits = (estado.indicacoes.novo.telefone||'').replace(/\D/g,'');
+  if(nome.length<2){ mostrarToast('Digite o nome do motorista que você está indicando','erro'); return; }
+  if(telDigits.length<10){ mostrarToast('Digite um telefone válido com DDD','erro'); return; }
+  estado.indicacoes.enviando = true; render();
+  try{
+    await sb.rpc('entrega_motorista_criar_indicacao', { p_telefone: estado.motorista.telefone, p_indicado_nome: nome, p_indicado_telefone: telDigits });
+    mostrarToast('Indicação enviada! Você vai ver o status aqui assim que ele se cadastrar.','sucesso');
+    estado.indicacoes.novo = { nome:'', telefone:'' };
+    await carregarMinhasIndicacoes();
+  }catch(e){
+    const m = String(e.message||'');
+    mostrarToast(m.includes('ja_indicado') ? 'Você já indicou esse número' : 'Não consegui enviar a indicação agora','erro');
+  }
+  estado.indicacoes.enviando = false; render();
+}
 function mudarAbaComoFunciona(aba){ estado.comoFunciona.aba=aba; render(); }
 function abrirComoInstalar(){ estado.comoInstalarAberto=true; render(); }
 function fecharComoInstalar(){ estado.comoInstalarAberto=false; render(); }
@@ -7312,6 +7356,53 @@ function comoFuncionaHTML(){
       </div>
       <div class="cf-corpo">
         ${cf.aba==='cliente' ? comoFuncionaClienteHTML() : cf.aba==='motorista' ? comoFuncionaMotoristaHTML() : taxasERegrasHTML()}
+      </div>
+    </div>
+  </div>`;
+}
+function indicacoesHTML(){
+  const ind = estado.indicacoes;
+  const lista = ind.lista || [];
+  const totalPago = lista.filter(i=>i.status==='pago').reduce((s,i)=>s+Number(i.bonus_valor||0),0);
+  const totalEmAndamento = lista.filter(i=>i.status!=='pago' && i.status!=='cancelado').reduce((s,i)=>s+Number(i.bonus_valor||0),0);
+  const valorBonus = lista[0]?.bonus_valor ?? '';
+  return `
+  <div class="modal-fundo" onclick="if(event.target===this) fecharIndicacoes()">
+    <div class="modal-chat" style="max-height:90vh">
+      <div class="chat-topo"><h3>🤝 Indique e ganhe</h3><button class="chat-fechar" onclick="fecharIndicacoes()">&times;</button></div>
+      <div class="cf-corpo">
+        <div class="cf-nota" style="margin-top:0">Indique outro motorista pro Entrega Flash. Quando ele se cadastrar e for aprovado, você ganha um bônus em dinheiro no seu saldo.</div>
+
+        <div style="display:flex;gap:10px;margin:12px 0">
+          <div class="cartao" style="flex:1;margin:0;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--poeira);text-transform:uppercase;letter-spacing:.4px">Já pago</div>
+            <div style="font-family:'Rajdhani';font-weight:800;font-size:22px;color:var(--verde)">R$ ${totalPago.toFixed(2)}</div>
+          </div>
+          <div class="cartao" style="flex:1;margin:0;padding:12px;text-align:center">
+            <div style="font-size:11px;color:var(--poeira);text-transform:uppercase;letter-spacing:.4px">Em andamento</div>
+            <div style="font-family:'Rajdhani';font-weight:800;font-size:22px;color:var(--mango)">R$ ${totalEmAndamento.toFixed(2)}</div>
+          </div>
+        </div>
+
+        <div class="cf-titulo-secao">Indicar um motorista novo</div>
+        <input type="text" placeholder="Nome do motorista" value="${ind.novo.nome}" oninput="estado.indicacoes.novo.nome=this.value" style="margin-bottom:8px">
+        <input type="tel" placeholder="Telefone com DDD" value="${ind.novo.telefone}" oninput="estado.indicacoes.novo.telefone=this.value" style="margin-bottom:8px">
+        <button class="btn btn-primario" ${ind.enviando?'disabled':''} onclick="enviarIndicacao()">${ind.enviando?'<span class="girando"></span>Enviando...':'Enviar indicação'}</button>
+
+        <div class="cf-titulo-secao" style="margin-top:20px">Minhas indicações</div>
+        ${ind.carregando ? `<div class="vazio">Carregando...</div>` :
+          lista.length===0 ? `<div class="vazio">Você ainda não indicou ninguém.</div>` :
+          lista.map(i=>`
+            <div class="cartao" style="margin:0 0 8px;padding:12px 14px">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <div><b>${i.indicado_nome}</b><div style="font-size:12.5px;color:var(--poeira)">${i.indicado_telefone}</div></div>
+                <div style="text-align:right">
+                  <div style="font-weight:800;color:var(--osso)">R$ ${Number(i.bonus_valor||0).toFixed(2)}</div>
+                  <div style="font-size:11.5px;font-weight:700;color:${statusIndicacaoCor(i.status)}">${statusIndicacaoLabel(i.status)}</div>
+                </div>
+              </div>
+            </div>`).join('')
+        }
       </div>
     </div>
   </div>`;
@@ -7657,6 +7748,7 @@ function render(){
     ${estado.modalConfirmar ? modalConfirmarHTML() : ''}
     ${estado.modalReprovar ? modalReprovarHTML() : ''}
     ${estado.comoFunciona.aberto ? comoFuncionaHTML() : ''}
+    ${estado.indicacoes.aberto ? indicacoesHTML() : ''}
     ${estado.comoInstalarAberto ? comoInstalarHTML() : ''}
     ${estado.popupInstalarAberto ? popupInstalarHTML() : ''}
     ${estado.avisoNavegadorEmbutidoAberto ? avisoNavegadorEmbutidoHTML() : ''}

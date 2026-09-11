@@ -1,0 +1,34 @@
+ENTREGA FLASH — LÍDER DA CIDADE
+Atualização 11/09/2026
+
+O que foi adicionado:
+- Painel exclusivo em /lider.html
+- Cadastro e gerenciamento de líderes no Admin > Líderes
+- Líder vinculado a uma cidade
+- Indicadores: equipe da cidade, online agora, entregas hoje e no mês
+- Meta mensal da cidade
+- Indicação de novos motoristas
+- Status de indicação: aguardando cadastro, em análise, aprovado e ativo
+- Ativação do indicado após 3 entregas concluídas
+- Comissão estimada calculada sobre a COMISSÃO DA PLATAFORMA, não sobre o frete total
+- Percentual, período (dias), meta e bônus configuráveis por líder no admin
+- Líder não tem acesso ao painel geral, saldos, preços, clientes de outras cidades ou configurações do admin
+
+Fluxo:
+1. Admin entra em Admin > Líderes.
+2. Cria o líder, informa cidade, telefone, senha, percentual e meta.
+3. Líder entra em /lider.html.
+4. O painel mostra somente a equipe da cidade configurada.
+5. Líder pode indicar um novo motorista.
+6. Quando o indicado se cadastra, o painel reconhece pelo telefone.
+7. Após aprovação e 3 entregas concluídas, a indicação vira ATIVA.
+8. A comissão estimada passa a considerar as entregas desse indicado durante o período configurado.
+
+Regra sugerida inicial:
+- 7% da comissão líquida da plataforma
+- por 90 dias
+- somente após motorista indicado estar realmente ativo
+
+Importante:
+- Não é comissão multinível. É apenas Líder -> Motorista indicado.
+- O líder não pode aprovar/reprovar motorista nem alterar valores financeiros.
