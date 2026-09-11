@@ -1,6 +1,6 @@
-// build: 20260911-LIDER-CIDADE-1
+// build: 20260911-LIDER-CIDADE-2
 // Entrega Flash - Service Worker com atualização forçada + reparo de Push + integração Vendaí
-const EF_VERSION = '20260911-LIDER-CIDADE-1';
+const EF_VERSION = '20260911-LIDER-CIDADE-2';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;
@@ -22,7 +22,8 @@ self.addEventListener('activate', (event) => {
     for (const cliente of clientes) {
       try {
         const u = new URL(cliente.url);
-        if (u.origin === self.location.origin && !u.pathname.startsWith('/admin/')) {
+        const principal = u.pathname === '/' || u.pathname.endsWith('/index.html') || u.pathname.endsWith('/entregaflash.html');
+        if (u.origin === self.location.origin && !u.pathname.startsWith('/admin/') && principal) {
           await cliente.navigate(new URL(EF_HOME, self.registration.scope).href);
         }
       } catch (e) {}

@@ -8018,6 +8018,19 @@ async function atualizarDisponibilidadeDB(telefone, disponivel){
     payload.lat_atualizado_em = agora;
   }
   const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
+  if(!error && disponivel){
+    // Avisa o Líder da Cidade quando um motorista aprovado entra online.
+    // O push funciona mesmo com o painel do líder fechado, desde que ele tenha ativado os alertas.
+    setTimeout(async()=>{
+      try{
+        const {data:m}=await sb.from('entrega_motoristas').select('nome,cidade,status').eq('telefone',telefone).maybeSingle();
+        if(m && m.status==='aprovado' && m.cidade){
+          const ref=String(m.cidade).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'');
+          await enviarPushServidor('lider_cidade',ref,'Motorista online',`${m.nome||'Um motorista'} ficou online em ${m.cidade}.`,'/lider.html','motorista_online');
+        }
+      }catch(e){ console.warn('push líder cidade',e); }
+    },0);
+  }
   return !error;
 }
 
