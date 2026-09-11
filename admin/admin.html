@@ -837,6 +837,19 @@ body.ef-admin-logado .admin-topo{position:sticky;top:0;z-index:30;backdrop-filte
 body.ef-admin-logado .modal-chat:has(#suporte-admin-mensagens){width:min(720px,100%);}
 body.ef-admin-logado #suporte-admin-mensagens{flex:1;min-height:150px;}
 @media(max-width:700px){body.ef-admin-logado .modal-chat:has(#suporte-admin-mensagens){height:92dvh!important;max-height:92dvh!important;border-radius:18px 18px 0 0;}body.ef-admin-logado #suporte-admin-mensagens{min-height:130px;}}
+
+/* ===== Líder da Cidade: painel responsivo 11/09 ===== */
+.lider-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.lider-form-grid>*{min-width:0}.lider-form-grid input,.lider-form-grid select{width:100%;max-width:100%;min-width:0}
+.lider-import-card{padding:14px;border:1px solid var(--linha);border-radius:16px;background:rgba(255,255,255,.025);margin-bottom:14px}
+.lider-import-title{font-family:'Rajdhani',sans-serif;font-weight:800;font-size:16px;margin-bottom:4px}.lider-help{font-size:12px;line-height:1.45;color:var(--poeira);margin-top:5px}
+.lider-selected{display:flex;align-items:center;gap:11px;padding:12px;border-radius:14px;background:rgba(82,216,136,.08);border:1px solid rgba(82,216,136,.24);margin-top:10px}
+.lider-selected .avatar{width:42px;height:42px;border-radius:13px;background:rgba(82,216,136,.15);display:grid;place-items:center;font-weight:900;flex:0 0 auto}.lider-selected .txt{min-width:0;flex:1}.lider-selected .txt b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lider-selected .txt span{display:block;font-size:11.5px;color:var(--poeira);margin-top:3px}
+.lider-rule-card{padding:12px 13px;border-radius:14px;background:rgba(255,174,0,.07);border:1px solid rgba(255,174,0,.20);font-size:12px;line-height:1.5;margin-top:14px}.lider-rule-card b{color:var(--mango)}
+.lider-actions{display:flex;gap:8px;margin-top:14px}.lider-actions .btn{flex:1;min-width:0}
+.lider-row{padding:13px 0;border-bottom:1px solid var(--linha);display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:10px}.lider-row:last-child{border-bottom:0}.lider-row-main{min-width:0}.lider-row-main b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.lider-row-main .meta{font-size:12px;color:var(--poeira);margin-top:3px;white-space:normal;line-height:1.35}
+@media(max-width:720px){.lider-form-grid{grid-template-columns:1fr}.lider-actions{flex-direction:column}.lider-row{grid-template-columns:minmax(0,1fr) auto}.lider-row .btn{grid-column:1/-1;width:100%}.lider-import-card{padding:12px}.admin-cartao{overflow:hidden}.lider-form-grid label{line-height:1.25}.lider-form-grid input,.lider-form-grid select{font-size:16px!important}}
+
 </style>
 <!-- build: Entrega Flash Admin PWA dedicado -->
 </head>
@@ -7535,56 +7548,93 @@ function mudarAbaAdmin(aba){
 
 async function carregarLideresAdmin(){
   try{
-    const {data,error}=await sb.rpc('entrega_admin_listar_lideres',{p_senha:estado.admin.senhaDigitada});
-    if(error) throw error;
-    estado.admin.lideres=data||[];
+    const [rl,rm]=await Promise.all([
+      sb.rpc('entrega_admin_listar_lideres',{p_senha:estado.admin.senhaDigitada}),
+      sb.rpc('entrega_admin_motoristas_para_lider',{p_senha:estado.admin.senhaDigitada})
+    ]);
+    if(rl.error) throw rl.error;
+    if(rm.error) throw rm.error;
+    estado.admin.lideres=rl.data||[];
+    estado.admin.motoristasLider=rm.data||[];
     render();
-  }catch(e){ console.error(e); mostrarToast('Erro ao carregar líderes.','erro'); }
+  }catch(e){ console.error(e); mostrarToast('Erro ao carregar líderes/motoristas.','erro'); }
 }
 function editarLiderAdmin(id){
   estado.admin.liderEditando=(estado.admin.lideres||[]).find(x=>String(x.id)===String(id))||null;
   render();
-  setTimeout(()=>document.getElementById('lider-nome')?.focus(),30);
 }
-function novoLiderAdmin(){ estado.admin.liderEditando=null; render(); setTimeout(()=>document.getElementById('lider-nome')?.focus(),30); }
+function novoLiderAdmin(){ estado.admin.liderEditando=null; render(); }
+function motoristaLiderSelecionado(){
+  const id=document.getElementById('lider-motorista')?.value||'';
+  return (estado.admin.motoristasLider||[]).find(m=>String(m.id)===String(id))||null;
+}
+function atualizarResumoMotoristaLider(){
+  const m=motoristaLiderSelecionado(),box=document.getElementById('lider-motorista-resumo');
+  if(!box)return;
+  if(!m){box.innerHTML='<div class="lider-help">Selecione um motorista já cadastrado. Nome, telefone e cidade serão importados automaticamente.</div>';return;}
+  box.innerHTML=`<div class="lider-selected"><div class="avatar">${(m.nome||'?').charAt(0).toUpperCase()}</div><div class="txt"><b>${m.nome||'Motorista'}</b><span>${m.cidade||'Cidade não informada'} · ${m.telefone||''} · ${m.veiculo_tipo||'veículo'}${m.ja_lider?' · JÁ É LÍDER':''}</span></div></div>`;
+}
+function filtrarMotoristasLider(){
+  const termo=(document.getElementById('lider-busca-motorista')?.value||'').trim().toLowerCase();
+  const select=document.getElementById('lider-motorista');if(!select)return;
+  const ed=estado.admin.liderEditando||{};
+  const atual=select.value||ed.motorista_id||'';
+  const lista=(estado.admin.motoristasLider||[]).filter(m=>!termo||`${m.nome||''} ${m.telefone||''} ${m.cidade||''}`.toLowerCase().includes(termo));
+  select.innerHTML='<option value="">Selecione o motorista cadastrado</option>'+lista.map(m=>`<option value="${m.id}" ${String(m.id)===String(atual)?'selected':''}>${m.nome} — ${m.cidade||'sem cidade'} — ${m.telefone}${m.ja_lider&&String(m.lider_id)!==String(ed.id||'')?' (já é líder)':''}</option>`).join('');
+  if(atual && !select.value){const m=(estado.admin.motoristasLider||[]).find(x=>String(x.id)===String(atual));if(m){select.insertAdjacentHTML('beforeend',`<option value="${m.id}" selected>${m.nome} — ${m.cidade||'sem cidade'} — ${m.telefone}</option>`);}}
+  atualizarResumoMotoristaLider();
+}
 async function salvarLiderAdmin(){
   const ed=estado.admin.liderEditando||{};
-  const nome=document.getElementById('lider-nome')?.value.trim()||'';
-  const telefone=document.getElementById('lider-telefone')?.value.replace(/\D/g,'')||'';
-  const cidade=document.getElementById('lider-cidade')?.value.trim()||'';
+  const motoristaId=document.getElementById('lider-motorista')?.value||ed.motorista_id||'';
   const senha=document.getElementById('lider-senha')?.value||'';
-  const pct=Number(document.getElementById('lider-pct')?.value||7);
+  const pct=Number(document.getElementById('lider-pct')?.value||3);
   const dias=Number(document.getElementById('lider-dias')?.value||90);
   const meta=Number(document.getElementById('lider-meta')?.value||50);
-  const bonus=Number(document.getElementById('lider-bonus')?.value||0);
+  const bonus=Number(document.getElementById('lider-bonus')?.value||10);
+  const bonusMeta=Number(document.getElementById('lider-bonus-meta')?.value||50);
+  const bonusMetaEntregas=Number(document.getElementById('lider-bonus-meta-entregas')?.value||50);
   const ativo=document.getElementById('lider-ativo')?.checked!==false;
-  if(nome.length<2||telefone.length<10||cidade.length<2){ mostrarToast('Preencha nome, telefone e cidade.','erro'); return; }
-  if(!ed.id && senha.length<4){ mostrarToast('Defina uma senha para o novo líder.','erro'); return; }
+  if(!motoristaId){ mostrarToast('Selecione o motorista que será promovido a líder.','erro'); return; }
+  if(!ed.id && senha.length<4){ mostrarToast('Só falta criar a senha de acesso do líder.','erro'); return; }
   const senhaHash=senha?await hashSenha(senha):'';
-  const {error}=await sb.rpc('entrega_admin_salvar_lider',{p_senha:estado.admin.senhaDigitada,p_id:ed.id||null,p_nome:nome,p_telefone:telefone,p_cidade:cidade,p_senha_hash:senhaHash,p_percentual_comissao:pct,p_dias_comissao:dias,p_meta_entregas_mensal:meta,p_bonus_ativacao:bonus,p_ativo:ativo});
-  if(error){ console.error(error); mostrarToast('Não consegui salvar o líder.','erro'); return; }
-  mostrarToast(ed.id?'Líder atualizado ✓':'Líder criado ✓','sucesso'); estado.admin.liderEditando=null; await carregarLideresAdmin();
+  const {error}=await sb.rpc('entrega_admin_salvar_lider_motorista',{p_senha:estado.admin.senhaDigitada,p_id:ed.id||null,p_motorista_id:motoristaId,p_senha_hash:senhaHash,p_percentual_comissao:pct,p_dias_comissao:dias,p_meta_entregas_mensal:meta,p_bonus_ativacao:bonus,p_bonus_meta_valor:bonusMeta,p_bonus_meta_entregas:bonusMetaEntregas,p_ativo:ativo});
+  if(error){console.error(error);const msg=String(error.message||'');mostrarToast(msg.includes('motorista_ja_lider')?'Esse motorista já é líder.':'Não consegui salvar o líder.','erro');return;}
+  mostrarToast(ed.id?'Líder atualizado ✓':'Motorista promovido a líder ✓','sucesso');estado.admin.liderEditando=null;await carregarLideresAdmin();
 }
 function adminAbaLideresHTML(){
-  const lista=estado.admin.lideres||[],ed=estado.admin.liderEditando||{};
-  return `<div class="admin-secao-titulo"><div><h2>🏙️ Líderes da cidade</h2><p>Crie um responsável por cidade. Ele acompanha a equipe local, online, metas e indicações — sem acesso ao financeiro geral nem às configurações do admin.</p></div></div>
+  const lista=estado.admin.lideres||[],ed=estado.admin.liderEditando||{},motoristas=estado.admin.motoristasLider||[];
+  let motorId=ed.motorista_id||'';
+  if(!motorId && ed.telefone){const achou=motoristas.find(m=>String(m.telefone||'').replace(/\D/g,'')===String(ed.telefone||'').replace(/\D/g,''));if(achou)motorId=achou.id;}
+  return `<div class="admin-secao-titulo"><div><h2>🏙️ Líderes da cidade</h2><p>Agora você não precisa digitar os dados de novo: escolha um motorista já cadastrado e crie apenas a senha e as regras do líder.</p></div></div>
   <div class="admin-cartao" style="margin-bottom:14px">
-    <h3 style="margin-top:0">${ed.id?'Editar líder':'Novo líder'}</h3>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div><label>Nome</label><input id="lider-nome" value="${(ed.nome||'').replace(/"/g,'&quot;')}" placeholder="Ex: João Silva"></div>
-      <div><label>Telefone</label><input id="lider-telefone" type="tel" value="${ed.telefone||''}" placeholder="DDD + número"></div>
-      <div><label>Cidade</label><input id="lider-cidade" value="${(ed.cidade||'').replace(/"/g,'&quot;')}" placeholder="Ex: Muzambinho"></div>
-      <div><label>${ed.id?'Nova senha (opcional)':'Senha de acesso'}</label><input id="lider-senha" type="password" placeholder="mínimo 4 caracteres"></div>
-      <div><label>% da comissão da plataforma</label><input id="lider-pct" type="number" step="0.1" value="${ed.percentual_comissao??7}"></div>
-      <div><label>Dias de comissão por indicado</label><input id="lider-dias" type="number" value="${ed.dias_comissao??90}"></div>
-      <div><label>Meta mensal de entregas</label><input id="lider-meta" type="number" value="${ed.meta_entregas_mensal??50}"></div>
-      <div><label>Bônus de ativação</label><input id="lider-bonus" type="number" step="0.01" value="${ed.bonus_ativacao??0}"></div>
+    <h3 style="margin-top:0">${ed.id?'Editar líder':'Promover motorista a líder'}</h3>
+    <div class="lider-import-card">
+      <div class="lider-import-title">1. Escolha o motorista cadastrado</div>
+      <div class="lider-help">Nome, telefone, cidade e veículo vêm direto do cadastro do motorista.</div>
+      <input id="lider-busca-motorista" placeholder="Pesquisar por nome, telefone ou cidade" oninput="filtrarMotoristasLider()" style="margin-top:10px">
+      <select id="lider-motorista" onchange="atualizarResumoMotoristaLider()" style="margin-top:8px">
+        <option value="">Selecione o motorista cadastrado</option>
+        ${motoristas.map(m=>`<option value="${m.id}" ${String(m.id)===String(motorId)?'selected':''}>${m.nome} — ${m.cidade||'sem cidade'} — ${m.telefone}${m.ja_lider&&String(m.lider_id)!==String(ed.id||'')?' (já é líder)':''}</option>`).join('')}
+      </select>
+      <div id="lider-motorista-resumo">${motorId?(()=>{const m=motoristas.find(x=>String(x.id)===String(motorId));return m?`<div class="lider-selected"><div class="avatar">${(m.nome||'?').charAt(0).toUpperCase()}</div><div class="txt"><b>${m.nome}</b><span>${m.cidade||'Cidade não informada'} · ${m.telefone||''} · ${m.veiculo_tipo||'veículo'}</span></div></div>`:''})():'<div class="lider-help">Selecione um motorista para importar os dados.</div>'}</div>
     </div>
-    <label style="display:flex;align-items:center;gap:8px;margin-top:12px"><input id="lider-ativo" type="checkbox" ${ed.ativo===false?'':'checked'} style="width:auto"> Líder ativo</label>
-    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn btn-primario" onclick="salvarLiderAdmin()">Salvar líder</button>${ed.id?'<button class="btn btn-secundario" onclick="novoLiderAdmin()">Cancelar edição</button>':''}</div>
-    <div style="font-size:12px;color:var(--poeira);margin-top:10px">Painel do líder: <b>/lider.html</b></div>
+    <div class="lider-import-title">2. Acesso e regras do líder</div>
+    <div class="lider-form-grid">
+      <div><label>${ed.id?'Nova senha (deixe vazio para manter)':'Senha de acesso do líder'}</label><input id="lider-senha" type="password" placeholder="mínimo 4 caracteres"><div class="lider-help">É a única informação pessoal nova necessária.</div></div>
+      <div><label>% da comissão da plataforma</label><input id="lider-pct" type="number" min="0" max="100" step="0.1" value="${ed.percentual_comissao??3}"><div class="lider-help">Sugestão inicial: 3%. Não é sobre o valor total da corrida.</div></div>
+      <div><label>Dias de comissão por indicado</label><input id="lider-dias" type="number" min="1" value="${ed.dias_comissao??90}"></div>
+      <div><label>Meta mensal de entregas</label><input id="lider-meta" type="number" min="0" value="${ed.meta_entregas_mensal??50}"></div>
+      <div><label>Bônus por motorista ativado</label><input id="lider-bonus" type="number" min="0" step="0.01" value="${ed.bonus_ativacao??10}"><div class="lider-help">Sugestão: R$ 10 somente após o indicado completar 3 entregas.</div></div>
+      <div><label>Bônus ao bater a meta</label><input id="lider-bonus-meta" type="number" min="0" step="0.01" value="${ed.bonus_meta_valor??50}"><div class="lider-help">Sugestão: R$ 50 quando a cidade bater a meta.</div></div>
+      <div><label>Entregas para liberar bônus da meta</label><input id="lider-bonus-meta-entregas" type="number" min="0" value="${ed.bonus_meta_entregas??50}"></div>
+      <div style="display:flex;align-items:end"><label style="display:flex;align-items:center;gap:9px;margin:0 0 13px"><input id="lider-ativo" type="checkbox" ${ed.ativo===false?'':'checked'} style="width:auto"> Líder ativo</label></div>
+    </div>
+    <div class="lider-rule-card"><b>Regra sugerida:</b> 3% da comissão da plataforma por até 90 dias por motorista indicado. A indicação só vira ativa depois de 3 entregas concluídas. Bônus sugeridos: R$ 10 por motorista ativado e R$ 50 quando a cidade bater 50 entregas no mês. Nenhum bônus é pago por simples cadastro.</div>
+    <div class="lider-actions"><button class="btn btn-primario" onclick="salvarLiderAdmin()">${ed.id?'SALVAR ALTERAÇÕES':'PROMOVER A LÍDER'}</button>${ed.id?'<button class="btn btn-secundario" onclick="novoLiderAdmin()">Cancelar edição</button>':''}</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:12px">Painel do líder: <b>/lider.html</b> · o próprio líder poderá instalar como app e ativar notificações.</div>
   </div>
-  <div class="admin-cartao"><h3 style="margin-top:0">Líderes cadastrados</h3>${lista.length?lista.map(l=>`<div style="padding:12px 0;border-bottom:1px solid var(--linha);display:flex;align-items:center;gap:10px"><div style="flex:1"><b>${l.nome}</b><div style="font-size:12px;color:var(--poeira)">${l.cidade} · ${l.telefone}</div><div style="font-size:11.5px;color:var(--poeira)">${Number(l.percentual_comissao||0).toFixed(1)}% da comissão da plataforma · ${l.dias_comissao} dias · meta ${l.meta_entregas_mensal}/mês</div></div><span style="font-size:11px;font-weight:800;color:${l.ativo?'#52d888':'#ff7a72'}">${l.ativo?'ATIVO':'PAUSADO'}</span><button class="btn btn-secundario btn-pequeno" onclick="editarLiderAdmin(${l.id})">Editar</button></div>`).join(''):'<div class="vazio">Nenhum líder cadastrado ainda.</div>'}</div>`;
+  <div class="admin-cartao"><h3 style="margin-top:0">Líderes cadastrados</h3>${lista.length?lista.map(l=>`<div class="lider-row"><div class="lider-row-main"><b>${l.nome}</b><div class="meta">${l.cidade} · ${l.telefone}<br>${Number(l.percentual_comissao||0).toFixed(1)}% da comissão · ${l.dias_comissao} dias · meta ${l.meta_entregas_mensal}/mês · bônus motorista ${Number(l.bonus_ativacao||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} · bônus meta ${Number(l.bonus_meta_valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div><span style="font-size:11px;font-weight:800;color:${l.ativo?'#52d888':'#ff7a72'}">${l.ativo?'ATIVO':'PAUSADO'}</span><button class="btn btn-secundario btn-pequeno" onclick="editarLiderAdmin(${l.id})">Editar</button></div>`).join(''):'<div class="vazio">Nenhum líder cadastrado ainda.</div>'}</div>`;
 }
 
 async function carregarIndicacoesAdmin(){
