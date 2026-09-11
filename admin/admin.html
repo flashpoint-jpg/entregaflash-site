@@ -7549,7 +7549,7 @@ function mudarAbaAdmin(aba){
 async function carregarLideresAdmin(){
   try{
     const [rl,rm]=await Promise.all([
-      sb.rpc('entrega_admin_listar_lideres',{p_senha:estado.admin.senhaDigitada}),
+      sb.rpc('entrega_admin_listar_lideres_v2',{p_senha:estado.admin.senhaDigitada}),
       sb.rpc('entrega_admin_motoristas_para_lider',{p_senha:estado.admin.senhaDigitada})
     ]);
     if(rl.error) throw rl.error;
@@ -7565,6 +7565,13 @@ function editarLiderAdmin(id){
 }
 function novoLiderAdmin(){ estado.admin.liderEditando=null; render(); }
 
+const REGIOES_GRANDE_SP_LIDER=['Arujá','Barueri','Biritiba Mirim','Caieiras','Cajamar','Carapicuíba','Cotia','Diadema','Embu das Artes','Embu-Guaçu','Ferraz de Vasconcelos','Francisco Morato','Franco da Rocha','Guararema','Guarulhos','Itapecerica da Serra','Itapevi','Itaquaquecetuba','Jandira','Juquitiba','Mairiporã','Mauá','Mogi das Cruzes','Osasco','Pirapora do Bom Jesus','Poá','Ribeirão Pires','Rio Grande da Serra','Salesópolis','Santa Isabel','Santana de Parnaíba','Santo André','São Bernardo do Campo','São Caetano do Sul','São Lourenço da Serra','São Paulo','Suzano','Taboão da Serra','Vargem Grande Paulista'];
+function normRegiaoLider(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function regioesSelecionadasLider(){return Array.from(document.querySelectorAll('.lider-regiao-check:checked')).map(x=>x.value).filter(Boolean)}
+function atualizarRegioesResumo(){const box=document.getElementById('lider-regioes-resumo');if(!box)return;const a=regioesSelecionadasLider();box.innerHTML=a.length?`<b>${a.length} região(ões) liberada(s):</b> ${a.join(' • ')}`:'<b>Nenhuma região marcada.</b> Se salvar assim, será usada a cidade do motorista.';}
+function selecionarGrandeSPLider(){const gs=new Set(REGIOES_GRANDE_SP_LIDER.map(normRegiaoLider));document.querySelectorAll('.lider-regiao-check').forEach(x=>{if(gs.has(normRegiaoLider(x.value)))x.checked=true});atualizarRegioesResumo();}
+function limparRegioesLider(){document.querySelectorAll('.lider-regiao-check').forEach(x=>x.checked=false);atualizarRegioesResumo();}
+function filtrarRegioesLider(){const q=normRegiaoLider(document.getElementById('lider-busca-regiao')?.value||'');document.querySelectorAll('[data-lider-regiao]').forEach(el=>{el.style.display=!q||normRegiaoLider(el.getAttribute('data-lider-regiao')).includes(q)?'flex':'none'});}
 function motoristaLiderSelecionado(){
   const id=document.getElementById('lider-motorista')?.value||'';
   return (estado.admin.motoristasLider||[]).find(m=>String(m.id)===String(id))||null;
@@ -7574,6 +7581,7 @@ function atualizarResumoMotoristaLider(){
   if(!box)return;
   if(!m){box.innerHTML='<div class="lider-help">Selecione um motorista já cadastrado. Nome, telefone e cidade serão importados automaticamente.</div>';return;}
   box.innerHTML=`<div class="lider-selected"><div class="avatar">${(m.nome||'?').charAt(0).toUpperCase()}</div><div class="txt"><b>${m.nome||'Motorista'}</b><span>${m.cidade||'Cidade não informada'} · ${m.telefone||''} · ${m.veiculo_tipo||'veículo'}${m.ja_lider?' · JÁ É LÍDER':''}</span></div></div>`;
+  if(!regioesSelecionadasLider().length && m.cidade){const alvo=normRegiaoLider(m.cidade);document.querySelectorAll('.lider-regiao-check').forEach(x=>{if(normRegiaoLider(x.value)===alvo)x.checked=true});atualizarRegioesResumo();}
 }
 function filtrarMotoristasLider(){
   const termo=(document.getElementById('lider-busca-motorista')?.value||'').trim().toLowerCase();
@@ -7596,10 +7604,13 @@ async function salvarLiderAdmin(){
   const bonusMeta=Number(document.getElementById('lider-bonus-meta')?.value||50);
   const bonusMetaEntregas=Number(document.getElementById('lider-bonus-meta-entregas')?.value||50);
   const ativo=document.getElementById('lider-ativo')?.checked!==false;
+  let regioes=regioesSelecionadasLider();
+  const motoristaSel=(estado.admin.motoristasLider||[]).find(m=>String(m.id)===String(motoristaId));
+  if(!regioes.length && motoristaSel?.cidade) regioes=[motoristaSel.cidade];
   if(!motoristaId){ mostrarToast('Selecione o motorista que será promovido a líder.','erro'); return; }
   if(!ed.id && senha.length<4){ mostrarToast('Só falta criar a senha de acesso do líder.','erro'); return; }
   const senhaHash=senha?await hashSenha(senha):'';
-  const {error}=await sb.rpc('entrega_admin_salvar_lider_motorista',{p_senha:estado.admin.senhaDigitada,p_id:ed.id||null,p_motorista_id:motoristaId,p_senha_hash:senhaHash,p_percentual_comissao:pct,p_dias_comissao:dias,p_meta_entregas_mensal:meta,p_bonus_ativacao:bonus,p_bonus_meta_valor:bonusMeta,p_bonus_meta_entregas:bonusMetaEntregas,p_ativo:ativo});
+  const {error}=await sb.rpc('entrega_admin_salvar_lider_motorista_v2',{p_senha:estado.admin.senhaDigitada,p_id:ed.id||null,p_motorista_id:motoristaId,p_senha_hash:senhaHash,p_regioes:regioes,p_percentual_comissao:pct,p_dias_comissao:dias,p_meta_entregas_mensal:meta,p_bonus_ativacao:bonus,p_bonus_meta_valor:bonusMeta,p_bonus_meta_entregas:bonusMetaEntregas,p_ativo:ativo});
   if(error){console.error(error);const msg=String(error.message||'');mostrarToast(msg.includes('motorista_ja_lider')?'Esse motorista já é líder.':'Não consegui salvar o líder.','erro');return;}
   mostrarToast(ed.id?'Líder atualizado ✓':'Motorista promovido a líder ✓','sucesso');estado.admin.liderEditando=null;await carregarLideresAdmin();
 }
@@ -7607,7 +7618,14 @@ function adminAbaLideresHTML(){
   const lista=estado.admin.lideres||[],ed=estado.admin.liderEditando||{},motoristas=estado.admin.motoristasLider||[];
   let motorId=ed.motorista_id||'';
   if(!motorId && ed.telefone){const achou=motoristas.find(m=>String(m.telefone||'').replace(/\D/g,'')===String(ed.telefone||'').replace(/\D/g,''));if(achou)motorId=achou.id;}
-  return `<div class="admin-secao-titulo"><div><h2>🏙️ Líderes da cidade</h2><p>Agora você não precisa digitar os dados de novo: escolha um motorista já cadastrado e crie apenas a senha e as regras do líder.</p></div></div>
+  const motoristaAtual=motoristas.find(x=>String(x.id)===String(motorId));
+  const selecionadas=(Array.isArray(ed.regioes_atendimento)&&ed.regioes_atendimento.length?ed.regioes_atendimento:(motoristaAtual?.cidade?[motoristaAtual.cidade]:[]));
+  const selNorm=new Set(selecionadas.map(normRegiaoLider));
+  const mapa=new Map();
+  [...REGIOES_GRANDE_SP_LIDER,...motoristas.map(m=>m.cidade).filter(Boolean),...selecionadas].forEach(c=>{const k=normRegiaoLider(c);if(k&&!mapa.has(k))mapa.set(k,String(c).trim())});
+  const regioes=[...mapa.values()].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+  const chips=regioes.map(c=>`<label data-lider-regiao="${c.replace(/"/g,'&quot;')}" style="display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid var(--linha);border-radius:999px;background:var(--painel-alt);font-size:12px;cursor:pointer"><input class="lider-regiao-check" type="checkbox" value="${c.replace(/"/g,'&quot;')}" ${selNorm.has(normRegiaoLider(c))?'checked':''} onchange="atualizarRegioesResumo()" style="width:auto;margin:0"> ${c}</label>`).join('');
+  return `<div class="admin-secao-titulo"><div><h2>🏙️ Líderes por região</h2><p>Escolha um motorista já cadastrado, crie a senha e libere uma ou várias cidades para ele acompanhar. Um líder pode cuidar de Diadema, Santo André, São Paulo ou até toda a Grande São Paulo.</p></div></div>
   <div class="admin-cartao" style="margin-bottom:14px">
     <h3 style="margin-top:0">${ed.id?'Editar líder':'Promover motorista a líder'}</h3>
     <div class="lider-import-card">
@@ -7620,22 +7638,30 @@ function adminAbaLideresHTML(){
       </select>
       <div id="lider-motorista-resumo">${motorId?(()=>{const m=motoristas.find(x=>String(x.id)===String(motorId));return m?`<div class="lider-selected"><div class="avatar">${(m.nome||'?').charAt(0).toUpperCase()}</div><div class="txt"><b>${m.nome}</b><span>${m.cidade||'Cidade não informada'} · ${m.telefone||''} · ${m.veiculo_tipo||'veículo'}</span></div></div>`:''})():'<div class="lider-help">Selecione um motorista para importar os dados.</div>'}</div>
     </div>
-    <div class="lider-import-title">2. Acesso e regras do líder</div>
+
+    <div class="lider-import-title" style="margin-top:14px">2. Regiões que esse líder pode atender</div>
+    <div class="lider-help">Marque quantas cidades quiser. O painel do líder vai mostrar motoristas ONLINE e OFFLINE de todas as regiões escolhidas.</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button type="button" class="btn btn-verde btn-pequeno" onclick="selecionarGrandeSPLider()">📍 Selecionar Grande São Paulo inteira</button><button type="button" class="btn btn-secundario btn-pequeno" onclick="limparRegioesLider()">Limpar seleção</button></div>
+    <input id="lider-busca-regiao" placeholder="Buscar cidade/região" oninput="filtrarRegioesLider()" style="margin-top:10px">
+    <div style="display:flex;gap:7px;flex-wrap:wrap;max-height:230px;overflow:auto;padding:10px 2px">${chips}</div>
+    <div id="lider-regioes-resumo" class="lider-rule-card" style="margin-top:8px">${selecionadas.length?`<b>${selecionadas.length} região(ões) liberada(s):</b> ${selecionadas.join(' • ')}`:'<b>Nenhuma região marcada.</b> Se salvar assim, será usada a cidade do motorista.'}</div>
+
+    <div class="lider-import-title" style="margin-top:14px">3. Acesso e regras do líder</div>
     <div class="lider-form-grid">
       <div><label>${ed.id?'Nova senha (deixe vazio para manter)':'Senha de acesso do líder'}</label><input id="lider-senha" type="password" placeholder="mínimo 4 caracteres"><div class="lider-help">É a única informação pessoal nova necessária.</div></div>
       <div><label>% da comissão da plataforma</label><input id="lider-pct" type="number" min="0" max="100" step="0.1" value="${ed.percentual_comissao??3}"><div class="lider-help">Sugestão inicial: 3%. Não é sobre o valor total da corrida.</div></div>
       <div><label>Dias de comissão por indicado</label><input id="lider-dias" type="number" min="1" value="${ed.dias_comissao??90}"></div>
       <div><label>Meta mensal de entregas</label><input id="lider-meta" type="number" min="0" value="${ed.meta_entregas_mensal??50}"></div>
       <div><label>Bônus por motorista ativado</label><input id="lider-bonus" type="number" min="0" step="0.01" value="${ed.bonus_ativacao??10}"><div class="lider-help">Sugestão: R$ 10 somente após o indicado completar 3 entregas.</div></div>
-      <div><label>Bônus ao bater a meta</label><input id="lider-bonus-meta" type="number" min="0" step="0.01" value="${ed.bonus_meta_valor??50}"><div class="lider-help">Sugestão: R$ 50 quando a cidade bater a meta.</div></div>
+      <div><label>Bônus ao bater a meta</label><input id="lider-bonus-meta" type="number" min="0" step="0.01" value="${ed.bonus_meta_valor??50}"><div class="lider-help">Sugestão: R$ 50 quando as regiões baterem a meta.</div></div>
       <div><label>Entregas para liberar bônus da meta</label><input id="lider-bonus-meta-entregas" type="number" min="0" value="${ed.bonus_meta_entregas??50}"></div>
       <div style="display:flex;align-items:end"><label style="display:flex;align-items:center;gap:9px;margin:0 0 13px"><input id="lider-ativo" type="checkbox" ${ed.ativo===false?'':'checked'} style="width:auto"> Líder ativo</label></div>
     </div>
-    <div class="lider-rule-card"><b>Regra sugerida:</b> 3% da comissão da plataforma por até 90 dias por motorista indicado. A indicação só vira ativa depois de 3 entregas concluídas. Bônus sugeridos: R$ 10 por motorista ativado e R$ 50 quando a cidade bater 50 entregas no mês. Nenhum bônus é pago por simples cadastro.</div>
+    <div class="lider-rule-card"><b>Regra sugerida:</b> 3% da comissão da plataforma por até 90 dias por motorista indicado. A indicação só vira ativa depois de 3 entregas concluídas. Bônus sugeridos: R$ 10 por motorista ativado e R$ 50 quando as regiões baterem 50 entregas no mês. Nenhum bônus é pago por simples cadastro.</div>
     <div class="lider-actions"><button class="btn btn-primario" onclick="salvarLiderAdmin()">${ed.id?'SALVAR ALTERAÇÕES':'PROMOVER A LÍDER'}</button>${ed.id?'<button class="btn btn-secundario" onclick="novoLiderAdmin()">Cancelar edição</button>':''}</div>
-    <div style="font-size:12px;color:var(--poeira);margin-top:12px">Painel do líder: <b>/lider.html</b> · o próprio líder poderá instalar como app e ativar notificações.</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:12px">Painel do líder: <b>/lider.html</b> · o próprio líder poderá instalar como app e falar com os motoristas pelo WhatsApp.</div>
   </div>
-  <div class="admin-cartao"><h3 style="margin-top:0">Líderes cadastrados</h3>${lista.length?lista.map(l=>`<div class="lider-row"><div class="lider-row-main"><b>${l.nome}</b><div class="meta">${l.cidade} · ${l.telefone}<br>${Number(l.percentual_comissao||0).toFixed(1)}% da comissão · ${l.dias_comissao} dias · meta ${l.meta_entregas_mensal}/mês · bônus motorista ${Number(l.bonus_ativacao||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} · bônus meta ${Number(l.bonus_meta_valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div><span style="font-size:11px;font-weight:800;color:${l.ativo?'#52d888':'#ff7a72'}">${l.ativo?'ATIVO':'PAUSADO'}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-secundario btn-pequeno" onclick="editarLiderAdmin(${l.id})">✏️ Editar</button></div></div>`).join(''):'<div class="vazio">Nenhum líder cadastrado ainda.</div>'}</div>`;
+  <div class="admin-cartao"><h3 style="margin-top:0">Líderes cadastrados</h3>${lista.length?lista.map(l=>{const rs=Array.isArray(l.regioes_atendimento)&&l.regioes_atendimento.length?l.regioes_atendimento:[l.cidade];return `<div class="lider-row"><div class="lider-row-main"><b>${l.nome}</b><div class="meta">📍 ${rs.join(' • ')}<br>${l.telefone}<br>${Number(l.percentual_comissao||0).toFixed(1)}% da comissão · ${l.dias_comissao} dias · meta ${l.meta_entregas_mensal}/mês · bônus motorista ${Number(l.bonus_ativacao||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})} · bônus meta ${Number(l.bonus_meta_valor||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</div></div><span style="font-size:11px;font-weight:800;color:${l.ativo?'#52d888':'#ff7a72'}">${l.ativo?'ATIVO':'PAUSADO'}</span><div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn btn-secundario btn-pequeno" onclick="editarLiderAdmin(${l.id})">✏️ Editar</button></div></div>`}).join(''):'<div class="vazio">Nenhum líder cadastrado ainda.</div>'}</div>`;
 }
 
 async function carregarIndicacoesAdmin(){
