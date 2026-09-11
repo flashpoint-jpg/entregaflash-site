@@ -1,34 +1,35 @@
-ENTREGA FLASH — LÍDER DA CIDADE
-Atualização 11/09/2026
+ENTREGA FLASH — LÍDER DA CIDADE — ATUALIZAÇÃO 11/09/2026
 
-O que foi adicionado:
-- Painel exclusivo em /lider.html
-- Cadastro e gerenciamento de líderes no Admin > Líderes
-- Líder vinculado a uma cidade
-- Indicadores: equipe da cidade, online agora, entregas hoje e no mês
-- Meta mensal da cidade
-- Indicação de novos motoristas
-- Status de indicação: aguardando cadastro, em análise, aprovado e ativo
-- Ativação do indicado após 3 entregas concluídas
-- Comissão estimada calculada sobre a COMISSÃO DA PLATAFORMA, não sobre o frete total
-- Percentual, período (dias), meta e bônus configuráveis por líder no admin
-- Líder não tem acesso ao painel geral, saldos, preços, clientes de outras cidades ou configurações do admin
+O QUE MUDOU
+- O líder agora é criado a partir de um motorista que JÁ ESTÁ CADASTRADO.
+- Admin não precisa redigitar nome, telefone, cidade ou veículo.
+- Basta escolher o motorista, criar a senha e definir as regras do líder.
+- Formulário do Admin corrigido para celular: campos sem sobreposição e layout responsivo.
+- Percentual sugerido padrão: 3% da comissão da plataforma (não é 3% da corrida).
+- Período sugerido: até 90 dias por motorista indicado e ativado.
+- Ativação do indicado: após 3 entregas concluídas.
+- Bônus sugerido por motorista ativado: R$ 10.
+- Meta sugerida: 50 entregas/mês.
+- Bônus sugerido ao bater a meta: R$ 50.
+- Nenhum bônus por simples cadastro.
 
-Fluxo:
-1. Admin entra em Admin > Líderes.
-2. Cria o líder, informa cidade, telefone, senha, percentual e meta.
-3. Líder entra em /lider.html.
-4. O painel mostra somente a equipe da cidade configurada.
-5. Líder pode indicar um novo motorista.
-6. Quando o indicado se cadastra, o painel reconhece pelo telefone.
-7. Após aprovação e 3 entregas concluídas, a indicação vira ATIVA.
-8. A comissão estimada passa a considerar as entregas desse indicado durante o período configurado.
+PAINEL DO LÍDER
+- Acesso em /lider.html
+- Lembra telefone/sessão neste aparelho.
+- Tem botão Instalar app (PWA própria do líder).
+- Tem botão Ativar notificações.
+- Ao ativar alertas, o líder pode receber push da sua cidade, inclusive aviso de motorista ficando online.
+- Vê motoristas da cidade, online agora, entregas do dia/mês, meta, indicações, comissão e bônus estimados.
 
-Regra sugerida inicial:
-- 7% da comissão líquida da plataforma
-- por 90 dias
-- somente após motorista indicado estar realmente ativo
+ARQUIVOS PRINCIPAIS ALTERADOS
+- /admin/admin.html
+- /lider.html
+- /lider-manifest.json (novo)
+- /index.html
+- /entregaflash-sw.js
 
-Importante:
-- Não é comissão multinível. É apenas Líder -> Motorista indicado.
-- O líder não pode aprovar/reprovar motorista nem alterar valores financeiros.
+BANCO / SUPABASE
+- Líder pode ser vinculado diretamente ao motorista por motorista_id.
+- Novos campos de bônus/meta adicionados ao cadastro de líderes.
+- Criadas funções administrativas para importar motoristas e promover a líder sem duplicar cadastro.
+- Normalização de cidade melhorada para juntar variações de maiúsculas/minúsculas e acentos.
