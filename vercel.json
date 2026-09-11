@@ -7,9 +7,35 @@
     {
       "source": "/admin/",
       "destination": "/admin/admin.html"
+    },
+    {
+      "source": "/lider",
+      "destination": "/lider.html"
+    },
+    {
+      "source": "/lider/",
+      "destination": "/lider.html"
     }
   ],
   "headers": [
+    {
+      "source": "/lider.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/lider-manifest.json",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, max-age=0"
+        }
+      ]
+    },
     {
       "source": "/entregaflash.apk",
       "headers": [

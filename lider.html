@@ -63,7 +63,7 @@
 <div id="toast" class="toast"></div>
 <script>
 const SUPABASE_URL='https://rgcclordmqjmwuzrrfbd.supabase.co';
-const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJIUzI1NiIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
+const SUPABASE_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
 const VAPID_PUBLIC_KEY='BBBzZ91h6R8yKe4HJSsYcC8IXaTVNtlAXNb_dQPENNGI0f9zKebPq2JKl49pjTFnNHA9Ki4mvMxTQTI3wPv6Dds';
 const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 let sess={telefone:localStorage.getItem('ef_lider_tel')||'',senhaHash:localStorage.getItem('ef_lider_hash')||''}, dados=null, deferredInstall=null, canalRealtime=null;
@@ -78,7 +78,7 @@ async function instalarApp(){
   if(deferredInstall){deferredInstall.prompt();const r=await deferredInstall.userChoice;deferredInstall=null;if(r.outcome==='accepted')toast('Instalação iniciada ✓');return}
   toast('No Chrome, toque em ⋮ e escolha “Instalar app” ou “Adicionar à tela inicial”.');
 }
-async function registrarSW(){if(!('serviceWorker' in navigator))return null;try{return await navigator.serviceWorker.register('/entregaflash-sw.js?v=lider-20260911-2',{scope:'/'});}catch(e){console.warn(e);return null}}
+async function registrarSW(){if(!('serviceWorker' in navigator))return null;try{return await navigator.serviceWorker.register('/entregaflash-sw.js?v=lider-20260911-3',{scope:'/'});}catch(e){console.warn(e);return null}}
 function urlBase64ToUint8Array(base64String){const padding='='.repeat((4-base64String.length%4)%4);const base64=(base64String+padding).replace(/-/g,'+').replace(/_/g,'/');const rawData=atob(base64);return Uint8Array.from([...rawData].map(c=>c.charCodeAt(0)))}
 async function ativarAlertas(){
   if(!sess.telefone){toast('Entre no painel primeiro.');return}
@@ -108,8 +108,8 @@ async function login(){
   const t=document.getElementById('tel').value.replace(/\D/g,''),s=document.getElementById('senha').value;
   if(t.length<10||s.length<4){toast('Informe telefone e senha');return}
   const b=document.getElementById('entrar');b.disabled=true;b.innerHTML='<span class="loading"></span>Entrando...';
-  try{const h=await hashSenha(s);const {data,error}=await sb.rpc('entrega_lider_autenticar',{p_telefone:t,p_senha_hash:h});if(error||!data?.length)throw new Error('login');sess={telefone:t,senhaHash:h};localStorage.setItem('ef_lider_tel',t);localStorage.setItem('ef_lider_hash',h);await carregar();if(Notification.permission==='granted')ativarAlertas();}
-  catch(e){toast('Acesso não encontrado ou senha incorreta')}finally{b.disabled=false;b.textContent='Entrar no painel'}
+  try{const h=await hashSenha(s);const {data,error}=await sb.rpc('entrega_lider_autenticar',{p_telefone:t,p_senha_hash:h});if(error){console.error('Login líder:',error);throw new Error('servidor')}if(!data?.length)throw new Error('login');sess={telefone:t,senhaHash:h};localStorage.setItem('ef_lider_tel',t);localStorage.setItem('ef_lider_hash',h);await carregar();if(typeof Notification!=='undefined'&&Notification.permission==='granted')ativarAlertas();}
+  catch(e){toast(e?.message==='servidor'?'Falha de conexão com o servidor. Tente novamente.':'Acesso não encontrado ou senha incorreta')}finally{b.disabled=false;b.textContent='Entrar no painel'}
 }
 async function carregar(){
   if(!sess.telefone||!sess.senhaHash)return;
