@@ -1839,7 +1839,7 @@ function dispararAnimacaoPlano(chave){
 let estado = {
   modo:'cliente',
   telaBoasVindas: true,
-  form:{ etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', roca:false, extras:extrasVazios() },
+  form:{ etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', motoristaPreferidoTelefone:'', roca:false, extras:extrasVazios() },
   semEndereco:{ aberto:false, campo:'origem', mapsLink:'', plusCode:'', erro:'', enviandoFoto:false },
   calculando:false, falhaCalculo:false,
   transicaoPedido:{ ativa:false, alvo:null },
@@ -1858,12 +1858,13 @@ let estado = {
     loginTelefone:'', loginErro:'',
     cadastro:{ nome:'', telefone:'', senha:'', erro:'' }
   },
-  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null },
+  motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null, latAtualizadoEm:null },
   trocaPlanoMotorista:{ aberto:false, gerando:false, erro:'', motoristaId:null, cpf:'', qrCode:null, copiaCola:null, status:'pendente' },
   chamadosAmigo:[], // chamados de SOS "motorista amigo" em aberto (carregados quando motorista está disponível)
   chamadoAmigoModal:{ aberto:false, pedidoId:null, percentual:10, enviando:false },
   canalChamadosAmigo:null,
   pedidos:[], ultimoPedidosJSON:'', ultimoPedidosJSONEstrutural:'',
+  motoristasFavoritos:[], favoritosMotoristasCarregando:false,
   motoristasOnline:0,
   presenca:{ total:0, clientes:0, motoristas:0 }, // pessoas com o app aberto agora (via presença em tempo real)
   abaMinhasEntregas:'andamento', // andamento | concluidas | canceladas
@@ -2070,7 +2071,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260910-DESPACHO-GLOBAL-1';
+  const versaoApp = '20260912-PIN-FAVORITO-1';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2206,6 +2207,37 @@ async function notificar(titulo, corpo, tag){
 // ---------- sessão persistente (mantém login/tela após F5) ----------
 function salvarLocal(chave,valor){ try{ localStorage.setItem(chave,valor); }catch(e){} }
 function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
+
+// ---------- ponte com o APK Android nativo (GPS em segundo plano) ----------
+const EF_NATIVE_ANDROID_CHAVE='ef_native_android_bg_v1';
+(function detectarApkNativoAndroid(){
+  try{
+    const u=new URL(location.href);
+    if(u.searchParams.get('ef_native')==='1'){
+      localStorage.setItem(EF_NATIVE_ANDROID_CHAVE,'1');
+      u.searchParams.delete('ef_native');
+      history.replaceState(null,'',u.pathname+(u.search||'')+(u.hash||''));
+    }
+  }catch(e){}
+})();
+function entregaFlashNativoAndroidAtivo(){
+  try{ return localStorage.getItem(EF_NATIVE_ANDROID_CHAVE)==='1'; }catch(e){ return false; }
+}
+function controlarGpsNativoAndroid(acao, telefone){
+  if(!entregaFlashNativoAndroidAtivo()) return false;
+  const tel=String(telefone||'').replace(/\D/g,'');
+  if(!tel) return false;
+  const op=acao==='stop'?'stop':'start';
+  try{
+    const a=document.createElement('a');
+    a.href=`entregaflash://tracking/${op}?phone=${encodeURIComponent(tel)}`;
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ try{ a.remove(); }catch(e){} },1000);
+    return true;
+  }catch(e){ console.warn('ponte GPS nativo',e); return false; }
+}
 const CHAVE_RASCUNHO_PEDIDO_PAGAMENTO = 'ef_pedido_aguardando_saldo_v1';
 function salvarPedidoAguardandoSaldo(preco){
   try{
@@ -2248,6 +2280,7 @@ async function restaurarSessao(){
         estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
         estado.filtroTelefoneCliente = data.telefone;
         estado.form.nome = data.nome; estado.form.telefone = data.telefone;
+        await carregarMotoristasFavoritos(false);
       } else { removerLocal('ef_cliente_telefone'); }
     }
 
@@ -2259,7 +2292,7 @@ async function restaurarSessao(){
         // enviar tudo não podem cair em “aguardando análise”. Ao reabrir o app, retomam
         // automaticamente PIX/documentos exatamente do ponto em que pararam.
         estado.modo='entregador'; estado.telaBoasVindas=false;
-        estado.motorista = { nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null };
+        estado.motorista = { nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null, latAtualizadoEm:null };
         estado.painelMotorista.telefoneLiberado=data.telefone;
         estado.painelMotorista.loginTelefone=data.telefone;
         removerLocal('ef_motorista_disponivel');
@@ -2269,11 +2302,12 @@ async function restaurarSessao(){
           nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
           veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
           fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
-          notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null
+          notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null, latAtualizadoEm:Number(data.lat_atualizado_em)||null
         };
         if(estado.motorista.disponivel && estado.motorista.status==='aprovado'){
           salvarLocal('ef_motorista_disponivel','true');
           iniciarRastreioMotorista();
+          setTimeout(()=>controlarGpsNativoAndroid('start', estado.motorista.telefone),350);
         } else {
           salvarLocal('ef_motorista_disponivel','false');
         }
@@ -3025,6 +3059,9 @@ function paraCamposApp(row){
     chegadaEntregaEm: row.chegada_entrega_em!=null ? Number(row.chegada_entrega_em) : null,
     taxaEsperaColeta: Number(row.taxa_espera_coleta)||0,
     taxaEsperaEntrega: Number(row.taxa_espera_entrega)||0,
+    pinConfirmadoEm: row.pin_confirmado_em!=null ? Number(row.pin_confirmado_em) : null,
+    motoristaPreferidoTelefone: row.motorista_preferido_telefone || '',
+    preferenciaExclusivaAte: row.preferencia_exclusiva_ate!=null ? Number(row.preferencia_exclusiva_ate) : null,
     acrescimoValor: Number(row.acrescimo_valor)||0,
     acrescimoMotivos: Array.isArray(row.acrescimo_motivos) ? row.acrescimo_motivos : (row.acrescimo_motivos ? JSON.parse(row.acrescimo_motivos) : [])
   };
@@ -3055,8 +3092,124 @@ function paraCamposDB(p){
     extra_urgente: !!(p.extras&&p.extras.urgente),
     chegada_coleta_em: p.chegadaColetaEm||null, chegada_entrega_em: p.chegadaEntregaEm||null,
     taxa_espera_coleta: p.taxaEsperaColeta||0, taxa_espera_entrega: p.taxaEsperaEntrega||0,
+    motorista_preferido_telefone: p.motoristaPreferidoTelefone||null,
     acrescimo_valor: p.acrescimoValor||0, acrescimo_motivos: JSON.stringify(p.acrescimoMotivos||[])
   };
+}
+
+
+// ---------- PIN de entrega + motorista favorito ----------
+const JANELA_FAVORITO_MS = 30000;
+function normalizarTelefoneEF(v){ return String(v||'').replace(/\D/g,''); }
+function gerarPinEntrega(){
+  try{
+    const a=new Uint32Array(1); crypto.getRandomValues(a); return String(1000+(a[0]%9000));
+  }catch(e){ return String(Math.floor(1000+Math.random()*9000)); }
+}
+function chavePinEntrega(id){ return 'ef_pin_entrega_'+String(id||''); }
+function salvarPinEntregaLocal(id,pin){ try{ localStorage.setItem(chavePinEntrega(id),String(pin||'')); }catch(e){} }
+function obterPinEntregaLocal(id){ try{ const v=localStorage.getItem(chavePinEntrega(id)); return /^\d{4}$/.test(v||'')?v:''; }catch(e){ return ''; } }
+function removerPinEntregaLocal(id){ try{ localStorage.removeItem(chavePinEntrega(id)); }catch(e){} }
+function preferenciaFavoritoAtiva(p,agora=Date.now()){
+  return !!(p && p.motoristaPreferidoTelefone && Number(p.preferenciaExclusivaAte||0)>agora);
+}
+function inicioBuscaNormalPedido(p){
+  const exp=Number(p?.preferenciaExclusivaAte||0); return exp>0 ? exp : Number(p?.criadoEm||Date.now());
+}
+function nomeFavoritoPorTelefone(tel){
+  const t=normalizarTelefoneEF(tel); const x=(estado.motoristasFavoritos||[]).find(m=>normalizarTelefoneEF(m.telefone)===t); return x?.nome||'';
+}
+function motoristaEhFavorito(tel){
+  const t=normalizarTelefoneEF(tel); return !!t && (estado.motoristasFavoritos||[]).some(m=>normalizarTelefoneEF(m.telefone)===t);
+}
+async function carregarMotoristasFavoritos(renderizar=false){
+  const tel=normalizarTelefoneEF(estado.cliente?.telefone);
+  if(!estado.cliente?.logado || !tel){ estado.motoristasFavoritos=[]; return; }
+  if(estado.favoritosMotoristasCarregando) return;
+  estado.favoritosMotoristasCarregando=true;
+  try{
+    const {data,error}=await sb.rpc('entrega_cliente_listar_motoristas_favoritos',{p_cliente_telefone:tel});
+    if(error) throw error;
+    estado.motoristasFavoritos=(data||[]).map(x=>({
+      telefone:x.motorista_telefone||'', nome:x.nome||'Motorista', veiculoTipo:x.veiculo_tipo||'',
+      marca:x.veiculo_marca||'', placa:x.veiculo_placa||'', cor:x.veiculo_cor||'', fotoUrl:x.foto_motorista_url||null,
+      nota:x.nota_media!=null?Number(x.nota_media):5, totalAvaliacoes:Number(x.total_avaliacoes)||0,
+      online:!!x.online, criadoEm:Number(x.criado_em)||0
+    }));
+    const sel=normalizarTelefoneEF(estado.form?.motoristaPreferidoTelefone);
+    if(sel){
+      const ainda=(estado.motoristasFavoritos||[]).find(x=>normalizarTelefoneEF(x.telefone)===sel && x.online && x.veiculoTipo===estado.form.veiculo);
+      if(!ainda) estado.form.motoristaPreferidoTelefone='';
+    }
+  }catch(e){ console.warn('Falha ao carregar motoristas favoritos',e); }
+  finally{ estado.favoritosMotoristasCarregando=false; if(renderizar) render(); }
+}
+async function alternarFavoritoMotorista(pedidoId){
+  const p=estado.pedidos.find(x=>x.id===pedidoId);
+  if(!p || p.status!=='entregue' || !p.motoristaTelefone) return;
+  const ja=motoristaEhFavorito(p.motoristaTelefone);
+  const {data,error}=await sb.rpc('entrega_cliente_favoritar_motorista',{
+    p_cliente_telefone:estado.cliente.telefone,
+    p_motorista_telefone:p.motoristaTelefone,
+    p_favoritar:!ja
+  });
+  if(error || data!==true){ console.error(error); mostrarToast('Não consegui atualizar o motorista favorito.','erro'); return; }
+  await carregarMotoristasFavoritos(false);
+  mostrarToast(!ja?'Motorista adicionado aos favoritos!':'Motorista removido dos favoritos.','sucesso');
+  render();
+}
+function favoritoMotoristaHTML(p){
+  if(p.status!=='entregue' || !p.motoristaTelefone) return '';
+  const ja=motoristaEhFavorito(p.motoristaTelefone);
+  return `<div class="favorito-pos-entrega"><div><b>${ja?'★ Motorista favorito':'☆ Gostou deste motorista?'}</b><span>${ja?'Você pode chamá-lo primeiro em uma próxima entrega.':'Favorite para poder chamá-lo primeiro na próxima vez.'}</span></div><button type="button" class="btn ${ja?'btn-secundario':'btn-primario'} btn-pequeno" onclick="alternarFavoritoMotorista('${p.id}')">${ja?'Remover favorito':'★ Favoritar motorista'}</button></div>`;
+}
+function selecionarMotoristaPreferido(tel){ estado.form.motoristaPreferidoTelefone=normalizarTelefoneEF(tel); render(); }
+function seletorMotoristaFavoritoHTML(f){
+  const todos=(estado.motoristasFavoritos||[]);
+  if(!todos.length) return '';
+  const compativeis=todos.filter(x=>x.veiculoTipo===f.veiculo);
+  if(!compativeis.length) return `<div class="favorito-escolha"><b>★ Seus motoristas favoritos</b><div class="subtitulo">Você tem favoritos, mas nenhum usa o veículo escolhido neste pedido.</div></div>`;
+  const selecionado=normalizarTelefoneEF(f.motoristaPreferidoTelefone);
+  return `<div class="favorito-escolha"><div class="favorito-escolha-topo"><div><b>★ Chamar motorista favorito primeiro</b><span>Se escolher um favorito online, a chamada toca só para ele por 30 segundos. Se não aceitar, abre automaticamente para os demais.</span></div><button type="button" class="favorito-normal ${!selecionado?'ativo':''}" onclick="selecionarMotoristaPreferido('')">Busca normal</button></div><div class="favorito-lista">${compativeis.map(m=>{
+    const ativo=normalizarTelefoneEF(m.telefone)===selecionado;
+    return `<button type="button" class="favorito-card ${ativo?'ativo':''} ${m.online?'':'offline'}" ${m.online?`onclick="selecionarMotoristaPreferido('${normalizarTelefoneEF(m.telefone)}')"`:'disabled'}>${m.fotoUrl?`<img src="${m.fotoUrl}" alt="">`:`<span class="favorito-avatar">${(m.nome||'M').charAt(0).toUpperCase()}</span>`}<span class="favorito-dados"><b>${m.nome}</b><small>${VEICULOS[m.veiculoTipo]?.emoji||''} ${VEICULOS[m.veiculoTipo]?.label||m.veiculoTipo} · ★ ${Number(m.nota||5).toFixed(1)}</small><em>${m.online?'● Online agora':'○ Offline agora'}</em></span>${ativo?'<strong>✓</strong>':''}</button>`;
+  }).join('')}</div></div>`;
+}
+function pinEntregaClienteHTML(p){
+  if(!p || ['buscando','cancelado','entregue','aguardando_pagamento'].includes(p.status)) return '';
+  const pin=obterPinEntregaLocal(p.id);
+  if(!pin) return `<div class="pin-cliente-box aviso"><b>🔐 PIN de entrega</b><span>O PIN não está salvo neste aparelho. Não finalize a entrega sem confirmar com o suporte.</span></div>`;
+  return `<div class="pin-cliente-box"><div><b>🔐 PIN da entrega</b><span>Informe ao motorista somente quando o produto estiver com você.</span></div><strong>${pin}</strong></div>`;
+}
+async function confirmarPinEFinalizar(pedidoId){
+  const p=estado.pedidos.find(x=>x.id===pedidoId);
+  if(!p || p.motoristaTelefone!==estado.motorista.telefone || p.status!=='a_caminho') return;
+  const el=document.getElementById('pin-entrega-'+pedidoId);
+  const pin=String(el?.value||'').replace(/\D/g,'').slice(0,4);
+  if(pin.length!==4){ mostrarToast('Digite os 4 números do PIN informado pelo cliente.','erro'); return; }
+  const destinos=listaDestinosPedido(p); const alvo=destinos[destinos.length-1]?.coord||null;
+  mostrarToast('Validando PIN e localização...');
+  const pos=await obterPosicaoAtual();
+  if(alvo){
+    if(!pos){ mostrarToast('Não consegui confirmar sua localização. Ative o GPS e tente novamente.','erro'); return; }
+    const d=distanciaKm(pos.lat,pos.lon,alvo.lat,alvo.lon);
+    if(d>RAIO_GEOFENCE_KM){ mostrarToast(`O PIN só pode ser validado no endereço da entrega (faltam ~${d.toFixed(2)} km).`,'erro'); return; }
+  }
+  const {data,error}=await sb.rpc('entrega_confirmar_pin_entrega',{
+    p_pedido_id:pedidoId,p_motorista_telefone:estado.motorista.telefone,p_pin:pin,
+    p_lat:pos?.lat??null,p_lng:pos?.lon??null
+  });
+  if(error){ console.error(error); mostrarToast('Não consegui validar o PIN. Tente novamente.','erro'); return; }
+  if(data!==true){ mostrarToast('PIN incorreto. Peça ao cliente os 4 números que aparecem no app dele.','erro'); return; }
+  p.pinConfirmadoEm=Date.now(); estado.ultimoPedidosJSON='';
+  render();
+  mostrarToast('PIN confirmado! Agora tire a foto obrigatória da entrega.','sucesso');
+  setTimeout(()=>solicitarFoto(pedidoId,'depois'),80);
+}
+function pinMotoristaHTML(p){
+  if(p.status!=='a_caminho' || p.tipoEntrega==='vendai_marketplace') return '';
+  if(p.pinConfirmadoEm) return `<div class="pin-motorista-box ok"><b>✓ PIN confirmado</b><span>Agora tire a foto obrigatória para concluir a entrega.</span></div>`;
+  return `<div class="pin-motorista-box"><b>🔐 PIN para entregar</b><span>Peça ao cliente o PIN de 4 números. Sem o PIN correto a entrega não finaliza.</span><div><input id="pin-entrega-${p.id}" inputmode="numeric" pattern="[0-9]*" maxlength="4" placeholder="0000" autocomplete="one-time-code" oninput="this.value=this.value.replace(/\\D/g,'').slice(0,4)"><button type="button" class="btn btn-verde btn-pequeno" onclick="confirmarPinEFinalizar('${p.id}')">Validar PIN</button></div></div>`;
 }
 
 function estaDigitandoEndereco(){
@@ -3179,15 +3332,16 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 180000; // GPS recente; o servidor limpa disponibilidade fantasma sem push após 15 min
+const PRESENCA_MOTORISTA_MS = 5*60*1000; // online real = GPS confirmado nos últimos 5 minutos
 function motoristaOnlineAgora(m, agora=Date.now()){
-  // O servidor mantém disponível quem tem push válido mesmo com o app fechado.
-  // Sem push e sem sinal por 15 min, a rotina automática remove o online fantasma.
-  return !!(m && m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
+  const gpsEm = Number(m?.lat_atualizado_em||0);
+  const temPosicao = m?.lat_atual!=null && m?.lng_atual!=null;
+  return !!(m && m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status) && temPosicao && gpsEm>0 && (agora-gpsEm)<=PRESENCA_MOTORISTA_MS);
 }
 async function carregarMotoristasOnline(){
   try{
-    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).in('status', STATUS_ACESSO_PAINEL);
+    const corteGps=Date.now()-PRESENCA_MOTORISTA_MS;
+    const { count, error } = await sb.from('entrega_motoristas').select('id',{count:'exact',head:true}).eq('disponivel', true).in('status', STATUS_ACESSO_PAINEL).gte('lat_atualizado_em', corteGps);
     if(error){ console.error(error); return; }
     if(count!==estado.motoristasOnline){ estado.motoristasOnline = count||0; if(!estaDigitandoEndereco()) render(); }
   }catch(e){ console.error(e); }
@@ -3342,6 +3496,22 @@ function assinarMotoristaLogadoRealtime(telefone){
       if(novo.veiculo_cor && novo.veiculo_cor!==estado.motorista.cor){ estado.motorista.cor=novo.veiculo_cor; mudou=true; }
       if(novo.foto_motorista_url && novo.foto_motorista_url!==estado.motorista.fotoMotoristaUrl){ estado.motorista.fotoMotoristaUrl=novo.foto_motorista_url; mudou=true; }
       if(novo.raio_atendimento_km!=null && novo.raio_atendimento_km!==estado.motorista.raioAtendimentoKm){ estado.motorista.raioAtendimentoKm=novo.raio_atendimento_km; mudou=true; }
+      // O APK nativo atualiza o GPS direto no Supabase mesmo com WhatsApp/Waze na frente.
+      // Guarda o horário do último FIX do banco para a tela reconhecer o online real.
+      if(novo.lat_atualizado_em!=null){
+        const antes=Number(estado.motorista.latAtualizadoEm||0);
+        const eraFresco=antes>0 && (Date.now()-antes)<=PRESENCA_MOTORISTA_MS;
+        const depois=Number(novo.lat_atualizado_em)||0;
+        estado.motorista.latAtualizadoEm=depois||null;
+        const ficouFresco=depois>0 && (Date.now()-depois)<=PRESENCA_MOTORISTA_MS;
+        if(eraFresco!==ficouFresco) mudou=true;
+      }
+      // Se o serviço nativo recuperou sinal depois de uma limpeza automática, sincroniza o botão.
+      if(novo.disponivel===true && estado.motorista.disponivel===false && novo.status==='aprovado'){
+        estado.motorista.disponivel=true;
+        salvarLocal('ef_motorista_disponivel','true');
+        mudou=true;
+      }
       // se o banco disser offline (ex: robô de limpeza por falta de sinal, ou admin) enquanto
       // a tela ainda mostrava online, sincroniza e avisa — evita ficar "online" na tela sem
       // realmente receber pedidos.
@@ -3356,6 +3526,7 @@ function assinarMotoristaLogadoRealtime(telefone){
         estado.motorista.disponivel = true;
         salvarLocal('ef_motorista_disponivel','true');
         iniciarRastreioMotorista();
+        setTimeout(()=>controlarGpsNativoAndroid('start', estado.motorista.telefone),350);
         setTimeout(()=>heartbeatMotoristaPresenca(),900);
         mostrarToast(' Cadastro aprovado! Ativação online automática iniciada.', 'sucesso');
         notificar(' Cadastro aprovado!', 'Abra o Entrega Flash e mantenha o GPS ativo para receber pedidos.');
@@ -4367,7 +4538,7 @@ async function exigirLocalizacaoOperacional(tipo){
           const lat = pos.coords.latitude, lon = pos.coords.longitude;
           estado.ultimaLocalizacao = { lat, lng:lon, atualizadoEm:Date.now() };
           // A mesma posição precisa alimentar o rastreio do motorista.
-          ultimaPosicaoMotorista = { lat, lon };
+          ultimaPosicaoMotorista = { lat, lon, capturadaEm:Number(pos.timestamp||Date.now()) };
           // remove imediatamente o aviso de processamento quando o GPS respondeu
           estado.toast = null;
           estado.toastSeq = (estado.toastSeq||0)+1;
@@ -4468,6 +4639,7 @@ async function criarPedido(){
     editado:false, canceladoEm:null, taxaCancelamento:0, prioridade:(f.prioridadeValor||0)>0, prioridadeValor:f.prioridadeValor||0,
     veiculo:f.veiculo, descricao:f.descricao, distancia:f.distancia, distanciaGPS:f.distanciaGPS, distanciaDivergente:!!f.distanciaDivergente, preco:preco,
     extras: {...f.extras},
+    motoristaPreferidoTelefone:normalizarTelefoneEF(f.motoristaPreferidoTelefone), preferenciaExclusivaAte:null, pinConfirmadoEm:null,
     status:'aguardando_pagamento', motoristaNome:'', motoristaTelefone:'', criadoEm:agora, atualizadoEm:agora
   };
   const { error: erroSalvar } = await sb.from('entrega_pedidos').insert(paraCamposDB(pedido));
@@ -4476,6 +4648,19 @@ async function criarPedido(){
     mostrarToast('Não consegui criar o pedido. Nenhum valor foi debitado da sua carteira.', 'erro');
     return;
   }
+
+  // O PIN nasce no aparelho do cliente. O servidor recebe somente o hash e nunca expõe os 4 dígitos aos motoristas.
+  const pinEntrega = gerarPinEntrega();
+  const { data:pinDefinido, error:erroPin } = await sb.rpc('entrega_definir_pin_entrega', {
+    p_pedido_id:pedido.id, p_cliente_telefone:estado.cliente.telefone, p_pin:pinEntrega
+  });
+  if(erroPin || pinDefinido!==true){
+    console.error('Falha ao definir PIN',erroPin);
+    await sb.from('entrega_pedidos').update({status:'cancelado',cancelado_por:'sistema',cancelado_em:Date.now(),atualizado_em:Date.now()}).eq('id',pedido.id).eq('status','aguardando_pagamento');
+    mostrarToast('Não consegui gerar o PIN de segurança. Nenhum valor foi debitado. Tente novamente.','erro');
+    return;
+  }
+  salvarPinEntregaLocal(pedido.id,pinEntrega);
 
   let saldoAposDebito = null;
   let erroDebito = null;
@@ -4506,6 +4691,10 @@ async function criarPedido(){
     }
   }
   pedido.status='buscando';
+  try{
+    const {data:prefSrv}=await sb.from('entrega_pedidos').select('motorista_preferido_telefone,preferencia_exclusiva_ate').eq('id',pedido.id).maybeSingle();
+    if(prefSrv){ pedido.motoristaPreferidoTelefone=prefSrv.motorista_preferido_telefone||''; pedido.preferenciaExclusivaAte=prefSrv.preferencia_exclusiva_ate!=null?Number(prefSrv.preferencia_exclusiva_ate):null; }
+  }catch(e){ console.warn('Preferência do favorito não sincronizada',e); }
   w.saldo = Number(saldoAposDebito)||0;
   estado.cliente.carteira.saldo = w.saldo;
   estado.ultimoPedidosJSON='';
@@ -4523,7 +4712,7 @@ async function criarPedido(){
   estado.pedidoBuscandoId = pedido.id;
   estado.abaPedidosCliente = 'ativos';
   removerLocal(CHAVE_RASCUNHO_PEDIDO_PAGAMENTO);
-  estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', roca:false, extras:extrasVazios() };
+  estado.form = { etapaPedido:1, nome:f.nome, telefone:f.telefone, origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', motoristaPreferidoTelefone:'', roca:false, extras:extrasVazios() };
   // Mostra uma tela persistente de busca. Ela só sai quando o cliente escolher ver os pedidos
   // ou quando o realtime informar que um motorista aceitou.
   estado.pedidos = [pedido, ...estado.pedidos.filter(x=>x.id!==pedido.id)];
@@ -4706,6 +4895,7 @@ function carregarPedidoCanceladoNoFormulario(p, etapa=2){
     destinoFotoUrl: p.destinoFotoUrl || null,
     destinoReferencia: p.destinoReferencia || '',
     destinoComplemento: p.destinoComplemento || '',
+    motoristaPreferidoTelefone: '',
     roca: false,
     extras: {...extrasVazios(), ...(p.extras||{})}
   };
@@ -5023,7 +5213,7 @@ async function aceitarPedido(id){
     acrescimo_valor: 0, acrescimo_motivos: JSON.stringify([]),
     preco: p.preco
   }).eq('id', id).eq('status','buscando').select('id');
-  if(error){ console.error(error); mostrarToast('Erro ao aceitar o pedido.', 'erro'); return; }
+  if(error){ console.error(error); if(String(error.message||'').includes('pedido_reservado_motorista_favorito')) mostrarToast('Este pedido está chamando o motorista favorito do cliente primeiro. Aguarde alguns segundos.','info'); else mostrarToast('Erro ao aceitar o pedido.', 'erro'); return; }
   if(!data || data.length===0){
     mostrarErro('Esse pedido acabou de ser aceito por outro motorista. Escolhe outro da lista.');
     estado.ultimoPedidosJSON=''; await carregarPedidos();
@@ -5081,7 +5271,7 @@ async function cancelarPedidoMotorista(id){
     status:'buscando', motorista_nome:null, motorista_telefone:null, motorista_foto_url:null,
     motorista_veiculo_tipo:null, motorista_marca:null, motorista_cor:null, motorista_placa:null,
     motorista_nota_media:null, motorista_total_avaliacoes:null, motorista_lat:null, motorista_lng:null,
-    iniciado_em:null, cancelado_por:'motorista', atualizado_em: agora
+    iniciado_em:null, cancelado_por:'motorista', pin_confirmado_em:null, pin_confirmado_lat:null, pin_confirmado_lng:null, motorista_preferido_telefone:null, preferencia_exclusiva_ate:null, atualizado_em: agora
   }).eq('id', id);
   if(error){ console.error(error); mostrarToast('Erro ao cancelar.', 'erro'); return; }
   const { error: erroLog } = await sb.from('entrega_cancelamentos_motorista').insert({
@@ -5146,7 +5336,7 @@ async function avancarStatus(id){
     const payloadAvanco = { status: novoStatus, atualizado_em: agora };
     if(campoTaxaEspera) payloadAvanco[campoTaxaEspera] = taxaEspera;
     const { error } = await sb.from('entrega_pedidos').update(payloadAvanco).eq('id', id);
-    if(error){ console.error(error); mostrarToast('Erro ao atualizar o pedido.', 'erro'); return; }
+    if(error){ console.error(error); if(String(error.message||'').includes('pin_entrega_nao_confirmado')) mostrarToast('Valide o PIN do cliente antes de marcar a entrega como concluída.','erro'); else mostrarToast('Erro ao atualizar o pedido.', 'erro'); return; }
     estado.ultimoPedidosJSON='';
     if(taxaEspera>0){
       // debita do cliente e credita 100% ao motorista, como compensação pelo tempo de espera
@@ -5157,6 +5347,7 @@ async function avancarStatus(id){
       mostrarToast(`Taxa de espera de R$ ${taxaEspera.toFixed(2)} cobrada do cliente e creditada a você.${creditoEspera.ok?'':' (erro ao creditar, avisa o suporte)'}`, 'sucesso');
     }
     if(novoStatus==='entregue'){
+      removerPinEntregaLocal(id);
       vibrarLeve([40,30,40]);
       registrarAlertaAdmin('pedido_entregue', `Pedido de ${p.clienteNome||'?'} entregue por ${p.motoristaNome||'?'} (${p.motoristaTelefone||''}) · R$ ${Number(p.preco||0).toFixed(2)}.`, id);
       const aindaAtivos = estado.pedidos.some(x=>x.id!==id && x.motoristaTelefone===p.motoristaTelefone && x.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(x.status));
@@ -5217,6 +5408,7 @@ async function verificarNoEndereco(coordAlvo){
 async function solicitarFoto(pedidoId, tipo){
   const p = estado.pedidos.find(x=>x.id===pedidoId);
   if(!p) return;
+  if(tipo==='depois' && p.tipoEntrega!=='vendai_marketplace' && !p.pinConfirmadoEm){ mostrarToast('Antes da foto final, valide o PIN de 4 números informado pelo cliente.','erro'); return; }
   let coordAlvo;
   if(tipo==='antes'){
     coordAlvo = p.origemCoord;
@@ -5300,7 +5492,7 @@ function iniciarRastreioMotorista(){
     return;
   }
   watchId = navigator.geolocation.watchPosition(
-    (pos)=>{ ultimaPosicaoMotorista = { lat:pos.coords.latitude, lon:pos.coords.longitude }; enviarPosicaoMotorista(); },
+    (pos)=>{ ultimaPosicaoMotorista = { lat:pos.coords.latitude, lon:pos.coords.longitude, capturadaEm:Number(pos.timestamp||Date.now()) }; enviarPosicaoMotorista(); },
     (err)=>{
       console.warn(err);
       if(!avisoLocalizacaoMostrado){
@@ -5310,35 +5502,34 @@ function iniciarRastreioMotorista(){
         mostrarToast(msg, 'erro');
       }
     },
-    { enableHighAccuracy:true, maximumAge:10000 }
+    { enableHighAccuracy:true, maximumAge:5000, timeout:20000 }
   );
   if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 8000);
 }
 function pararRastreioMotorista(){ if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; } avisoLocalizacaoMostrado=false; }
 async function enviarPosicaoMotorista(){
   if(!ultimaPosicaoMotorista || !estado.motorista.ativo) return;
-  // grava a posição atual do motorista sempre que ele estiver logado — isso alimenta o mapa
-  // geral do admin, que mostra motoristas disponíveis mesmo sem corrida em andamento
-  if(estado.motorista.telefone){
-    const payloadPosicao = { lat_atual: ultimaPosicaoMotorista.lat, lng_atual: ultimaPosicaoMotorista.lon, lat_atualizado_em: Date.now() };
-    // aproveita cada atualização de GPS (a cada ~8s) pra também renovar o "disponível agora" —
-    // assim, mesmo se o timer de 45s for pausado pelo navegador com a tela bloqueada, o sinal de
-    // online continua chegando enquanto o GPS ainda estiver ativo.
-    // CORREÇÃO: só renovava o horário (disponivel_atualizado_em), nunca o valor disponivel=true
-    // em si — se o robô de limpeza já tivesse marcado offline por falta de sinal, o motorista
-    // ficava preso em offline pra sempre mesmo com GPS ativo mandando posição a cada 8s. Agora
-    // reafirma disponivel=true junto, se autocurando.
+  const fixEm=Number(ultimaPosicaoMotorista.capturadaEm||0);
+  const fixFresco=fixEm>0 && (Date.now()-fixEm)<=90000; // não carimba posição antiga como se fosse nova
+  if(estado.motorista.telefone && fixFresco){
+    const payloadPosicao = {
+      lat_atual: ultimaPosicaoMotorista.lat,
+      lng_atual: ultimaPosicaoMotorista.lon,
+      lat_atualizado_em: fixEm
+    };
     if(estado.motorista.disponivel){
       payloadPosicao.disponivel = true;
       payloadPosicao.disponivel_atualizado_em = Date.now();
       estado.motorista.disponivel_atualizado_em = payloadPosicao.disponivel_atualizado_em;
     }
-    sb.from('entrega_motoristas').update(payloadPosicao).eq('telefone', estado.motorista.telefone);
+    await sb.from('entrega_motoristas').update(payloadPosicao).eq('telefone', estado.motorista.telefone);
+    estado.motorista.latAtualizadoEm=fixEm;
   }
+  if(!fixFresco) return;
   const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
   if(ativos.length===0) return;
   await Promise.all(ativos.map(p=>sb.from('entrega_pedidos').update({
-    motorista_lat: ultimaPosicaoMotorista.lat, motorista_lng: ultimaPosicaoMotorista.lon, motorista_atualizado_em: Date.now()
+    motorista_lat: ultimaPosicaoMotorista.lat, motorista_lng: ultimaPosicaoMotorista.lon, motorista_atualizado_em: fixEm
   }).eq('id', p.id)));
   estado.ultimoPedidosJSON='';
 }
@@ -5434,7 +5625,7 @@ function animarMarcadorSimples(mk, de, para){
 }
 // ---------- mapa geral do admin: mostra AO VIVO motoristas em corrida, motoristas disponíveis e clientes aguardando ----------
 // idade máxima de uma posição pra ainda ser considerada "ao vivo" (motorista pode ter fechado o app sem sair)
-const POSICAO_MOTORISTA_MAX_IDADE_MS = 6*60*1000; // 6 minutos
+const POSICAO_MOTORISTA_MAX_IDADE_MS = PRESENCA_MOTORISTA_MS; // 5 minutos: mesma regra do online real
 function montarMapaAdminGeral(){
   setTimeout(()=>{
     const slot = document.getElementById('admin-mapa-geral');
@@ -5768,9 +5959,12 @@ function cartaoPedidoCliente(p){
   }
   if(p.status==='buscando'){
     const foiCanceladoPeloMotorista = p.canceladoPor==='motorista';
-    const minutosBuscando = (Date.now() - p.criadoEm) / 60000;
-    const raioKm = minutosBuscando<2 ? 5 : minutosBuscando<4 ? 15 : minutosBuscando<7 ? 30 : minutosBuscando<10 ? 60 : minutosBuscando<15 ? 120 : 200;
-    const ampliando = minutosBuscando >= 1;
+    const favAtivo = preferenciaFavoritoAtiva(p);
+    const nomeFav = nomeFavoritoPorTelefone(p.motoristaPreferidoTelefone);
+    const inicioNormal = inicioBuscaNormalPedido(p);
+    const idadeNormalSeg = Math.max(0,(Date.now()-inicioNormal)/1000);
+    const raioKm = idadeNormalSeg<30 ? 10 : idadeNormalSeg<90 ? 20 : idadeNormalSeg<180 ? 40 : null;
+    const ampliando = idadeNormalSeg >= 30;
     return `
     <div class="pedido" id="pedido-${p.id}">
       <div class="linha-topo">
@@ -5782,13 +5976,14 @@ function cartaoPedidoCliente(p){
       ${paradasHTML(p)}
       ${agendaHTML(p)}
       ${foiCanceladoPeloMotorista ? `<div class="subtitulo" style="color:var(--chama);margin-bottom:6px">O motorista cancelou a corrida.</div>` : ''}
-      <div class="buscando-box radar-busca-wrap" data-criado="${p.criadoEm}">
+      ${favAtivo ? `<div class="chamada-favorito-ativa"><b>★ Chamando ${nomeFav||'seu motorista favorito'} primeiro</b><span>Ele tem prioridade exclusiva por alguns segundos. Se não aceitar, o pedido abre sozinho para os demais motoristas.</span></div>` : ''}
+      <div class="buscando-box radar-busca-wrap" data-criado="${inicioNormal}">
         <div class="radar-busca">
           <span class="radar-anel"></span><span class="radar-anel"></span><span class="radar-anel"></span>
           <span class="radar-centro"></span>
         </div>
-        <div class="radar-raio-texto">${raioKm<=30 ? 'Buscando motoristas em até' : 'Ampliando a área de busca para'} ${raioKm} km</div>
-        <div class="radar-raio-sub">${foiCanceladoPeloMotorista ? 'Estamos a buscar o entregador disponível mais próximo de ti' : 'Isto pode levar alguns minutos'}</div>
+        <div class="radar-raio-texto">${favAtivo ? 'Aguardando resposta do favorito' : (raioKm!=null ? `${ampliando?'Ampliando':'Buscando'} motoristas em até ${raioKm} km` : 'Busca liberada para motoristas disponíveis')}</div>
+        <div class="radar-raio-sub">${foiCanceladoPeloMotorista ? 'Estamos a buscar o entregador disponível mais próximo de ti' : (favAtivo?'Se ele não aceitar, a busca normal começa automaticamente.':'Isto pode levar alguns minutos')}</div>
       </div>
       ${prioridadeBoostHTML(p)}
       ${pedidoIdLinhaHTML(p)}
@@ -5819,8 +6014,10 @@ function cartaoPedidoCliente(p){
       </div>
     </div>` : ''}
     ${emAndamento && p.origemCoord && p.destinoCoord ? `<div class="mapa" id="${mapaId}"></div>${etaHTML(p)}` : ''}
+    ${pinEntregaClienteHTML(p)}
     ${fotosHTML(p)}
     ${avaliacaoHTML(p)}
+    ${favoritoMotoristaHTML(p)}
     ${emAndamento ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${botaoChatHTML(p.id, estado.chatNaoLidas[p.id]||0)}${botaoLigarHTML(p.motoristaTelefone)}<button type="button" class="btn btn-secundario btn-pequeno" onclick="compartilharPedido('${p.id}')"> Compartilhar</button></div>` : ''}
     ${emAndamento ? pedidoIdLinhaHTML(p) : ''}
     ${relogioCancelamentoHTML(p)}
@@ -5848,6 +6045,7 @@ function cartaoPedidoDisponivel(p){
       <span class="tempo-pedido" id="tempo-desde-${p.id}" data-criado="${p.criadoEm}" style="font-size:11.5px;color:var(--poeira)">⏱ ${tempoDecorrido(p.criadoEm)}</span>
       ${p.distanciaAteMim!=null ? `<span style="font-size:11.5px;color:var(--poeira)">· ${p.distanciaAteMim.toFixed(1)} km até a recolha</span>` : ''}
     </div>
+    ${preferenciaFavoritoAtiva(p) && normalizarTelefoneEF(p.motoristaPreferidoTelefone)===normalizarTelefoneEF(estado.motorista.telefone) ? `<div class="pedido-favorito-badge">★ O cliente chamou você como motorista favorito</div>` : ''}
     ${extrasHTML(p)}
     <div style="font-size:14px;color:var(--poeira);margin-bottom:8px">${VEICULOS[p.veiculo].emoji} ${VEICULOS[p.veiculo].label}${p.descricao?' · '+p.descricao:''}</div>
     ${p.origemReferencia || p.origemFotoUrl ? `<div style="font-size:13px;color:var(--poeira);margin-bottom:4px"> recolha em local sem endereço fixo (referência${p.origemFotoUrl?' e foto':''} disponíveis após aceitar)</div>` : ''}
@@ -5878,7 +6076,9 @@ function cartaoPedidoAtivo(p){
   } else if(p.status==='a_caminho' && temMaisParadas && !ultimaParada){
     botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="confirmarParadaIntermediaria('${p.id}')"> Confirmar chegada nesta parada (${paradaAtualIdx+1}/${listaParadas.length})</button>`;
   } else if(p.status==='a_caminho'){
-    botaoAcao = `<button class="btn btn-verde btn-pequeno" onclick="solicitarFoto('${p.id}','depois')"> ${temMaisParadas?`Tirar foto e finalizar a última parada (${paradaAtualIdx+1}/${listaParadas.length})`:'Tirar foto e marcar entregue'} (obrigatória — precisa estar no endereço)</button>`;
+    botaoAcao = (p.tipoEntrega==='vendai_marketplace' || p.pinConfirmadoEm)
+      ? `<button class="btn btn-verde btn-pequeno" onclick="solicitarFoto('${p.id}','depois')"> ${temMaisParadas?`Tirar foto e finalizar a última parada (${paradaAtualIdx+1}/${listaParadas.length})`:'Tirar foto e marcar entregue'} (obrigatória — precisa estar no endereço)</button>`
+      : '';
   }
   const plano = PLANOS[estado.motorista.plano] || PLANOS.free;
   const usados = estado.motorista.cancelamentosHoje||0;
@@ -5909,6 +6109,7 @@ function cartaoPedidoAtivo(p){
     </div>` : ''}
     ${p.status==='a_caminho' && !p.destinoCoord ? `<div class="ligar-antes-aviso" style="margin-top:8px"><span style="font-size:20px"></span><div class="laa-texto"><b>Local sem GPS exato.</b> Recomendamos ligar pro cliente antes de seguir viagem, pra confirmar o caminho.</div></div>` : ''}
     ${p.iniciadoEm && p.status!=='entregue' ? `<div class="gps-ao-vivo"><span class="ponto-pulsante"></span> localização a atualizar em tempo real</div>` : ''}
+    ${p.status==='a_caminho' && ultimaParada ? pinMotoristaHTML(p) : ''}
     ${p.origemCoord && p.destinoCoord ? `<div class="mapa" id="${mapaId}"></div>${p.iniciadoEm ? etaHTML(p) : ''}` : ''}
     ${fotosHTML(p)}
     <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
@@ -6242,14 +6443,14 @@ function entrarComoVisitante(papel){
     estado.cliente = { nome:'Visitante', telefone:'', logado:true, visitante:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10',
       pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   } else {
-    estado.motorista = { nome:'Visitante', telefone:'', ativo:true, visitante:true, status:'visitante', plano:'free', disponivel:false, veiculo:'moto', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null };
+    estado.motorista = { nome:'Visitante', telefone:'', ativo:true, visitante:true, status:'visitante', plano:'free', disponivel:false, veiculo:'moto', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null, latAtualizadoEm:null };
   }
   mostrarToast(' Você está só conhecendo o app. Para pedir ou aceitar corridas de verdade, cadastre-se!', 'info');
   render();
 }
 function sairDoModoVisitante(){
   if(estado.modo==='cliente'){ estado.cliente = { nome:'', telefone:'', logado:false, visitante:false, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } }; irParaCadastroCliente(); }
-  else { estado.motorista = { nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null }; irParaCadastro(); }
+  else { estado.motorista = { nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null, latAtualizadoEm:null }; irParaCadastro(); }
   render();
 }
 function telaAcessoCliente(){
@@ -6343,6 +6544,7 @@ function irEtapaPedido(alvo){
   // atualizações realtime redesenharem a tela e dava a impressão de que o botão voltou ao formulário.
   estado.transicaoPedido = { ativa:false, alvo:null };
   f.etapaPedido = alvo;
+  if(alvo===3 && estado.cliente.logado) carregarMotoristasFavoritos(true);
   if(alvo===3 && f.distancia==null && !estado.falhaCalculo){ calcularCorrida(); return; }
   render();
   setTimeout(()=>{ document.querySelector('.etapa-conteudo')?.scrollIntoView({behavior:'smooth',block:'start'}); },30);
@@ -6357,7 +6559,10 @@ function telaCliente(){
     const iconeBusca = iconesBusca[pedidoBuscando.veiculo] || '🚘';
     const onlineBusca = Number(estado.motoristasOnline)||0;
     const distanciaBusca = Number(pedidoBuscando.distancia)||0;
+    const favAtivoBusca=preferenciaFavoritoAtiva(pedidoBuscando);
+    const nomeFavBusca=nomeFavoritoPorTelefone(pedidoBuscando.motoristaPreferidoTelefone);
     return `<div class="cartao busca-motorista-premium" id="pedido-buscando-tela">
+      ${favAtivoBusca?`<div class="chamada-favorito-ativa" style="margin-bottom:12px"><b>★ Chamando ${nomeFavBusca||'seu motorista favorito'} primeiro</b><span>A chamada já tocou para ele. Se não aceitar em até 30 segundos, o sistema chama os demais automaticamente.</span></div>`:''}
       <div class="busca-topo">
         <div class="busca-veiculo-icone" aria-hidden="true">${iconeBusca}</div>
         <div>
@@ -6549,6 +6754,7 @@ function telaCliente(){
       <input type="number" id="c-distancia-manual" placeholder="Ex: ${f.distanciaGPS}" min="0.1" max="${KM_MANUAL_MAXIMO}" step="0.1" style="flex:1">
       <button class="btn btn-secundario btn-pequeno" onclick="usarDistanciaManual()">Usar</button>
     </div>`}` : ''}
+    ${seletorMotoristaFavoritoHTML(f)}
     ${preco!=null ? `
     <div class="estimativa" style="margin-top:16px">
       <div><div class="rotulo">Preço estimado</div><div class="sub">${f.distancia} km · ~${f.duracaoMin} min${valorExtras(f.extras)>0?` · +R$ ${valorExtras(f.extras).toFixed(2)} extras`:''}</div></div>
@@ -7034,25 +7240,33 @@ function telaMotorista(){
   }
   const planoAtual = PLANOS[m.plano] || PLANOS.free;
   const agoraTs = Date.now();
-  const disponiveis = m.disponivel ? estado.pedidos
-    .filter(p=>p.status==='buscando' && p.veiculo===m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
+  const gpsLocalEm = Math.max(Number(ultimaPosicaoMotorista?.capturadaEm||0), Number(m.latAtualizadoEm||0));
+  const onlineLocalReal = !!(m.disponivel && gpsLocalEm>0 && (agoraTs-gpsLocalEm)<=PRESENCA_MOTORISTA_MS);
+  const disponiveis = onlineLocalReal ? estado.pedidos
+    .filter(p=>{
+      if(p.status!=='buscando' || p.veiculo!==m.veiculo) return false;
+      if(preferenciaFavoritoAtiva(p,agoraTs)) return normalizarTelefoneEF(p.motoristaPreferidoTelefone)===normalizarTelefoneEF(m.telefone);
+      const idadeBusca=agoraTs-inicioBuscaNormalPedido(p);
+      return p.prioridade || planoAtual.prioridade || idadeBusca>=ATRASO_PRIORIDADE_PRO_MS;
+    })
     .map(p=>({ ...p, distanciaAteMim: (ultimaPosicaoMotorista && p.origemCoord) ? distanciaKm(ultimaPosicaoMotorista.lat,ultimaPosicaoMotorista.lon,p.origemCoord.lat,p.origemCoord.lon) : null }))
-    // Distribuição automática global: o motorista não escolhe mais um raio que possa esconder corridas.
+    // Se existe favorito ativo, só ele vê a corrida por 30 s. Depois começa a busca normal:
     // 10 km imediato → 20 km aos 30 s → 40 km aos 90 s → todos do veículo aos 3 min.
     .filter(p=>{
-      const idadeSeg=Math.max(0,(agoraTs-Number(p.criadoEm||agoraTs))/1000);
+      if(preferenciaFavoritoAtiva(p,agoraTs)) return true;
+      const idadeSeg=Math.max(0,(agoraTs-inicioBuscaNormalPedido(p))/1000);
       const raioAuto=idadeSeg<30?10:idadeSeg<90?20:idadeSeg<180?40:Infinity;
-      if(p.distanciaAteMim==null) return !Number.isFinite(raioAuto); // sem GPS só entra na liberação total
+      if(p.distanciaAteMim==null) return !Number.isFinite(raioAuto);
       return p.distanciaAteMim<=raioAuto;
     })
-    .sort((a,b)=> (b.prioridadeValor||0) - (a.prioridadeValor||0) || (a.distanciaAteMim!=null && b.distanciaAteMim!=null ? a.distanciaAteMim-b.distanciaAteMim : a.criadoEm-b.criadoEm)) : [];
+    .sort((a,b)=> (preferenciaFavoritoAtiva(b,agoraTs)?1:0)-(preferenciaFavoritoAtiva(a,agoraTs)?1:0) || (b.prioridadeValor||0) - (a.prioridadeValor||0) || (a.distanciaAteMim!=null && b.distanciaAteMim!=null ? a.distanciaAteMim-b.distanciaAteMim : a.criadoEm-b.criadoEm)) : [];
   // pedidos de OUTROS tipos de veículo, só pra avisar o motorista que existem (ele não pode aceitá-los, pois o veículo é diferente do dele)
-  const pedidosOutroVeiculo = m.disponivel ? estado.pedidos
-    .filter(p=>p.status==='buscando' && p.veiculo!==m.veiculo && (p.prioridade || planoAtual.prioridade || (agoraTs-p.criadoEm)>=ATRASO_PRIORIDADE_PRO_MS))
+  const pedidosOutroVeiculo = onlineLocalReal ? estado.pedidos
+    .filter(p=>p.status==='buscando' && p.veiculo!==m.veiculo && !preferenciaFavoritoAtiva(p,agoraTs) && (p.prioridade || planoAtual.prioridade || (agoraTs-inicioBuscaNormalPedido(p))>=ATRASO_PRIORIDADE_PRO_MS))
     : [];
   const contagemPorVeiculoOutro = pedidosOutroVeiculo.reduce((acc,p)=>{ acc[p.veiculo]=(acc[p.veiculo]||0)+1; return acc; }, {});
   // chamados de "motorista amigo" (SOS) abertos por outros motoristas, compatíveis com o meu veículo
-  const chamadosParaMim = m.disponivel ? (estado.chamadosAmigo||[]).filter(c=>c.status==='aberto' && c.motorista_solicitante!==m.telefone && c.veiculo_tipo===m.veiculo) : [];
+  const chamadosParaMim = onlineLocalReal ? (estado.chamadosAmigo||[]).filter(c=>c.status==='aberto' && c.motorista_solicitante!==m.telefone && c.veiculo_tipo===m.veiculo) : [];
   const meusChamadosAbertos = (estado.chamadosAmigo||[]).filter(c=>c.status==='aberto' && c.motorista_solicitante===m.telefone);
   const ativos = estado.pedidos.filter(p=>!['buscando','entregue','cancelado'].includes(p.status) && p.motoristaTelefone===m.telefone);
   const hoje = new Date(); hoje.setHours(0,0,0,0);
@@ -7071,10 +7285,10 @@ function telaMotorista(){
   </div>` : '';
 
   const blocoOnline = m.status==='aprovado' ? `<div class="cartao ef-app20-hero">
-    <div class="ef-app20-status"><div><div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--poeira);font-weight:800"><span class="ef-app20-dot ${m.disponivel?'on':''}"></span>${m.disponivel?'ONLINE · RECEBENDO PEDIDOS':'OFFLINE'}</div><div class="ef-app20-money">R$ ${ganhosHoje.toFixed(2)}</div><div style="font-size:12px;color:var(--poeira);margin-top:4px">Ganhos de hoje</div></div><div style="font-size:28px">${m.disponivel?'⚡':'◉'}</div></div>
+    <div class="ef-app20-status"><div><div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--poeira);font-weight:800"><span class="ef-app20-dot ${onlineLocalReal?'on':''}"></span>${onlineLocalReal?'ONLINE · GPS ATUALIZADO':m.disponivel?'SEM SINAL GPS · NÃO RECEBE PEDIDOS':'OFFLINE'}</div><div class="ef-app20-money">R$ ${ganhosHoje.toFixed(2)}</div><div style="font-size:12px;color:var(--poeira);margin-top:4px">Ganhos de hoje</div></div><div style="font-size:28px">${onlineLocalReal?'⚡':m.disponivel?'📍':'◉'}</div></div>
     <div class="ef-app20-stats"><div class="ef-app20-stat"><small>Entregas hoje</small><b>${entreguesHojeArr.length}</b></div><div class="ef-app20-stat"><small>Saldo disponível</small><b>R$ ${Number(m.saldo||0).toFixed(2)}</b></div></div>
     <button class="btn ef-app20-mainbtn ${m.disponivel?'btn-secundario':'btn-verde'}" ${atributoDesabilitado('alternarDisponibilidade')} onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${carregando('alternarDisponibilidade') ? '<span class="girando"></span>Atualizando...' : (m.disponivel?'PARAR · FICAR OFFLINE':'⚡ FICAR ONLINE')}</button>
-    <div class="cf-ajuda" style="text-align:center;margin-top:8px">${m.disponivel?'Você permanece ONLINE até tocar em FICAR OFFLINE. Mantenha o app aberto/GPS ativo para localização em tempo real.':'Toque para começar a receber pedidos compatíveis com seu veículo.'}</div>
+    <div class="cf-ajuda" style="text-align:center;margin-top:8px">${onlineLocalReal?(entregaFlashNativoAndroidAtivo()?'GPS em segundo plano ativo. Você pode usar WhatsApp, Waze ou bloquear a tela e continuar recebendo pedidos.':'GPS confirmado agora. Você está apto a receber pedidos.'):(m.disponivel?(entregaFlashNativoAndroidAtivo()?'O serviço de GPS perdeu sinal. Abra o Entrega Flash e confira a permissão de localização.':'Seu botão está ligado, mas o GPS não está recente. Abra o Entrega Flash e mantenha o GPS ativo para voltar a ficar online de verdade.'):'Toque para começar a receber pedidos compatíveis com seu veículo.')}</div>
   </div>` : `<div class="cartao" style="opacity:.78;text-align:center"><button class="btn btn-secundario" disabled style="width:100%">🔒 FICAR ONLINE</button><div class="cf-ajuda" style="margin-top:8px">Liberado automaticamente após a aprovação dos documentos.</div></div>`;
 
   const blocoPrimeiroDia = (m.status==='aprovado' && entregasMes===0) ? `<div class="cartao ef-app20-guide"><div style="font-family:'Rajdhani';font-size:19px;font-weight:900">🚀 SEU PRIMEIRO DIA</div><div class="subtitulo" style="margin-top:3px">É simples: fique online e siga o fluxo da primeira entrega.</div><div class="ef-app20-steps"><div class="ef-app20-step"><i>1</i>Online</div><div class="ef-app20-step"><i>2</i>Receba</div><div class="ef-app20-step"><i>3</i>Aceite</div><div class="ef-app20-step"><i>4</i>Receba</div></div></div>` : '';
@@ -7966,6 +8180,8 @@ function setDeep(path,value){
 }
 function mudarVeiculo(k){
   estado.form.veiculo=k;
+  const pref=normalizarTelefoneEF(estado.form.motoristaPreferidoTelefone);
+  if(pref){ const fav=(estado.motoristasFavoritos||[]).find(x=>normalizarTelefoneEF(x.telefone)===pref); if(!fav || fav.veiculoTipo!==k || !fav.online) estado.form.motoristaPreferidoTelefone=''; }
   if(estado.form.distancia!=null){ estado.form.duracaoMin = Math.max(3, Math.round((estado.form.distancia/VEICULOS[k].veloc)*60)); }
   render();
 }
@@ -7993,7 +8209,7 @@ async function entrarComoMotorista(){
   await carregarPedidos();
   render();
 }
-function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); /* sair da conta NÃO coloca offline: só o botão FICAR OFFLINE faz isso */ estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
+function sairMotorista(){ pararRastreioMotorista(); encerrarMotoristaLogadoRealtime(); /* sair da conta NÃO coloca offline: só o botão FICAR OFFLINE faz isso */ estado.motorista={nome:'',telefone:'',ativo:false,plano:null,disponivel:false,veiculo:'',marca:'',placa:'',cor:'',fotoMotoristaUrl:null,fotoVeiculoUrl:null,saldo:0,notaMedia:5,totalAvaliacoes:0,cancelamentosHoje:0,raioAtendimentoKm:null,latAtualizadoEm:null}; estado.chamadosAmigo=[]; removerLocal('ef_motorista_telefone'); removerLocal('ef_motorista_disponivel'); render(); }
 async function trocarMinhaSenhaMotorista(){
   const atual = document.getElementById('ef-senha-atual-motorista')?.value||'';
   const nova = document.getElementById('ef-senha-nova-motorista')?.value||'';
@@ -8039,18 +8255,29 @@ async function heartbeatMotoristaPresenca(){
   const m=estado.motorista;
   if(!m?.ativo || !m.telefone || !m.disponivel || m.status!=='aprovado') return;
   const agora=Date.now();
-  // CORREÇÃO: antes só atualizava disponivel_atualizado_em (e só se disponivel já
-  // estivesse true no banco). Se o robô de limpeza (limpar-motoristas-fantasmas) já
-  // tinha marcado o motorista como offline por ficar >15min sem sinal (tela bloqueada,
-  // app em segundo plano), o heartbeat nunca mais conseguia voltar a marcar online —
-  // ficava reafirmando só o horário pra sempre, preso em offline mesmo mandando sinal
-  // fresco. Agora reafirma disponivel=true a cada sinal, se autocurando.
-  const payload={ disponivel:true, disponivel_atualizado_em: agora };
-  if(ultimaPosicaoMotorista){
-    payload.lat_atual=ultimaPosicaoMotorista.lat;
-    payload.lng_atual=ultimaPosicaoMotorista.lon;
-    payload.lat_atualizado_em=agora;
+  // Tenta obter um FIX real. Não renova lat_atualizado_em usando coordenada antiga em memória.
+  if(document.visibilityState==='visible' && navigator.geolocation){
+    try{
+      await new Promise(resolve=>navigator.geolocation.getCurrentPosition(
+        pos=>{
+          ultimaPosicaoMotorista={lat:pos.coords.latitude,lon:pos.coords.longitude,capturadaEm:Number(pos.timestamp||Date.now())};
+          resolve(true);
+        },
+        ()=>resolve(false),
+        {enableHighAccuracy:true,timeout:12000,maximumAge:5000}
+      ));
+    }catch(e){}
   }
+  const fixEm=Number(ultimaPosicaoMotorista?.capturadaEm||0);
+  const fixFresco=fixEm>0 && (agora-fixEm)<=90000;
+  if(!fixFresco) return;
+  const payload={
+    disponivel:true,
+    disponivel_atualizado_em:agora,
+    lat_atual:ultimaPosicaoMotorista.lat,
+    lng_atual:ultimaPosicaoMotorista.lon,
+    lat_atualizado_em:fixEm
+  };
   try{
     const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone',m.telefone);
     if(!error) m.disponivel_atualizado_em=agora;
@@ -8086,6 +8313,7 @@ async function alternarDisponibilidade(){
   salvarLocal('ef_motorista_disponivel', m.disponivel ? 'true' : 'false');
   if(m.disponivel){
     registrarEventoPushAtivacao('online');
+    controlarGpsNativoAndroid('start', m.telefone);
     iniciarRastreioMotorista();
     // redundância intencional: confirma imediatamente a coordenada no banco,
     // além do watchPosition que continuará atualizando enquanto estiver online.
@@ -8095,7 +8323,7 @@ async function alternarDisponibilidade(){
     if(typeof Notification!=='undefined' && Notification.permission==='granted') await inscreverPushReal();
     else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
   }
-  else { pararRastreioMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
+  else { controlarGpsNativoAndroid('stop', m.telefone); pararRastreioMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
   render();
 }
 
@@ -8444,7 +8672,7 @@ async function cadastrarCliente(){
     estado.filtroTelefoneCliente=confirmado.telefone; estado.form.nome=confirmado.nome||c.nome; estado.form.telefone=confirmado.telefone; estado.ultimoPedidosJSON='';
     salvarLocal('ef_cliente_telefone',confirmado.telefone); salvarLocal('ef_modo','cliente'); atualizarPresencaSite('cliente');
     clienteBemVindoAnimando=true; render();
-    await carregarPedidos(); await carregarCarteiraCliente(); assinarCarteiraClienteRealtime(confirmado.telefone);
+    await carregarPedidos(); await carregarCarteiraCliente(); await carregarMotoristasFavoritos(false); assinarCarteiraClienteRealtime(confirmado.telefone);
     if(estado.notificacoesStatus==='granted') inscreverPushReal(); else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),1200);
     setTimeout(()=>{clienteBemVindoAnimando=false;render();},4000);
   }catch(e){
@@ -8462,6 +8690,7 @@ async function entrarNoPainelCliente(data){
   salvarLocal('ef_cliente_telefone', data.telefone); salvarLocal('ef_modo','cliente');
   await carregarPedidos();
   await carregarCarteiraCliente();
+  await carregarMotoristasFavoritos(false);
   assinarCarteiraClienteRealtime(data.telefone);
   atualizarPresencaSite('cliente');
   if(estado.notificacoesStatus==='granted') inscreverPushReal();
@@ -8557,8 +8786,9 @@ function sairCliente(){
   encerrarCarteiraClienteRealtime();
   estado.cliente = { nome:'', telefone:'', logado:false, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   estado.filtroTelefoneCliente = '';
+  estado.motoristasFavoritos = [];
   removerLocal('ef_cliente_telefone');
-  estado.form = { etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', roca:false, extras:extrasVazios() };
+  estado.form = { etapaPedido:1, nome:'', telefone:'', origem:'', destino:'', paradas:[], tipoRetirada:'agora', horarioAgendado:'', veiculo:'moto', descricao:'', distancia:null, duracaoMin:null, distanciaGPS:null, distanciaDivergente:false, origemCoord:null, destinoCoord:null, prioridade:false, prioridadeValor:0, origemFotoUrl:null, origemReferencia:'', origemComplemento:'', destinoFotoUrl:null, destinoReferencia:'', destinoComplemento:'', motoristaPreferidoTelefone:'', roca:false, extras:extrasVazios() };
   estado.edicaoPedido = null;
   estado.abaPedidosCliente = 'ativos';
   estado.painelCliente.tela='entrar';
@@ -8583,7 +8813,7 @@ async function entrarNoPainelMotorista(data){
     nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
     veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
     fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
-    notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null
+    notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null, latAtualizadoEm:Number(data.lat_atualizado_em)||null
   };
   estado.ultimoPedidosJSON='';
   salvarLocal('ef_motorista_telefone', data.telefone); salvarLocal('ef_modo','entregador');
@@ -8597,6 +8827,7 @@ async function entrarNoPainelMotorista(data){
   if(estado.motorista.status==='aprovado' && estado.motorista.disponivel){
     salvarLocal('ef_motorista_disponivel','true');
     iniciarRastreioMotorista();
+    setTimeout(()=>controlarGpsNativoAndroid('start', data.telefone),350);
     setTimeout(()=>heartbeatMotoristaPresenca(),1200);
   } else {
     salvarLocal('ef_motorista_disponivel','false');
@@ -11442,4 +11673,15 @@ html,body{background:#12161c!important}
   .icone-veiculo-premium,.icone-veiculo-premium svg{width:43px;height:28px}
   .veiculo-escolha-destaque .nome-veiculo{font-size:11.5px}
 }
+
+
+/* ===== 12/09/2026 — PIN de entrega + motorista favorito ===== */
+.pin-cliente-box,.pin-motorista-box,.favorito-escolha,.favorito-pos-entrega,.chamada-favorito-ativa{margin-top:12px;border-radius:14px;padding:12px 13px;border:1px solid rgba(255,201,60,.36);background:rgba(255,201,60,.08)}
+.pin-cliente-box{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.pin-cliente-box>div{min-width:0}.pin-cliente-box b,.pin-motorista-box b,.favorito-escolha b,.favorito-pos-entrega b,.chamada-favorito-ativa b{display:block;color:var(--osso);font-size:13px}.pin-cliente-box span,.pin-motorista-box span,.favorito-escolha span,.favorito-pos-entrega span,.chamada-favorito-ativa span{display:block;color:var(--poeira);font-size:11.5px;line-height:1.35;margin-top:3px}.pin-cliente-box>strong{font-family:'Rajdhani',sans-serif;font-size:30px;letter-spacing:5px;color:var(--mango);white-space:nowrap}.pin-cliente-box.aviso{border-color:rgba(255,92,92,.35);background:rgba(255,92,92,.07)}
+.pin-motorista-box>div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}.pin-motorista-box input{margin:0!important;text-align:center;font-size:22px!important;font-weight:900;letter-spacing:6px;min-width:0}.pin-motorista-box.ok{border-color:rgba(65,190,110,.4);background:rgba(65,190,110,.08)}
+.favorito-pos-entrega{display:flex;align-items:center;justify-content:space-between;gap:10px}.favorito-pos-entrega>div{min-width:0}.favorito-pos-entrega button{flex:0 0 auto}
+.favorito-escolha{background:rgba(255,255,255,.035)}.favorito-escolha-topo{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.favorito-escolha-topo>div{min-width:0}.favorito-normal{border:1px solid rgba(255,255,255,.16);background:transparent;color:var(--poeira);border-radius:10px;padding:7px 9px;font-weight:800;font-size:10px;cursor:pointer}.favorito-normal.ativo{background:var(--mango);color:#251600;border-color:var(--mango)}.favorito-lista{display:grid;gap:7px;margin-top:10px}.favorito-card{width:100%;display:flex;align-items:center;gap:9px;text-align:left;border:1px solid rgba(255,255,255,.1);background:var(--painel-alt);color:var(--osso);padding:9px;border-radius:12px;cursor:pointer}.favorito-card.ativo{border-color:var(--mango);box-shadow:0 0 0 1px rgba(255,201,60,.2)}.favorito-card.offline{opacity:.48;cursor:not-allowed}.favorito-card img,.favorito-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:0 0 38px}.favorito-avatar{display:grid;place-items:center;background:rgba(255,201,60,.15);color:var(--mango);font-weight:900}.favorito-dados{min-width:0;flex:1}.favorito-dados b{font-size:12.5px}.favorito-dados small,.favorito-dados em{display:block;font-size:10.5px;color:var(--poeira);font-style:normal;margin-top:2px}.favorito-dados em{color:#65c98b}.favorito-card.offline .favorito-dados em{color:var(--poeira)}.favorito-card>strong{color:var(--mango);font-size:18px}
+.chamada-favorito-ativa{border-color:rgba(255,201,60,.52);background:linear-gradient(135deg,rgba(255,201,60,.14),rgba(255,171,0,.05))}.pedido-favorito-badge{margin:7px 0 9px;padding:8px 10px;border-radius:10px;background:rgba(255,201,60,.13);border:1px solid rgba(255,201,60,.38);color:var(--mango);font-size:12px;font-weight:900}
+@media(max-width:480px){.favorito-escolha-topo,.favorito-pos-entrega{align-items:stretch;flex-direction:column}.favorito-normal,.favorito-pos-entrega button{width:100%}.pin-motorista-box>div{grid-template-columns:1fr}.pin-cliente-box>strong{font-size:27px}}
 </style>
