@@ -1860,6 +1860,7 @@ let estado = {
   },
   motorista:{ nome:'', telefone:'', ativo:false, visitante:false, plano:null, disponivel:false, veiculo:'', marca:'', placa:'', cor:'', fotoMotoristaUrl:null, fotoVeiculoUrl:null, saldo:0, notaMedia:5, totalAvaliacoes:0, cancelamentosHoje:0, raioAtendimentoKm:null, criadoEm:null, latAtualizadoEm:null },
   trocaPlanoMotorista:{ aberto:false, gerando:false, erro:'', motoristaId:null, cpf:'', qrCode:null, copiaCola:null, status:'pendente' },
+  avisoPlanoProAberto:false,
   chamadosAmigo:[], // chamados de SOS "motorista amigo" em aberto (carregados quando motorista está disponível)
   chamadoAmigoModal:{ aberto:false, pedidoId:null, percentual:10, enviando:false },
   canalChamadosAmigo:null,
@@ -2271,6 +2272,49 @@ async function exigirAtualizacaoApkAntesDeFicarOnline(){
   }
   return false;
 }
+function efAndroidDetectado(){
+  return /Android/i.test(navigator.userAgent||'');
+}
+function efAndroidSemAppNativo(){
+  return efAndroidDetectado() && !entregaFlashNativoAndroidAtivo();
+}
+function baixarApkMotoristaAtual(){
+  const url=EF_APK_ATUAL_URL+'?v='+EF_APK_ATUAL_VERSION_CODE+'&t='+Date.now();
+  mostrarToast('Baixando o Entrega Flash atualizado...','info');
+  try{
+    const a=document.createElement('a');
+    a.href=url;
+    a.download='Entrega-Flash.apk';
+    a.rel='noopener';
+    a.style.display='none';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(()=>{ try{ a.remove(); }catch(e){} },1200);
+  }catch(e){ location.href=url; }
+}
+async function exigirAppNativoGpsSegundoPlano(){
+  // Se o motorista abriu por navegador/PWA ou por um APK muito antigo que não se identifica,
+  // não deixamos mais passar direto para ONLINE no Android. O GPS web pode parar com WhatsApp,
+  // Waze ou tela bloqueada. O APK nativo é o fluxo confiável para segundo plano.
+  if(!efAndroidSemAppNativo()) return true;
+  const atualizar=await confirmarAcao(
+    '<b style="font-size:19px">Atualização do GPS necessária</b><br><br>Para continuar online mesmo usando WhatsApp, Waze ou com a tela bloqueada, instale/atualize o aplicativo Entrega Flash.<br><br><b>Depois de instalar, abra o aplicativo novo e toque em FICAR ONLINE.</b>',
+    'ATUALIZAR / INSTALAR APP'
+  );
+  if(atualizar) baixarApkMotoristaAtual();
+  return false;
+}
+function blocoGpsSegundoPlanoMotoristaHTML(){
+  if(!estado.motorista?.ativo || estado.motorista.status!=='aprovado' || !efAndroidSemAppNativo()) return '';
+  return `<div class="cartao" style="border:2px solid var(--chama);background:linear-gradient(135deg,rgba(255,90,60,.14),rgba(255,201,60,.07));text-align:center">
+    <div style="font-size:28px;margin-bottom:6px">📍</div>
+    <div style="font-family:'Rajdhani';font-weight:900;font-size:21px">GPS EM SEGUNDO PLANO</div>
+    <div style="font-size:14px;color:var(--poeira);line-height:1.5;margin-top:6px">Este celular ainda não está usando o aplicativo nativo atualizado. Atualize para continuar aparecendo online quando abrir WhatsApp/Waze ou bloquear a tela.</div>
+    <button class="btn btn-primario" style="width:100%;margin-top:13px" onclick="baixarApkMotoristaAtual()">⬆️ ATUALIZAR / INSTALAR APP</button>
+    <div style="font-size:12px;color:var(--poeira);margin-top:8px">Versão atual do motorista: ${EF_APK_ATUAL_VERSION_CODE}</div>
+  </div>`;
+}
+
 function controlarGpsNativoAndroid(acao, telefone){
   if(!entregaFlashNativoAndroidAtivo()) return false;
   const tel=String(telefone||'').replace(/\D/g,'');
@@ -5190,7 +5234,7 @@ function trocaPlanoMotoristaHTML(m){
   if(!t.aberto) return `
     <div style="margin-top:14px;padding:14px 16px;background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div><div style="font-size:12.5px;color:var(--poeira);text-transform:uppercase;letter-spacing:.4px">Seu plano</div><b style="font-size:18px">${m.plano==='pro'?' Pro':' Free'}</b></div>
-      <button class="btn btn-primario btn-pequeno" style="margin-top:0" onclick="abrirTrocaPlanoMotorista()"> Trocar plano</button>
+      <button class="btn btn-primario btn-pequeno" style="margin-top:0" onclick="abrirTrocaPlanoMotorista()">${m.plano==='pro'?'VER PLANOS':'ATUALIZAR PLANO'}</button>
     </div>`;
   return `
     <div style="margin-top:14px;padding:16px;background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px">
@@ -5205,6 +5249,61 @@ function trocaPlanoMotoristaHTML(m){
         `}
       </div>
     </div>`;
+}
+
+function planoDestaqueMotoristaHTML(m){
+  const atualPro = m.plano==='pro';
+  return `<div class="cartao" style="border:2px solid ${atualPro?'var(--verde)':'var(--mango)'};background:linear-gradient(135deg,rgba(255,190,61,.12),rgba(111,207,106,.05))">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:var(--poeira);font-weight:800">SEU PLANO ATUAL</div>
+        <div style="font-family:'Rajdhani';font-size:24px;font-weight:900;color:var(--osso);margin-top:2px">${atualPro?'PLANO PRO':'PLANO FREE'}</div>
+      </div>
+      <div class="pix-status pago" style="margin:0">${atualPro?'PRO ATIVO':'FREE ATIVO'}</div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px">
+      <div style="padding:12px;border:1px solid var(--linha);border-radius:12px;background:var(--painel-alt)">
+        <b style="font-family:'Rajdhani';font-size:17px">Free</b>
+        <div class="subtitulo" style="margin:5px 0 0">Grátis · você fica com ${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% de cada entrega · saque em até ${PLANOS.free.saqueDias} dias.</div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--mango);border-radius:12px;background:rgba(255,190,61,.07)">
+        <b style="font-family:'Rajdhani';font-size:17px;color:var(--mango)">Pro</b>
+        <div class="subtitulo" style="margin:5px 0 0">R$ ${PLANOS.pro.preco.toFixed(2)} uma vez · você fica com ${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}% · prioridade e saque mais rápido.</div>
+      </div>
+    </div>
+    <button class="btn btn-primario" style="width:100%;margin-top:12px" onclick="abrirTrocaPlanoMotorista()">${atualPro?'VER / ALTERAR PLANOS':'ATUALIZAR PARA O PLANO PRO'}</button>
+  </div>`;
+}
+function abrirAvisoPlanoProMotoristaSeNecessario(m){
+  if(!m || !m.ativo || m.visitante || m.plano==='pro' || !m.telefone) return;
+  let visto=false;
+  try{ visto = localStorage.getItem('ef_aviso_plano_pro_v2_'+m.telefone)==='1'; }catch(e){}
+  if(!visto) estado.avisoPlanoProAberto=true;
+}
+function fecharAvisoPlanoProMotorista(abrirPlanos=false){
+  const tel=estado.motorista?.telefone||'';
+  try{ if(tel) localStorage.setItem('ef_aviso_plano_pro_v2_'+tel,'1'); }catch(e){}
+  estado.avisoPlanoProAberto=false;
+  if(abrirPlanos){ abrirTrocaPlanoMotorista(); return; }
+  render();
+}
+function avisoPlanoProMotoristaHTML(){
+  if(!estado.avisoPlanoProAberto || !estado.motorista?.ativo || estado.motorista.plano==='pro') return '';
+  return `<div class="modal-fundo" style="z-index:610;align-items:center" onclick="if(event.target===this) fecharAvisoPlanoProMotorista(false)">
+    <div class="modal-chat" style="max-width:410px;border-radius:16px;max-height:none">
+      <div class="cf-corpo" style="padding:25px 22px 22px;text-align:center">
+        <div style="font-size:12px;font-weight:900;letter-spacing:1px;color:var(--mango);text-transform:uppercase">NOVIDADE PARA MOTORISTAS</div>
+        <h3 style="font-family:'Rajdhani';font-size:25px;margin:7px 0 8px">Agora você tem 2 planos</h3>
+        <div class="subtitulo" style="margin-bottom:14px">Seu plano atual é <b>Free</b>. O <b>Plano Pro</b> também está disponível e pode ser ativado pelo próprio painel.</div>
+        <div style="padding:13px;border:1px solid var(--mango);border-radius:12px;background:rgba(255,190,61,.08);text-align:left">
+          <b style="font-size:17px;color:var(--mango)">Plano Pro — R$ ${PLANOS.pro.preco.toFixed(2)} pagamento único</b>
+          <div class="subtitulo" style="margin:6px 0 0">Você fica com ${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}% de cada entrega, tem prioridade, mais entregas simultâneas e saque mais rápido.</div>
+        </div>
+        <button class="btn btn-primario" style="width:100%;margin-top:14px" onclick="fecharAvisoPlanoProMotorista(true)">VER / ATUALIZAR PLANO</button>
+        <button class="btn btn-secundario" style="width:100%;margin-top:8px" onclick="fecharAvisoPlanoProMotorista(false)">Continuar no Free</button>
+      </div>
+    </div>
+  </div>`;
 }
 
 function entregasDoMesAtual(telefone){
@@ -7060,7 +7159,7 @@ function telaCadastroMotorista(){
   } else if(c.etapa===5){
     corpo = `
     <div class="etapa-titulo">5. Escolha o seu plano</div>
-    <div class="etapa-sub">Pode trocar de plano depois, falando com o suporte.</div>
+    <div class="etapa-sub">Escolha entre Free e Pro. Depois você pode atualizar o plano a qualquer momento pelo próprio painel.</div>
     ${planosHTML(c)}
     ${c.erroEtapa?`<div class="erro-campo">${c.erroEtapa}</div>`:''}
     <div style="display:flex;gap:8px;margin-top:14px">
@@ -7344,6 +7443,8 @@ function telaMotorista(){
   const blocoPedidos = `
   <div class="link-taxas-topo" onclick="abrirComoFunciona('taxas')"> Ver todas as taxas e regras</div>
   ${blocoAvisoAnalise}
+  ${blocoGpsSegundoPlanoMotoristaHTML()}
+  ${planoDestaqueMotoristaHTML(m)}
   ${treinamentoMotoristaHTML()}
   ${blocoPrimeiroDia}
   ${blocoOnline}
@@ -8008,6 +8109,7 @@ function render(){
     ${false && estado.sosClienteAtivo ? `<div class="sos-cliente-tela"><div class="sos-cliente-caixa"><div class="sos-cliente-icone"></div><div class="sos-cliente-titulo">SOS ACIONADO</div><div class="sos-cliente-msg">Seu alerta de emergência foi enviado para a central e para os motoristas disponíveis. Mantenha o telefone acessível.</div><button class="btn" onclick="fecharSOSCliente()">Entendi / fechar alerta</button></div></div>` : ''}
     ${estado.toast ? `<div class="toast toast-${estado.toastTipo||'info'}"><span class="toast-icone">${estado.toastTipo==='sucesso'?'':estado.toastTipo==='erro'?'':'ℹ'}</span><span>${estado.toast}</span></div>` : ''}
     ${estado.modalConfirmar ? modalConfirmarHTML() : ''}
+    ${estado.avisoPlanoProAberto ? avisoPlanoProMotoristaHTML() : ''}
     ${estado.modalReprovar ? modalReprovarHTML() : ''}
     ${estado.comoFunciona.aberto ? comoFuncionaHTML() : ''}
     ${estado.indicacoes.aberto ? indicacoesHTML() : ''}
@@ -8353,6 +8455,10 @@ async function alternarDisponibilidade(){
     mostrarToast('Seu cadastro precisa estar aprovado para iniciar rota e receber pedidos.','erro');
     return;
   }
+
+  // Android sem o app nativo atualizado: não deixa mais passar direto para ONLINE.
+  // Primeiro oferece o APK que mantém o GPS funcionando com WhatsApp/Waze/tela bloqueada.
+  if(novoValor && !(await exigirAppNativoGpsSegundoPlano())) return;
 
   // A atualização obrigatória só aparece no momento certo: quando um motorista
   // aprovado, usando o APK, tenta ficar ONLINE. Navegar/abrir o app não é bloqueado.
@@ -8915,6 +9021,7 @@ async function entrarNoPainelMotorista(data){
   estado.ultimoPedidosJSON='';
   salvarLocal('ef_motorista_telefone', data.telefone); salvarLocal('ef_modo','entregador');
   await carregarPedidos();
+  abrirAvisoPlanoProMotoristaSeNecessario(estado.motorista);
   render();
   carregarCancelamentosMotorista();
   carregarSaldoMotorista();
@@ -10945,6 +11052,7 @@ window.avancarEtapa1=avancarEtapa1; window.avancarEtapa2=avancarEtapa2; window.a
 window.avancarEtapa4=avancarEtapa4; window.avancarEtapa5=avancarEtapa5; window.voltarEtapa=voltarEtapa;
 window.mudarVeiculoCadastro=mudarVeiculoCadastro; window.solicitarUploadDocumento=solicitarUploadDocumento;
 window.escolherPlano=escolherPlano;
+window.abrirTrocaPlanoMotorista=abrirTrocaPlanoMotorista; window.fecharAvisoPlanoProMotorista=fecharAvisoPlanoProMotorista; window.baixarApkMotoristaAtual=baixarApkMotoristaAtual;
 window.processarDocumentoSelecionado=processarDocumentoSelecionado; window.copiarPix=copiarPix;
 window.finalizarCadastroMotorista=finalizarCadastroMotorista; window.alternarTermos=alternarTermos;
 window.abrirAdmin=abrirAdmin; window.fecharAdmin=fecharAdmin; window.digitarSenhaAdmin=digitarSenhaAdmin;
