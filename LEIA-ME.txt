@@ -1,9 +1,0 @@
-FINALIZAÇÃO ENTREGA FLASH - versão 2026091204
-
-Substitua na raiz do repositório entregaflash-site:
-1) index.html
-2) vercel.json
-
-O APK entregaflash-2026091204.apk já deve permanecer na raiz.
-A atualização obrigatória só aparece quando um motorista com APK antigo toca em FICAR ONLINE.
-A versão 2026091204 não é bloqueada.
