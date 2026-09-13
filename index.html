@@ -2210,18 +2210,66 @@ function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
 
 // ---------- ponte com o APK Android nativo (GPS em segundo plano) ----------
 const EF_NATIVE_ANDROID_CHAVE='ef_native_android_bg_v1';
+const EF_NATIVE_APP_VERSION_CHAVE='ef_native_app_version_v1';
+const EF_NATIVE_APP_VERSION_NAME_CHAVE='ef_native_app_version_name_v1';
+const EF_APK_ATUAL_VERSION_CODE=2026091204;
+const EF_APK_ATUAL_URL='/entregaflash-2026091204.apk';
 (function detectarApkNativoAndroid(){
   try{
     const u=new URL(location.href);
     if(u.searchParams.get('ef_native')==='1'){
       localStorage.setItem(EF_NATIVE_ANDROID_CHAVE,'1');
+
+      // O APK envia seu versionCode/versionName na URL de abertura. Guardamos localmente
+      // para bloquear SOMENTE versões antigas quando o motorista tocar em FICAR ONLINE.
+      const vc=String(u.searchParams.get('ef_app_version')||'').trim();
+      const vn=String(u.searchParams.get('ef_app_version_name')||'').trim();
+      if(/^\d+$/.test(vc)) localStorage.setItem(EF_NATIVE_APP_VERSION_CHAVE,vc);
+      if(vn) localStorage.setItem(EF_NATIVE_APP_VERSION_NAME_CHAVE,vn);
+
+      // Limpa os parâmetros visíveis sem recarregar a página.
       u.searchParams.delete('ef_native');
+      u.searchParams.delete('ef_app_version');
+      u.searchParams.delete('ef_app_version_name');
       history.replaceState(null,'',u.pathname+(u.search||'')+(u.hash||''));
     }
   }catch(e){}
 })();
 function entregaFlashNativoAndroidAtivo(){
   try{ return localStorage.getItem(EF_NATIVE_ANDROID_CHAVE)==='1'; }catch(e){ return false; }
+}
+function versaoCodigoApkNativo(){
+  try{ return Number(localStorage.getItem(EF_NATIVE_APP_VERSION_CHAVE)||0)||0; }catch(e){ return 0; }
+}
+function precisaAtualizarApkNativo(){
+  if(!entregaFlashNativoAndroidAtivo()) return false;
+  const instalada=versaoCodigoApkNativo();
+  return !instalada || instalada<EF_APK_ATUAL_VERSION_CODE;
+}
+async function exigirAtualizacaoApkAntesDeFicarOnline(){
+  if(!precisaAtualizarApkNativo()) return true;
+  const instalada=versaoCodigoApkNativo();
+  const versaoTexto=instalada ? `<br><small style="opacity:.72">Versão instalada: ${instalada}</small>` : '';
+  const atualizar=await confirmarAcao(
+    `<b style="font-size:19px">Atualização necessária</b><br><br>Existe uma nova versão do Entrega Flash. Atualize o aplicativo para ficar online e receber entregas.${versaoTexto}`,
+    'ATUALIZAR AGORA'
+  );
+  if(atualizar){
+    mostrarToast('Baixando a atualização do Entrega Flash...','info');
+    try{
+      const a=document.createElement('a');
+      a.href=EF_APK_ATUAL_URL+'?v='+EF_APK_ATUAL_VERSION_CODE;
+      a.download='Entrega-Flash.apk';
+      a.rel='noopener';
+      a.style.display='none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ try{ a.remove(); }catch(e){} },1200);
+    }catch(e){
+      location.href=EF_APK_ATUAL_URL+'?v='+EF_APK_ATUAL_VERSION_CODE;
+    }
+  }
+  return false;
 }
 function controlarGpsNativoAndroid(acao, telefone){
   if(!entregaFlashNativoAndroidAtivo()) return false;
@@ -8305,6 +8353,10 @@ async function alternarDisponibilidade(){
     mostrarToast('Seu cadastro precisa estar aprovado para iniciar rota e receber pedidos.','erro');
     return;
   }
+
+  // A atualização obrigatória só aparece no momento certo: quando um motorista
+  // aprovado, usando o APK, tenta ficar ONLINE. Navegar/abrir o app não é bloqueado.
+  if(novoValor && !(await exigirAtualizacaoApkAntesDeFicarOnline())) return;
 
   // APK Android: usa SOMENTE o serviço nativo para o motorista.
   // Isso evita acionar geolocalização web + delegação + Activity nativa ao mesmo tempo.
