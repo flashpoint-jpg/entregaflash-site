@@ -7,7 +7,7 @@
 <meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Entrega Flash</title>
-<link rel="manifest" href="entregaflash-manifest.json?v=20260912-PIN-FAVORITO-2">
+<link rel="manifest" href="entregaflash-manifest.json?v=20260907-ICONE-MODERNO-1">
 <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <link rel="preconnect" href="https://unpkg.com" crossorigin>
 <link rel="preconnect" href="https://connect.facebook.net" crossorigin>
@@ -2228,13 +2228,26 @@ function controlarGpsNativoAndroid(acao, telefone){
   const tel=String(telefone||'').replace(/\D/g,'');
   if(!tel) return false;
   const op=acao==='stop'?'stop':'start';
+
+  // Evita abrir várias Activities/janelas se o mesmo comando for disparado
+  // por clique + realtime + restauração da sessão quase ao mesmo tempo.
+  try{
+    const chave='ef_native_gps_cmd_v2';
+    const agora=Date.now();
+    const anterior=JSON.parse(sessionStorage.getItem(chave)||'null');
+    if(anterior && anterior.op===op && anterior.tel===tel && (agora-Number(anterior.em||0))<15000){
+      return true;
+    }
+    sessionStorage.setItem(chave, JSON.stringify({op,tel,em:agora}));
+  }catch(e){}
+
   try{
     const a=document.createElement('a');
     a.href=`entregaflash://tracking/${op}?phone=${encodeURIComponent(tel)}`;
     a.style.display='none';
     document.body.appendChild(a);
     a.click();
-    setTimeout(()=>{ try{ a.remove(); }catch(e){} },1000);
+    setTimeout(()=>{ try{ a.remove(); }catch(e){} },800);
     return true;
   }catch(e){ console.warn('ponte GPS nativo',e); return false; }
 }
@@ -4507,7 +4520,7 @@ function semEnderecoModalHTML(){
 }
 
 async function exigirLocalizacaoOperacional(tipo){
-  // Não é usado na entrada do site. Só é chamado quando a localização é realmente necessária.
+  // Só é chamado quando a localização é realmente necessária.
   if(!window.isSecureContext){
     mostrarToast('Para usar a localização, abra o Entrega Flash pelo endereço HTTPS.', 'erro');
     return false;
@@ -4517,45 +4530,38 @@ async function exigirLocalizacaoOperacional(tipo){
     return false;
   }
 
-  // Não manda mais o aviso "Ative a localização" quando o GPS já está liberado.
-  // Primeiro consultamos a permissão (quando o navegador suporta Permissions API) e
-  // só falamos em liberar localização se ela estiver realmente bloqueada.
-  try{
-    if(navigator.permissions?.query){
-      const permissao = await navigator.permissions.query({name:'geolocation'});
-      if(permissao.state==='denied'){
-        mostrarToast('📍 Ative sua localização. Ligue o GPS/Localização do celular e permita o acesso para o Entrega Flash. Depois, toque em Confirmar pedido novamente.', 'erro');
-        return false;
-      }
-    }
-  }catch(e){ /* alguns navegadores não expõem geolocation na Permissions API */ }
+  // Não fazemos pré-bloqueio com navigator.permissions.
+  // Na TWA a permissão Android é delegada pelo próprio aplicativo e o pedido
+  // correto precisa partir do getCurrentPosition.
+  mostrarToast(tipo==='motorista'
+    ? 'Confirmando sua localização para ficar online...'
+    : 'Confirmando sua localização...', 'info');
 
-  mostrarToast(tipo==='motorista' ? 'Confirmando sua localização para iniciar a rota...' : 'Confirmando sua localização para finalizar o pedido...', 'info');
   return await new Promise(resolve=>{
     navigator.geolocation.getCurrentPosition(
       pos=>{
         try{
-          const lat = pos.coords.latitude, lon = pos.coords.longitude;
-          estado.ultimaLocalizacao = { lat, lng:lon, atualizadoEm:Date.now() };
-          // A mesma posição precisa alimentar o rastreio do motorista.
-          ultimaPosicaoMotorista = { lat, lon, capturadaEm:Number(pos.timestamp||Date.now()) };
-          // remove imediatamente o aviso de processamento quando o GPS respondeu
-          estado.toast = null;
-          estado.toastSeq = (estado.toastSeq||0)+1;
+          const lat=pos.coords.latitude, lon=pos.coords.longitude;
+          estado.ultimaLocalizacao={lat,lng:lon,atualizadoEm:Date.now()};
+          ultimaPosicaoMotorista={lat,lon,capturadaEm:Number(pos.timestamp||Date.now())};
+          estado.toast=null;
+          estado.toastSeq=(estado.toastSeq||0)+1;
         }catch(e){}
         resolve(true);
       },
       err=>{
-        const msg = err && err.code===1
-          ? '📍 Ative sua localização. Ligue o GPS/Localização do celular e permita o acesso para o Entrega Flash. Depois, toque em Confirmar pedido novamente.'
+        const acao=tipo==='motorista'
+          ? 'Depois, toque em FICAR ONLINE novamente.'
+          : 'Depois, tente novamente.';
+        const msg=err && err.code===1
+          ? '📍 O Entrega Flash não recebeu acesso à localização. Permita Localização para o aplicativo. '+acao
           : err && err.code===3
-            ? '📍 Ative sua localização. Verifique se o GPS/Localização do celular está ligado, aguarde alguns segundos e toque em Confirmar pedido novamente.'
-            : '📍 Ative sua localização. Ligue o GPS/Localização do celular e permita o acesso para o Entrega Flash. Depois, tente novamente.';
-        mostrarToast(msg, 'erro');
+            ? '📍 O GPS demorou para responder. Deixe a Localização do celular ligada, aguarde alguns segundos e tente novamente.'
+            : '📍 Não consegui obter sua localização agora. Verifique se a Localização/GPS está ligada e tente novamente.';
+        mostrarToast(msg,'erro');
         resolve(false);
       },
-      // aceita uma leitura recente do próprio aparelho e evita falso erro em celulares mais lentos
-      { enableHighAccuracy:true, timeout:20000, maximumAge:60000 }
+      {enableHighAccuracy:true,timeout:25000,maximumAge:60000}
     );
   });
 }
@@ -5481,9 +5487,21 @@ async function processarFotoSelecionada(input){
 // ---------- rastreio ao vivo ----------
 let avisoLocalizacaoMostrado = false;
 function iniciarRastreioMotorista(){
+  // No APK nativo o LocationForegroundService envia o GPS direto ao Supabase.
+  // Não abrimos watchPosition na TWA, pois isso pode disparar várias Activities
+  // transparentes de delegação de localização e dar a impressão de "abrir sem parar".
+  if(entregaFlashNativoAndroidAtivo()){
+    try{
+      if(watchId!=null && navigator.geolocation){ navigator.geolocation.clearWatch(watchId); }
+    }catch(e){}
+    watchId=null;
+    if(window._envioIntervalo){ clearInterval(window._envioIntervalo); window._envioIntervalo=null; }
+    avisoLocalizacaoMostrado=false;
+    return;
+  }
+
   if(watchId!=null) return;
   if(!window.isSecureContext){
-    // navegadores modernos bloqueiam geolocalização fora de HTTPS (exceto localhost) — sem isso, a posição nunca chega
     if(!avisoLocalizacaoMostrado){ avisoLocalizacaoMostrado=true; mostrarToast('Não foi possível ativar a localização: o app precisa estar em HTTPS.', 'erro'); }
     return;
   }
@@ -5491,47 +5509,29 @@ function iniciarRastreioMotorista(){
     if(!avisoLocalizacaoMostrado){ avisoLocalizacaoMostrado=true; mostrarToast('Este navegador não tem suporte a localização.', 'erro'); }
     return;
   }
-  watchId = navigator.geolocation.watchPosition(
-    (pos)=>{ ultimaPosicaoMotorista = { lat:pos.coords.latitude, lon:pos.coords.longitude, capturadaEm:Number(pos.timestamp||Date.now()) }; enviarPosicaoMotorista(); },
+  watchId=navigator.geolocation.watchPosition(
+    (pos)=>{ ultimaPosicaoMotorista={lat:pos.coords.latitude,lon:pos.coords.longitude,capturadaEm:Number(pos.timestamp||Date.now())}; enviarPosicaoMotorista(); },
     (err)=>{
       console.warn(err);
       if(!avisoLocalizacaoMostrado){
-        avisoLocalizacaoMostrado = true;
-        const msg = err && err.code===1 ? 'Localização bloqueada. Ative a permissão de localização pro app pra aparecer no mapa e receber pedidos.'
+        avisoLocalizacaoMostrado=true;
+        const msg=err && err.code===1
+          ? 'Localização bloqueada. Ative a permissão de localização pro app pra aparecer no mapa e receber pedidos.'
           : 'Não consegui obter sua localização agora. Verifique o GPS e tente de novo.';
-        mostrarToast(msg, 'erro');
+        mostrarToast(msg,'erro');
       }
     },
-    { enableHighAccuracy:true, maximumAge:5000, timeout:20000 }
+    {enableHighAccuracy:true,maximumAge:5000,timeout:20000}
   );
-  if(!window._envioIntervalo) window._envioIntervalo = setInterval(enviarPosicaoMotorista, 8000);
+  if(!window._envioIntervalo) window._envioIntervalo=setInterval(enviarPosicaoMotorista,8000);
 }
-function pararRastreioMotorista(){ if(watchId!=null){ navigator.geolocation.clearWatch(watchId); watchId=null; } avisoLocalizacaoMostrado=false; }
-async function enviarPosicaoMotorista(){
-  if(!ultimaPosicaoMotorista || !estado.motorista.ativo) return;
-  const fixEm=Number(ultimaPosicaoMotorista.capturadaEm||0);
-  const fixFresco=fixEm>0 && (Date.now()-fixEm)<=90000; // não carimba posição antiga como se fosse nova
-  if(estado.motorista.telefone && fixFresco){
-    const payloadPosicao = {
-      lat_atual: ultimaPosicaoMotorista.lat,
-      lng_atual: ultimaPosicaoMotorista.lon,
-      lat_atualizado_em: fixEm
-    };
-    if(estado.motorista.disponivel){
-      payloadPosicao.disponivel = true;
-      payloadPosicao.disponivel_atualizado_em = Date.now();
-      estado.motorista.disponivel_atualizado_em = payloadPosicao.disponivel_atualizado_em;
-    }
-    await sb.from('entrega_motoristas').update(payloadPosicao).eq('telefone', estado.motorista.telefone);
-    estado.motorista.latAtualizadoEm=fixEm;
-  }
-  if(!fixFresco) return;
-  const ativos = estado.pedidos.filter(p=>p.motoristaTelefone===estado.motorista.telefone && p.iniciadoEm && ['indo_coletar','coletado','a_caminho'].includes(p.status));
-  if(ativos.length===0) return;
-  await Promise.all(ativos.map(p=>sb.from('entrega_pedidos').update({
-    motorista_lat: ultimaPosicaoMotorista.lat, motorista_lng: ultimaPosicaoMotorista.lon, motorista_atualizado_em: fixEm
-  }).eq('id', p.id)));
-  estado.ultimoPedidosJSON='';
+function pararRastreioMotorista(){
+  try{
+    if(watchId!=null && navigator.geolocation) navigator.geolocation.clearWatch(watchId);
+  }catch(e){}
+  watchId=null;
+  if(window._envioIntervalo){ clearInterval(window._envioIntervalo); window._envioIntervalo=null; }
+  avisoLocalizacaoMostrado=false;
 }
 
 // ---------- mapa ----------
@@ -8254,8 +8254,12 @@ let intervaloHeartbeatMotoristaPresenca = null;
 async function heartbeatMotoristaPresenca(){
   const m=estado.motorista;
   if(!m?.ativo || !m.telefone || !m.disponivel || m.status!=='aprovado') return;
+
+  // No APK nativo, o serviço Android já envia um ping real a cada poucos segundos,
+  // atualizando lat/lng, presença e entregas diretamente no Supabase.
+  if(entregaFlashNativoAndroidAtivo()) return;
+
   const agora=Date.now();
-  // Tenta obter um FIX real. Não renova lat_atualizado_em usando coordenada antiga em memória.
   if(document.visibilityState==='visible' && navigator.geolocation){
     try{
       await new Promise(resolve=>navigator.geolocation.getCurrentPosition(
@@ -8279,7 +8283,7 @@ async function heartbeatMotoristaPresenca(){
     lat_atualizado_em:fixEm
   };
   try{
-    const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone',m.telefone);
+    const {error}=await sb.from('entrega_motoristas').update(payload).eq('telefone',m.telefone);
     if(!error) m.disponivel_atualizado_em=agora;
   }catch(e){ console.warn('heartbeat motorista',e); }
 }
@@ -8292,38 +8296,79 @@ function iniciarHeartbeatMotoristaPresenca(){
 iniciarHeartbeatMotoristaPresenca();
 
 async function alternarDisponibilidade(){
-  const m = estado.motorista;
-  const temAtivos = estado.pedidos.some(p=>!['buscando','entregue','cancelado'].includes(p.status) && p.motoristaTelefone===m.telefone);
+  const m=estado.motorista;
+  const temAtivos=estado.pedidos.some(p=>!['buscando','entregue','cancelado'].includes(p.status) && p.motoristaTelefone===m.telefone);
   if(m.disponivel && temAtivos){ mostrarToast('Termina a entrega em curso antes de ficar indisponível.'); return; }
-  const novoValor = !m.disponivel;
-  if(novoValor){
-    if(m.status!=='aprovado'){
-      mostrarToast('Seu cadastro precisa estar aprovado para iniciar rota e receber pedidos.', 'erro');
-      return;
+  const novoValor=!m.disponivel;
+
+  if(novoValor && m.status!=='aprovado'){
+    mostrarToast('Seu cadastro precisa estar aprovado para iniciar rota e receber pedidos.','erro');
+    return;
+  }
+
+  // APK Android: usa SOMENTE o serviço nativo para o motorista.
+  // Isso evita acionar geolocalização web + delegação + Activity nativa ao mesmo tempo.
+  if(entregaFlashNativoAndroidAtivo()){
+    if(novoValor){
+      mostrarToast('Ativando GPS em segundo plano...','info');
+
+      // Primeiro liga o serviço Android. Ele próprio valida a permissão e envia
+      // a primeira posição real ao Supabase.
+      if(!controlarGpsNativoAndroid('start',m.telefone)){
+        mostrarToast('Não consegui iniciar o GPS do aplicativo. Feche e abra o Entrega Flash e tente novamente.','erro');
+        return;
+      }
+
+      const ok=await atualizarDisponibilidadeDB(m.telefone,true);
+      if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
+
+      m.disponivel=true;
+      salvarLocal('ef_motorista_disponivel','true');
+      registrarEventoPushAtivacao('online');
+      iniciarRastreioMotorista(); // no APK nativo é no-op proposital
+      mostrarToast('Online! GPS em segundo plano ativado.','sucesso');
+
+      if(typeof Notification!=='undefined' && Notification.permission==='granted'){
+        await inscreverPushReal();
+      }
+    }else{
+      const ok=await atualizarDisponibilidadeDB(m.telefone,false);
+      if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
+      m.disponivel=false;
+      salvarLocal('ef_motorista_disponivel','false');
+      controlarGpsNativoAndroid('stop',m.telefone);
+      pararRastreioMotorista();
+      mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.');
     }
+    render();
+    return;
+  }
+
+  // Navegador/PWA: mantém o fluxo web normal.
+  if(novoValor){
     if(!(await exigirLocalizacaoOperacional('motorista'))) return;
     if(!ultimaPosicaoMotorista){
-      mostrarToast('Não consegui obter sua posição para aparecer no mapa. Ative o GPS e tente novamente.', 'erro');
+      mostrarToast('Não consegui obter sua posição para aparecer no mapa. Ative o GPS e tente novamente.','erro');
       return;
     }
   }
-  const ok = await atualizarDisponibilidadeDB(m.telefone, novoValor);
+
+  const ok=await atualizarDisponibilidadeDB(m.telefone,novoValor);
   if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
-  m.disponivel = novoValor;
-  salvarLocal('ef_motorista_disponivel', m.disponivel ? 'true' : 'false');
+  m.disponivel=novoValor;
+  salvarLocal('ef_motorista_disponivel',m.disponivel?'true':'false');
+
   if(m.disponivel){
     registrarEventoPushAtivacao('online');
-    controlarGpsNativoAndroid('start', m.telefone);
     iniciarRastreioMotorista();
-    // redundância intencional: confirma imediatamente a coordenada no banco,
-    // além do watchPosition que continuará atualizando enquanto estiver online.
     await enviarPosicaoMotorista();
-    mostrarToast('Rota iniciada! Você já aparece no mapa e está recebendo pedidos.', 'sucesso');
-    // Ao ficar online, repara/renova o push imediatamente. Se ainda não decidiu, pede a permissão.
+    mostrarToast('Rota iniciada! Você já aparece no mapa e está recebendo pedidos.','sucesso');
     if(typeof Notification!=='undefined' && Notification.permission==='granted') await inscreverPushReal();
-    else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(), 600);
+    else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),600);
+  }else{
+    pararRastreioMotorista();
+    mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.');
   }
-  else { controlarGpsNativoAndroid('stop', m.telefone); pararRastreioMotorista(); mostrarToast('Ficaste indisponível. Não vai receber novos pedidos.'); }
   render();
 }
 
