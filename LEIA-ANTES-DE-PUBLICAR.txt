@@ -1,0 +1,13 @@
+Entrega Flash - fechamento 14/09/2026
+
+Versao minima obrigatoria do APK: 2026091304
+Motorista com versao inferior fica bloqueado ao tentar FICAR ONLINE e recebe botao de atualizacao.
+IMPORTANTE: antes de publicar este pacote, substitua entregaflash.apk pelo app-release.apk final renomeado para entregaflash.apk.
+Nao publique este pacote com o APK antigo que veio da versao anterior.
+
+
+FINAL 14/09/2026
+- APK oficial na raiz: entregaflash.apk
+- versionCode minimo obrigatorio: 2026091304
+- Motoristas com versao anterior ficam impedidos de FICAR ONLINE ate atualizar.
+- Service Worker: 20260914-FINAL-1304-2.

@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "br.app.entregaflash.www.twa",
+    "sha256_cert_fingerprints": [
+      "3E:8F:40:51:25:04:E9:86:EA:89:66:55:6F:AA:54:B5:EA:E1:A4:9D:4F:30:FE:5C:D6:B9:C7:B2:7F:A4:29:EC"
+    ]
+  }
+}]

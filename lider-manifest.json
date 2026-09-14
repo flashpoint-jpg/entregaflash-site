@@ -1,0 +1,17 @@
+{
+  "id":"/lider-app",
+  "name":"Entrega Flash • Líder da Cidade",
+  "short_name":"EF Líder",
+  "description":"Painel do Líder da Cidade do Entrega Flash",
+  "start_url":"/lider.html",
+  "scope":"/",
+  "display":"standalone",
+  "background_color":"#08090b",
+  "theme_color":"#0b0c0f",
+  "orientation":"portrait-primary",
+  "icons":[
+    {"src":"/icon-192.png","sizes":"192x192","type":"image/png"},
+    {"src":"/icon-512.png","sizes":"512x512","type":"image/png"},
+    {"src":"/icon-512-maskable.png","sizes":"512x512","type":"image/png","purpose":"maskable"}
+  ]
+}
