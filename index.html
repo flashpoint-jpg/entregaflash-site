@@ -1434,7 +1434,7 @@ body.ef-menu-motorista-ativo #app{padding-bottom:var(--ef-menu-altura)!important
 body.ef-menu-motorista-ativo .conteudo-motorista{padding-bottom:0!important}
 body.ef-menu-motorista-ativo .abas-motorista{
   position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:100;
-  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  display:grid;grid-template-columns:repeat(6,minmax(0,1fr));
   width:100%!important;max-width:var(--ef-max,1180px)!important;margin:0 auto!important;
   min-height:calc(65px + env(safe-area-inset-bottom,0px));
   padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)!important;
@@ -1448,6 +1448,38 @@ body.ef-menu-motorista-ativo .sos-flutuante{bottom:calc(var(--ef-menu-altura) + 
 body.ef-menu-motorista-ativo .toast{bottom:calc(var(--ef-menu-altura) + 12px)!important}
 .ef-perfil-ajuda-acoes{display:grid;gap:10px}
 .ef-perfil-ajuda-acoes .btn{width:100%;min-width:0;margin:0;text-align:left;white-space:normal}
+body.ef-menu-motorista-ativo .abas-motorista .icone-kit svg{display:block;width:21px;height:21px}
+.ef-kit-cartao{max-width:760px;margin-left:auto;margin-right:auto}
+.ef-kit-cartao .ef-kit-chamada{display:inline-block;margin-bottom:10px;padding:6px 10px;border-radius:999px;background:rgba(255,149,24,.13);color:#9b4600;font-size:13px;font-weight:800}
+.ef-kit-cartao h2{margin-bottom:8px}
+.ef-kit-descricao{margin:0;color:var(--poeira);font-size:16px;line-height:1.5}
+.ef-kit-imagem{margin:18px 0;border-radius:18px;background:radial-gradient(circle at 50% 30%,#fff9ed,#e4dfd5);overflow:hidden}
+.ef-kit-imagem img{display:block;width:100%;height:auto;aspect-ratio:1;object-fit:contain}
+.ef-kit-itens{display:flex;flex-wrap:wrap;gap:8px;list-style:none;padding:0;margin:0 0 18px}
+.ef-kit-itens li{padding:7px 10px;border:1px solid var(--linha);border-radius:10px;font-size:14px;line-height:1.35;color:var(--osso);background:var(--painel-alt)}
+.ef-kit-cartao .btn{margin:0}
+.ef-kit-status{margin:0;font-size:16px;font-weight:700;line-height:1.5;color:#9b4600;text-align:center}
+.ef-kit-status:not(:empty){margin-bottom:14px;padding:12px;border-radius:12px;background:rgba(255,149,24,.1)}
+/* O visitante não tem barra inferior: somente o respiro e a área segura. */
+body.ef-cliente-visitante{padding-bottom:0!important}
+body.ef-cliente-visitante #app{padding-bottom:calc(16px + env(safe-area-inset-bottom,0px))!important}
+body.ef-cliente-visitante main>.cartao{margin-bottom:12px!important}
+body.ef-cliente-visitante main>.ef-ajuda-visitante{margin-bottom:0!important}
+body.ef-cliente-visitante .ef-form-entrega label{line-height:1.4}
+body.ef-cliente-visitante .ef-form-entrega input{min-width:0;min-height:48px!important;padding:12px!important;font-size:16px!important}
+body.ef-cliente-visitante .ef-form-entrega input::placeholder{color:#6b7280!important;opacity:1}
+body.ef-cliente-visitante .ef-form-entrega .btn-voz{width:48px;min-width:48px;min-height:48px}
+body.ef-cliente-visitante .ef-form-entrega .voz-endereco-ajuda{font-size:15px;line-height:1.5;margin-bottom:14px}
+body.ef-cliente-visitante .ef-form-entrega .btn-sitio-roca{max-width:100%;white-space:normal;line-height:1.4}
+body.ef-cliente-visitante .ef-form-entrega .btn-sitio-roca::before{flex-shrink:0}
+body.ef-cliente-visitante .btn-add-parada{min-height:48px;padding:12px;white-space:normal;line-height:1.4}
+.ef-limite-enderecos{margin:6px 0 0;font-size:14px;line-height:1.4;color:var(--poeira);text-align:center}
+body.ef-cliente-visitante .ef-meus-pedidos .vazio{padding:16px 8px;font-size:15.5px;line-height:1.5}
+body.ef-cliente-visitante .ef-meus-pedidos .aba-mini{margin-bottom:8px}
+.ef-ajuda-visitante summary{cursor:pointer;min-height:44px;align-content:center;color:var(--osso);font-size:16px;font-weight:700;line-height:1.4}
+.ef-ajuda-visitante[open] summary{margin-bottom:12px}
+.ef-ajuda-visitante .ef-perfil-ajuda-acoes .btn{font-size:15px;line-height:1.4}
+.ef-ajuda-visitante .faixa-instalar{margin-top:12px}
 @media(min-width:701px){
   body.ef-menu-motorista-ativo .abas-motorista{width:calc(100% - 40px)!important}
 }
@@ -1996,7 +2028,9 @@ let estado = {
   motoristasOnline:0,
   presenca:{ total:0, clientes:0, motoristas:0 }, // pessoas com o app aberto agora (via presença em tempo real)
   abaMinhasEntregas:'andamento', // andamento | concluidas | canceladas
-  abaPrincipalMotorista:'pedidos', // pedidos | perfil | historico
+  abaPrincipalMotorista:'pedidos', // pedidos | mapa | carteira | historico | kit | perfil
+  kitIndisponivel:false,
+  ajudaVisitanteAberta:false,
   carregando:true, toast:null,
   sessaoCarregando: (function(){ try{ return !!(localStorage.getItem('ef_motorista_telefone') || localStorage.getItem('ef_cliente_telefone')); }catch(e){ return false; } })(),
   chatAberto:null, mensagens:[], canalChat:null, naoLidas:0, chatNaoLidas:{},
@@ -2956,8 +2990,8 @@ function falarNoCampo(campo){
   try{ rec.start(); mostrarToast(' Pode falar o endereço agora.'); }
   catch(e){ mostrarToast('Não consegui abrir o microfone. Verifique a permissão do navegador.', 'erro'); }
 }
-function campoEnderecoComVoz(id, valor, placeholder, campo){
-  return `<div class="campo-com-voz"><input type="text" id="${id}" value="${valor||''}" placeholder="${placeholder}" autocomplete="off" inputmode="text" aria-label="${placeholder}" oninput="(function(el,c){if(c==='origem'||c==='destino'){estado.form[c]=el.value;estado.form[c+'Coord']=null;}else if(c.indexOf('parada-')===0){var i=parseInt(c.split('-')[1],10);if(Number.isFinite(i)){estado.form.paradas[i]=el.value;if(estado.form.paradasCoords)estado.form.paradasCoords[i]=null;}}debounce('inline-'+c,function(){buscarSugestoes(c)},500)})(this,'${campo}')"><button type="button" class="btn-voz" data-voz-campo="${campo}" onclick="falarNoCampo('${campo}')" aria-label="Preencher por voz" title="Falar endereço"></button></div>`;
+function campoEnderecoComVoz(id, valor, placeholder, campo, rotulo=placeholder){
+  return `<div class="campo-com-voz"><input type="text" id="${id}" value="${valor||''}" placeholder="${placeholder}" autocomplete="off" inputmode="text" aria-label="${rotulo}" oninput="(function(el,c){if(c==='origem'||c==='destino'){estado.form[c]=el.value;estado.form[c+'Coord']=null;}else if(c.indexOf('parada-')===0){var i=parseInt(c.split('-')[1],10);if(Number.isFinite(i)){estado.form.paradas[i]=el.value;if(estado.form.paradasCoords)estado.form.paradasCoords[i]=null;}}debounce('inline-'+c,function(){buscarSugestoes(c)},500)})(this,'${campo}')"><button type="button" class="btn-voz" data-voz-campo="${campo}" onclick="falarNoCampo('${campo}')" aria-label="Preencher por voz" title="Falar endereço"></button></div>`;
 }
 
 function selecionarSugestao(campo, idx){
@@ -6981,6 +7015,7 @@ function irEtapaPedido(alvo){
 
 function telaCliente(){
   const f = estado.form;
+  const visitante = !!estado.cliente.visitante;
   const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
     const infoVeiculo = VEICULOS[pedidoBuscando.veiculo] || {label:'Veículo'};
@@ -7065,7 +7100,7 @@ function telaCliente(){
     <button class="btn btn-secundario" style="margin-top:8px" ${atributoDesabilitado('trocarSenhaCliente')} onclick="executarComCarregando('trocarSenhaCliente', trocarMinhaSenhaCliente)">${rotuloCarregando('trocarSenhaCliente',' Trocar senha','Trocando...')}</button>
   </div>` : ''}
 
-  <div class="cartao">
+  <div class="cartao ef-form-entrega">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <h2 style="margin:0">Pedir entrega</h2>
     </div>
@@ -7076,10 +7111,11 @@ function telaCliente(){
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
     ${f.etapaPedido===1 ? `
-    <div class="voz-endereco-ajuda"> <b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.</div><label style="margin-top:0">Endereço de recolha</label>
-    ${campoEnderecoComVoz('c-origem', f.origem, 'Rua, número, bairro ou ponto de referência', 'origem')}
+    <div class="voz-endereco-ajuda">${visitante ? 'Digite o endereço ou toque no microfone. Você também pode buscar por bairro ou ponto de referência.' : '<b>Mais fácil:</b> comece a digitar ou toque no microfone e fale o endereço. As sugestões aparecem já nas primeiras letras.'}</div><label for="c-origem" style="margin-top:0">Endereço de recolha</label>
+    ${campoEnderecoComVoz('c-origem', f.origem, visitante ? 'Rua e número' : 'Rua, número, bairro ou ponto de referência', 'origem', 'Endereço de recolha')}
     <div class="sugestoes" id="sugestoes-origem"></div>
-    <input type="text" id="c-origem-complemento" value="${(f.origemComplemento||'').replace(/"/g,'&quot;')}" oninput="estado.form.origemComplemento=this.value" placeholder="Número da casa, bloco, apartamento (opcional)" style="margin-top:-2px;margin-bottom:10px">
+    ${visitante ? '<label for="c-origem-complemento">Complemento (opcional)</label>' : ''}
+    <input type="text" id="c-origem-complemento" value="${(f.origemComplemento||'').replace(/"/g,'&quot;')}" oninput="estado.form.origemComplemento=this.value" placeholder="${visitante ? 'Casa, bloco, apartamento' : 'Número da casa, bloco, apartamento (opcional)'}" style="margin-top:-2px;margin-bottom:10px">
     <div style="font-size:14px;margin-top:-4px;margin-bottom:10px">
       <a onclick="abrirSemEndereco('origem')" class="btn-sitio-roca"> Sítio/zona rural sem endereço?</a>
     </div>
@@ -7087,10 +7123,11 @@ function telaCliente(){
       ${f.origemReferencia ? ` Referência: ${f.origemReferencia}<br>` : ''}
       ${f.origemFotoUrl ? ` Foto do local anexada` : ''}
     </div>` : ''}
-    <label>Endereço de entrega</label>
-    ${campoEnderecoComVoz('c-destino', f.destino, 'Rua, número, bairro ou ponto de referência', 'destino')}
+    <label for="c-destino">Endereço de entrega</label>
+    ${campoEnderecoComVoz('c-destino', f.destino, visitante ? 'Rua e número' : 'Rua, número, bairro ou ponto de referência', 'destino', 'Endereço de entrega')}
     <div class="sugestoes" id="sugestoes-destino"></div>
-    <input type="text" id="c-destino-complemento" value="${(f.destinoComplemento||'').replace(/"/g,'&quot;')}" oninput="estado.form.destinoComplemento=this.value" placeholder="Número da casa, bloco, apartamento (opcional)" style="margin-top:-2px;margin-bottom:10px">
+    ${visitante ? '<label for="c-destino-complemento">Complemento (opcional)</label>' : ''}
+    <input type="text" id="c-destino-complemento" value="${(f.destinoComplemento||'').replace(/"/g,'&quot;')}" oninput="estado.form.destinoComplemento=this.value" placeholder="${visitante ? 'Casa, bloco, apartamento' : 'Número da casa, bloco, apartamento (opcional)'}" style="margin-top:-2px;margin-bottom:10px">
     <div style="font-size:14px;margin-top:-4px;margin-bottom:10px">
       <a onclick="abrirSemEndereco('destino')" class="btn-sitio-roca"> Sítio/zona rural sem endereço?</a>
     </div>
@@ -7101,7 +7138,7 @@ function telaCliente(){
     ${(f.paradas||[]).map((valor,idx)=>`
     <div class="linha-parada">
       <span class="badge-parada">+${idx+2}</span>
-      ${campoEnderecoComVoz(`c-parada-${idx}`, valor, 'Mais um endereço de entrega', `parada-${idx}`)}
+      ${campoEnderecoComVoz(`c-parada-${idx}`, valor, visitante ? 'Rua e número' : 'Mais um endereço de entrega', `parada-${idx}`, `Endereço de entrega ${idx+2}`)}
       <div class="botoes-parada">
         <button type="button" class="btn-mover-parada" ${idx===0?'disabled':''} onclick="moverParada(${idx},-1)" title="Mover para cima">▲</button>
         <button type="button" class="btn-mover-parada" ${idx===f.paradas.length-1?'disabled':''} onclick="moverParada(${idx},1)" title="Mover para baixo">▼</button>
@@ -7112,7 +7149,7 @@ function telaCliente(){
     <div style="font-size:14px;margin:2px 0 8px 28px">
       <a onclick="abrirSemEndereco('parada-${idx}')" class="btn-sitio-roca"> Sítio/zona rural sem endereço?</a>
     </div>`).join('')}
-    ${(f.paradas||[]).length < MAX_PARADAS_EXTRA ? `<button type="button" class="btn-add-parada" onclick="adicionarParada()">+ Adicionar mais um endereço de entrega (até 10 no total)</button>` : ''}
+    ${(f.paradas||[]).length < MAX_PARADAS_EXTRA ? `<button type="button" class="btn-add-parada" onclick="adicionarParada()">${visitante ? '+ Adicionar endereço de entrega' : '+ Adicionar mais um endereço de entrega (até 10 no total)'}</button>${visitante ? '<p class="ef-limite-enderecos">Até 10 endereços de entrega no total.</p>' : ''}` : ''}
     ${(f.paradas||[]).length > 0 ? `<div class="cf-nota" style="margin-top:6px">Cada endereço de entrega extra soma +R$ ${TAXA_PARADA_EXTRA_VALOR.toFixed(2)} ao valor da corrida.</div>` : ''}
     <button class="btn btn-primario" style="margin-top:16px" onclick="irEtapaPedido(2)">Continuar →</button>
     ` : ''}
@@ -7202,19 +7239,20 @@ function telaCliente(){
     </div>
   </div>
 
-  <div class="cartao">
+  <div class="cartao ef-meus-pedidos">
     <h2>Os meus pedidos</h2>
     <div class="aba-mini">
       <button class="${estado.abaPedidosCliente==='ativos'?'ativo':''}" onclick="estado.abaPedidosCliente='ativos';render()">Em andamento</button>
       <button class="${estado.abaPedidosCliente==='historico'?'ativo':''}" onclick="estado.abaPedidosCliente='historico';render()">Histórico</button>
     </div>
     ${!estado.filtroTelefoneCliente
-      ? `<div class="vazio"><span class="emoji-grande"></span>Depois de fazeres um pedido, ele aparece aqui.</div>`
+      ? `<div class="vazio">Seus pedidos aparecerão aqui após a confirmação.</div>`
       : listaExibida.length===0
         ? `<div class="vazio"><span class="emoji-grande"></span>${estado.abaPedidosCliente==='ativos'?'Nenhum pedido em andamento.':'Ainda não há pedidos no histórico.'}</div>`
         : listaExibida.map(cartaoPedidoCliente).join('')
     }
   </div>
+  ${visitante ? ajudaVisitanteHTML() : ''}
   ${estado.edicaoPedido ? modalEdicaoPedidoHTML() : ''}`;
 }
 
@@ -7671,8 +7709,26 @@ function menuMotoristaHTML(){
     <button type="button" class="${aba==='mapa'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('mapa')"><span class="icone-aba">⌖</span>Mapa</button>
     <button type="button" class="${aba==='carteira'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('carteira')"><span class="icone-aba">◈</span>Carteira</button>
     <button type="button" class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')"><span class="icone-aba">↺</span>Histórico</button>
+    <button type="button" class="${aba==='kit'?'ativo':''}" aria-label="Peça seu kit" onclick="mudarAbaPrincipalMotorista('kit')"><span class="icone-aba icone-kit" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v1M6 5h12l2 16H4L6 5Z"/><path d="M9 9v2a3 3 0 0 0 6 0V9M8 17h8"/></svg></span><span>Peça seu<br>kit</span></button>
     <button type="button" class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')"><span class="icone-aba">●</span>Perfil</button>
   </nav>`;
+}
+
+function kitMotoristaHTML(){
+  return `<section class="cartao ef-kit-cartao" aria-labelledby="ef-kit-titulo">
+    <span class="ef-kit-chamada">Kit Entrega Flash</span>
+    <h2 id="ef-kit-titulo">Peça seu kit</h2>
+    <p class="ef-kit-descricao">A identidade da Entrega Flash para acompanhar você nas entregas.</p>
+    <div class="ef-kit-imagem"><img src="assets/kit-entrega-flash.png" width="1254" height="1254" alt="Kit Entrega Flash preto e laranja: mochila bag, camiseta, camisa de manga longa, blusão e adesivos." decoding="async"></div>
+    <ul class="ef-kit-itens" aria-label="Itens do kit"><li>Mochila bag</li><li>Camiseta</li><li>Manga longa</li><li>Blusão</li><li>Adesivos</li></ul>
+    <p id="ef-kit-status" class="ef-kit-status" role="status" aria-live="polite" aria-atomic="true">${estado.kitIndisponivel ? 'Kit ainda indisponível.' : ''}</p>
+    <button type="button" class="btn btn-primario" onclick="solicitarKitMotorista()" aria-describedby="ef-kit-status">Solicitar</button>
+  </section>`;
+}
+function solicitarKitMotorista(){
+  // Vitrine demonstrativa: apenas exibe o aviso, sem registrar pedido ou pagamento.
+  estado.kitIndisponivel = true;
+  render();
 }
 
 // Os avisos de instalação e notificações continuam acessíveis no Perfil do motorista.
@@ -7716,6 +7772,7 @@ function ajudaMotoristaHTML(){
 }
 function rodapeAppHTML(){
   if(estado.modo==='entregador' && estado.motorista.ativo) return '';
+  if(estado.modo==='cliente' && estado.cliente.visitante) return '';
   return `${avisosAppHTML()}
     <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()"> Sugestões e Reclamações</button>
     <div class="rodape-discreto">
@@ -7723,6 +7780,17 @@ function rodapeAppHTML(){
       <span>·</span>
       <span onclick="carregarPedidos()">↻ atualizar</span>
     </div>`;
+}
+
+function ajudaVisitanteHTML(){
+  return `<details class="cartao ef-ajuda-visitante" ${estado.ajudaVisitanteAberta ? 'open' : ''} ontoggle="if(this.isConnected) estado.ajudaVisitanteAberta=this.open">
+    <summary>Ajuda e informações</summary>
+    <div class="ef-perfil-ajuda-acoes">
+      <button type="button" class="btn btn-secundario" onclick="abrirComoFunciona('cliente')">Como funciona o app</button>
+      <button type="button" class="btn btn-secundario" onclick="abrirFeedback()">Sugestões e Reclamações</button>
+    </div>
+    ${avisosAppHTML()}
+  </details>`;
 }
 
 let _efObserverMenuMotorista = null;
@@ -7913,7 +7981,7 @@ function telaMotorista(){
 
   return `
   <div class="conteudo-motorista">
-    ${aba==='pedidos' ? blocoPedidos : aba==='mapa' ? blocoMapaMotorista : aba==='carteira' ? blocoCarteiraMotorista : aba==='historico' ? blocoHistorico : blocoPerfil}
+    ${aba==='pedidos' ? blocoPedidos : aba==='mapa' ? blocoMapaMotorista : aba==='carteira' ? blocoCarteiraMotorista : aba==='historico' ? blocoHistorico : aba==='kit' ? kitMotoristaHTML() : blocoPerfil}
   </div>
   ${estado.chamadoAmigoModal.aberto ? modalChamadoAmigoHTML() : ''}`;
 }
@@ -8380,6 +8448,13 @@ function render(){
     !planoAnimando && !clienteBemVindoAnimando && !estado.transicaoPedido.ativa
   );
   document.body.classList.toggle('ef-menu-motorista-ativo', menuMotoristaAtivo);
+  const clienteVisitanteAtivo = !!(
+    estado.modo==='cliente' && estado.cliente.visitante &&
+    !estado.resetSenha?.aberto && !estado.parceiro?.aberto &&
+    !(estado.telaBoasVindas && !estado.sessaoCarregando) &&
+    !planoAnimando && !clienteBemVindoAnimando && !estado.transicaoPedido.ativa
+  );
+  document.body.classList.toggle('ef-cliente-visitante', clienteVisitanteAtivo);
   if(estado.resetSenha && estado.resetSenha.aberto){
     app.innerHTML=telaRedefinirSenha();
     return;
