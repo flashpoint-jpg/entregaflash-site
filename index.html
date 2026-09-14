@@ -1333,7 +1333,7 @@ input:focus,select:focus,textarea:focus{outline:none!important;box-shadow:0 0 0 
 :root{--ef-max:1180px;--ef-gutter:clamp(12px,3vw,32px);--ef-safe-bottom:env(safe-area-inset-bottom,0px)}
 html{width:100%;min-height:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 body{width:100%;min-width:0;min-height:100dvh;overflow-x:hidden;overscroll-behavior-y:auto}
-*,*::before,*::after{min-width:0}
+*,*::before,*::after{box-sizing:border-box}
 img,svg,video,canvas{max-width:100%}
 button,input,select,textarea{font:inherit;max-width:100%}
 button,.btn,[role="button"]{touch-action:manipulation}
@@ -1391,6 +1391,22 @@ table{max-width:100%;border-collapse:collapse}
 }
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
+</style><style id="ef-correction-profile-mobile-1409">
+@media(max-width:700px){
+  header.topo{padding-top:calc(6px + env(safe-area-inset-top,0px))!important;padding-bottom:7px!important;min-height:0!important}
+  header.topo .marca .logo-img{width:min(190px,58vw)!important;max-width:190px!important;max-height:82px!important;object-fit:contain!important}
+  header.topo .tagline{font-size:11px!important;line-height:1.2!important;margin-top:3px!important;letter-spacing:.55px!important}
+  .perfil-acoes{width:100%;justify-content:stretch!important}
+  .perfil-acoes-botoes{display:grid!important;grid-template-columns:minmax(0,1fr) 92px;width:100%;gap:8px!important}
+  .perfil-acoes-botoes .btn{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;padding:11px 10px!important;font-size:14px!important;white-space:nowrap!important;overflow:visible!important}
+  .perfil-acoes-botoes .botao-chat{min-width:0!important}
+  .cartao{overflow:visible}
+}
+@media(max-width:360px){
+  header.topo .marca .logo-img{width:min(168px,54vw)!important;max-height:72px!important}
+  .perfil-acoes-botoes{grid-template-columns:minmax(0,1fr) 78px}
+  .perfil-acoes-botoes .btn{font-size:12.5px!important;padding-left:7px!important;padding-right:7px!important}
 }
 </style></head>
 
@@ -7690,8 +7706,8 @@ function telaMotorista(){
   const blocoPerfil = `
   ${perfilMotoristaHTML(m)}
   <div class="cartao">
-    <div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
-      <div style="display:flex;gap:8px">
+    <div class="perfil-acoes" style="display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+      <div class="perfil-acoes-botoes" style="display:flex;gap:8px">
         <button class="btn btn-secundario btn-pequeno botao-chat" onclick="abrirSuporte()"> Mensagens${estado.suporteNaoLidas>0?`<span class="notif-bolinha">${estado.suporteNaoLidas}</span>`:''}</button>
         <button class="btn btn-secundario btn-pequeno" onclick="sairMotorista()">Sair</button>
       </div>
