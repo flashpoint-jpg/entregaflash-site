@@ -5414,7 +5414,12 @@ function resetTrocaPlanoMotorista(){
 function abrirTrocaPlanoMotorista(){
   const t = estado.trocaPlanoMotorista;
   t.aberto = true; t.gerando=false; t.erro=''; t.qrCode=null; t.copiaCola=null; t.status='pendente';
+  // O painel de troca fica na aba Perfil; leve o motorista até ele.
+  estado.abaPrincipalMotorista = 'perfil';
   render();
+  setTimeout(()=>{
+    document.getElementById('painel-troca-plano-motorista')?.scrollIntoView({behavior:'smooth',block:'center'});
+  }, 80);
 }
 function fecharTrocaPlanoMotorista(){ resetTrocaPlanoMotorista(); render(); }
 async function carregarDadosMotoristaParaPlano(){
@@ -5484,7 +5489,7 @@ function trocaPlanoMotoristaHTML(m){
       <button class="btn btn-primario btn-pequeno" style="margin-top:0" onclick="abrirTrocaPlanoMotorista()">${m.plano==='pro'?'VER PLANOS':'ATUALIZAR PLANO'}</button>
     </div>`;
   return `
-    <div style="margin-top:14px;padding:16px;background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px">
+    <div id="painel-troca-plano-motorista" style="margin-top:14px;padding:16px;background:var(--painel-alt);border:1px solid var(--linha);border-radius:12px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><b style="font-family:'Rajdhani';font-size:18px"> Trocar plano</b><button class="btn btn-secundario btn-pequeno" style="margin-top:0" onclick="fecharTrocaPlanoMotorista()">Fechar</button></div>
       <div style="margin-top:12px;padding:12px;border:1px solid var(--linha);border-radius:10px"><b> Free</b><div class="subtitulo">${Math.round((1-PLANOS.free.taxaPlataforma)*100)}% de cada entrega · sem limite de entregas</div>${m.plano==='pro'?`<button class="btn btn-secundario btn-pequeno" onclick="mudarMotoristaParaFree()">Mudar para Free</button>`:`<div class="pix-status pago" style="margin-top:8px">Plano atual</div>`}</div>
       <div style="margin-top:10px;padding:12px;border:1px solid var(--mango);border-radius:10px"><b> Pro — R$ ${PLANOS.pro.preco.toFixed(2)} pagamento único</b><div class="subtitulo">${Math.round((1-PLANOS.pro.taxaPlataforma)*100)}% de cada entrega · prioridade · mais entregas simultâneas · saque mais rápido</div>
