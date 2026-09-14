@@ -2072,7 +2072,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260914-FINAL-1304-2';
+  const versaoApp = '20260914-CHAMADA-NATIVA-2';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2105,6 +2105,15 @@ async function inscreverPushReal(papelForcado){
   if(!referencia || typeof Notification==='undefined' || Notification.permission!=='granted') return false;
   try{
     const reg = await navigator.serviceWorker.ready;
+    // No APK nativo do motorista, a CHAMADA DE CORRIDA agora é 100% nativa.
+    // Remove a assinatura web antiga para não aparecer aquela notificação simples do navegador
+    // junto/antes do popup com áudio do aplicativo.
+    if(papel==='motorista' && entregaFlashNativoAndroidAtivo()){
+      const antiga = await reg.pushManager.getSubscription();
+      if(antiga){ try{ await antiga.unsubscribe(); }catch(_){} }
+      try{ await registrarStatusAplicativo(papel, referencia, false); }catch(_){}
+      return true;
+    }
     let sub = await reg.pushManager.getSubscription();
     if(!sub){
       sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
@@ -2213,7 +2222,7 @@ function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
 const EF_NATIVE_ANDROID_CHAVE='ef_native_android_bg_v1';
 const EF_NATIVE_APP_VERSION_CHAVE='ef_native_app_version_v1';
 const EF_NATIVE_APP_VERSION_NAME_CHAVE='ef_native_app_version_name_v1';
-const EF_APK_ATUAL_VERSION_CODE=2026091401;
+const EF_APK_ATUAL_VERSION_CODE=2026091402;
 const EF_APK_ATUAL_URL='/entregaflash.apk';
 (function detectarApkNativoAndroid(){
   try{
@@ -3110,8 +3119,12 @@ function detectarNovosPedidosMotorista(novos){
     if(estado.statusAnteriorMotorista[np.id]) return;
     estado.statusAnteriorMotorista[np.id] = true;
     registrarTelemetriaChamadaPedido(np,'recebido');
-    tocarSomNovoPedido();
-    notificar('🆕 Novo pedido disponível!', `${np.origem} → ${np.destino} · R$ ${Number(np.preco).toFixed(2)}`, 'novo-'+np.id);
+    // Dentro do APK novo, NÃO dispara a notificação simples do navegador.
+    // O serviço Android faz o som personalizado, popup e botões Aceitar/Recusar.
+    if(!entregaFlashNativoAndroidAtivo()){
+      tocarSomNovoPedido();
+      notificar('🆕 Novo pedido disponível!', `${np.origem} → ${np.destino} · R$ ${Number(np.preco).toFixed(2)}`, 'novo-'+np.id);
+    }
   });
   const idsAtuais = new Set(novos.map(p=>p.id));
   Object.keys(estado.statusAnteriorMotorista).forEach(id=>{ if(!idsAtuais.has(id)) delete estado.statusAnteriorMotorista[id]; });
