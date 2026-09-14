@@ -2416,11 +2416,17 @@ async function restaurarSessao(){
           fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
           notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null, latAtualizadoEm:Number(data.lat_atualizado_em)||null
         };
-        if(estado.motorista.disponivel && estado.motorista.status==='aprovado'){
+        const intencaoOnlineSalva=obterIntencaoMotoristaOnline();
+        const querRetomarOnline=estado.motorista.status==='aprovado' && (estado.motorista.disponivel || intencaoOnlineSalva===true);
+        if(querRetomarOnline){
+          estado.motorista.disponivel=true;
+          definirMotoristaQuerPermanecerOnline(true);
           salvarLocal('ef_motorista_disponivel','true');
           iniciarRastreioMotorista();
           setTimeout(()=>controlarGpsNativoAndroid('start', estado.motorista.telefone),350);
+          if(!data.disponivel) setTimeout(()=>iniciarReconexaoAutomaticaMotorista(),700);
         } else {
+          if(intencaoOnlineSalva===null) definirMotoristaQuerPermanecerOnline(false);
           salvarLocal('ef_motorista_disponivel','false');
         }
         // Não sobrescreve a ativação automática salva no banco ao restaurar a sessão.
@@ -3587,6 +3593,101 @@ function encerrarCarteiraClienteRealtime(){
 
 // ---------- estado do motorista logado (tempo real) ----------
 let canalMotoristaLogadoRealtime = null;
+
+// Intenção do motorista é separada do campo `disponivel` do banco.
+// Se uma oscilação de GPS/internet fizer o backend limpar `disponivel`, o app
+// continua sabendo que o motorista QUER permanecer online e tenta recuperar sozinho.
+const CHAVE_MOTORISTA_QUER_ONLINE = 'ef_motorista_quero_online_v1';
+const RECONEXAO_MOTORISTA_INTERVALO_MS = 12000;
+let reconexaoMotoristaTimer = null;
+let reconexaoMotoristaAtiva = false;
+let reconexaoMotoristaAvisada = false;
+
+function obterIntencaoMotoristaOnline(){
+  try{
+    const v=localStorage.getItem(CHAVE_MOTORISTA_QUER_ONLINE);
+    if(v===null) return null;
+    return v==='true';
+  }catch(e){ return null; }
+}
+function motoristaQuerPermanecerOnline(){
+  const salvo=obterIntencaoMotoristaOnline();
+  return salvo===null ? !!estado.motorista?.disponivel : salvo;
+}
+function definirMotoristaQuerPermanecerOnline(valor){
+  salvarLocal(CHAVE_MOTORISTA_QUER_ONLINE, valor?'true':'false');
+}
+function pararReconexaoAutomaticaMotorista(){
+  if(reconexaoMotoristaTimer){ clearInterval(reconexaoMotoristaTimer); reconexaoMotoristaTimer=null; }
+  reconexaoMotoristaAtiva=false;
+  reconexaoMotoristaAvisada=false;
+}
+async function tentarReconectarMotorista(){
+  const m=estado.motorista;
+  if(!m?.ativo || !m.telefone || m.status!=='aprovado' || !motoristaQuerPermanecerOnline()){
+    pararReconexaoAutomaticaMotorista();
+    return;
+  }
+
+  // Mantém/reinicia o serviço nativo. No navegador, tenta renovar o FIX quando a tela estiver aberta.
+  if(entregaFlashNativoAndroidAtivo()){
+    controlarGpsNativoAndroid('start',m.telefone);
+  }else if(document.visibilityState==='visible'){
+    iniciarRastreioMotorista();
+    try{ await heartbeatMotoristaPresenca(); }catch(e){}
+  }
+
+  const agora=Date.now();
+  const gpsEm=Math.max(
+    Number(m.latAtualizadoEm||0),
+    Number(ultimaPosicaoMotorista?.capturadaEm||0)
+  );
+  if(!(gpsEm>0 && (agora-gpsEm)<=PRESENCA_MOTORISTA_MS)) return;
+
+  // Só volta a marcar disponível quando já existe GPS recente.
+  // Assim não cria um "online falso" durante a falta de sinal.
+  try{
+    const {error}=await sb.from('entrega_motoristas')
+      .update({disponivel:true, disponivel_atualizado_em:agora})
+      .eq('telefone',m.telefone);
+    if(error) return;
+
+    const avisar=reconexaoMotoristaAvisada || reconexaoMotoristaAtiva;
+    m.disponivel=true;
+    salvarLocal('ef_motorista_disponivel','true');
+    pararReconexaoAutomaticaMotorista();
+    if(avisar) mostrarToast('Sinal recuperado. Você voltou a ficar ONLINE automaticamente.','sucesso');
+    render();
+  }catch(e){ console.warn('reconexão automática motorista',e); }
+}
+function iniciarReconexaoAutomaticaMotorista(){
+  const m=estado.motorista;
+  if(!m?.ativo || !m.telefone || m.status!=='aprovado' || !motoristaQuerPermanecerOnline()) return;
+
+  reconexaoMotoristaAtiva=true;
+  // Mantém o botão no estado de intenção ONLINE. Pedidos continuam bloqueados até o GPS voltar.
+  m.disponivel=true;
+  salvarLocal('ef_motorista_disponivel','true');
+
+  if(!reconexaoMotoristaAvisada){
+    reconexaoMotoristaAvisada=true;
+    mostrarToast('Sinal instável. Reconectando automaticamente — não precisa tocar em nada.','info');
+  }
+  if(entregaFlashNativoAndroidAtivo()) controlarGpsNativoAndroid('start',m.telefone);
+  if(!reconexaoMotoristaTimer){
+    reconexaoMotoristaTimer=setInterval(()=>{ tentarReconectarMotorista(); },RECONEXAO_MOTORISTA_INTERVALO_MS);
+  }
+  setTimeout(()=>{ tentarReconectarMotorista(); },700);
+}
+function vigiarSinalMotorista(){
+  const m=estado.motorista;
+  if(!m?.ativo || !m.telefone || m.status!=='aprovado' || !motoristaQuerPermanecerOnline()) return;
+  const gpsEm=Math.max(Number(m.latAtualizadoEm||0),Number(ultimaPosicaoMotorista?.capturadaEm||0));
+  const fresco=gpsEm>0 && (Date.now()-gpsEm)<=PRESENCA_MOTORISTA_MS;
+  if(!fresco) iniciarReconexaoAutomaticaMotorista();
+  else if(reconexaoMotoristaAtiva) tentarReconectarMotorista();
+}
+
 function assinarMotoristaLogadoRealtime(telefone){
   encerrarMotoristaLogadoRealtime();
   if(!telefone) return;
@@ -3617,22 +3718,34 @@ function assinarMotoristaLogadoRealtime(telefone){
         estado.motorista.latAtualizadoEm=depois||null;
         const ficouFresco=depois>0 && (Date.now()-depois)<=PRESENCA_MOTORISTA_MS;
         if(eraFresco!==ficouFresco) mudou=true;
+        if(ficouFresco && reconexaoMotoristaAtiva && motoristaQuerPermanecerOnline()){
+          setTimeout(()=>tentarReconectarMotorista(),120);
+        }
       }
-      // Se o serviço nativo recuperou sinal depois de uma limpeza automática, sincroniza o botão.
-      if(novo.disponivel===true && estado.motorista.disponivel===false && novo.status==='aprovado'){
-        estado.motorista.disponivel=true;
+      // Se o serviço nativo recuperou sinal, conclui a reconexão sem exigir novo toque.
+      if(novo.disponivel===true && novo.status==='aprovado' && motoristaQuerPermanecerOnline()){
+        if(estado.motorista.disponivel===false){ estado.motorista.disponivel=true; mudou=true; }
         salvarLocal('ef_motorista_disponivel','true');
-        mudou=true;
+        if(reconexaoMotoristaAtiva){
+          const avisar=reconexaoMotoristaAvisada;
+          pararReconexaoAutomaticaMotorista();
+          if(avisar) mostrarToast('Sinal recuperado. Você voltou a ficar ONLINE automaticamente.','sucesso');
+          mudou=true;
+        }
       }
-      // se o banco disser offline (ex: robô de limpeza por falta de sinal, ou admin) enquanto
-      // a tela ainda mostrava online, sincroniza e avisa — evita ficar "online" na tela sem
-      // realmente receber pedidos.
-      if(novo.disponivel===false && estado.motorista.disponivel===true){
-        estado.motorista.disponivel=false;
-        salvarLocal('ef_motorista_disponivel','false');
-        pararRastreioMotorista();
-        mostrarToast('Você ficou offline por falta de sinal. Toque em FICAR ONLINE pra voltar.', 'erro');
-        mudou=true;
+
+      // Falta temporária de sinal não obriga novo toque em FICAR ONLINE.
+      if(novo.disponivel===false){
+        if(novo.status==='aprovado' && motoristaQuerPermanecerOnline()){
+          iniciarReconexaoAutomaticaMotorista();
+          mudou=true;
+        }else if(estado.motorista.disponivel===true){
+          estado.motorista.disponivel=false;
+          salvarLocal('ef_motorista_disponivel','false');
+          pararReconexaoAutomaticaMotorista();
+          pararRastreioMotorista();
+          mudou=true;
+        }
       }
       if(novo.status==='aprovado' && statusAnterior!=='aprovado'){
         estado.motorista.disponivel = true;
@@ -7395,7 +7508,7 @@ function telaMotorista(){
   const planoAtual = PLANOS[m.plano] || PLANOS.free;
   const agoraTs = Date.now();
   const gpsLocalEm = Math.max(Number(ultimaPosicaoMotorista?.capturadaEm||0), Number(m.latAtualizadoEm||0));
-  const onlineLocalReal = !!(m.disponivel && gpsLocalEm>0 && (agoraTs-gpsLocalEm)<=PRESENCA_MOTORISTA_MS);
+  const onlineLocalReal = !!(m.disponivel && !reconexaoMotoristaAtiva && gpsLocalEm>0 && (agoraTs-gpsLocalEm)<=PRESENCA_MOTORISTA_MS);
   const disponiveis = onlineLocalReal ? estado.pedidos
     .filter(p=>{
       if(p.status!=='buscando' || p.veiculo!==m.veiculo) return false;
@@ -7439,10 +7552,10 @@ function telaMotorista(){
   </div>` : '';
 
   const blocoOnline = m.status==='aprovado' ? `<div class="cartao ef-app20-hero">
-    <div class="ef-app20-status"><div><div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--poeira);font-weight:800"><span class="ef-app20-dot ${onlineLocalReal?'on':''}"></span>${onlineLocalReal?'ONLINE · GPS ATUALIZADO':m.disponivel?'SEM SINAL GPS · NÃO RECEBE PEDIDOS':'OFFLINE'}</div><div class="ef-app20-money">R$ ${ganhosHoje.toFixed(2)}</div><div style="font-size:12px;color:var(--poeira);margin-top:4px">Ganhos de hoje</div></div><div style="font-size:28px">${onlineLocalReal?'⚡':m.disponivel?'📍':'◉'}</div></div>
+    <div class="ef-app20-status"><div><div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--poeira);font-weight:800"><span class="ef-app20-dot ${onlineLocalReal?'on':''}"></span>${onlineLocalReal?'ONLINE · GPS ATUALIZADO':m.disponivel?'RECONECTANDO GPS · AUTOMÁTICO':'OFFLINE'}</div><div class="ef-app20-money">R$ ${ganhosHoje.toFixed(2)}</div><div style="font-size:12px;color:var(--poeira);margin-top:4px">Ganhos de hoje</div></div><div style="font-size:28px">${onlineLocalReal?'⚡':m.disponivel?'📡':'◉'}</div></div>
     <div class="ef-app20-stats"><div class="ef-app20-stat"><small>Entregas hoje</small><b>${entreguesHojeArr.length}</b></div><div class="ef-app20-stat"><small>Saldo disponível</small><b>R$ ${Number(m.saldo||0).toFixed(2)}</b></div></div>
     <button class="btn ef-app20-mainbtn ${m.disponivel?'btn-secundario':'btn-verde'}" ${atributoDesabilitado('alternarDisponibilidade')} onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${carregando('alternarDisponibilidade') ? '<span class="girando"></span>Atualizando...' : (m.disponivel?'PARAR · FICAR OFFLINE':'⚡ FICAR ONLINE')}</button>
-    <div class="cf-ajuda" style="text-align:center;margin-top:8px">${onlineLocalReal?(entregaFlashNativoAndroidAtivo()?'GPS em segundo plano ativo. Você pode usar WhatsApp, Waze ou bloquear a tela e continuar recebendo pedidos.':'GPS confirmado agora. Você está apto a receber pedidos.'):(m.disponivel?(entregaFlashNativoAndroidAtivo()?'O serviço de GPS perdeu sinal. Abra o Entrega Flash e confira a permissão de localização.':'Seu botão está ligado, mas o GPS não está recente. Abra o Entrega Flash e mantenha o GPS ativo para voltar a ficar online de verdade.'):'Toque para começar a receber pedidos compatíveis com seu veículo.')}</div>
+    <div class="cf-ajuda" style="text-align:center;margin-top:8px">${onlineLocalReal?(entregaFlashNativoAndroidAtivo()?'GPS em segundo plano ativo. Você pode usar WhatsApp, Waze ou bloquear a tela e continuar recebendo pedidos.':'GPS confirmado agora. Você está apto a receber pedidos.'):(m.disponivel?'Sinal instável. O Entrega Flash está reconectando sozinho; quando o GPS voltar, você fica ONLINE automaticamente.':'Toque para começar a receber pedidos compatíveis com seu veículo.')}</div>
   </div>` : `<div class="cartao" style="opacity:.78;text-align:center"><button class="btn btn-secundario" disabled style="width:100%">🔒 FICAR ONLINE</button><div class="cf-ajuda" style="margin-top:8px">Liberado automaticamente após a aprovação dos documentos.</div></div>`;
 
   const blocoPrimeiroDia = (m.status==='aprovado' && entregasMes===0) ? `<div class="cartao ef-app20-guide"><div style="font-family:'Rajdhani';font-size:19px;font-weight:900">🚀 SEU PRIMEIRO DIA</div><div class="subtitulo" style="margin-top:3px">É simples: fique online e siga o fluxo da primeira entrega.</div><div class="ef-app20-steps"><div class="ef-app20-step"><i>1</i>Online</div><div class="ef-app20-step"><i>2</i>Receba</div><div class="ef-app20-step"><i>3</i>Aceite</div><div class="ef-app20-step"><i>4</i>Receba</div></div></div>` : '';
@@ -7469,7 +7582,9 @@ function telaMotorista(){
   <div class="cartao">
     <h2>Pedidos disponíveis</h2>
     ${!m.disponivel
-      ? `<div class="vazio"><span class="emoji-grande"></span>Toque em "Iniciar rota" para começar a receber pedidos.</div>`
+      ? `<div class="vazio"><span class="emoji-grande"></span>Toque em <b>FICAR ONLINE</b> para começar a receber pedidos.</div>`
+      : !onlineLocalReal
+        ? `<div class="vazio"><span class="emoji-grande">📡</span>Reconectando GPS automaticamente...<div style="margin-top:7px;font-size:13px;color:var(--poeira)">Você não precisa tocar em nada. Os pedidos voltam assim que o sinal for recuperado.</div></div>`
       : disponiveis.length===0
         ? `<div class="vazio"><span class="emoji-grande"></span>Sem pedidos por agora${Object.keys(contagemPorVeiculoOutro).length>0
             ? `<div style="margin-top:8px;font-size:13px;color:var(--poeira)">Sem pedidos para o seu veículo (${(VEICULOS[m.veiculo]||{}).label||m.veiculo}) no momento — há ${Object.entries(contagemPorVeiculoOutro).map(([v,n])=>`${n} de ${(VEICULOS[v]||{}).label||v}`).join(', ')} esperando, mas só aparecem pra motoristas com o veículo compatível.</div>`
@@ -7539,7 +7654,7 @@ function telaMotorista(){
   const blocoMapaMotorista = `<div class="cartao" style="overflow:hidden;padding:0">
     <div style="padding:16px 16px 10px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px"><div><h2 style="margin:0">Mapa ao vivo</h2><div class="subtitulo" style="margin:3px 0 0">Sua posição e suas corridas aparecem aqui em tempo real.</div></div><span style="font-size:26px">⌖</span></div></div>
     <div id="mapa-motorista-home" style="width:100%;height:min(58vh,460px);background:#0d1014"></div>
-    <div style="padding:12px 16px 16px"><button class="btn ${m.disponivel?'btn-secundario':'btn-verde'}" onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${m.disponivel?'Parar rota':'Iniciar rota e atualizar GPS'}</button><div class="cf-ajuda" style="text-align:center;margin-top:7px">${m.status==='aprovado'?'Você está apto a receber corridas compatíveis com seu veículo.':'Modo de apresentação: você pode conhecer o mapa agora; aceitar corridas é liberado após documentos e aprovação.'}</div></div>
+    <div style="padding:12px 16px 16px"><button class="btn ${m.disponivel?'btn-secundario':'btn-verde'}" onclick="executarComCarregando('alternarDisponibilidade', alternarDisponibilidade)">${m.disponivel?'FICAR OFFLINE':'FICAR ONLINE e atualizar GPS'}</button><div class="cf-ajuda" style="text-align:center;margin-top:7px">${m.status==='aprovado'?'Você está apto a receber corridas compatíveis com seu veículo.':'Modo de apresentação: você pode conhecer o mapa agora; aceitar corridas é liberado após documentos e aprovação.'}</div></div>
   </div>`;
 
   const blocoCarteiraMotorista = `<div class="cartao saldo-card" style="padding:20px;border:1px solid var(--mango);background:radial-gradient(circle at 85% 0,rgba(255,176,0,.16),transparent 42%),linear-gradient(180deg,#17191d,#0e1013)">
@@ -7835,7 +7950,7 @@ function comoFuncionaMotoristaHTML(){
   return `
   <div class="cf-passo"><div class="num">1</div><div class="conteudo"><b>Cadastra-te</b><span>Nome, CPF, telefone, senha, dados do veículo (${Object.values(VEICULOS).map(v=>v.label.toLowerCase()).join(', ')}) e fotos/documentos (CNH, CRLV, foto do veículo e sua foto).</span></div></div>
   <div class="cf-passo"><div class="num">2</div><div class="conteudo"><b>Aguarda aprovação</b><span>A equipe confere o seu cadastro. Assim que aprovado, já pode começar a receber pedidos.</span></div></div>
-  <div class="cf-passo"><div class="num">3</div><div class="conteudo"><b>Fique disponível</b><span>Toque em "Iniciar rota" para ver os pedidos disponíveis na sua região e aceitar o que quiser.</span></div></div>
+  <div class="cf-passo"><div class="num">3</div><div class="conteudo"><b>Fique disponível</b><span>Toque em "FICAR ONLINE" para receber os pedidos disponíveis na sua região e aceitar o que quiser.</span></div></div>
   <div class="cf-passo"><div class="num">4</div><div class="conteudo"><b>Aceite e inicie a corrida</b><span>Depois de aceitar, toque em "▶ Iniciar corrida" quando estiver pronto para seguir até o endereço de coleta — é aí que o seu GPS começa a ser compartilhado com o cliente.</span></div></div>
   <div class="cf-passo"><div class="num">5</div><div class="conteudo"><b>Chegou? Tire a foto</b><span>Só é possível marcar "coletado" ou "entregue" quando você estiver fisicamente no endereço — o app confere a sua localização e a foto é obrigatória nos dois momentos.</span></div></div>
   <div class="cf-passo"><div class="num">6</div><div class="conteudo"><b>Receba na hora</b><span>Ao marcar como entregue, o valor já cai no seu saldo dentro do app. Peça o saque quando quiser.</span></div></div>
@@ -8446,9 +8561,20 @@ async function heartbeatMotoristaPresenca(){
 }
 function iniciarHeartbeatMotoristaPresenca(){
   if(intervaloHeartbeatMotoristaPresenca) return;
-  intervaloHeartbeatMotoristaPresenca=setInterval(heartbeatMotoristaPresenca,45000);
-  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') heartbeatMotoristaPresenca(); });
-  window.addEventListener('focus',()=>heartbeatMotoristaPresenca());
+  intervaloHeartbeatMotoristaPresenca=setInterval(()=>{
+    heartbeatMotoristaPresenca();
+    vigiarSinalMotorista();
+  },45000);
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible'){
+      heartbeatMotoristaPresenca();
+      vigiarSinalMotorista();
+    }
+  });
+  window.addEventListener('focus',()=>{
+    heartbeatMotoristaPresenca();
+    vigiarSinalMotorista();
+  });
 }
 iniciarHeartbeatMotoristaPresenca();
 
@@ -8458,8 +8584,15 @@ async function alternarDisponibilidade(){
   if(m.disponivel && temAtivos){ mostrarToast('Termina a entrega em curso antes de ficar indisponível.'); return; }
   const novoValor=!m.disponivel;
 
+  // Ao tocar em FICAR OFFLINE, grava a intenção antes do update para impedir
+  // que um evento realtime atrasado religue o motorista.
+  if(!novoValor){
+    definirMotoristaQuerPermanecerOnline(false);
+    pararReconexaoAutomaticaMotorista();
+  }
+
   if(novoValor && m.status!=='aprovado'){
-    mostrarToast('Seu cadastro precisa estar aprovado para iniciar rota e receber pedidos.','erro');
+    mostrarToast('Seu cadastro precisa estar aprovado para ficar online e receber pedidos.','erro');
     return;
   }
 
@@ -8488,6 +8621,8 @@ async function alternarDisponibilidade(){
       if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
 
       m.disponivel=true;
+      definirMotoristaQuerPermanecerOnline(true);
+      pararReconexaoAutomaticaMotorista();
       salvarLocal('ef_motorista_disponivel','true');
       registrarEventoPushAtivacao('online');
       iniciarRastreioMotorista(); // no APK nativo é no-op proposital
@@ -8498,7 +8633,11 @@ async function alternarDisponibilidade(){
       }
     }else{
       const ok=await atualizarDisponibilidadeDB(m.telefone,false);
-      if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
+      if(!ok){
+        definirMotoristaQuerPermanecerOnline(true);
+        mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.');
+        return;
+      }
       m.disponivel=false;
       salvarLocal('ef_motorista_disponivel','false');
       controlarGpsNativoAndroid('stop',m.telefone);
@@ -8519,15 +8658,21 @@ async function alternarDisponibilidade(){
   }
 
   const ok=await atualizarDisponibilidadeDB(m.telefone,novoValor);
-  if(!ok){ mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.'); return; }
+  if(!ok){
+    if(!novoValor) definirMotoristaQuerPermanecerOnline(true);
+    mostrarErro('Não consegui atualizar seu status. Verifica sua internet e tenta de novo.');
+    return;
+  }
   m.disponivel=novoValor;
+  definirMotoristaQuerPermanecerOnline(novoValor);
+  if(novoValor) pararReconexaoAutomaticaMotorista();
   salvarLocal('ef_motorista_disponivel',m.disponivel?'true':'false');
 
   if(m.disponivel){
     registrarEventoPushAtivacao('online');
     iniciarRastreioMotorista();
     await enviarPosicaoMotorista();
-    mostrarToast('Rota iniciada! Você já aparece no mapa e está recebendo pedidos.','sucesso');
+    mostrarToast('Online! Você já aparece no mapa e está recebendo pedidos.','sucesso');
     if(typeof Notification!=='undefined' && Notification.permission==='granted') await inscreverPushReal();
     else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),600);
   }else{
@@ -9035,12 +9180,18 @@ async function entrarNoPainelMotorista(data){
   assinarMotoristaLogadoRealtime(data.telefone);
   if(estado.notificacoesStatus==='granted') inscreverPushReal();
   registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted');
-  if(estado.motorista.status==='aprovado' && estado.motorista.disponivel){
+  const intencaoOnlineSalva=obterIntencaoMotoristaOnline();
+  const querRetomarOnline=estado.motorista.status==='aprovado' && (estado.motorista.disponivel || intencaoOnlineSalva===true);
+  if(querRetomarOnline){
+    estado.motorista.disponivel=true;
+    definirMotoristaQuerPermanecerOnline(true);
     salvarLocal('ef_motorista_disponivel','true');
     iniciarRastreioMotorista();
     setTimeout(()=>controlarGpsNativoAndroid('start', data.telefone),350);
     setTimeout(()=>heartbeatMotoristaPresenca(),1200);
+    if(!data.disponivel) setTimeout(()=>iniciarReconexaoAutomaticaMotorista(),700);
   } else {
+    if(intencaoOnlineSalva===null) definirMotoristaQuerPermanecerOnline(false);
     salvarLocal('ef_motorista_disponivel','false');
   }
   mostrarLembreteDocumentosDiario(data.telefone,data.status);
