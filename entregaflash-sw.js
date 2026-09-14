@@ -1,6 +1,6 @@
-// build: 20260912-PIN-FAVORITO-1
+// build: 20260914-FINAL-1304-2
 // Entrega Flash - Service Worker com atualização forçada + reparo de Push + integração Vendaí
-const EF_VERSION = '20260912-PIN-FAVORITO-1';
+const EF_VERSION = '20260914-FINAL-1304-2';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;
@@ -26,6 +26,10 @@ self.addEventListener('activate', (event) => {
         if (u.origin === self.location.origin && !u.pathname.startsWith('/admin/') && principal) {
           const destino = new URL(EF_HOME, self.registration.scope);
           if (u.searchParams.get('ef_native') === '1') destino.searchParams.set('ef_native','1');
+          const vc = u.searchParams.get('ef_app_version');
+          const vn = u.searchParams.get('ef_app_version_name');
+          if (vc) destino.searchParams.set('ef_app_version', vc);
+          if (vn) destino.searchParams.set('ef_app_version_name', vn);
           await cliente.navigate(destino.href);
         }
       } catch (e) {}

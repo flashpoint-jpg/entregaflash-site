@@ -2072,7 +2072,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260912-PIN-FAVORITO-1';
+  const versaoApp = '20260914-FINAL-1304-2';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2213,7 +2213,7 @@ function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
 const EF_NATIVE_ANDROID_CHAVE='ef_native_android_bg_v1';
 const EF_NATIVE_APP_VERSION_CHAVE='ef_native_app_version_v1';
 const EF_NATIVE_APP_VERSION_NAME_CHAVE='ef_native_app_version_name_v1';
-const EF_APK_ATUAL_VERSION_CODE=2026091204;
+const EF_APK_ATUAL_VERSION_CODE=2026091304;
 const EF_APK_ATUAL_URL='/entregaflash.apk';
 (function detectarApkNativoAndroid(){
   try{
@@ -2252,7 +2252,7 @@ async function exigirAtualizacaoApkAntesDeFicarOnline(){
   const instalada=versaoCodigoApkNativo();
   const versaoTexto=instalada ? `<br><small style="opacity:.72">Versão instalada: ${instalada}</small>` : '';
   const atualizar=await confirmarAcao(
-    `<b style="font-size:19px">Atualização necessária</b><br><br>Existe uma nova versão do Entrega Flash. Atualize o aplicativo para ficar online e receber entregas.${versaoTexto}`,
+    `<b style="font-size:19px">Atualização obrigatória</b><br><br>Para ficar online e receber entregas, você precisa usar a versão mais recente do Entrega Flash.${versaoTexto}<br><br><b>Atualize o aplicativo e depois toque em FICAR ONLINE novamente.</b>`,
     'ATUALIZAR AGORA'
   );
   if(atualizar){
@@ -2305,13 +2305,20 @@ async function exigirAppNativoGpsSegundoPlano(){
   return false;
 }
 function blocoGpsSegundoPlanoMotoristaHTML(){
-  if(!estado.motorista?.ativo || estado.motorista.status!=='aprovado' || !efAndroidSemAppNativo()) return '';
+  if(!estado.motorista?.ativo || estado.motorista.status!=='aprovado') return '';
+  const semApp=efAndroidSemAppNativo();
+  const antiga=precisaAtualizarApkNativo();
+  if(!semApp && !antiga) return '';
+  const titulo=antiga?'ATUALIZAÇÃO OBRIGATÓRIA':'GPS EM SEGUNDO PLANO';
+  const texto=antiga
+    ? 'Você está usando uma versão antiga do Entrega Flash. Para ficar online e receber entregas, atualize o aplicativo.'
+    : 'Este celular ainda não está usando o aplicativo nativo atualizado. Atualize para continuar aparecendo online quando abrir WhatsApp/Waze ou bloquear a tela.';
   return `<div class="cartao" style="border:2px solid var(--chama);background:linear-gradient(135deg,rgba(255,90,60,.14),rgba(255,201,60,.07));text-align:center">
-    <div style="font-size:28px;margin-bottom:6px">📍</div>
-    <div style="font-family:'Rajdhani';font-weight:900;font-size:21px">GPS EM SEGUNDO PLANO</div>
-    <div style="font-size:14px;color:var(--poeira);line-height:1.5;margin-top:6px">Este celular ainda não está usando o aplicativo nativo atualizado. Atualize para continuar aparecendo online quando abrir WhatsApp/Waze ou bloquear a tela.</div>
+    <div style="font-size:28px;margin-bottom:6px">⬆️</div>
+    <div style="font-family:'Rajdhani';font-weight:900;font-size:21px">${titulo}</div>
+    <div style="font-size:14px;color:var(--poeira);line-height:1.5;margin-top:6px">${texto}</div>
     <button class="btn btn-primario" style="width:100%;margin-top:13px" onclick="baixarApkMotoristaAtual()">⬆️ ATUALIZAR / INSTALAR APP</button>
-    <div style="font-size:12px;color:var(--poeira);margin-top:8px">Versão atual do motorista: ${EF_APK_ATUAL_VERSION_CODE}</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:8px">Versão mínima obrigatória: ${EF_APK_ATUAL_VERSION_CODE}</div>
   </div>`;
 }
 
