@@ -1955,7 +1955,7 @@ function ehNavegadorEmbutido(){
   const ua = navigator.userAgent || '';
   return /; ?wv\)/i.test(ua) || /\bInstagram\b/i.test(ua) || /FBAN|FBAV|FB_IAB/i.test(ua) || /\bWhatsApp\b/i.test(ua) || /\bLine\//i.test(ua);
 }
-function abrirPopupInstalar(){ estado.popupInstalarAberto=true; render(); }
+function abrirPopupInstalar(){ if(entregaFlashNativoAndroidAtivo()) return; estado.popupInstalarAberto=true; render(); }
 function fecharPopupInstalar(){
   estado.popupInstalarAberto=false;
   try{ localStorage.setItem('ef_popup_instalar_visto','1'); }catch(e){}
@@ -2068,6 +2068,7 @@ function onboardingHTML(){
   </div>`;
 }
 function agendarPopupInstalarSeNecessario(){
+  if(entregaFlashNativoAndroidAtivo()) return;
   let jaVisto=false;
   try{ jaVisto = !!localStorage.getItem('ef_popup_instalar_visto'); }catch(e){}
   if(jaVisto || estado.appInstalado) return;
@@ -2238,7 +2239,7 @@ function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
 const EF_NATIVE_ANDROID_CHAVE='ef_native_android_bg_v1';
 const EF_NATIVE_APP_VERSION_CHAVE='ef_native_app_version_v1';
 const EF_NATIVE_APP_VERSION_NAME_CHAVE='ef_native_app_version_name_v1';
-const EF_APK_ATUAL_VERSION_CODE=2026091402;
+const EF_APK_ATUAL_VERSION_CODE=2026091403;
 const EF_APK_ATUAL_URL='/EntregaFlash.apk';
 (function detectarApkNativoAndroid(){
   try{
@@ -6700,12 +6701,12 @@ function telaBoasVindas(){
     </div>
 
     <div class="bv-regional-note"> <b>Entrega Flash é regional:</b> conectamos clientes e entregadores nas cidades atendidas e também na zona rural próxima, sem limitar a comunicação a uma única cidade.</div>
-    <div class="bv-install-area"><button type="button" class="btn-baixar-app" style="width:100%" onclick="instalarPeloPopup()">📲 INSTALAR APLICATIVO ATUALIZADO</button><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Android: baixa somente o aplicativo oficial Entrega Flash. iPhone: instala pela tela inicial.</div></div>
+    ${!entregaFlashNativoAndroidAtivo() ? `<div class="bv-install-area"><button type="button" class="btn-baixar-app" style="width:100%" onclick="instalarPeloPopup()">📲 INSTALAR APLICATIVO ATUALIZADO</button><div style="font-size:11.5px;color:var(--poeira);margin-top:8px">Android: baixa somente o aplicativo oficial Entrega Flash. iPhone: instala pela tela inicial.</div></div>` : ''}
   </div>
   <div class="bv-cta-fixa">
     <button type="button" class="btn-primario" onclick="entrarComoVisitante('cliente')"> Pedir entrega</button>
     <button type="button" class="btn-azul" onclick="escolherBoasVindas('entregador')"> Seja motorista</button>
-    <button type="button" class="btn-instalar-fixo" onclick="instalarPeloPopup()"> Instalar app</button>
+    ${!entregaFlashNativoAndroidAtivo() ? `<button type="button" class="btn-instalar-fixo" onclick="instalarPeloPopup()"> Instalar app</button>` : ''}
   </div>`;
 }
 function escolherBoasVindas(papel){
@@ -7837,9 +7838,10 @@ async function enviarIndicacao(){
   estado.indicacoes.enviando = false; render();
 }
 function mudarAbaComoFunciona(aba){ estado.comoFunciona.aba=aba; render(); }
-function abrirComoInstalar(){ estado.comoInstalarAberto=true; render(); }
+function abrirComoInstalar(){ if(entregaFlashNativoAndroidAtivo()) return; estado.comoInstalarAberto=true; render(); }
 function fecharComoInstalar(){ estado.comoInstalarAberto=false; render(); }
 function comoInstalarHTML(){
+  if(entregaFlashNativoAndroidAtivo()) return '';
   return `
   <div class="modal-fundo" onclick="if(event.target===this) fecharComoInstalar()">
     <div class="modal-chat" style="max-height:88vh">
@@ -8213,7 +8215,7 @@ function render(){
   // ou seja, a cada clique/atualização em qualquer parte do app, o que fazia a logo "piscar" o tempo todo.
   const headerHTML = `
       ${(!estado.cliente.logado && !estado.motorista.ativo) ? `<button class="btn-voltar-topo" onclick="voltarParaEscolhaModo()">Voltar</button>` : ''}
-      ${!estado.appInstalado ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'instalarPeloPopup()'}"></button>` : ''}
+      ${(!estado.appInstalado && !entregaFlashNativoAndroidAtivo()) ? `<button class="btn-instalar-topo" title="Instalar app" onclick="${estado.podeInstalar ? 'instalarApp()' : 'instalarPeloPopup()'}"></button>` : ''}
       <div class="marca"><div class="bv-logo-badge"><img class="logo-img" src="${estado.modo==='cliente' ? LOGO_ENTREGA_FLASH_CLIENTE : LOGO_ENTREGA_FLASH_MOTORISTA}" alt="Entrega Flash"></div></div>
       <div class="tagline">Rápido · Seguro · No Prazo — perto de você</div>
   `;
@@ -8223,7 +8225,7 @@ function render(){
   const restoHTML = `
     ${barraNavegacaoFluxo()}
     <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
-    ${(estado.podeInstalar && !estado.appInstalado) ? `
+    ${(estado.podeInstalar && !estado.appInstalado && !entregaFlashNativoAndroidAtivo()) ? `
     <div class="faixa-instalar">
       <div style="flex:1">
         <div class="txt">Instale o app no seu celular</div>
@@ -8247,7 +8249,7 @@ function render(){
       </div>
       <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar</button>
     </div>` : ''}
-    ${!estado.viaAnuncio ? `<div class="link-instalar" onclick="abrirComoInstalar()">Como instalar o app</div>` : ''}
+    ${(!estado.viaAnuncio && !entregaFlashNativoAndroidAtivo()) ? `<div class="link-instalar" onclick="abrirComoInstalar()">Como instalar o app</div>` : ''}
     <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()"> Sugestões e Reclamações</button>
     <div class="rodape-discreto">
       <span onclick="abrirComoFunciona('${estado.modo==='cliente'?'cliente':'motorista'}')">como funciona o app</span>
