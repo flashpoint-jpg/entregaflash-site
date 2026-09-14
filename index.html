@@ -1425,7 +1425,37 @@ table{max-width:100%;border-collapse:collapse}
     flex:0 0 auto!important;
   }
 }
-</style></head>
+</style>
+<style id="ef-menu-motorista-fixo-1409">
+/* Uma única reserva de espaço, exatamente da altura do menu e da área segura. */
+:root{--ef-menu-altura:calc(65px + env(safe-area-inset-bottom,0px))}
+body.ef-menu-motorista-ativo{padding-bottom:0!important}
+body.ef-menu-motorista-ativo #app{padding-bottom:var(--ef-menu-altura)!important}
+body.ef-menu-motorista-ativo .conteudo-motorista{padding-bottom:0!important}
+body.ef-menu-motorista-ativo .abas-motorista{
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;z-index:100;
+  display:grid;grid-template-columns:repeat(5,minmax(0,1fr));
+  width:100%!important;max-width:var(--ef-max,1180px)!important;margin:0 auto!important;
+  min-height:calc(65px + env(safe-area-inset-bottom,0px));
+  padding:0 env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)!important;
+  border-radius:0!important;background:#0a0b0e!important;
+}
+body.ef-menu-motorista-ativo .abas-motorista button{
+  min-width:0;min-height:64px;padding:8px 2px!important;margin:0;gap:3px;line-height:1.2;
+  justify-content:center;white-space:normal;overflow-wrap:anywhere;
+}
+body.ef-menu-motorista-ativo .sos-flutuante{bottom:calc(var(--ef-menu-altura) + 12px)!important;z-index:110}
+body.ef-menu-motorista-ativo .toast{bottom:calc(var(--ef-menu-altura) + 12px)!important}
+.ef-perfil-ajuda-acoes{display:grid;gap:10px}
+.ef-perfil-ajuda-acoes .btn{width:100%;min-width:0;margin:0;text-align:left;white-space:normal}
+@media(min-width:701px){
+  body.ef-menu-motorista-ativo .abas-motorista{width:calc(100% - 40px)!important}
+}
+@media(min-width:1100px){
+  body.ef-menu-motorista-ativo .abas-motorista{width:calc(100% - 52px)!important}
+}
+</style>
+</head>
 
 <style id="ef-parceiros-premium">
 /* ===== ENTREGA FLASH EMPRESAS / PARCEIROS ===== */
@@ -7631,6 +7661,88 @@ function treinamentoMotoristaHTML(){
   </div>`;
 }
 
+// Menu fora do main animado: position:fixed fica ancorado na tela, não no conteúdo.
+function menuMotoristaHTML(){
+  if(estado.modo!=='entregador' || !estado.motorista.ativo) return '';
+  const aba = estado.abaPrincipalMotorista || 'pedidos';
+  return `
+  <nav class="abas-motorista" aria-label="Menu do motorista">
+    <button type="button" class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')"><span class="icone-aba">⚡</span>Pedidos</button>
+    <button type="button" class="${aba==='mapa'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('mapa')"><span class="icone-aba">⌖</span>Mapa</button>
+    <button type="button" class="${aba==='carteira'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('carteira')"><span class="icone-aba">◈</span>Carteira</button>
+    <button type="button" class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')"><span class="icone-aba">↺</span>Histórico</button>
+    <button type="button" class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')"><span class="icone-aba">●</span>Perfil</button>
+  </nav>`;
+}
+
+// Os avisos de instalação e notificações continuam acessíveis no Perfil do motorista.
+function avisosAppHTML(){
+  return `
+    ${(estado.podeInstalar && !estado.appInstalado && !entregaFlashNativoAndroidAtivo()) ? `
+    <div class="faixa-instalar">
+      <div style="flex:1">
+        <div class="txt">Instale o app no seu celular</div>
+        <div class="sub">Acesso mais rápido, funciona como um app normal.</div>
+      </div>
+      <button class="btn btn-primario btn-pequeno" onclick="instalarApp()">Instalar</button>
+    </div>` : ''}
+    ${estado.mostrarDicaIOS ? `
+    <div class="faixa-instalar">
+      <div style="flex:1">
+        <div class="txt">Instale o app no iPhone</div>
+        <div class="sub">Toque em Compartilhar <b>⬆</b> e depois em "Adicionar à Tela de Início".</div>
+      </div>
+      <button class="btn btn-secundario btn-pequeno" onclick="estado.mostrarDicaIOS=false;render()">Entendi</button>
+    </div>` : ''}
+    ${(estado.notificacoesStatus==='default' && !estado.viaAnuncio && (estado.cliente.logado || estado.motorista.ativo)) ? `
+    <div class="faixa-instalar">
+      <div style="flex:1">
+        <div class="txt">Ativa as notificações</div>
+        <div class="sub">Receba avisos em tempo real de novos pedidos e das suas entregas.</div>
+      </div>
+      <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar</button>
+    </div>` : ''}
+    ${(!estado.viaAnuncio && !entregaFlashNativoAndroidAtivo()) ? `<div class="link-instalar" onclick="abrirComoInstalar()">Como instalar o app</div>` : ''}`;
+}
+function ajudaMotoristaHTML(){
+  return `<div class="cartao" id="ajuda-motorista">
+    <h2>Ajuda</h2>
+    <div class="ef-perfil-ajuda-acoes">
+      <button type="button" class="btn btn-secundario" onclick="abrirFeedback()">Sugestões e Reclamações</button>
+      <button type="button" class="btn btn-secundario" onclick="abrirComoFunciona('motorista')">Como funciona o app</button>
+    </div>
+  </div>
+  ${avisosAppHTML()}`;
+}
+function rodapeAppHTML(){
+  if(estado.modo==='entregador' && estado.motorista.ativo) return '';
+  return `${avisosAppHTML()}
+    <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()"> Sugestões e Reclamações</button>
+    <div class="rodape-discreto">
+      <span onclick="abrirComoFunciona('${estado.modo==='cliente'?'cliente':'motorista'}')">como funciona o app</span>
+      <span>·</span>
+      <span onclick="carregarPedidos()">↻ atualizar</span>
+    </div>`;
+}
+
+let _efObserverMenuMotorista = null;
+function medirAlturaMenuMotorista(){
+  const menu = document.querySelector('.abas-motorista');
+  const altura = menu ? Math.ceil(menu.getBoundingClientRect().height) : 0;
+  if(altura>0) document.documentElement.style.setProperty('--ef-menu-altura', altura+'px');
+  else document.documentElement.style.removeProperty('--ef-menu-altura');
+}
+function observarMenuMotorista(){
+  if(_efObserverMenuMotorista){ _efObserverMenuMotorista.disconnect(); _efObserverMenuMotorista=null; }
+  medirAlturaMenuMotorista();
+  const menu = document.querySelector('.abas-motorista');
+  if(menu && typeof ResizeObserver==='function'){
+    _efObserverMenuMotorista = new ResizeObserver(medirAlturaMenuMotorista);
+    _efObserverMenuMotorista.observe(menu);
+  }
+}
+window.addEventListener('resize', medirAlturaMenuMotorista);
+
 function telaMotorista(){
   const m = estado.motorista;
   if(!m.ativo){
@@ -7759,7 +7871,8 @@ function telaMotorista(){
     <label>Nova senha</label>
     <input type="text" id="ef-senha-nova-motorista" placeholder="Mín. 4 caracteres" style="-webkit-text-security:disc;text-security:disc;">
     <button class="btn btn-secundario" style="margin-top:8px" ${atributoDesabilitado('trocarSenhaMotorista')} onclick="executarComCarregando('trocarSenhaMotorista', trocarMinhaSenhaMotorista)">${rotuloCarregando('trocarSenhaMotorista',' Trocar senha','Trocando...')}</button>
-  </div>`;
+  </div>
+  ${ajudaMotoristaHTML()}`;
 
   const blocoHistorico = `<div class="cartao">
     <h2> Minhas entregas</h2>
@@ -7801,13 +7914,6 @@ function telaMotorista(){
   return `
   <div class="conteudo-motorista">
     ${aba==='pedidos' ? blocoPedidos : aba==='mapa' ? blocoMapaMotorista : aba==='carteira' ? blocoCarteiraMotorista : aba==='historico' ? blocoHistorico : blocoPerfil}
-  </div>
-  <div class="abas-motorista">
-    <button class="${aba==='pedidos'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('pedidos')"><span class="icone-aba">⚡</span>Pedidos</button>
-    <button class="${aba==='mapa'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('mapa')"><span class="icone-aba">⌖</span>Mapa</button>
-    <button class="${aba==='carteira'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('carteira')"><span class="icone-aba">◈</span>Carteira</button>
-    <button class="${aba==='historico'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('historico')"><span class="icone-aba">↺</span>Histórico</button>
-    <button class="${aba==='perfil'?'ativo':''}" onclick="mudarAbaPrincipalMotorista('perfil')"><span class="icone-aba">●</span>Perfil</button>
   </div>
   ${estado.chamadoAmigoModal.aberto ? modalChamadoAmigoHTML() : ''}`;
 }
@@ -8267,6 +8373,13 @@ function render(){
     return;
   }
   const app = document.getElementById('app');
+  const menuMotoristaAtivo = !!(
+    estado.modo==='entregador' && estado.motorista.ativo &&
+    !estado.resetSenha?.aberto && !estado.parceiro?.aberto &&
+    !(estado.telaBoasVindas && !estado.sessaoCarregando) &&
+    !planoAnimando && !clienteBemVindoAnimando && !estado.transicaoPedido.ativa
+  );
+  document.body.classList.toggle('ef-menu-motorista-ativo', menuMotoristaAtivo);
   if(estado.resetSenha && estado.resetSenha.aberto){
     app.innerHTML=telaRedefinirSenha();
     return;
@@ -8327,37 +8440,8 @@ function render(){
   const restoHTML = `
     ${barraNavegacaoFluxo()}
     <main class="${_efClasseTransicao.trim()}">${estado.modo==='cliente' ? (estado.cliente.logado ? telaCliente() : (estado.sessaoCarregando ? `<div class="cartao"><div class="vazio"><span class="emoji-grande">⏳</span>A retomar a sua sessão...</div></div>` : telaAcessoCliente())) : telaMotorista()}</main>
-    ${(estado.podeInstalar && !estado.appInstalado && !entregaFlashNativoAndroidAtivo()) ? `
-    <div class="faixa-instalar">
-      <div style="flex:1">
-        <div class="txt">Instale o app no seu celular</div>
-        <div class="sub">Acesso mais rápido, funciona como um app normal.</div>
-      </div>
-      <button class="btn btn-primario btn-pequeno" onclick="instalarApp()">Instalar</button>
-    </div>` : ''}
-    ${estado.mostrarDicaIOS ? `
-    <div class="faixa-instalar">
-      <div style="flex:1">
-        <div class="txt">Instale o app no iPhone</div>
-        <div class="sub">Toque em Compartilhar <b>⬆</b> e depois em "Adicionar à Tela de Início".</div>
-      </div>
-      <button class="btn btn-secundario btn-pequeno" onclick="estado.mostrarDicaIOS=false;render()">Entendi</button>
-    </div>` : ''}
-    ${(estado.notificacoesStatus==='default' && !estado.viaAnuncio && (estado.cliente.logado || estado.motorista.ativo)) ? `
-    <div class="faixa-instalar">
-      <div style="flex:1">
-        <div class="txt">Ativa as notificações</div>
-        <div class="sub">Receba avisos em tempo real de novos pedidos e das suas entregas.</div>
-      </div>
-      <button class="btn btn-primario btn-pequeno" onclick="pedirPermissaoNotificacao()">Ativar</button>
-    </div>` : ''}
-    ${(!estado.viaAnuncio && !entregaFlashNativoAndroidAtivo()) ? `<div class="link-instalar" onclick="abrirComoInstalar()">Como instalar o app</div>` : ''}
-    <button class="btn btn-secundario" style="margin-top:10px" onclick="abrirFeedback()"> Sugestões e Reclamações</button>
-    <div class="rodape-discreto">
-      <span onclick="abrirComoFunciona('${estado.modo==='cliente'?'cliente':'motorista'}')">como funciona o app</span>
-      <span>·</span>
-      <span onclick="carregarPedidos()">↻ atualizar</span>
-    </div>
+    ${menuMotoristaHTML()}
+    ${rodapeAppHTML()}
 
     ${estado.modo==='entregador' && estado.motorista.ativo ? `
     <div class="sos-flutuante" title="SOS — veículo quebrado / pedir ajuda" onclick="abrirSOSFlutuante()"><span class="emoji"></span>SOS</div>` : ''}
@@ -8462,6 +8546,7 @@ function render(){
     _ultimoHeaderHTML = headerHTML;
   }
   document.getElementById('app-resto').innerHTML = restoHTML;
+  observarMenuMotorista();
   const bind=(id,path)=>{ const el=document.getElementById(id); if(el) el.addEventListener('input',(e)=>setDeep(path,e.target.value)); };
   bind('c-nome','form.nome'); bind('c-telefone','form.telefone'); bind('c-origem','form.origem');
   bind('c-destino','form.destino'); bind('c-descricao','form.descricao');
