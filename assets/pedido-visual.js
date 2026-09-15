@@ -54,7 +54,41 @@ function efDataPedido(p){
   return (d.toDateString()===new Date().toDateString()?'Hoje':d.toLocaleDateString('pt-BR'))+', '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
 function efImagemSegura(url){return /^(https:\/\/|\/(?!\/))/.test(String(url||''))?String(url):'';}
+// Mesma sequência usada para disponibilizar o pedido aos motoristas.
+function efRaioBuscaPedido(p,agora=Date.now()){
+  const segundos=Math.max(0,(agora-inicioBuscaNormalPedido(p))/1000);
+  return segundos<30?10:segundos<90?20:segundos<180?40:Infinity;
+}
+function efBuscaPedido(p,agora=Date.now()){
+  if(p.status!=='buscando')return null;
+  if(preferenciaFavoritoAtiva(p,agora))return {etapa:-1,raio:null,titulo:'Chamando seu favorito',alcance:'Prioridade exclusiva',mapa:'Aguardando seu motorista favorito',proxima:'Busca geral em '+Math.max(1,Math.ceil((Number(p.preferenciaExclusivaAte)-agora)/1000))+' s',descricao:'Se ele não aceitar, buscamos outros motoristas automaticamente.'};
+  const raio=efRaioBuscaPedido(p,agora),etapa=raio===10?0:raio===20?1:raio===40?2:3;
+  const segundos=Math.max(0,(agora-inicioBuscaNormalPedido(p))/1000),limites=[30,90,180];
+  return {etapa,raio,titulo:etapa===0?'Procurando perto de você':etapa<3?'Ampliamos a busca':'Continuamos procurando',alcance:Number.isFinite(raio)?'Até '+raio+' km':'Busca ampliada',mapa:Number.isFinite(raio)?'Buscando em até '+raio+' km':'Busca aberta para o mesmo veículo',proxima:etapa<3?(etapa<2?'Próxima área: '+[20,40][etapa]+' km':'Busca geral')+' em '+Math.max(1,Math.ceil(limites[etapa]-segundos))+' s':'Pedido disponível aos motoristas do mesmo veículo',descricao:etapa<3?'A área aumenta automaticamente até alguém aceitar.':'Assim que alguém aceitar, avisamos você aqui.'};
+}
+function efRadarBuscaHTML(centro=true){return `<span class="ef-radar-busca" aria-hidden="true"><i></i><i></i><i></i>${centro?'<b>'+efIcone('veiculo')+'</b>':''}</span>`;}
+function efBuscaHTML(p){
+  const busca=efBuscaPedido(p);if(!busca)return '';
+  return `<section class="ef-track-card ef-busca-card" id="ef-busca-card" aria-label="Busca de motorista" data-etapa="${busca.etapa}"><div class="ef-busca-topo">${efRadarBuscaHTML()}<div class="ef-busca-conteudo"><span class="ef-busca-titulo" id="ef-busca-titulo" role="status">${busca.titulo}</span><strong class="ef-busca-alcance" id="ef-busca-alcance">${busca.alcance}</strong><p id="ef-busca-descricao">${busca.descricao}</p></div></div><ol class="ef-busca-etapas" aria-label="Ampliação da área de busca" ${busca.etapa<0?'hidden':''}>${['10 km','20 km','40 km','Geral'].map((label,i)=>`<li data-etapa="${i}" data-feita="${i<busca.etapa}" ${i===busca.etapa?'aria-current="step"':''}>${label}</li>`).join('')}</ol><p class="ef-busca-proxima">${efIcone('relogio')}<span id="ef-busca-proxima">${busca.proxima}</span></p></section>`;
+}
+function efTextoGpsDetalhe(p,busca=efBuscaPedido(p)){
+  if(busca)return busca.mapa;
+  return efGpsRecente(p)?'GPS atualizado às '+new Date(Number(p.motoristaAtualizadoEm)).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · Trajeto ilustrativo':'Aguardando localização recente · Trajeto ilustrativo';
+}
+function efAtualizarBuscaDetalhe(){
+  const p=efPedidoEmFoco(),busca=p&&efBuscaPedido(p),card=document.getElementById('ef-busca-card');
+  if(!busca||!card)return;
+  for(const [id,valor] of Object.entries({'ef-busca-titulo':busca.titulo,'ef-busca-alcance':busca.alcance,'ef-busca-descricao':busca.descricao,'ef-busca-proxima':busca.proxima,'ef-busca-mapa-texto':busca.mapa,'ef-gps-detalhe':efTextoGpsDetalhe(p,busca)})){
+    const el=document.getElementById(id);if(el&&el.textContent!==valor)el.textContent=valor;
+  }
+  if(card.dataset.etapa!==String(busca.etapa)){
+    card.dataset.etapa=String(busca.etapa);card.querySelector('.ef-busca-etapas').hidden=busca.etapa<0;
+    card.querySelectorAll('.ef-busca-etapas li').forEach(el=>{const i=Number(el.dataset.etapa);el.dataset.feita=String(i<busca.etapa);if(i===busca.etapa)el.setAttribute('aria-current','step');else el.removeAttribute('aria-current');});
+  }
+  efAtualizarMapaBusca(p,busca);
+}
 function efMotoristaHTML(p){
+  if(p.status==='buscando')return efBuscaHTML(p);
   const encontrado=!!p.motoristaNome&&!['buscando','aguardando_pagamento','cancelado'].includes(p.status),foto=efImagemSegura(p.motoristaFotoUrl);
   const ativo=['indo_coletar','coletado','a_caminho'].includes(p.status),tel=String(p.motoristaTelefone||'').replace(/\D/g,'');
   const avaliacao=Number(p.motoristaTotalAvaliacoes)>0&&Number(p.motoristaNotaMedia)>0?Number(p.motoristaNotaMedia).toLocaleString('pt-BR',{maximumFractionDigits:2}):null;
@@ -72,10 +106,10 @@ function efTrajetoHTML(p){
   return `<section class="ef-track-card ef-trajeto-card"><div class="ef-card-titulo">${efIcone('pacote')}<h2>Entrega <span>· ${efEsc(VEICULOS[p.veiculo]?.label||'Veículo')}</span></h2>${podeEditar(p)?`<button type="button" onclick="abrirEdicaoPedido(${efArg(p.id)})">Editar</button>`:''}</div><ol class="ef-trajeto">${etapas.map((e,i)=>`<li class="${e.feito?'ef-etapa-feita':''} ${e.atual?'ef-etapa-atual':''}"><span class="ef-etapa-ponto">${e.feito?efIcone('check'):i===etapas.length-1?efIcone('pino'):'<i></i>'}</span><div><span class="ef-etapa-legenda">${efEsc(e.label)}${e.feito?' · concluída':e.atual&&p.status==='a_caminho'?' · em andamento':''}</span><h3>${efEsc(e.endereco||'Endereço não informado')}</h3>${i===0?`<time>${efEsc(efDataPedido(p))}${p.tipoRetirada==='agendado'?' · agendada':''}</time>`:''}${i===0&&(p.origemReferencia||p.origemComplemento)?`<p>${efEsc([p.origemComplemento,p.origemReferencia].filter(Boolean).join(' · '))}</p>`:''}${i===1&&(p.destinoReferencia||p.destinoComplemento)?`<p>${efEsc([p.destinoComplemento,p.destinoReferencia].filter(Boolean).join(' · '))}</p>`:''}</div></li>`).join('')}</ol><button type="button" class="ef-compartilhar" onclick="compartilharPedido(${efArg(p.id)})">${efIcone('compartilhar')}Compartilhar acompanhamento</button></section>`;
 }
 function efDetalhePedidoHTML(p){
-  const encerrado=['cancelado','entregue'].includes(p.status),mapa=!estado.detalheMapaOculto&&!encerrado,eta=efEstimativaPedido(p);
-  return `<div class="ef-detalhe" data-pedido="${efEsc(p.id)}"><header class="ef-track-header"><button type="button" class="ef-icon-btn" aria-label="Voltar aos meus pedidos" onclick="efFecharDetalhe()">${efIcone('voltar')}</button><div><span>ENTREGA <b>FLASH</b></span><h1>${efEsc(efStatusPedido(p))}</h1></div><button type="button" class="ef-icon-btn" aria-label="Opções do pedido" aria-expanded="${!!estado.detalheMenu}" aria-controls="ef-track-opcoes" onclick="estado.detalheMenu=!estado.detalheMenu;render()">${efIcone('mais')}</button></header>
+  const encerrado=['cancelado','entregue'].includes(p.status),mapa=!estado.detalheMapaOculto&&!encerrado,eta=efEstimativaPedido(p),busca=efBuscaPedido(p);
+  return `<div class="ef-detalhe${busca?' ef-detalhe-buscando':''}" data-pedido="${efEsc(p.id)}"><header class="ef-track-header"><button type="button" class="ef-icon-btn" aria-label="Voltar aos meus pedidos" onclick="efFecharDetalhe()">${efIcone('voltar')}</button><div><span>ENTREGA <b>FLASH</b></span><h1>${efEsc(efStatusPedido(p))}</h1></div><button type="button" class="ef-icon-btn" aria-label="Opções do pedido" aria-expanded="${!!estado.detalheMenu}" aria-controls="ef-track-opcoes" onclick="estado.detalheMenu=!estado.detalheMenu;render()">${efIcone('mais')}</button></header>
     ${estado.detalheMenu?`<nav id="ef-track-opcoes" class="ef-track-opcoes" aria-label="Opções do pedido"><button onclick="copiarIdPedido(${efArg(p.id)})">Copiar código do pedido</button><button onclick="carregarPedidos()">Atualizar acompanhamento</button><button onclick="abrirSuporteGeral()">Falar com o suporte</button>${podeCancelar(p)?acoesPedidoHTML(p):''}</nav>`:''}
-    <div class="ef-track-layout"><section id="ef-mapa-painel" class="ef-mapa-painel" ${mapa?'':'hidden'} aria-label="Localização da entrega"><div id="ef-mapa-detalhe" class="ef-mapa-detalhe"></div><div class="ef-mapa-aviso" id="ef-mapa-aviso" role="status">Carregando mapa…</div><div class="ef-eta-flutuante" id="ef-eta-detalhe" ${eta?'':'hidden'}><b>${eta?'~'+eta.min:''}<small>min</small></b><span id="ef-eta-label">${eta?eta.label:''}</span></div><button class="ef-centralizar" type="button" onclick="efCentralizarMapa()" aria-label="Centralizar trajeto">${efIcone('alvo')}</button><div class="ef-mapa-rodape"><span class="ef-gps-dot"></span><span id="ef-gps-detalhe">${efGpsRecente(p)?'Localização atualizada':'Aguardando localização recente'}</span></div></section>
+    <div class="ef-track-layout"><section id="ef-mapa-painel" class="ef-mapa-painel" ${mapa?'':'hidden'} aria-label="Localização da entrega"><div id="ef-mapa-detalhe" class="ef-mapa-detalhe"></div><div class="ef-mapa-aviso" id="ef-mapa-aviso" role="status">Carregando mapa…</div>${busca?`<div class="ef-busca-mapa-badge">${efIcone('alvo')}<span id="ef-busca-mapa-texto">${busca.mapa}</span><span class="ef-busca-pontos" aria-hidden="true"><i></i><i></i><i></i></span></div>`:''}<div class="ef-eta-flutuante" id="ef-eta-detalhe" ${eta?'':'hidden'}><b>${eta?'~'+eta.min:''}<small>min</small></b><span id="ef-eta-label">${eta?eta.label:''}</span></div><button class="ef-centralizar" type="button" onclick="efCentralizarMapa()" aria-label="Centralizar trajeto">${efIcone('alvo')}</button><div class="ef-mapa-rodape"><span class="ef-gps-dot"></span><span id="ef-gps-detalhe">${efTextoGpsDetalhe(p,busca)}</span></div></section>
     <div class="ef-track-dados ${mapa?'com-mapa':''}">${efMotoristaHTML(p)}${efTrajetoHTML(p)}
       <section class="ef-track-card ef-resumo-pedido"><div class="ef-card-titulo">${efIcone('pacote')}<h2>Informações do pedido</h2></div><dl><div><dt>Valor da corrida</dt><dd>${Number(p.preco||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}</dd></div><div><dt>Código</dt><dd>${efEsc(p.id)}</dd></div>${p.descricao?`<div class="ef-descricao"><dt>O que vamos entregar</dt><dd>${efEsc(p.descricao)}</dd></div>`:''}</dl>${p.acrescimoValor>0?`<p>Acréscimo noturno/pico: ${empresaDinheiro(p.acrescimoValor)}</p>`:''}${p.taxaEsperaColeta||p.taxaEsperaEntrega?`<p>Taxa de espera: ${empresaDinheiro(Number(p.taxaEsperaColeta||0)+Number(p.taxaEsperaEntrega||0))}</p>`:''}${p.status==='cancelado'?`<p>${p.taxaCancelamento>0?'Taxa de cancelamento: '+empresaDinheiro(p.taxaCancelamento):'Cancelado sem custo.'}</p>`:''}${extrasHTML(p)}${seloPrioridadeHTML(p)}</section>
       ${pinEntregaClienteHTML(p)}${fotosHTML(p)}${avaliacaoHTML(p)}${favoritoMotoristaHTML(p)}${relogioCancelamentoHTML(p)}
@@ -86,8 +120,28 @@ function efDetalhePedidoHTML(p){
 }
 let efMapaDetalhe=null;
 function efLimparMapaDetalhe(){if(!efMapaDetalhe)return;clearInterval(efMapaDetalhe.timer);efMapaDetalhe.map?.remove();efMapaDetalhe=null;}
-function efCentralizarMapa(){const m=efMapaDetalhe;if(m?.bounds?.length)m.map.fitBounds(m.bounds,{padding:[52,64],maxZoom:16});}
+function efCentralizarMapa(){const m=efMapaDetalhe;if(m?.buscaArea)m.map.fitBounds(m.buscaArea.getBounds(),{padding:[24,56],maxZoom:13});else if(m?.bounds?.length)m.map.fitBounds(m.bounds,{padding:[52,64],maxZoom:16});}
+function efAtualizarMapaBusca(p,busca){
+  const m=efMapaDetalhe;if(!m||m.id!==p.id)return;
+  if(!busca||!efCoordenada(p.origemCoord)){
+    if(m.buscaArea){m.map.removeLayer(m.buscaArea);m.buscaArea=null;}
+    if(m.buscaRadar){m.map.removeLayer(m.buscaRadar);m.buscaRadar=null;}
+    m.buscaChave=null;return;
+  }
+  const pos=[Number(p.origemCoord.lat),Number(p.origemCoord.lon)],chave=JSON.stringify([busca.etapa,pos]);
+  if(m.buscaChave===chave)return;
+  if(!m.buscaRadar)m.buscaRadar=L.marker(pos,{icon:L.divIcon({className:'ef-radar-no-mapa',html:efRadarBuscaHTML(false),iconSize:[180,180],iconAnchor:[90,90]}),interactive:false,keyboard:false,zIndexOffset:-1000}).addTo(m.map);
+  else m.buscaRadar.setLatLng(pos);
+  if(Number.isFinite(busca.raio)&&busca.raio>0){
+    if(!m.buscaArea)m.buscaArea=L.circle(pos,{radius:busca.raio*1000,color:'#ee7027',weight:2,opacity:.6,fillColor:'#f98d38',fillOpacity:.12,interactive:false}).addTo(m.map);
+    else m.buscaArea.setLatLng(pos).setRadius(busca.raio*1000);
+  }else if(m.buscaArea){m.map.removeLayer(m.buscaArea);m.buscaArea=null;}
+  m.buscaChave=chave;
+  // Amplia a visualização apenas ao mudar de etapa, preservando os gestos no mapa.
+  if(!estado.detalheMapaOculto)requestAnimationFrame(()=>{if(efMapaDetalhe===m){m.map.invalidateSize();efCentralizarMapa();}});
+}
 function efMontarMapaDetalhe(){
+  efAtualizarBuscaDetalhe();
   const p=efPedidoEmFoco(),slot=document.getElementById('ef-mapa-detalhe');
   if(!p||!slot||['entregue','cancelado'].includes(p.status)){efLimparMapaDetalhe();return;}
   if(estado.detalheMapaOculto)return;
@@ -115,6 +169,7 @@ function efMontarMapaDetalhe(){
     for(let i=1;i<etapas.length;i++){const a=etapas[i-1].coord,b=etapas[i].coord;if(efCoordenada(a)&&efCoordenada(b))L.polyline([[a.lat,a.lon],[b.lat,b.lon]],{color:'#ee7027',weight:3,opacity:.6,dashArray:'5 9'}).addTo(m.markers);}
     m.signature=assinatura;m.bounds=pontos;efCentralizarMapa();
   }
+  efAtualizarMapaBusca(p,efBuscaPedido(p));
   const recente=efGpsRecente(p),eta=efEstimativaPedido(p);
   if(recente){
     const pos=[Number(p.motoristaCoord.lat),Number(p.motoristaCoord.lon)];
@@ -123,7 +178,7 @@ function efMontarMapaDetalhe(){
     m.bounds=[...pontos,pos];
   }else if(m.driver){m.map.removeLayer(m.driver);m.driver=null;m.bounds=pontos;}
   el('ef-mapa-aviso').hidden=!m.tileError;
-  el('ef-gps-detalhe').textContent=recente?'GPS atualizado às '+new Date(Number(p.motoristaAtualizadoEm)).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · Trajeto ilustrativo':'Aguardando localização recente · Trajeto ilustrativo';
+  el('ef-gps-detalhe').textContent=efTextoGpsDetalhe(p);
   el('ef-eta-detalhe').hidden=!eta;
   if(eta){el('ef-eta-detalhe').querySelector('b').innerHTML='~'+eta.min+'<small>min</small>';el('ef-eta-label').textContent=eta.label+' · estimativa';}
   requestAnimationFrame(()=>m.map.invalidateSize());
