@@ -137,6 +137,7 @@ function pedidoDaContaEmpresa(id){return [...(estado.pedidos||[]),...(estado.par
 function verPedidoEmpresa(id){
   const p=pedidoDaContaEmpresa(id);if(!p)return;
   if(!estado.pedidos.some(x=>x.id===id))estado.pedidos.push(p);
+  if(typeof efAbrirDetalhe==='function'){efAbrirDetalhe(id);carregarPedidos();return;}
   estado.parceiro.aberto=false;estado.telaBoasVindas=false;estado.modo='cliente';estado.pedidoBuscandoId=p.status==='buscando'?id:null;estado.abaPedidosCliente=['entregue','cancelado'].includes(p.status)?'historico':'ativos';render();
   document.getElementById('pedido-'+id)?.scrollIntoView({behavior:'smooth'});
 }
