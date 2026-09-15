@@ -15,6 +15,14 @@
     {
       "source": "/lider/",
       "destination": "/lider.html"
+    },
+    {
+      "source": "/empresas",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/empresas/",
+      "destination": "/index.html"
     }
   ],
   "headers": [

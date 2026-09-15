@@ -1,2 +1,6 @@
 [functions.lembrete-documentos-diario]
 verify_jwt = false
+
+# A funcao valida sessao do cliente, senha administrativa ou token de rastreio.
+[functions.empresas-portal]
+verify_jwt = false
