@@ -1543,6 +1543,8 @@ body.ef-cliente-visitante .ef-meus-pedidos .aba-mini{margin-bottom:8px}
 
 <link rel="stylesheet" href="/assets/empresas.css?v=20260915-empresas-1">
 <script src="/assets/empresas.js?v=20260915-empresas-1"></script>
+<link rel="preload" as="style" href="/assets/pedido-visual.css?v=20260915-visual-1">
+<script src="/assets/pedido-visual.js?v=20260915-visual-1"></script>
 <script>
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
@@ -3281,7 +3283,7 @@ function detectarMotoristaEncontrado(novos){
     // mostravam "Entregador encontrado!" mesmo quando ninguém tinha aceitado — por isso o
     // "np.status!=='cancelado'" abaixo, pra só disparar esse alerta quando é uma aceitação de verdade.
     if(anterior==='buscando' && np.status!=='buscando' && np.status!=='cancelado'){
-      if(estado.pedidoBuscandoId===np.id) estado.pedidoBuscandoId=null;
+      // Mantém o acompanhamento aberto quando o motorista aceita a corrida.
       dispararAlertaMotorista(np);
       notificar('Entregador encontrado!', `${np.motoristaNome||'Um entregador'} vai levar o seu pedido. Você tem ${Math.round(JANELA_CANCELAMENTO_MS/60000)} min pra cancelar sem custo.`, 'pedido-'+np.id);
     } else if(anterior && anterior!=='buscando' && np.status==='buscando' && np.canceladoPor==='motorista'){
@@ -3359,6 +3361,7 @@ function paraCamposApp(row){
     destinoFotoUrl: row.destino_foto_url || null, destinoReferencia: row.destino_referencia || '', destinoComplemento: row.destino_complemento || '',
     destinoCoord:(row.destino_lat!=null&&row.destino_lng!=null)?{lat:row.destino_lat,lon:row.destino_lng}:null,
     motoristaCoord:(row.motorista_lat!=null&&row.motorista_lng!=null)?{lat:row.motorista_lat,lon:row.motorista_lng}:null,
+    motoristaAtualizadoEm: Number(row.motorista_atualizado_em)||0,
     fotoAntesUrl: row.foto_antes_url || null, fotoDepoisUrl: row.foto_depois_url || null,
     veiculo:row.veiculo, descricao:row.descricao||'',
     tipoEntrega: row.tipo_entrega || 'padrao',
@@ -3552,7 +3555,7 @@ function estaDigitandoEndereco(){
 // ou se foi só o motorista andando — nesse caso só o mapa precisa mexer, não a tela inteira.
 function pedidoSemPosicao(p){
   const c = Object.assign({}, p);
-  delete c.motoristaCoord; delete c.atualizadoEm;
+  delete c.motoristaCoord; delete c.motoristaAtualizadoEm; delete c.atualizadoEm;
   return c;
 }
 let _carregarPedidosEmAndamento = false;
@@ -3618,6 +3621,7 @@ async function carregarPedidos(){
 // atualiza só os marcadores dos mapas já abertos na tela (sem tocar no resto do DOM) —
 // usado quando a única coisa que mudou foi a posição do motorista em trânsito.
 function atualizarMapasAoVivo(pedidos){
+  if(efPedidoEmFoco())efMontarMapaDetalhe();
   pedidos.forEach(p=>{
     if(!p.origemCoord || !p.destinoCoord || p.status==='buscando' || p.status==='entregue' || p.status==='cancelado') return;
     if(estado.modo==='cliente' && p.clienteTelefone===estado.filtroTelefoneCliente){ montarMapa('mapa-c-'+p.id, p); }
@@ -6416,6 +6420,7 @@ function acoesPedidoHTML(p){
   return `<div class="acoes-pedido">${botoes.join('')}</div>`;
 }
 function cartaoPedidoCliente(p){
+  if(!['entregue','cancelado'].includes(p.status))return efResumoAcompanhamentoHTML(p);
   const mapaId = 'mapa-c-'+p.id;
   const emAndamento = p.status!=='buscando' && p.status!=='entregue' && p.status!=='cancelado';
   if(p.status==='cancelado'){
@@ -6934,6 +6939,8 @@ function irEtapaPedido(alvo){
 
 function telaCliente(){
   const f = estado.form;
+  const foco = efPedidoEmFoco();
+  if(foco)return efDetalhePedidoHTML(foco);
   const visitante = !!estado.cliente.visitante;
   const pedidoBuscando = estado.pedidoBuscandoId ? estado.pedidos.find(p=>p.id===estado.pedidoBuscandoId) : null;
   if(pedidoBuscando && pedidoBuscando.status==='buscando'){
@@ -7691,6 +7698,7 @@ function ajudaMotoristaHTML(){
   ${avisosAppHTML()}`;
 }
 function rodapeAppHTML(){
+  if(efPedidoEmFoco())return '';
   if(estado.modo==='entregador' && estado.motorista.ativo) return '';
   if(estado.modo==='cliente' && estado.cliente.visitante) return '';
   return `${avisosAppHTML()}
@@ -8362,6 +8370,8 @@ function render(){
     return;
   }
   document.body.classList.toggle('ef-empresas',!!estado.parceiro?.aberto);
+  document.body.classList.toggle('ef-acompanhamento',!!efPedidoEmFoco()&&!estado.transicaoPedido.ativa);
+  if(!efPedidoEmFoco())efLimparMapaDetalhe();
   const app = document.getElementById('app');
   const menuMotoristaAtivo = !!(
     estado.modo==='entregador' && estado.motorista.ativo &&
@@ -8588,6 +8598,7 @@ function render(){
   });
   if(document.getElementById('mapa-motorista-home')) setTimeout(montarMapaMotoristaHome,0);
   limparMapasInativos(idsMapasAtivos);
+  efMontarMapaDetalhe();
   if(estado.admin.aberto && estado.admin.logado && estado.admin.aba==='resumo') montarMapaAdminGeral();
   if(estado.chatAberto) renderChat();
   if(estado.suporteAberto) renderSuporteChat();
@@ -11656,6 +11667,7 @@ iniciarAppReal();
 })();
 </script>
 
+<link rel="stylesheet" href="/assets/pedido-visual.css?v=20260915-visual-1">
 </body>
 </html>
 <style id="ef-ajuste-clarear-compactar-20260901">
