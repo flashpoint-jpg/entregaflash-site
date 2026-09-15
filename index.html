@@ -1714,6 +1714,25 @@ function registrarConversaoMetaCadastro(papel, identificador=''){
   }catch(e){ console.warn('Meta CompleteRegistration:',e); return false; }
 }
 
+// Conversões da Meta para o funil de pedido do cliente.
+// Não envia nome, telefone, endereço ou qualquer outro dado pessoal.
+function registrarConversaoMetaPedido(nomeEvento, pedido=null){
+  try{
+    if(typeof fbq!=='function') return false;
+    const idPedido = String(pedido?.id||'').replace(/[^a-zA-Z0-9_-]/g,'').slice(0,64);
+    const chave = idPedido ? `ef_meta_${nomeEvento}_${idPedido}` : `ef_meta_${nomeEvento}_sessao`;
+    if(sessionStorage.getItem(chave)==='1' || localStorage.getItem(chave)==='1') return false;
+    const dados = {
+      currency:'BRL',
+      value:Number(pedido?.preco)||0,
+      veiculo:String(pedido?.veiculo||estado?.form?.veiculo||'')
+    };
+    fbq('trackCustom', nomeEvento, dados);
+    if(idPedido) localStorage.setItem(chave,'1'); else sessionStorage.setItem(chave,'1');
+    return true;
+  }catch(e){ console.warn('Meta pedido:',nomeEvento,e); return false; }
+}
+
 // Conta a abertura do site. A deduplicação por sessão evita somar vários renders/reloads internos.
 registrarVisitaFunilAnuncio();
 
@@ -5035,6 +5054,8 @@ async function criarPedido(){
     return;
   }
 
+  registrarConversaoMetaPedido('PedidoIniciado', { preco, veiculo:f.veiculo });
+
   // ---- cria primeiro como aguardando pagamento e só então o banco debita + libera em UMA transação ----
   // Se a gravação falhar, nenhum centavo sai da carteira. Se o débito falhar, o pedido nunca fica visível aos motoristas.
   const agora = Date.now();
@@ -5100,6 +5121,7 @@ async function criarPedido(){
     }
   }
   pedido.status='buscando';
+  registrarConversaoMetaPedido('PedidoCriado', pedido);
   try{
     const {data:prefSrv}=await sb.from('entrega_pedidos').select('motorista_preferido_telefone,preferencia_exclusiva_ate').eq('id',pedido.id).maybeSingle();
     if(prefSrv){ pedido.motoristaPreferidoTelefone=prefSrv.motorista_preferido_telefone||''; pedido.preferenciaExclusivaAte=prefSrv.preferencia_exclusiva_ate!=null?Number(prefSrv.preferencia_exclusiva_ate):null; }
