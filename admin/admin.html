@@ -891,6 +891,9 @@ body.ef-admin-logado #suporte-admin-mensagens{flex:1;min-height:150px;}
   <div id="gate-localizacao-corpo" class="gl-corpo"></div>
 </div>
 
+<link rel="stylesheet" href="/assets/empresas.css?v=20260915-empresas-1">
+<script src="/assets/empresas.js?v=20260915-empresas-1"></script>
+<script src="/assets/empresas-admin.js?v=20260915-empresas-1"></script>
 <script>
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
@@ -7544,6 +7547,8 @@ function mudarAbaAdmin(aba){
   if(aba==='feedbacks' && !estado.admin.feedbacksCarregados) carregarFeedbacksAdmin();
   if(aba==='indicacoes') carregarIndicacoesAdmin();
   if(aba==='lideres') carregarLideresAdmin();
+  if(aba==='empresas') carregarEmpresasAdmin();
+  if(aba==='fluxo-pedidos') carregarFluxoPedidosAdmin();
 }
 
 async function carregarLideresAdmin(){
@@ -8193,6 +8198,8 @@ function adminCorpoHTML(){
   const abasCompletas = [
     {id:'resumo', label:'📊 Resumo'},
     {id:'operacoes', label:'🎛️ Operações'},
+    {id:'empresas', label:'Empresas parceiras'},
+    {id:'fluxo-pedidos', label:'Caminho dos pedidos'},
     {id:'diagnostico', label:'🩺 Diagnóstico'},
     {id:'config', label:'⚙️ Config'},
     {id:'pedidos', label:'📦 Pedidos'},
@@ -8216,6 +8223,8 @@ function adminCorpoHTML(){
   let corpo;
   if(a.aba==='resumo') corpo = adminAbaResumoHTML();
   else if(a.aba==='operacoes') corpo = centroOperacoesHTML();
+  else if(a.aba==='empresas') corpo = adminEmpresasHTML();
+  else if(a.aba==='fluxo-pedidos') corpo = adminFluxoPedidosHTML();
   else if(a.aba==='diagnostico') corpo = adminAbaDiagnosticoHTML();
   else if(a.aba==='config') corpo = adminAbaConfigHTML();
   else if(a.aba==='pedidos') corpo = adminAbaPedidosHTML();

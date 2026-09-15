@@ -1541,6 +1541,8 @@ body.ef-cliente-visitante .ef-meus-pedidos .aba-mini{margin-bottom:8px}
   <div id="gate-localizacao-corpo" class="gl-corpo"></div>
 </div>
 
+<link rel="stylesheet" href="/assets/empresas.css?v=20260915-empresas-1">
+<script src="/assets/empresas.js?v=20260915-empresas-1"></script>
 <script>
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
@@ -5027,7 +5029,7 @@ async function criarPedido(){
   estado.calculando = false; render();
   const foraDaArea = paradasBrutas.find(x=>!x.coord);
   if(foraDaArea){
-    const ehReferencia = /^|^|Plus Code/.test(foraDaArea.texto);
+    const ehReferencia = /^(?:GPS:|Link Maps:)|Plus Code/i.test(foraDaArea.texto);
     if(!ehReferencia){
       if(!(await confirmarAcao(`Não consegui confirmar automaticamente o endereço "${foraDaArea.texto}". Pode continuar mesmo assim (o motorista vai receber só o texto, sem localização automática) ou cancelar e ajustar o endereço. Continuar?`))) return;
     }
@@ -6383,17 +6385,6 @@ function pedidoIdLinhaHTML(p){
 async function copiarIdPedido(id){
   try{ await navigator.clipboard.writeText(id); mostrarToast('ID copiado.', 'sucesso'); }catch(e){ mostrarToast('Não foi possível copiar. Copia manualmente.', 'erro'); }
 }
-async function compartilharPedido(id){
-  const p = estado.pedidos.find(x=>x.id===id);
-  if(!p) return;
-  const texto = `Acompanha a minha entrega Entrega Flash:\nRecolha: ${p.origem}\nEntrega: ${p.destino}\nStatus: ${ROTULOS_ESTAGIO[p.status]||p.status}\nID do pedido: ${p.id}`;
-  if(navigator.share){
-    try{ await navigator.share({ title:'Entrega Flash', text:texto }); }catch(e){ /* usuário cancelou */ }
-  } else {
-    try{ await navigator.clipboard.writeText(texto); mostrarToast('Detalhes copiados para compartilhar.', 'sucesso'); }catch(e){ mostrarToast('Não foi possível compartilhar.', 'erro'); }
-  }
-}
-
 // ---------- cartões ----------
 function listaDestinosPedido(p){
   const lista = [{ endereco:p.destino, coord:p.destinoCoord||null }];
@@ -6439,7 +6430,7 @@ function cartaoPedidoCliente(p){
       ${paradasHTML(p)}
       <span class="selo selo-cancelado">Cancelado</span>
       ${p.taxaCancelamento>0 ? `<div class="subtitulo">Taxa de cancelamento cobrada: R$ ${p.taxaCancelamento.toFixed(2)}. O restante foi devolvido à sua carteira.</div>` : `<div class="subtitulo">Cancelado sem custo. Valor devolvido à sua carteira.</div>`}
-      <button class="btn btn-primario btn-pequeno" style="margin-top:10px" onclick="refazerPedidoCancelado('${p.id}')">Refazer / trocar veículo</button>
+      <button class="btn btn-primario btn-pequeno" style="margin-top:10px" onclick="repetirPedido('${p.id}')">Refazer / trocar veículo</button>
     </div>`;
   }
   if(p.status==='buscando'){
@@ -6502,6 +6493,7 @@ function cartaoPedidoCliente(p){
     ${pinEntregaClienteHTML(p)}
     ${fotosHTML(p)}
     ${avaliacaoHTML(p)}
+    ${p.status==='entregue'?`<button type="button" class="btn btn-secundario btn-pequeno" onclick="repetirPedido('${p.id}')">Pedir novamente</button>`:''}
     ${favoritoMotoristaHTML(p)}
     ${emAndamento ? `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">${botaoChatHTML(p.id, estado.chatNaoLidas[p.id]||0)}${botaoLigarHTML(p.motoristaTelefone)}<button type="button" class="btn btn-secundario btn-pequeno" onclick="compartilharPedido('${p.id}')"> Compartilhar</button></div>` : ''}
     ${emAndamento ? pedidoIdLinhaHTML(p) : ''}
@@ -6648,103 +6640,8 @@ function fotosHTML(p){
   </div>`;
 }
 
-// ---------- parceiros / Entrega Flash Empresas ----------
-function abrirParceiros(){
-  estado.parceiro.aberto = true;
-  estado.parceiro.erro = '';
-  window.scrollTo(0,0);
-  render();
-}
-function fecharParceiros(){
-  estado.parceiro.aberto = false;
-  estado.parceiro.enviado = false;
-  estado.parceiro.erro = '';
-  window.scrollTo(0,0);
-  render();
-}
-function parceiroCampo(campo, valor){ estado.parceiro.form[campo]=valor; }
-function parceiroEsc(v){ return String(v??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-function normalizarWhatsParceiro(v){ return String(v||'').replace(/\D/g,'').slice(-11); }
-async function enviarCadastroParceiro(){
-  const p = estado.parceiro;
-  const f = p.form;
-  p.erro='';
-  const whats = normalizarWhatsParceiro(f.whatsapp);
-  if(String(f.estabelecimento||'').trim().length<2){ p.erro='Informe o nome do estabelecimento.'; render(); return; }
-  if(String(f.responsavel||'').trim().length<2){ p.erro='Informe o nome do responsável.'; render(); return; }
-  if(whats.length<10){ p.erro='Informe um WhatsApp válido com DDD.'; render(); return; }
-  if(String(f.cidade||'').trim().length<2){ p.erro='Informe a cidade.'; render(); return; }
-  p.enviando=true; render();
-  try{
-    const payload={
-      estabelecimento:String(f.estabelecimento).trim(),
-      responsavel:String(f.responsavel).trim(),
-      whatsapp:whats,
-      cidade:String(f.cidade).trim(),
-      endereco:String(f.endereco||'').trim()||null,
-      tipo_negocio:f.tipoNegocio,
-      entregas_dia:f.entregasDia||null,
-      mensagem:String(f.mensagem||'').trim()||null
-    };
-    const { error } = await sb.from('entrega_parceiros').insert(payload);
-    if(error) throw error;
-    p.enviado=true;
-    p.form={ estabelecimento:'', responsavel:'', whatsapp:'', cidade:'', endereco:'', tipoNegocio:'farmacia', entregasDia:'0-5', mensagem:'' };
-    window.scrollTo(0,0);
-  }catch(e){
-    console.error('Falha cadastro parceiro',e);
-    p.erro='Não foi possível enviar agora. Confira sua internet e tente novamente.';
-  }finally{ p.enviando=false; render(); }
-}
-function telaParceiros(){
-  const p=estado.parceiro, f=p.form;
-  if(p.enviado) return `
-  <div class="parceiro-page"><div class="parceiro-shell">
-    <div class="parceiro-top"><button class="parceiro-back" onclick="fecharParceiros()">← Voltar</button><div class="parceiro-brand">ENTREGA <b>FLASH</b></div></div>
-    <div class="parceiro-sucesso"><div class="ico">✓</div><h2>Cadastro recebido!</h2><p>Obrigado pelo interesse em ser parceiro da Entrega Flash. Seus dados foram enviados e já ficaram registrados para contato.</p><button class="btn btn-primario" onclick="fecharParceiros()">VOLTAR PARA O INÍCIO</button></div>
-  </div></div>`;
-  return `
-  <div class="parceiro-page"><div class="parceiro-shell">
-    <div class="parceiro-top"><button class="parceiro-back" onclick="fecharParceiros()">← Voltar</button><div class="parceiro-brand">ENTREGA <b>FLASH</b> EMPRESAS</div></div>
-    <section class="parceiro-hero">
-      <span class="parceiro-eyebrow">Para farmácias, mercados e lojas</span>
-      <h1>Sua loja vende.<br><span>A gente entrega.</span></h1>
-      <p>Tenha uma rede de entregadores à disposição do seu negócio. Chame somente quando precisar e acompanhe a entrega pelo celular.</p>
-      <button class="btn btn-primario" onclick="document.getElementById('cadastro-parceiro')?.scrollIntoView({behavior:'smooth'})">QUERO SER PARCEIRO</button>
-    </section>
-    <div class="parceiro-grid">
-      <div class="parceiro-beneficio"><b>🛵 Entregador sob demanda</b><span>Você chama quando houver pedido, sem depender de um único motoboy.</span></div>
-      <div class="parceiro-beneficio"><b>📍 Acompanhamento da entrega</b><span>Veja o andamento e tenha mais controle sobre cada envio.</span></div>
-      <div class="parceiro-beneficio"><b>🏪 Feito para comércio local</b><span>Farmácia, mercado, restaurante, pet shop, autopeças e outros.</span></div>
-      <div class="parceiro-beneficio"><b>⚡ Menos atrito para vender</b><span>O parceiro pode solicitar a entrega sem obrigar o cliente final a se cadastrar.</span></div>
-      <div class="parceiro-beneficio"><b>📊 Histórico de entregas</b><span>Estrutura preparada para acompanhar a operação do estabelecimento.</span></div>
-      <div class="parceiro-beneficio"><b>⭐ Parceiro Entrega Flash</b><span>Possibilidade de selo e divulgação dentro do ecossistema Entrega Flash.</span></div>
-    </div>
-    <section class="parceiro-fluxo"><h3>Como funciona para sua empresa</h3><div class="parceiro-passos">
-      <div class="parceiro-passo"><strong>1. Recebeu o pedido</strong>Venda normalmente pelo balcão, telefone ou WhatsApp.</div>
-      <div class="parceiro-passo"><strong>2. Chama a Entrega Flash</strong>Informe retirada e destino e procure um entregador disponível.</div>
-      <div class="parceiro-passo"><strong>3. Acompanha até entregar</strong>Veja o andamento pelo celular e mantenha o cliente informado.</div>
-    </div></section>
-    <section class="parceiro-form-card" id="cadastro-parceiro">
-      <h2>Cadastre sua empresa</h2><div class="sub">É um primeiro contato. Não pedimos CNPJ nem documentos nesta etapa.</div>
-      <label>Nome do estabelecimento *</label><input value="${parceiroEsc(f.estabelecimento)}" oninput="parceiroCampo('estabelecimento',this.value)" placeholder="Ex.: Farmácia Central">
-      <label>Nome do responsável *</label><input value="${parceiroEsc(f.responsavel)}" oninput="parceiroCampo('responsavel',this.value)" placeholder="Quem fala pela empresa?">
-      <label>WhatsApp *</label><input type="tel" value="${parceiroEsc(f.whatsapp)}" oninput="parceiroCampo('whatsapp',this.value)" placeholder="(35) 99999-9999">
-      <label>Cidade *</label><input value="${parceiroEsc(f.cidade)}" oninput="parceiroCampo('cidade',this.value)" placeholder="Ex.: São Paulo, Guarulhos, sua cidade...">
-      <label>Endereço do estabelecimento</label><input value="${parceiroEsc(f.endereco)}" oninput="parceiroCampo('endereco',this.value)" placeholder="Rua, número e bairro">
-      <label>Tipo de negócio *</label><select onchange="parceiroCampo('tipoNegocio',this.value)">
-        <option value="farmacia" ${f.tipoNegocio==='farmacia'?'selected':''}>Farmácia</option><option value="mercado" ${f.tipoNegocio==='mercado'?'selected':''}>Mercado / Supermercado</option><option value="restaurante" ${f.tipoNegocio==='restaurante'?'selected':''}>Restaurante / Lanchonete</option><option value="loja" ${f.tipoNegocio==='loja'?'selected':''}>Loja / Comércio</option><option value="petshop" ${f.tipoNegocio==='petshop'?'selected':''}>Pet shop</option><option value="autopecas" ${f.tipoNegocio==='autopecas'?'selected':''}>Autopeças</option><option value="floricultura" ${f.tipoNegocio==='floricultura'?'selected':''}>Floricultura</option><option value="outro" ${f.tipoNegocio==='outro'?'selected':''}>Outro</option>
-      </select>
-      <label>Quantas entregas faz por dia?</label><select onchange="parceiroCampo('entregasDia',this.value)"><option ${f.entregasDia==='0-5'?'selected':''}>0-5</option><option ${f.entregasDia==='6-10'?'selected':''}>6-10</option><option ${f.entregasDia==='11-20'?'selected':''}>11-20</option><option ${f.entregasDia==='20+'?'selected':''}>20+</option></select>
-      <label>Quer contar algo sobre sua operação?</label><textarea oninput="parceiroCampo('mensagem',this.value)" placeholder="Ex.: fazemos entregas de medicamentos à noite...">${parceiroEsc(f.mensagem)}</textarea>
-      ${p.erro?`<div class="parceiro-erro">${parceiroEsc(p.erro)}</div>`:''}
-      <button class="btn btn-primario" ${p.enviando?'disabled':''} onclick="enviarCadastroParceiro()">${p.enviando?'ENVIANDO...':'CADASTRAR MINHA EMPRESA'}</button>
-      <div class="parceiro-note">Cadastro inicial gratuito • Sem envio de documentos agora</div>
-    </section>
-  </div></div>`;
-}
+// Area empresarial em assets/empresas.js.
 
-// ---------- telas ----------
 function telaPreparandoBV(){
   const papel = bvPreparando;
   const titulo = papel==='cliente' ? 'Legal! Deixa com a gente ' : 'Boa! Deixa com a gente ';
@@ -7081,6 +6978,7 @@ function telaCliente(){
   const listaExibida = estado.abaPedidosCliente==='ativos' ? pedidosAtivos : pedidosHistorico;
   const w = estado.cliente.carteira;
   return `
+  ${empresaResumoClienteHTML()}
   <div class="cartao">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div style="font-size:14px;color:var(--poeira)">Olá, <b style="color:var(--osso);font-size:16px">${estado.cliente.nome}</b></div>
@@ -7898,6 +7796,7 @@ function telaMotorista(){
   <div class="link-taxas-topo" onclick="abrirComoFunciona('taxas')"> Ver todas as taxas e regras</div>
   ${blocoAvisoAnalise}
   ${blocoGpsSegundoPlanoMotoristaHTML()}
+  ${testeRecebimentoHTML()}
   ${planoDestaqueMotoristaHTML(m)}
   ${treinamentoMotoristaHTML()}
   ${blocoPrimeiroDia}
@@ -8462,6 +8361,7 @@ function render(){
     _efRenderAdminPendente=true;
     return;
   }
+  document.body.classList.toggle('ef-empresas',!!estado.parceiro?.aberto);
   const app = document.getElementById('app');
   const menuMotoristaAtivo = !!(
     estado.modo==='entregador' && estado.motorista.ativo &&
@@ -8486,7 +8386,7 @@ function render(){
   const _valores = capturarValoresInputs();
   const _motoristasAdminAbertos = capturarMotoristasAdminAbertos();
   if(estado.parceiro && estado.parceiro.aberto){
-    app.innerHTML = telaParceiros();
+    app.innerHTML = telaParceiros() + (estado.modalConfirmar ? modalConfirmarHTML() : '') + (estado.toast ? '<div class="toast" role="status">'+parceiroEsc(estado.toast)+'</div>' : '');
     restaurarFocoAtivo(_foco);
     restaurarValoresInputs(_valores);
     restaurarScroll(_scroll);
@@ -9336,6 +9236,8 @@ async function cadastrarCliente(){
       return;
     }
 
+    const sessaoNova = await sb.rpc('entrega_cliente_login',{p_telefone:confirmado.telefone,p_senha_hash:senhaHash});
+    if(sessaoNova.data?.ok)guardarSessaoEmpresa(sessaoNova.data.token);
     registrarConversaoMetaCadastro('cliente', confirmado.telefone);
     registrarAlertaAdmin('novo_cliente', `Novo cliente cadastrado: ${c.nome} (${c.telefone}).`);
     estado.cliente={nome:confirmado.nome||c.nome,telefone:confirmado.telefone,logado:true,carteira:{saldo:0,carregando:false,adicionando:false,valorInput:'10',pix:{qrCode:null,copiaCola:null,status:'pendente',gerando:false,erro:'',id:null}}};
@@ -9344,6 +9246,7 @@ async function cadastrarCliente(){
     clienteBemVindoAnimando=true; render();
     await carregarPedidos(); await carregarCarteiraCliente(); await carregarMotoristasFavoritos(false); assinarCarteiraClienteRealtime(confirmado.telefone);
     if(estado.notificacoesStatus==='granted') inscreverPushReal(); else if(typeof Notification!=='undefined' && Notification.permission==='default') setTimeout(()=>pedirPermissaoNotificacao(),1200);
+    if(estado.parceiroRetorno)await retomarEmpresaAposLogin();
     setTimeout(()=>{clienteBemVindoAnimando=false;render();},4000);
   }catch(e){
     console.error('Cadastro cliente:',e);
@@ -9407,7 +9310,7 @@ async function loginCliente(){
   pc.loginErro='';
   const senhaHash = await hashSenha(senha);
 
-  const { data: loginRaw, error } = await sb.rpc('entrega_cliente_autenticar', {
+  const { data: loginRaw, error } = await sb.rpc('entrega_cliente_login', {
     p_telefone: telefone,
     p_senha_hash: senhaHash
   });
@@ -9420,7 +9323,7 @@ async function loginCliente(){
     return;
   }
 
-  if(!data){
+  if(!data?.ok){
     pc.loginErro='Telefone ou senha incorretos. Se ainda não tem conta, faça seu cadastro.';
     render();
     return;
@@ -9435,7 +9338,9 @@ async function loginCliente(){
     return;
   }
 
+  guardarSessaoEmpresa(data.token);
   await entrarNoPainelCliente(data);
+  await retomarEmpresaAposLogin();
 }
 
 async function trocarMinhaSenhaCliente(){
@@ -9452,6 +9357,10 @@ async function trocarMinhaSenhaCliente(){
   mostrarToast('Senha trocada com sucesso!', 'sucesso');
 }
 function sairCliente(){
+  const sessaoAnterior=empresaSessao();
+  if(sessaoAnterior)sb.rpc('entrega_cliente_logout',{p_token:sessaoAnterior}).then(()=>{}).catch(()=>{});
+  removerLocal('ef_cliente_sessao');
+  estado.parceiro.empresa=null;estado.parceiro.pedidos=[];estado.parceiroRetorno=false;
   if(pixPollTimer){ clearInterval(pixPollTimer); pixPollTimer=null; }
   encerrarCarteiraClienteRealtime();
   estado.cliente = { nome:'', telefone:'', logado:false, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
@@ -11570,6 +11479,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
 } else {
   aplicarEstadoInicialSincrono();
   inicializarResetSenhaPeloLink();
+  inicializarEmpresas();
   render();
   carregarConfigGeral().then(render);
   registrarServiceWorker();
@@ -11590,6 +11500,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
     estado.viaAnuncio = !!new URLSearchParams(window.location.search).get('ir');
   }catch(e){ estado.viaAnuncio = false; }
   restaurarSessao().then(async ()=>{
+    inicializarEmpresas();
     render();
     // pula a tela de boas-vindas e já abre o cadastro certo (só se não estiver logado)
     try{
