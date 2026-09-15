@@ -20,7 +20,13 @@ function efFecharDetalhe(){
   const p=efPedidoEmFoco();estado.pedidoBuscandoId=null;estado.detalheMenu=false;estado.abaPedidosCliente=p&&['entregue','cancelado'].includes(p.status)?'historico':'ativos';render();
   document.getElementById(p?'pedido-'+p.id:'')?.scrollIntoView({block:'start'});
 }
-function efAlternarMapa(){estado.detalheMapaOculto=!estado.detalheMapaOculto;render();}
+function efAlternarMapa(){
+  estado.detalheMapaOculto=!estado.detalheMapaOculto;render();
+  requestAnimationFrame(()=>{
+    const alvo=estado.detalheMapaOculto?document.querySelector('.ef-motorista-card'):document.getElementById('ef-mapa-painel');
+    alvo?.scrollIntoView({block:'start',behavior:'auto'});
+  });
+}
 function efStatusPedido(p){
   if(p.status==='indo_coletar'&&p.chegadaColetaEm)return 'Motorista no local de retirada';
   return {buscando:'Buscando motorista parceiro',indo_coletar:'Motorista a caminho da retirada',coletado:'Pedido retirado',a_caminho:'Sua entrega está a caminho',entregue:'Entrega concluída',cancelado:'Entrega cancelada',aguardando_pagamento:'Aguardando pagamento'}[p.status]||'Acompanhe sua entrega';
