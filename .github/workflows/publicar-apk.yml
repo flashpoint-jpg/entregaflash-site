@@ -1,0 +1,40 @@
+name: Publicar APK Entrega Flash
+
+permissions:
+  contents: write
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - '.github/workflows/publicar-apk.yml'
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar site
+        uses: actions/checkout@v4
+
+      - name: Baixar APK final gerado
+        run: |
+          curl -L --fail --retry 3 'https://sdmntprbrazilsouth.oaiusercontent.com/files/00000000-63ac-820e-a237-3dbafa576918/raw?se=2026-09-16T10%3A30%3A25Z&sp=r&sv=2026-02-06&sr=b&scid=5baa83e6-1d7d-5144-9d11-ff3ee3913fb6&skoid=fbc53507-c13f-4907-b4dd-0e03c91f5ad8&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-16T08%3A06%3A12Z&ske=2026-09-17T08%3A06%3A12Z&sks=b&skv=2026-02-06&sig=cvgtSg3dX5T5SZxSgVSy4GZ3G/u5x2s/vpIieJrr5HE%3D' -o /tmp/ef-apk.zip
+          rm -rf /tmp/ef-apk
+          mkdir -p /tmp/ef-apk
+          unzip -q /tmp/ef-apk.zip -d /tmp/ef-apk
+          cp /tmp/ef-apk/app-debug.apk EntregaFlash.apk
+          test -s EntregaFlash.apk
+          ls -lh EntregaFlash.apk
+
+      - name: Publicar APK no repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add EntregaFlash.apk
+          if git diff --cached --quiet; then
+            echo "APK ja esta atualizado."
+            exit 0
+          fi
+          git commit -m "Publica APK Entrega Flash 2026091601"
+          git push
