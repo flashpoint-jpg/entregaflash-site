@@ -3144,14 +3144,14 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-// ONLINE REAL = cadastro aprovado + marcou-se disponível + enviou sinal nos últimos 2 minutos.
-// Assim o painel não confunde motorista que ficou marcado como disponível ontem com quem está
-// realmente com o app ativo agora e apto a receber uma chamada.
-const PRESENCA_MOTORISTA_MS = 120000; // 2 min sem heartbeat = offline operacional
+// ONLINE REAL = a mesma regra do despacho: aprovado + disponível + GPS confirmado nos últimos 5 minutos.
+// Isso evita o painel mostrar um número diferente do servidor que realmente distribui as chamadas.
+const PRESENCA_MOTORISTA_MS = 5*60*1000;
 function motoristaOnlineAgora(m, agora=Date.now()){
   if(!m || m.status!=='aprovado' || !m.disponivel) return false;
-  const ultimo = Number(m.disponivel_atualizado_em||0);
-  return ultimo>0 && (agora-ultimo) <= PRESENCA_MOTORISTA_MS;
+  const gpsEm = Number(m.lat_atualizado_em||0);
+  const temPosicao = m.lat_atual!=null && m.lng_atual!=null;
+  return !!(temPosicao && gpsEm>0 && (agora-gpsEm) <= PRESENCA_MOTORISTA_MS);
 }
 async function carregarMotoristasOnline(){
   try{
@@ -3160,7 +3160,7 @@ async function carregarMotoristasOnline(){
       .select('id',{count:'exact',head:true})
       .eq('status','aprovado')
       .eq('disponivel', true)
-      .gte('disponivel_atualizado_em', limite);
+      .gte('lat_atualizado_em', limite);
     if(error){ console.error(error); return; }
     if(count!==estado.motoristasOnline){ estado.motoristasOnline = count||0; if(!estaDigitandoEndereco()) render(); }
   }catch(e){ console.error(e); }
@@ -9684,7 +9684,7 @@ function adminAbaMotoristasHTML(){
   return `${campoBusca}
     <div class="admin-cartao" style="margin-bottom:14px;border:2px solid var(--verde);background:linear-gradient(135deg,rgba(111,207,106,.10),var(--painel))">
       <b style="font-family:'Rajdhani';font-size:17px;text-transform:uppercase">STATUS REAL DOS MOTORISTAS</b>
-      <div class="subtitulo" style="margin-top:4px;margin-bottom:10px">Online só conta quem está aprovado, marcou disponibilidade e enviou sinal ao sistema nos últimos 2 minutos.</div>
+      <div class="subtitulo" style="margin-top:4px;margin-bottom:10px">Online só conta quem está aprovado, marcou disponibilidade e tem GPS confirmado nos últimos 5 minutos.</div>
       <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px">
         <div style="text-align:center;background:var(--painel-alt);border-radius:9px;padding:10px 6px"><b style="display:block;font-size:26px;color:var(--verde)">${onlineLivres.length}</b><span style="font-size:11px">🟢 ONLINE<br>PODE RECEBER</span></div>
         <div style="text-align:center;background:var(--painel-alt);border-radius:9px;padding:10px 6px"><b style="display:block;font-size:26px;color:var(--mango)">${emRota.length}</b><span style="font-size:11px">🟠 EM ROTA<br>ATENDENDO</span></div>
