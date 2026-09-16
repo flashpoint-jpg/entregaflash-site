@@ -36,18 +36,33 @@ function efGpsRecente(p,agora=Date.now()){
   const idade=agora-Number(p.motoristaAtualizadoEm||0);
   return ['indo_coletar','coletado','a_caminho'].includes(p.status)&&efCoordenada(p.motoristaCoord)&&Number(p.motoristaAtualizadoEm)>0&&idade>=-30000&&idade<=180000;
 }
+function efTiposParadas(p){
+  const total=1+(p.paradas||[]).length;
+  if(typeof normalizarTiposParadas==='function')return normalizarTiposParadas(p.paradasTipos,total);
+  const tipos=Array.isArray(p.paradasTipos)?p.paradasTipos:[];
+  return Array.from({length:total},(_,i)=>tipos[i]==='retirada'?'retirada':'entrega');
+}
+function efRotuloParada(p,pos){
+  const tipos=efTiposParadas(p),limite=Math.min(Math.max(0,Number(pos)||0),tipos.length-1);
+  let retiradas=1,entregas=0;
+  for(let i=0;i<=limite;i++){if(tipos[i]==='retirada')retiradas++;else entregas++;}
+  return tipos[limite]==='retirada'?'Retirada '+retiradas:'Entrega '+entregas;
+}
 function efEtapasPedido(p){
-  const destinos=[{endereco:p.destino,coord:p.destinoCoord},...(p.paradas||[]).map((endereco,i)=>({endereco,coord:(p.paradasCoords||[])[i]}))];
+  const tipos=efTiposParadas(p);
+  const destinos=[{endereco:p.destino,coord:p.destinoCoord,tipo:tipos[0],label:efRotuloParada(p,0)},...(p.paradas||[]).map((endereco,i)=>({endereco,coord:(p.paradasCoords||[])[i],tipo:tipos[i+1],label:efRotuloParada(p,i+1)}))];
   const retirado=['coletado','a_caminho','entregue'].includes(p.status),final=p.status==='entregue';
-  return [{endereco:p.origem,coord:p.origemCoord,label:'Retirada',feito:retirado,atual:!retirado&&p.status!=='cancelado'},...destinos.map((d,i)=>({...d,label:destinos.length===1?'Entrega':`Entrega ${i+1}`,feito:final||retirado&&i<Number(p.paradaAtual||0),atual:!final&&retirado&&i===Number(p.paradaAtual||0)}))];
+  return [{endereco:p.origem,coord:p.origemCoord,tipo:'retirada',label:'Retirada 1',feito:retirado,atual:!retirado&&p.status!=='cancelado'},...destinos.map((d,i)=>({...d,feito:final||retirado&&i<Number(p.paradaAtual||0),atual:!final&&retirado&&i===Number(p.paradaAtual||0)}))];
 }
 function efAlvoPedido(p){const e=efEtapasPedido(p);return (p.status==='indo_coletar'?e[0]:e.slice(1)[Number(p.paradaAtual||0)])?.coord||null;}
 function efEstimativaPedido(p){
-  const alvo=efAlvoPedido(p);if(!efGpsRecente(p)||!efCoordenada(alvo))return null;
+  const etapas=efEtapasPedido(p),alvoEtapa=(p.status==='indo_coletar'?etapas[0]:etapas.slice(1)[Number(p.paradaAtual||0)]),alvo=alvoEtapa?.coord;
+  if(!efGpsRecente(p)||!efCoordenada(alvo))return null;
   const rad=x=>x*Math.PI/180,a=p.motoristaCoord;
   const h=Math.sin(rad(alvo.lat-a.lat)/2)**2+Math.cos(rad(a.lat))*Math.cos(rad(alvo.lat))*Math.sin(rad(alvo.lon-a.lon)/2)**2;
   const km=6371*2*Math.atan2(Math.sqrt(h),Math.sqrt(Math.max(0,1-h)));
-  return {min:Math.max(1,Math.round(km/Number(VEICULOS[p.veiculo]?.veloc||25)*60)),label:p.status==='indo_coletar'?'até a retirada':'até a próxima entrega'};
+  const label=p.status==='indo_coletar'?'até a retirada':(alvoEtapa?.tipo==='retirada'?'até a próxima retirada':'até a próxima entrega');
+  return {min:Math.max(1,Math.round(km/Number(VEICULOS[p.veiculo]?.veloc||25)*60)),label};
 }
 function efDataPedido(p){
   const d=new Date(p.horarioAgendado||p.criadoEm);if(!Number.isFinite(d.getTime()))return '';
