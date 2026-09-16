@@ -2273,7 +2273,7 @@ function aguardarPromptInstalacao(timeoutMs){
 console.info('[Entrega Flash] Busca de endereços versão 20260906-ENDERECO-2');
 async function registrarServiceWorker(){
   if(!('serviceWorker' in navigator)) return;
-  const versaoApp = '20260914-CHAMADA-NATIVA-2';
+  const versaoApp = '20260916-CANAL-NATIVO-1';
   try{
     const chaveVersao = 'ef_versao_cache_app';
     const versaoAnterior = localStorage.getItem(chaveVersao);
@@ -2338,7 +2338,10 @@ async function inscreverPushReal(papelForcado){
 }
 
 function entregaFlashInstalado(){
-  return !!(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.startsWith('android-app://'));
+  // O APK atual usa WebView/TWA e nem sempre aparece como display-mode standalone.
+  // O user-agent nativo é a identificação mais confiável para o painel administrativo.
+  const apkNativo = entregaFlashNativoAndroidAtivo() || /EntregaFlashNative\//i.test(navigator.userAgent||'');
+  return !!(apkNativo || window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true || document.referrer.startsWith('android-app://'));
 }
 function entregaFlashDispositivoId(){
   let id=localStorage.getItem('ef_dispositivo_id');
@@ -2355,6 +2358,42 @@ async function registrarStatusAplicativo(papel, referencia, temPush){
     });
   }catch(e){ console.warn('Não foi possível registrar o status do aplicativo',e); }
 }
+
+let efUltimoReparoCanalNotificacao=0;
+async function repararCanalNotificacoesAoAbrir(){
+  const agora=Date.now();
+  if(agora-efUltimoReparoCanalNotificacao<12000) return false;
+  efUltimoReparoCanalNotificacao=agora;
+  try{
+    if(estado.motorista?.ativo && estado.motorista.telefone){
+      const tel=String(estado.motorista.telefone).replace(/\D/g,'');
+      const nativo=entregaFlashNativoAndroidAtivo() || /EntregaFlashNative\//i.test(navigator.userAgent||'');
+      if(nativo){
+        // O APK não usa Web Push: a chamada chega pelo LocationForegroundService,
+        // que consulta pedidos em segundo plano. Apenas registra/renova o status do APK.
+        await registrarStatusAplicativo('motorista',tel,false);
+        return true;
+      }
+      if(typeof Notification!=='undefined' && Notification.permission==='granted'){
+        return await inscreverPushReal('motorista');
+      }
+      await registrarStatusAplicativo('motorista',tel,false);
+      return false;
+    }
+    if(estado.cliente?.logado && estado.cliente.telefone){
+      const tel=String(estado.cliente.telefone).replace(/\D/g,'');
+      if(typeof Notification!=='undefined' && Notification.permission==='granted'){
+        return await inscreverPushReal('cliente');
+      }
+      await registrarStatusAplicativo('cliente',tel,false);
+    }
+  }catch(e){ console.warn('Reparo automático do canal de notificações',e); }
+  return false;
+}
+window.addEventListener('focus',()=>setTimeout(repararCanalNotificacoesAoAbrir,500));
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='visible') setTimeout(repararCanalNotificacoesAoAbrir,500);
+});
 function mostrarLembreteDocumentosDiario(telefone,status){
   if(!['basico','liberado'].includes(status) || !telefone) return;
   const hoje=new Date().toISOString().slice(0,10), chave='ef_lembrete_docs_'+String(telefone).replace(/\D/g,'');
@@ -11529,7 +11568,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
     if(estado.cliente.logado) carregarCarteiraCliente();
     if(estado.motorista.ativo){ carregarSaldoMotorista(); carregarCancelamentosMotorista(); }
     if(estado.admin.logado){ await Promise.all([carregarMotoristasAdmin(), carregarPedidosEntreguesAdmin(), carregarSaquesAdmin()]); await carregarSuporteAdmin(); render(); }
-    if(estado.notificacoesStatus==='granted') inscreverPushReal();
+    await repararCanalNotificacoesAoAbrir();
 
     // Só decide a apresentação DEPOIS de confirmar no banco se a sessão ainda existe.
     // Assim, se o admin excluiu cliente/motorista, o localStorage é limpo antes desta decisão.
