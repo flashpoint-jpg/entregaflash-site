@@ -2315,12 +2315,14 @@ function assinarPedidosRealtime(){
 }
 
 // ---------- motoristas online ----------
-const PRESENCA_MOTORISTA_MS = 180000; // mantido apenas para diagnósticos de sinal/GPS
+const PRESENCA_MOTORISTA_MS = 5*60*1000; // mesma janela usada pelo despacho real do servidor
 function motoristaOnlineAgora(m, agora=Date.now()){
-  // REGRA OFICIAL DO PAINEL: se o motorista está marcado como disponível, aparece online.
-  // Não derruba o contador por GPS, app fechado ou tempo sem heartbeat.
-  // Ele só deixa de aparecer online quando `disponivel` for alterado para false.
-  return !!(m && m.disponivel && STATUS_ACESSO_PAINEL.includes(m.status));
+  // REGRA OPERACIONAL ÚNICA: aprovado + FICAR ONLINE + posição GPS recente.
+  // É a mesma condição usada pelo backend para entregar chamadas ao motorista.
+  if(!m || m.status!=='aprovado' || !m.disponivel) return false;
+  const gpsEm=Number(m.lat_atualizado_em||0);
+  const temPosicao=m.lat_atual!=null && m.lng_atual!=null;
+  return !!(temPosicao && gpsEm>0 && (agora-gpsEm)<=PRESENCA_MOTORISTA_MS);
 }
 function motoristaTemPushAtivoAdmin(m){
   const ref=String(m?.telefone||'').replace(/\D/g,'');
@@ -2330,10 +2332,10 @@ function motoristaTemPushAtivoAdmin(m){
     app.notificacoes==='granted' && !!app.push_ativo
   );
 }
-function motoristaPodeReceberPedido(m){
-  // CONTADOR OPERACIONAL REAL: só entra quem está aprovado, marcado disponível
-  // e tem push ativo no aparelho. GPS/localização não entra nessa conta.
-  return !!(m && m.status==='aprovado' && m.disponivel && motoristaTemPushAtivoAdmin(m));
+function motoristaPodeReceberPedido(m, agora=Date.now()){
+  // PUSH não define mais se o motorista está online: o APK nativo também busca
+  // pedidos em segundo plano. O que vale é o status operacional/GPS recente.
+  return motoristaOnlineAgora(m, agora);
 }
 // Regras únicas de situação do motorista usadas em TODO o painel.
 // Evita o resumo geral mostrar um número e o resumo por cidade mostrar outro.
@@ -4565,7 +4567,7 @@ function animarMarcadorSimples(mk, de, para){
 }
 // ---------- mapa geral do admin: mostra AO VIVO motoristas em corrida, motoristas disponíveis e clientes aguardando ----------
 // idade máxima de uma posição pra ainda ser considerada "ao vivo" (motorista pode ter fechado o app sem sair)
-const POSICAO_MOTORISTA_MAX_IDADE_MS = 6*60*1000; // 6 minutos
+const POSICAO_MOTORISTA_MAX_IDADE_MS = 5*60*1000; // mesma janela operacional: 5 minutos
 function montarMapaAdminGeral(){
   setTimeout(()=>{
     const slot = document.getElementById('admin-mapa-geral');
@@ -7238,11 +7240,11 @@ function resumoAdminHTML(){
   const presenca = estado.presenca||{total:0,clientes:0,motoristas:0};
   return `
   <div class="admin-cartao">
-    <b style="font-family:'Rajdhani';font-weight:700;font-size:14px;text-transform:uppercase">🟢 Online agora</b>
-    <div class="am-linha"><span>Pessoas online agora</span><b style="color:var(--verde)">${presenca.total}</b></div>
+    <b style="font-family:'Rajdhani';font-weight:700;font-size:14px;text-transform:uppercase">📱 App aberto agora</b>
+    <div class="am-linha"><span>Pessoas com o app aberto</span><b style="color:var(--verde)">${presenca.total}</b></div>
     <div class="am-linha"><span>👤 Clientes</span><b>${presenca.clientes}</b></div>
     <div class="am-linha"><span>🛵 Motoristas</span><b>${presenca.motoristas}</b></div>
-    <div class="subtitulo" style="margin-top:6px;margin-bottom:0">Este número conta todo mundo com o app aberto. O mapa mostra só quem tem posição pra marcar: motorista disponível/em corrida e cliente com pedido aberto — por isso pode aparecer menos bolinha no mapa do que gente "online" aqui.</div>
+    <div class="subtitulo" style="margin-top:6px;margin-bottom:0">Este número mostra somente quem está com o app aberto — não significa que o motorista está disponível. Para receber pedido, ele precisa estar aprovado, tocar em FICAR ONLINE e manter o GPS do aplicativo ativo.</div>
   </div>
   <div class="admin-cartao">
     <b style="font-family:'Rajdhani';font-weight:700;font-size:14px;text-transform:uppercase">🛵 Motoristas cadastrados</b>
