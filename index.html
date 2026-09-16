@@ -426,6 +426,14 @@ fbq('track', 'PageView');
   .confirmar-texto{font-size:15.5px;line-height:1.45;color:var(--osso);margin-bottom:18px;}
   .confirmar-botoes{display:flex;gap:10px;}
   .confirmar-botoes .btn{flex:1;margin:0;}
+  /* Confirmações críticas ficam acima da barra fixa do acompanhamento. */
+  .modal-fundo-confirmar{z-index:5000!important;align-items:center!important;padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));}
+  .modal-fundo-confirmar .confirmar-caixa{max-height:calc(100dvh - 48px - env(safe-area-inset-bottom,0px));overflow:auto;}
+  @media(max-width:420px){
+    .modal-fundo-confirmar{padding:14px 12px calc(14px + env(safe-area-inset-bottom,0px));}
+    .modal-fundo-confirmar .confirmar-caixa{width:100%;max-width:380px;padding:20px 16px;}
+    .modal-fundo-confirmar .confirmar-botoes{position:sticky;bottom:0;background:inherit;padding-top:8px;}
+  }
 
   .alerta-motorista{position:fixed;top:14px;left:50%;transform:translateX(-50%);width:calc(100% - 28px);max-width:452px;background:linear-gradient(135deg,var(--mango),var(--chama));color:var(--escuro);border-radius:18px;padding:14px 16px;z-index:400;display:flex;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,0.5);animation:entrarAlerta 0.4s ease-out;cursor:pointer;}
   @keyframes entrarAlerta{0%{transform:translate(-50%,-30px);opacity:0;}100%{transform:translate(-50%,0);opacity:1;}}
@@ -1548,7 +1556,7 @@ body.ef-cliente-visitante .ef-meus-pedidos .aba-mini{margin-bottom:8px}
 <link rel="stylesheet" href="/assets/empresas.css?v=20260915-empresas-1">
 <script src="/assets/empresas.js?v=20260915-empresas-1"></script>
 <link rel="preload" as="style" href="/assets/pedido-visual.css?v=20260915-busca-2">
-<script src="/assets/pedido-visual.js?v=20260916-paradas-tipo-1"></script>
+<script src="/assets/pedido-visual.js?v=20260916-cancelamento-modal-1"></script>
 <script>
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
@@ -3140,11 +3148,11 @@ function responderConfirmar(valor){
 function modalConfirmarHTML(){
   const m = estado.modalConfirmar;
   if(!m) return '';
-  return `<div class="modal-fundo" style="z-index:600" onclick="if(event.target===this) responderConfirmar(false)">
-    <div class="confirmar-caixa">
+  return `<div class="modal-fundo modal-fundo-confirmar" onclick="if(event.target===this) responderConfirmar(false)">
+    <div class="confirmar-caixa" role="dialog" aria-modal="true" aria-label="Confirmar ação">
       <div class="confirmar-texto">${m.mensagem}</div>
       <div class="confirmar-botoes">
-        <button class="btn btn-secundario" onclick="responderConfirmar(false)">Cancelar</button>
+        <button class="btn btn-secundario" onclick="responderConfirmar(false)">Voltar</button>
         <button class="btn btn-primario" onclick="responderConfirmar(true)">${m.tituloBotaoOk}</button>
       </div>
     </div>
