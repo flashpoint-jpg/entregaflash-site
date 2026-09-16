@@ -8903,8 +8903,8 @@ function motoristaCardHTML(m, emRota){
   const aguardandoDocumentos = motoristaAguardandoDocumentosAdmin(m);
   const onlineAgora = motoristaOnlineAgora(m);
   const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
-  const appStatus=app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
-  const pushStatus=app?.notificacoes==='granted'&&app?.push_ativo?'🔔 Notificações ativas':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 Notificações não ativadas';
+  const appStatus=app?.notificacoes==='nativo'?'✅ Aplicativo nativo instalado':app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
+  const pushStatus=app?.notificacoes==='nativo'?'📲 Chamadas pelo serviço nativo do APK':app?.notificacoes==='granted'&&app?.push_ativo?'🔔 PUSH web ativo':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 PUSH web não ativado';
   const ultimoApp=app?.ultimo_acesso?new Date(app.ultimo_acesso).toLocaleString('pt-BR'):'Nunca registrado';
   const statusOperacional = emRota
     ? `<span class="selo selo-andamento" style="display:inline-flex;align-items:center;gap:5px"><span class="ponto-pulsante" style="background:var(--mango)"></span>EM ROTA · ATENDENDO</span>`
