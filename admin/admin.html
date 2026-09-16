@@ -1409,7 +1409,7 @@ async function registrarServiceWorker(){
         await r.unregister();
       }
     }
-    await navigator.serviceWorker.register('./sw-admin.js?v=20260915-online-real-2', { scope:'./' });
+    await navigator.serviceWorker.register('./sw-admin.js?v=20260916-canal-nativo-1', { scope:'./' });
   }catch(e){ console.warn('Service Worker do Admin indisponível', e); }
 }
 async function pedirPermissaoNotificacao(){
@@ -7391,8 +7391,8 @@ function motoristaCardHTML(m, emRota){
   const aguardandoDocumentos = motoristaAguardandoDocumentosAdmin(m);
   const onlineAgora = motoristaPodeReceberPedido(m);
   const app=(estado.admin.appDispositivos||[]).find(x=>String(x.referencia||'').replace(/\D/g,'')===String(m.telefone||'').replace(/\D/g,''));
-  const appStatus=app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
-  const pushStatus=motoristaTemPushAtivoAdmin(m)?'🔔 Notificações ativas':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 Notificações não ativadas';
+  const appStatus=app?.notificacoes==='nativo'?'✅ Aplicativo nativo instalado':app?.instalado?'✅ Aplicativo instalado':app?'🌐 Acessou pelo navegador':'⚠️ Aplicativo ainda não identificado';
+  const pushStatus=app?.notificacoes==='nativo'?'📲 Chamadas pelo serviço nativo do APK':motoristaTemPushAtivoAdmin(m)?'🔔 PUSH web ativo':app?.notificacoes==='denied'?'🔕 Notificações bloqueadas':'🔔 PUSH web não ativado';
   const ultimoApp=app?.ultimo_acesso?new Date(app.ultimo_acesso).toLocaleString('pt-BR'):'Nunca registrado';
   let infoStatus = ROTULO_STATUS_MOTORISTA[m.status] || { texto:m.status, selo:'', cor:'' };
   if(aguardandoDocumentos){
@@ -9978,6 +9978,6 @@ function checarLocalizacaoObrigatoria(){
 iniciarAppReal();
 </script>
 
-<script src="/admin/teste-motoristas-online.js?v=20260915-online-real-2"></script>
+<script src="/admin/teste-motoristas-online.js?v=20260916-canal-nativo-1"></script>
 </body>
 </html>
