@@ -16,10 +16,21 @@
     } catch (_) { return false; }
   }
 
+  function operacionalmenteOnline(m) {
+    try {
+      if (typeof motoristaOnlineAgora === 'function') return !!motoristaOnlineAgora(m);
+      const gpsEm = Number(m?.lat_atualizado_em || 0);
+      const temPosicao = m?.lat_atual != null && m?.lng_atual != null;
+      return !!(m?.status === 'aprovado' && m?.disponivel && temPosicao && gpsEm > 0 && (Date.now() - gpsEm) <= 5 * 60 * 1000);
+    } catch (_) { return false; }
+  }
+
   function aptos() {
     try {
+      // O motorista "online" segue a mesma regra operacional do painel/servidor.
+      // PUSH é exigido aqui apenas porque ESTE botão testa a notificação push.
       return (estado.admin?.motoristas || []).filter(m =>
-        m?.status === 'aprovado' && !!m?.disponivel && appPushAtivo(m.telefone)
+        operacionalmenteOnline(m) && appPushAtivo(m.telefone)
       );
     } catch (_) { return []; }
   }
@@ -56,7 +67,7 @@
     if (executando) return;
     const lista = aptos();
     if (!lista.length) {
-      setStatus('⚠️ Nenhum motorista apto agora. Só entra: aprovado + online + PUSH ativo.', '#ffd166');
+      setStatus('⚠️ Nenhum motorista ONLINE com PUSH ativo agora. O status online é calculado pelo GPS; este botão testa somente a notificação PUSH.', '#ffd166');
       return;
     }
     if (!confirm(`Enviar CHAMADA TESTE para ${lista.length} motorista(s) apto(s)?\n\nNão cria corrida e não mexe em saldo.`)) return;
@@ -102,7 +113,7 @@
     }
 
     executando = false;
-    if (btn) { btn.disabled = false; btn.textContent = '🧪 TESTAR MOTORISTAS ONLINE'; }
+    if (btn) { btn.disabled = false; btn.textContent = '🧪 TESTAR PUSH NOS ONLINE'; }
     setTimeout(atualizarAberturas, 7000);
     setTimeout(atualizarAberturas, 20000);
     setTimeout(atualizarAberturas, 60000);
@@ -114,7 +125,7 @@
     caixa.id = 'ef-caixa-teste-motoristas';
     caixa.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:99999;width:min(360px,calc(100vw - 24px));font-family:inherit;display:none';
     caixa.innerHTML = `
-      <button id="${ID}" type="button" style="width:100%;padding:13px 16px;border:1px solid rgba(255,151,16,.55);border-radius:14px;background:#ff9710;color:#111;font-weight:950;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer">🧪 TESTAR MOTORISTAS ONLINE</button>
+      <button id="${ID}" type="button" style="width:100%;padding:13px 16px;border:1px solid rgba(255,151,16,.55);border-radius:14px;background:#ff9710;color:#111;font-weight:950;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer">🧪 TESTAR PUSH NOS ONLINE</button>
       <div id="${STATUS_ID}" style="display:none;margin-top:7px;padding:10px 12px;border-radius:12px;background:rgba(10,11,13,.96);border:1px solid rgba(255,255,255,.16);font-size:12px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.35)"></div>`;
     document.body.appendChild(caixa);
     document.getElementById(ID)?.addEventListener('click', dispararTeste);
@@ -123,7 +134,7 @@
       caixa.style.display = adminAberto() ? 'block' : 'none';
       const btn = document.getElementById(ID);
       if (btn && !executando && adminAberto()) {
-        btn.textContent = `🧪 TESTAR MOTORISTAS ONLINE (${aptos().length})`;
+        btn.textContent = `🧪 TESTAR PUSH NOS ONLINE (${aptos().length})`;
       }
     }, 1500);
   }
