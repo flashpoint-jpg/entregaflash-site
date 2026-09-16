@@ -1,7 +1,7 @@
-// build: 20260911-LIDER-CIDADE-1
-const CACHE='entrega-flash-admin-v20-20260911-lider-cidade';
-const TESTE_JS='/admin/teste-motoristas-online.js?v=20260911-lider-cidade-1';
-const APP_SHELL=['/admin/admin.html?v=20260911-lider-cidade-1','/admin/index.html?v=20260911-lider-cidade-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
+// build: 20260915-ONLINE-REAL-1
+const CACHE='entrega-flash-admin-v21-20260915-online-real';
+const TESTE_JS='/admin/teste-motoristas-online.js?v=20260915-online-real-1';
+const APP_SHELL=['/admin/admin.html?v=20260915-online-real-1','/admin/index.html?v=20260915-online-real-1','/admin/manifest-admin.json','/admin/icon-admin-192.png','/admin/icon-admin-512.png'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
