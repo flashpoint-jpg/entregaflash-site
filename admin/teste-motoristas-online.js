@@ -1,4 +1,4 @@
-// Entrega Flash Admin — botão de chamada TESTE para motoristas aptos
+// Entrega Flash Admin — verificação dos canais de chamada dos motoristas online
 (() => {
   const ID = 'ef-btn-teste-motoristas-online';
   const STATUS_ID = 'ef-status-teste-motoristas-online';
@@ -7,32 +7,36 @@
 
   function refTel(v) { return String(v || '').replace(/\D/g, ''); }
 
-  function appPushAtivo(tel) {
+  function appInfo(tel) {
     try {
       const ref = refTel(tel);
-      return (estado.admin?.appDispositivos || []).some(a =>
-        refTel(a.referencia) === ref && a.notificacoes === 'granted' && !!a.push_ativo
-      );
-    } catch (_) { return false; }
+      return (estado.admin?.appDispositivos || []).find(a => refTel(a.referencia) === ref) || null;
+    } catch (_) { return null; }
+  }
+
+  function appNativo(tel) {
+    const app = appInfo(tel);
+    return !!(app && app.notificacoes === 'nativo');
+  }
+
+  function appPushAtivo(tel) {
+    const app = appInfo(tel);
+    return !!(app && app.notificacoes === 'granted' && app.push_ativo);
   }
 
   function operacionalmenteOnline(m) {
     try {
       if (typeof motoristaOnlineAgora === 'function') return !!motoristaOnlineAgora(m);
+      if (typeof motoristaPodeReceberPedido === 'function') return !!motoristaPodeReceberPedido(m);
       const gpsEm = Number(m?.lat_atualizado_em || 0);
       const temPosicao = m?.lat_atual != null && m?.lng_atual != null;
       return !!(m?.status === 'aprovado' && m?.disponivel && temPosicao && gpsEm > 0 && (Date.now() - gpsEm) <= 5 * 60 * 1000);
     } catch (_) { return false; }
   }
 
-  function aptos() {
-    try {
-      // O motorista "online" segue a mesma regra operacional do painel/servidor.
-      // PUSH é exigido aqui apenas porque ESTE botão testa a notificação push.
-      return (estado.admin?.motoristas || []).filter(m =>
-        operacionalmenteOnline(m) && appPushAtivo(m.telefone)
-      );
-    } catch (_) { return []; }
+  function online() {
+    try { return (estado.admin?.motoristas || []).filter(operacionalmenteOnline); }
+    catch (_) { return []; }
   }
 
   function adminAberto() {
@@ -59,30 +63,50 @@
       const meus = (data || []).filter(e => ids.has(String(e.id || '')));
       const enviados = meus.filter(e => Number(e.enviados || 0) > 0).length;
       const abertos = meus.filter(e => !!e.aberto_em).length;
-      setStatus(`📨 Chamadas entregues: <b>${enviados}</b> &nbsp; · &nbsp; 📱 App aberto pelo teste: <b>${abertos}</b>`, '#d9f99d');
+      setStatus(`📨 PUSH web entregue: <b>${enviados}</b> &nbsp; · &nbsp; 📱 App aberto pelo teste: <b>${abertos}</b>`, '#d9f99d');
     } catch (_) {}
   }
 
   async function dispararTeste() {
     if (executando) return;
-    const lista = aptos();
-    if (!lista.length) {
-      setStatus('⚠️ Nenhum motorista ONLINE com PUSH ativo agora. O status online é calculado pelo GPS; este botão testa somente a notificação PUSH.', '#ffd166');
+
+    const todos = online();
+    if (!todos.length) {
+      setStatus('⚠️ Nenhum motorista realmente online agora.', '#ffd166');
       return;
     }
-    if (!confirm(`Enviar CHAMADA TESTE para ${lista.length} motorista(s) apto(s)?\n\nNão cria corrida e não mexe em saldo.`)) return;
+
+    const nativos = todos.filter(m => appNativo(m.telefone));
+    const webPush = todos.filter(m => !appNativo(m.telefone) && appPushAtivo(m.telefone));
+    const semCanal = todos.filter(m => !appNativo(m.telefone) && !appPushAtivo(m.telefone));
+
+    // O APK nativo NÃO usa Web Push. O próprio serviço Android consulta pedidos
+    // em segundo plano. GPS/heartbeat recente confirma que esse serviço está vivo.
+    if (!webPush.length) {
+      let html = '';
+      if (nativos.length) {
+        html += `✅ <b>${nativos.length}</b> motorista(s) no APK nativo com serviço de chamada em segundo plano ativo.<br><span style="opacity:.86">O APK não usa assinatura PUSH web; as corridas são buscadas automaticamente pelo serviço nativo.</span>`;
+      }
+      if (semCanal.length) {
+        html += `${html ? '<br><br>' : ''}⚠️ <b>${semCanal.length}</b> motorista(s) online pelo navegador/PWA ainda sem PUSH web ativo. Ao abrir o app, o sistema tenta reparar essa assinatura automaticamente.`;
+      }
+      setStatus(html || '✅ Canal de chamadas verificado.', semCanal.length ? '#ffd166' : '#d9f99d');
+      return;
+    }
+
+    if (!confirm(`Há ${todos.length} motorista(s) online.\n\n${nativos.length} usam chamada nativa do APK.\n${webPush.length} usam PUSH web e receberão uma notificação de teste.\n\nContinuar?`)) return;
 
     executando = true;
     ultimoEventos = [];
     const btn = document.getElementById(ID);
-    if (btn) { btn.disabled = true; btn.textContent = '🧪 ENVIANDO TESTE...'; }
-    setStatus(`Enviando teste para <b>${lista.length}</b> motorista(s)...`);
+    if (btn) { btn.disabled = true; btn.textContent = '🧪 VERIFICANDO...'; }
+    setStatus(`Verificando canais de <b>${todos.length}</b> motorista(s)...`);
 
     let comEntrega = 0;
     let semAssinatura = 0;
     let totalDispositivos = 0;
 
-    for (const m of lista) {
+    for (const m of webPush) {
       const ref = refTel(m.telefone);
       try {
         let r = null;
@@ -91,7 +115,7 @@
             'motorista',
             ref,
             '🧪 TESTE — Entrega Flash',
-            'Esta é apenas uma chamada de teste. Toque para confirmar que recebeu. NÃO é uma corrida real.',
+            'Teste de notificação. Não é uma corrida real.',
             '/?ir=login-motorista',
             'teste_chamada'
           );
@@ -106,17 +130,17 @@
       await new Promise(resolve => setTimeout(resolve, 120));
     }
 
-    if (comEntrega > 0) {
-      setStatus(`✅ Teste concluído: <b>${comEntrega}/${lista.length}</b> motorista(s) receberam pelo servidor (${totalDispositivos} dispositivo(s)).${semAssinatura ? `<br>⚠️ ${semAssinatura} ainda estão sem assinatura PUSH real.` : ''}`, '#d9f99d');
-    } else {
-      setStatus(`⚠️ O painel encontrou ${lista.length} apto(s), mas nenhuma assinatura PUSH real foi encontrada. Peça para eles abrirem o app uma vez após esta atualização; o cadastro PUSH será reparado automaticamente.`, '#ffd166');
-    }
+    const partes = [];
+    if (nativos.length) partes.push(`✅ <b>${nativos.length}</b> APK nativo: serviço de chamada em segundo plano ativo.`);
+    if (comEntrega) partes.push(`✅ PUSH web: <b>${comEntrega}/${webPush.length}</b> motorista(s) receberam pelo servidor (${totalDispositivos} dispositivo(s)).`);
+    if (semAssinatura || semCanal.length) partes.push(`⚠️ <b>${semAssinatura + semCanal.length}</b> navegador/PWA ainda precisa reparar o PUSH web.`);
+
+    setStatus(partes.join('<br>'), (semAssinatura || semCanal.length) ? '#ffd166' : '#d9f99d');
 
     executando = false;
-    if (btn) { btn.disabled = false; btn.textContent = '🧪 TESTAR PUSH NOS ONLINE'; }
+    if (btn) { btn.disabled = false; btn.textContent = '🧪 VERIFICAR CHAMADAS NOS ONLINE'; }
     setTimeout(atualizarAberturas, 7000);
     setTimeout(atualizarAberturas, 20000);
-    setTimeout(atualizarAberturas, 60000);
   }
 
   function instalarUI() {
@@ -125,7 +149,7 @@
     caixa.id = 'ef-caixa-teste-motoristas';
     caixa.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:99999;width:min(360px,calc(100vw - 24px));font-family:inherit;display:none';
     caixa.innerHTML = `
-      <button id="${ID}" type="button" style="width:100%;padding:13px 16px;border:1px solid rgba(255,151,16,.55);border-radius:14px;background:#ff9710;color:#111;font-weight:950;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer">🧪 TESTAR PUSH NOS ONLINE</button>
+      <button id="${ID}" type="button" style="width:100%;padding:13px 16px;border:1px solid rgba(255,151,16,.55);border-radius:14px;background:#ff9710;color:#111;font-weight:950;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer">🧪 VERIFICAR CHAMADAS NOS ONLINE</button>
       <div id="${STATUS_ID}" style="display:none;margin-top:7px;padding:10px 12px;border-radius:12px;background:rgba(10,11,13,.96);border:1px solid rgba(255,255,255,.16);font-size:12px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.35)"></div>`;
     document.body.appendChild(caixa);
     document.getElementById(ID)?.addEventListener('click', dispararTeste);
@@ -134,7 +158,7 @@
       caixa.style.display = adminAberto() ? 'block' : 'none';
       const btn = document.getElementById(ID);
       if (btn && !executando && adminAberto()) {
-        btn.textContent = `🧪 TESTAR PUSH NOS ONLINE (${aptos().length})`;
+        btn.textContent = `🧪 VERIFICAR CHAMADAS NOS ONLINE (${online().length})`;
       }
     }, 1500);
   }
