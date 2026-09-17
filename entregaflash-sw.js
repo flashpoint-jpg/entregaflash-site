@@ -1,6 +1,6 @@
-// build: 20260917-VERSION-LOOP-1
+// build: 20260917-VERSION-LOOP-2
 // Entrega Flash - Service Worker com atualização forçada + reparo de Push + integração Vendaí
-const EF_VERSION = '20260917-VERSION-LOOP-1';
+const EF_VERSION = '20260917-VERSION-LOOP-2';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;
