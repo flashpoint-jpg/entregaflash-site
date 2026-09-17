@@ -45,6 +45,23 @@
       ]
     },
     {
+      "source": "/EntregaFlash.apk",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/vnd.android.package-archive"
+        },
+        {
+          "key": "Content-Disposition",
+          "value": "attachment; filename=Entrega-Flash.apk"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
       "source": "/entregaflash.apk",
       "headers": [
         {
@@ -57,7 +74,25 @@
         },
         {
           "key": "Cache-Control",
-          "value": "no-store, max-age=0"
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/entregaflash-sw.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/push-repair.js",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
         }
       ]
     },
