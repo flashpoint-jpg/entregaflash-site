@@ -11220,7 +11220,20 @@ async function alterarPlanoMotoristaAdmin(id, novoPlano){
   if(!(await confirmarAcao(`Alterar o plano deste motorista para ${novoPlano==='pro'?'Pro':'Free'}?`))) return;
   const { error } = await sb.rpc('entrega_admin_alterar_plano_motorista', { p_senha: estado.admin.senhaDigitada, p_id: id, p_plano: novoPlano });
   if(error){ console.error(error); mostrarToast(error.message==='senha_invalida' ? 'Sessão de admin expirada. Sai e entra de novo.' : 'Erro ao alterar o plano: '+(error.message||''), 'erro'); return; }
-  mostrarToast('Plano alterado!', 'sucesso');
+
+  // Confirma no banco antes de informar sucesso. Evita o painel dizer "Plano alterado"
+  // quando uma versão antiga, sessão expirada ou qualquer falha de persistência mantiver o plano anterior.
+  const { data: confirmado, error: erroConfirmacao } = await sb.from('entrega_motoristas').select('plano').eq('id', id).maybeSingle();
+  if(erroConfirmacao || !confirmado || confirmado.plano!==novoPlano){
+    console.error('Plano não confirmado após RPC', {id, novoPlano, confirmado, erroConfirmacao});
+    mostrarToast('O banco não confirmou a alteração do plano. Atualize o painel e tente novamente.', 'erro');
+    await carregarMotoristasAdmin();
+    return;
+  }
+
+  const local=(estado.admin.motoristas||[]).find(m=>String(m.id)===String(id));
+  if(local) local.plano=novoPlano;
+  mostrarToast('Plano alterado e confirmado!', 'sucesso');
   await carregarMotoristasAdmin();
 }
 async function solicitarSaque(){
