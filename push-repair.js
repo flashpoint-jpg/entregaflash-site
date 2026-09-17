@@ -5,36 +5,59 @@
   let executando = false;
   let ultimoAlvo = '';
 
-  // HOTFIX 17/09/2026 — evita loop de atualização no APK nativo.
-  // A regra principal continua intacta para versões conhecidas: se o APK informou
-  // um versionCode antigo, a atualização continua obrigatória. O fallback abaixo
-  // só libera quando o app é reconhecido pelo user-agent nativo oficial, mas por
-  // alguma falha de handshake a página recebeu versionCode 0/não informado.
+  // HOTFIX 17/09/2026 — usa como fonte de verdade a versão exposta pelo APK
+  // no user-agent oficial (EntregaFlashNative/<versionCode>). Isso evita que uma
+  // versão antiga persistida no localStorage provoque atualização em loop.
+  function sincronizarVersaoNativaPeloUA() {
+    try {
+      const ua = String(navigator.userAgent || '');
+      const m = ua.match(/EntregaFlashNative\/(\d+)/i);
+      if (!m) return 0;
+      const codigo = Number(m[1] || 0) || 0;
+      if (codigo <= 0) return 0;
+      localStorage.setItem('ef_native_android_bg_v1', '1');
+      localStorage.setItem('ef_native_app_version_v1', String(codigo));
+      return codigo;
+    } catch (_) {
+      return 0;
+    }
+  }
+
   function corrigirLoopAtualizacaoNativa() {
     try {
       const ua = String(navigator.userAgent || '');
       const apkOficial = /EntregaFlashNative\//i.test(ua);
+      if (!apkOficial) return false;
+
+      // Primeiro corrige qualquer versão antiga que tenha ficado presa no navegador.
+      const versaoUA = sincronizarVersaoNativaPeloUA();
       const marcadoNativo = typeof entregaFlashNativoAndroidAtivo === 'function'
-        && entregaFlashNativoAndroidAtivo();
-      if (!apkOficial || !marcadoNativo) return false;
+        ? entregaFlashNativoAndroidAtivo()
+        : true;
+      if (!marcadoNativo) return false;
       if (typeof versaoCodigoApkNativo !== 'function') return false;
 
       const instalada = Number(versaoCodigoApkNativo() || 0) || 0;
-      if (instalada > 0) return false; // versão conhecida: mantém a comparação normal.
+      // Quando o UA trouxe uma versão real, a regra original pode comparar normalmente.
+      if (versaoUA > 0 && instalada > 0) return true;
 
+      // Fallback somente para APK oficial cujo versionCode não chegou por nenhum meio.
       const original = window.exigirAtualizacaoApkAntesDeFicarOnline;
       if (typeof original !== 'function' || original.__efAntiLoop) return false;
 
       const corrigida = async function(...args) {
         try {
-          const atual = Number(typeof versaoCodigoApkNativo === 'function' ? versaoCodigoApkNativo() : 0) || 0;
-          // Se depois o APK informar uma versão real, volta imediatamente à regra original.
-          if (atual > 0) return await original.apply(this, args);
           const uaAgora = String(navigator.userAgent || '');
+          const versaoAgoraUA = sincronizarVersaoNativaPeloUA();
+          const atual = Number(typeof versaoCodigoApkNativo === 'function' ? versaoCodigoApkNativo() : 0) || 0;
+
+          // Se a versão real foi recuperada do UA/localStorage, volta à regra oficial.
+          if (versaoAgoraUA > 0 || atual > 0) return await original.apply(this, args);
+
           const nativoAgora = /EntregaFlashNative\//i.test(uaAgora)
             && (typeof entregaFlashNativoAndroidAtivo !== 'function' || entregaFlashNativoAndroidAtivo());
           if (nativoAgora) {
-            console.info('[Entrega Flash] versão nativa não informada; fallback anti-loop aplicado.');
+            console.info('[Entrega Flash] APK oficial sem versionCode; fallback anti-loop aplicado.');
             return true;
           }
         } catch (_) {}
@@ -102,24 +125,30 @@
     }
   }
 
+  sincronizarVersaoNativaPeloUA();
   corrigirLoopAtualizacaoNativa();
   window.entregaFlashRepararPush = garantirPush;
   window.entregaFlashCorrigirLoopAtualizacao = corrigirLoopAtualizacaoNativa;
+  window.entregaFlashSincronizarVersaoNativa = sincronizarVersaoNativaPeloUA;
   window.addEventListener('load', () => {
+    sincronizarVersaoNativaPeloUA();
     corrigirLoopAtualizacaoNativa();
     setTimeout(garantirPush, 1200);
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
+      sincronizarVersaoNativaPeloUA();
       corrigirLoopAtualizacaoNativa();
       setTimeout(garantirPush, 350);
     }
   });
   setTimeout(() => {
+    sincronizarVersaoNativaPeloUA();
     corrigirLoopAtualizacaoNativa();
     garantirPush();
-  }, 3500);
+  }, 1200);
   setInterval(() => {
+    sincronizarVersaoNativaPeloUA();
     corrigirLoopAtualizacaoNativa();
     const a = alvoAtual();
     const chave = a ? `${a.papel}:${a.referencia}` : '';
