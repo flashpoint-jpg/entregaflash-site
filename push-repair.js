@@ -5,6 +5,49 @@
   let executando = false;
   let ultimoAlvo = '';
 
+  // HOTFIX 17/09/2026 — evita loop de atualização no APK nativo.
+  // A regra principal continua intacta para versões conhecidas: se o APK informou
+  // um versionCode antigo, a atualização continua obrigatória. O fallback abaixo
+  // só libera quando o app é reconhecido pelo user-agent nativo oficial, mas por
+  // alguma falha de handshake a página recebeu versionCode 0/não informado.
+  function corrigirLoopAtualizacaoNativa() {
+    try {
+      const ua = String(navigator.userAgent || '');
+      const apkOficial = /EntregaFlashNative\//i.test(ua);
+      const marcadoNativo = typeof entregaFlashNativoAndroidAtivo === 'function'
+        && entregaFlashNativoAndroidAtivo();
+      if (!apkOficial || !marcadoNativo) return false;
+      if (typeof versaoCodigoApkNativo !== 'function') return false;
+
+      const instalada = Number(versaoCodigoApkNativo() || 0) || 0;
+      if (instalada > 0) return false; // versão conhecida: mantém a comparação normal.
+
+      const original = window.exigirAtualizacaoApkAntesDeFicarOnline;
+      if (typeof original !== 'function' || original.__efAntiLoop) return false;
+
+      const corrigida = async function(...args) {
+        try {
+          const atual = Number(typeof versaoCodigoApkNativo === 'function' ? versaoCodigoApkNativo() : 0) || 0;
+          // Se depois o APK informar uma versão real, volta imediatamente à regra original.
+          if (atual > 0) return await original.apply(this, args);
+          const uaAgora = String(navigator.userAgent || '');
+          const nativoAgora = /EntregaFlashNative\//i.test(uaAgora)
+            && (typeof entregaFlashNativoAndroidAtivo !== 'function' || entregaFlashNativoAndroidAtivo());
+          if (nativoAgora) {
+            console.info('[Entrega Flash] versão nativa não informada; fallback anti-loop aplicado.');
+            return true;
+          }
+        } catch (_) {}
+        return await original.apply(this, args);
+      };
+      corrigida.__efAntiLoop = true;
+      window.exigirAtualizacaoApkAntesDeFicarOnline = corrigida;
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   function alvoAtual() {
     try {
       if (typeof estado === 'undefined') return null;
@@ -59,13 +102,25 @@
     }
   }
 
+  corrigirLoopAtualizacaoNativa();
   window.entregaFlashRepararPush = garantirPush;
-  window.addEventListener('load', () => setTimeout(garantirPush, 1200));
-  document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) setTimeout(garantirPush, 350);
+  window.entregaFlashCorrigirLoopAtualizacao = corrigirLoopAtualizacaoNativa;
+  window.addEventListener('load', () => {
+    corrigirLoopAtualizacaoNativa();
+    setTimeout(garantirPush, 1200);
   });
-  setTimeout(garantirPush, 3500);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      corrigirLoopAtualizacaoNativa();
+      setTimeout(garantirPush, 350);
+    }
+  });
+  setTimeout(() => {
+    corrigirLoopAtualizacaoNativa();
+    garantirPush();
+  }, 3500);
   setInterval(() => {
+    corrigirLoopAtualizacaoNativa();
     const a = alvoAtual();
     const chave = a ? `${a.papel}:${a.referencia}` : '';
     if (chave && (chave !== ultimoAlvo || !document.hidden)) garantirPush();
