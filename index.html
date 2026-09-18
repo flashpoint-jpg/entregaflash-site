@@ -309,7 +309,7 @@ fbq('track', 'PageView');
   .veiculo-escolha-destaque .veiculos button .emoji{font-size:19px;margin-bottom:5px;}
   @media(max-width:420px){.veiculo-escolha-destaque{margin-left:-4px;margin-right:-4px;padding:11px 8px}.veiculo-escolha-destaque .veiculos{gap:4px}.veiculo-escolha-destaque .veiculos button{font-size:11.5px;padding:9px 1px 8px}}
   .sugestoes:not(:empty){border:1px solid var(--linha);border-radius:14px;overflow:hidden;margin-top:6px;}
-  .sugestao-item{padding:10px 12px;font-size:14.5px;background:var(--painel-alt);cursor:pointer;border-bottom:1px solid var(--linha);}
+  .sugestao-item{padding:12px 14px;font-size:14.5px;background:var(--painel-alt);cursor:pointer;border-bottom:1px solid var(--linha);display:flex;gap:11px;align-items:flex-start}.sugestao-pin{flex:0 0 22px;font-size:18px;line-height:1.25;color:var(--mango)}.sugestao-texto{min-width:0}.sugestao-texto b{display:block;color:var(--osso);font-size:15px;line-height:1.25}.sugestao-texto small{display:block;color:var(--poeira);font-size:12.5px;line-height:1.35;margin-top:3px;white-space:normal}
   .sugestao-item:last-child{border-bottom:none;}
   .sugestao-item:hover, .sugestao-item:active{background:var(--linha);}
   .sugestao-vazia{padding:10px 12px;font-size:13px;color:var(--poeira);background:var(--painel-alt);}
@@ -3014,6 +3014,11 @@ async function usarLocalizacaoAtualComoCampo(campo){
     { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
   );
 }
+function htmlSugestaoEndereco(x,idx,campo){
+  const nome=String(x?.nome||'').trim(), partes=nome.split(',').map(v=>v.trim()).filter(Boolean), titulo=partes.slice(0,2).join(', ')||nome, detalhe=partes.slice(2).join(', ');
+  const seguro=t=>String(t||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  return '<div class="sugestao-item" onclick="selecionarSugestao(\''+campo+'\','+idx+')"><span class="sugestao-pin">●</span><span class="sugestao-texto"><b>'+seguro(titulo)+'</b>'+(detalhe?'<small>'+seguro(detalhe)+'</small>':'')+'</span></div>';
+}
 async function buscarSugestoes(campo){
   const inputEl = document.getElementById('c-'+campo);
   const cont = document.getElementById('sugestoes-'+campo);
@@ -3021,7 +3026,7 @@ async function buscarSugestoes(campo){
   const texto = inputEl.value.trim();
   // Antes exigia 3 letras pra começar a buscar — muita gente reclamava que tinha que digitar
   // quase o endereço inteiro antes de aparecer alguma sugestão. Agora já começa na primeira letra e também aceita voz.
-  if(texto.length<1){ const recentes=lerEnderecosRecentes(); estado.sugestoesTemp[campo]=recentes; cont.innerHTML=recentes.length?'<div class="sugestao-vazia"><b>Endereços usados recentemente</b></div>'+recentes.map((x,i)=>'<div class="sugestao-item" onclick="selecionarSugestao(\''+campo+'\','+i+')">📍 '+x.nome+'</div>').join(''):''; return; }
+  if(texto.length<1){ const recentes=lerEnderecosRecentes(); estado.sugestoesTemp[campo]=recentes; cont.innerHTML=recentes.length?'<div class="sugestao-vazia"><b>Endereços usados recentemente</b></div>'+recentes.map((x,i)=>htmlSugestaoEndereco(x,i,campo)).join(''):''; return; }
   cont.innerHTML = `<div class="sugestao-vazia">Buscando endereços...</div>`;
   try{
     const recentes=lerEnderecosRecentes().filter(x=>normalizarTexto(x.nome).includes(normalizarTexto(texto))).slice(0,3);
@@ -3031,9 +3036,7 @@ async function buscarSugestoes(campo){
     if(document.getElementById('c-'+campo).value.trim() !== texto) return;
     if(!achados || achados.length===0){ cont.innerHTML = `<div class="sugestao-vazia">Não achei sugestões prontas pra "${texto}". Se souber o CEP, digitar só ele costuma achar até ruas que o nome não encontra. Ou pode continuar digitando o endereço completo normalmente, ou:<button type="button" class="btn-gps-sugestao" onclick="usarLocalizacaoAtualComoCampo('${campo}')"> Usar localização atual (GPS)</button></div>`; return; }
     estado.sugestoesTemp[campo] = achados;
-    cont.innerHTML = estado.sugestoesTemp[campo].map((s,idx)=>
-      `<div class="sugestao-item" onclick="selecionarSugestao('${campo}',${idx})"> ${s.nome}</div>`
-    ).join('');
+    cont.innerHTML = estado.sugestoesTemp[campo].map((s,idx)=>htmlSugestaoEndereco(s,idx,campo)).join('');
   }catch(e){ console.error(e); cont.innerHTML = `<div class="sugestao-vazia">Não consegui buscar agora. Continua digitando o endereço completo ou tenta de novo em instantes.</div>`; }
 }
 // ---------- preenchimento por voz (endereços e outros campos) ----------
