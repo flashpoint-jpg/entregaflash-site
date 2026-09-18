@@ -11644,7 +11644,17 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
     // pula a tela de boas-vindas e já abre o cadastro certo (só se não estiver logado)
     try{
       const destinoAnuncio = new URLSearchParams(window.location.search).get('ir');
-      if(destinoAnuncio && !estado.cliente.logado && !estado.motorista.ativo){
+      if(destinoAnuncio === 'pedido-cliente'){
+        if(estado.cliente.logado){
+          estado.telaBoasVindas=false;
+          estado.modo='cliente';
+          salvarLocal('ef_modo','cliente');
+          render();
+        }else{
+          entrarComoVisitante('cliente');
+        }
+      }
+      else if(destinoAnuncio && !estado.cliente.logado && !estado.motorista.ativo){
         if(destinoAnuncio === 'cadastro-cliente'){ escolherBoasVindas('cliente'); }
         else if(destinoAnuncio === 'cadastro-motorista'){ escolherBoasVindas('entregador'); }
         else if(destinoAnuncio === 'login-cliente'){ entrarBoasVindas('cliente'); }
