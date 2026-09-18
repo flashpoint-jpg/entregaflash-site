@@ -2977,6 +2977,22 @@ function ganhoMotorista(preco, pedido=null){
   return Math.round(Number(preco||0)*(1-taxa)*100)/100;
 }
 
+// Endereços recentes do cliente: reaproveita origem/destino dos pedidos concluídos ou enviados neste aparelho.
+const CHAVE_ENDERECOS_RECENTES='ef_enderecos_recentes_v1';
+function lerEnderecosRecentes(){
+  try{return (JSON.parse(localStorage.getItem(CHAVE_ENDERECOS_RECENTES)||'[]')||[]).filter(x=>x&&x.nome&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lon))).slice(0,8)}catch(e){return[]}
+}
+function guardarEnderecoRecente(nome,coord){
+  if(!nome||!coord||!Number.isFinite(Number(coord.lat))||!Number.isFinite(Number(coord.lon)))return;
+  const chave=normalizarTexto(nome), lista=lerEnderecosRecentes().filter(x=>normalizarTexto(x.nome)!==chave);
+  lista.unshift({nome:String(nome).trim(),lat:Number(coord.lat),lon:Number(coord.lon),cidade:'',recente:true,salvoEm:Date.now()});
+  try{localStorage.setItem(CHAVE_ENDERECOS_RECENTES,JSON.stringify(lista.slice(0,8)))}catch(e){}
+}
+function guardarEnderecosDoFormulario(){
+  const f=estado.form||{};guardarEnderecoRecente(f.origem,f.origemCoord);guardarEnderecoRecente(f.destino,f.destinoCoord);
+  (f.paradas||[]).forEach((nome,i)=>guardarEnderecoRecente(nome,(f.paradasCoords||[])[i]));
+}
+
 // ---------- preenchimento automático de endereço ----------
 async function usarLocalizacaoAtualComoCampo(campo){
   if(!navigator.geolocation){ mostrarToast('Seu navegador não suporta localização por GPS.', 'erro'); return; }
@@ -3005,10 +3021,12 @@ async function buscarSugestoes(campo){
   const texto = inputEl.value.trim();
   // Antes exigia 3 letras pra começar a buscar — muita gente reclamava que tinha que digitar
   // quase o endereço inteiro antes de aparecer alguma sugestão. Agora já começa na primeira letra e também aceita voz.
-  if(texto.length<1){ cont.innerHTML=''; estado.sugestoesTemp[campo]=[]; return; }
+  if(texto.length<1){ const recentes=lerEnderecosRecentes(); estado.sugestoesTemp[campo]=recentes; cont.innerHTML=recentes.length?'<div class="sugestao-vazia"><b>Endereços usados recentemente</b></div>'+recentes.map((x,i)=>'<div class="sugestao-item" onclick="selecionarSugestao(\''+campo+'\','+i+')">📍 '+x.nome+'</div>').join(''):''; return; }
   cont.innerHTML = `<div class="sugestao-vazia">Buscando endereços...</div>`;
   try{
-    const achados = await buscarEnderecos(texto, 6);
+    const recentes=lerEnderecosRecentes().filter(x=>normalizarTexto(x.nome).includes(normalizarTexto(texto))).slice(0,3);
+    const remotos = await buscarEnderecos(texto, 8);
+    const achados=[...recentes,...remotos].filter((x,i,a)=>a.findIndex(y=>normalizarTexto(y.nome)===normalizarTexto(x.nome))===i).slice(0,8);
     // o campo pode ter mudado enquanto a busca corria - confere se ainda é o texto atual
     if(document.getElementById('c-'+campo).value.trim() !== texto) return;
     if(!achados || achados.length===0){ cont.innerHTML = `<div class="sugestao-vazia">Não achei sugestões prontas pra "${texto}". Se souber o CEP, digitar só ele costuma achar até ruas que o nome não encontra. Ou pode continuar digitando o endereço completo normalmente, ou:<button type="button" class="btn-gps-sugestao" onclick="usarLocalizacaoAtualComoCampo('${campo}')"> Usar localização atual (GPS)</button></div>`; return; }
@@ -5116,6 +5134,7 @@ async function criarPedido(){
     return;
   }
 
+  guardarEnderecosDoFormulario();
   registrarConversaoMetaPedido('PedidoIniciado', { preco, veiculo:f.veiculo });
 
   // ---- cria primeiro como aguardando pagamento e só então o banco debita + libera em UMA transação ----
