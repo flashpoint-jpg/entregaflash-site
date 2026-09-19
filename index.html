@@ -407,6 +407,16 @@ fbq('track', 'PageView');
 
   .rodape-motorista{background:var(--painel);border:1px solid var(--linha);border-radius:18px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
 
+  /* suporte admin: cards legíveis, sem controles flutuando por cima */
+  .ef-suporte-card{cursor:pointer;overflow:hidden;position:relative;padding:15px!important;min-width:0;}
+  .ef-suporte-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;min-width:0;}
+  .ef-suporte-identidade{min-width:0;flex:1;}
+  .ef-suporte-identidade>b{display:block;white-space:normal;overflow-wrap:anywhere;font-size:15.5px;line-height:1.25;}
+  .ef-suporte-identidade>span{display:inline-flex;margin-top:6px;padding:5px 8px;border-radius:999px;background:rgba(255,201,60,.10);border:1px solid rgba(255,201,60,.28);color:var(--mango);font-size:11.5px;font-weight:800;}
+  .ef-suporte-previa{margin-top:9px;padding-top:9px;border-top:1px solid var(--linha);font-size:12.5px;line-height:1.4;color:var(--poeira);overflow-wrap:anywhere;}
+  .ef-suporte-novas{display:inline-block;margin-top:9px;padding:5px 8px;border-radius:999px;background:rgba(255,201,60,.15);color:var(--mango);font-size:11.5px;font-weight:900;}
+  @media(max-width:420px){.ef-suporte-topo{align-items:flex-start}.ef-suporte-card .selo{flex-shrink:0}.admin-grade-cartoes{grid-template-columns:minmax(0,1fr)!important}}
+
   .toast{position:fixed;bottom:calc(22px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:rgba(41,51,122,0.95);backdrop-filter:blur(10px);border:1px solid var(--mango);color:var(--osso);padding:13px 20px;border-radius:16px;font-size:15px;font-weight:600;z-index:500;max-width:88%;text-align:center;box-shadow:var(--sombra-flutuante);display:flex;align-items:center;gap:10px;justify-content:center;animation:toast-entrar 0.22s ease-out;}
   @keyframes toast-entrar{0%{transform:translate(-50%,14px);opacity:0;}100%{transform:translate(-50%,0);opacity:1;}}
   .toast-sucesso{border-color:var(--verde);}
@@ -4394,7 +4404,7 @@ async function enviarContatoRapido(){
       cr.enviando=false; cr.aberto=false;
       if(tipo==='motorista'){ estado.painelMotorista.cadastro.telefone=telefone; if(nome) estado.painelMotorista.cadastro.nome=nome; }
       else { estado.painelCliente.cadastro.telefone=telefone; if(nome) estado.painelCliente.cadastro.nome=nome; }
-      mostrarToast('Pedido recebido. O suporte vai enviar um link seguro para redefinir sua senha.','sucesso');
+      mostrarToast('Pedido de redefinição recebido. Não envie outro chamado: acompanhe este pedido pelo suporte.','sucesso');
       await abrirSuporte(telefone,nome||'');
       return;
     }catch(e){
@@ -4430,7 +4440,7 @@ function contatoRapidoModalHTML(){
     <div class="modal-chat" style="max-height:none">
       <div class="chat-topo"><h3>${ehEsqueciSenha ? 'Esqueci minha senha' : (cr.contexto==='parceria' ? 'Parcerias comerciais' : 'Falar antes de se cadastrar')}</h3><button class="chat-fechar" onclick="fecharContatoRapido()">&times;</button></div>
       <div style="padding:16px">
-        <div style="font-size:14px;color:var(--poeira);margin-bottom:14px">${ehEsqueciSenha ? 'Informe o telefone da sua conta. O suporte vai gerar um link seguro para você criar uma nova senha. Seu nome é opcional.' : (cr.contexto==='parceria' ? 'Informe seu nome e telefone. Nossa equipe entra em contato para entender a parceria.' : 'Deixa seu nome e telefone que a nossa equipe te chama.')}</div>
+        <div style="font-size:14px;color:var(--poeira);margin-bottom:14px">${ehEsqueciSenha ? 'Informe o telefone da sua conta uma única vez. O suporte vai gerar um link seguro para você criar uma nova senha; não é necessário abrir vários chamados. Seu nome é opcional.' : (cr.contexto==='parceria' ? 'Informe seu nome e telefone. Nossa equipe entra em contato para entender a parceria.' : 'Deixa seu nome e telefone que a nossa equipe te chama.')}</div>
         <label>${ehEsqueciSenha?'Seu nome (opcional)':'O seu nome'}</label>
         <input type="text" id="cr-nome" value="${cr.nome}" placeholder="Ex: Ana Souza">
         <label>Telefone da conta</label>
@@ -4615,7 +4625,7 @@ async function carregarSuporteAdmin(){
   const statusMap = {}; (status||[]).forEach(s=>{ statusMap[s.motorista_telefone]=s.status; }); // ordenado por data: se houver linha duplicada antiga no banco, a mais recente sempre vence
   const porTelefone = {};
   filtrarMensagensSuporteDuplicadas(msgs||[]).forEach(m=>{
-    if(!porTelefone[m.motorista_telefone]) porTelefone[m.motorista_telefone] = { telefone:m.motorista_telefone, nome:m.motorista_nome, ultimaEm:m.criado_em, naoLidas:0 };
+    if(!porTelefone[m.motorista_telefone]) porTelefone[m.motorista_telefone] = { telefone:m.motorista_telefone, nome:m.motorista_nome, ultimaEm:m.criado_em, ultimaMensagem:String(m.texto||''), naoLidas:0 };
     if(m.remetente_tipo==='motorista' && !m.lido) porTelefone[m.motorista_telefone].naoLidas++;
   });
   const planoPorTelefone = {};
@@ -4696,15 +4706,27 @@ function renderSuporteAdminChat(){
       }).join('');
   caixa.scrollTop = caixa.scrollHeight;
 }
+function categoriaSuporteConversa(c){
+  const txt=String(c?.ultimaMensagem||'').toLowerCase();
+  if(/senha|acesso|login|entrar|redefin/.test(txt)) return {rotulo:'Acesso / senha', icone:'🔑'};
+  if(/pix|pagamento|saldo|saque|cobran/.test(txt)) return {rotulo:'Pagamento', icone:'💳'};
+  if(/pedido|corrida|entrega|cancel/.test(txt)) return {rotulo:'Pedido / entrega', icone:'📦'};
+  if(/document|cnh|crlv|cadastro|aprova/.test(txt)) return {rotulo:'Cadastro / documentos', icone:'📄'};
+  if(/online|gps|localiza|mapa/.test(txt)) return {rotulo:'Online / GPS', icone:'📍'};
+  return {rotulo:'Suporte geral', icone:'💬'};
+}
 function suporteConversaCardHTML(c){
+  const cat=categoriaSuporteConversa(c);
+  const previa=String(c.ultimaMensagem||'').trim();
   return `
-  <div class="admin-cartao" style="cursor:pointer" onclick="abrirSuporteAdmin('${c.telefone}')">
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <b>${c.plano==='pro'?' ':''}${c.nome||c.telefone}</b>
+  <div class="admin-cartao ef-suporte-card" onclick="abrirSuporteAdmin('${c.telefone}','${String(c.nome||'').replace(/'/g,"\\'")}')">
+    <div class="ef-suporte-topo">
+      <div class="ef-suporte-identidade"><b>${c.plano==='pro'?'⭐ ':''}${c.nome||c.telefone}</b><span>${cat.icone} ${cat.rotulo}</span></div>
       <span class="selo ${c.status==='resolvido'?'selo-entregue':'selo-andamento'}">${c.status}</span>
     </div>
     <div class="am-linha"><span>Telefone</span><b>${c.telefone}</b></div>
-    ${c.naoLidas>0 ? `<div class="am-linha"><span>Novas mensagens</span><b> ${c.naoLidas}</b></div>` : ''}
+    ${previa?`<div class="ef-suporte-previa">${formatarMensagemSuporteSegura(previa.length>105?previa.slice(0,105)+'…':previa)}</div>`:''}
+    ${c.naoLidas>0 ? `<div class="ef-suporte-novas">${c.naoLidas} nova${c.naoLidas===1?'':'s'} mensagem${c.naoLidas===1?'':'s'}</div>` : ''}
   </div>`;
 }
 
