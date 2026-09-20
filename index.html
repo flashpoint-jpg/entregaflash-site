@@ -2654,11 +2654,14 @@ function aplicarEstadoInicialSincrono(){
   restaurarRascunhosCadastro();
   restaurarPedidoAguardandoSaldo();
 }
+// Colunas lidas das tabelas (a senha nunca é lida pelo navegador).
+const COLUNAS_MOTORISTA='id,nome,cpf,telefone,cidade,veiculo_tipo,veiculo_marca,veiculo_placa,veiculo_cor,cnh_url,crlv_url,foto_veiculo_url,chave_pix,taxa_valor,taxa_status,taxa_txid,taxa_qr_code,taxa_copia_cola,taxa_pago_em,termos_aceitos,status,motivo_reprovacao,criado_em,atualizado_em,plano,foto_motorista_url,nota_media,total_avaliacoes,disponivel,disponivel_atualizado_em,chave_pix_tipo,foto_veiculo_tras_url,aceita_responsabilidade_bike,email,data_nascimento,lat_atual,lng_atual,lat_atualizado_em,raio_atendimento_km,face_descriptor,facial_ativa,facial_cadastrada_em,fundador_ativo,fundador_limite,fundador_inicio,documentos_enviados_em,documentos_reprovados';
+const COLUNAS_CLIENTE='telefone,nome,criado_em,atualizado_em,observacao_admin,bloqueado,face_descriptor,facial_ativa,facial_cadastrada_em';
 async function restaurarSessao(){
   try{
     const clienteTel = localStorage.getItem('ef_cliente_telefone');
     if(clienteTel){
-      const { data } = await sb.from('entrega_clientes').select('*').eq('telefone', clienteTel).maybeSingle();
+      const { data } = await sb.from('entrega_clientes').select(COLUNAS_CLIENTE).eq('telefone', clienteTel).maybeSingle();
       if(data && !data.bloqueado){
         estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
         estado.filtroTelefoneCliente = data.telefone;
@@ -2669,7 +2672,7 @@ async function restaurarSessao(){
 
     const motoristaTel = localStorage.getItem('ef_motorista_telefone');
     if(motoristaTel){
-      const { data } = await sb.from('entrega_motoristas').select('*').eq('telefone', motoristaTel).maybeSingle();
+      const { data } = await sb.from('entrega_motoristas').select(COLUNAS_MOTORISTA).eq('telefone', motoristaTel).maybeSingle();
       if(data && ['basico','liberado','pendente'].includes(data.status) && !cadastroTemDocumentosCompletos(data)){
         // CORREÇÃO CRÍTICA: cadastros antigos que foram marcados como pendentes antes de
         // enviar tudo não podem cair em “aguardando análise”. Ao reabrir o app, retomam
@@ -9604,6 +9607,8 @@ async function loginFacialMotorista(){
   if(data.status==='bloqueado'){ pm.loginErro='O seu cadastro está bloqueado. Fala com o suporte para mais informações.'; render(); return; }
   if(data.status==='liberado'){ registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted'); mostrarLembreteDocumentosDiario(data.telefone,data.status); pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   if(data.status==='reprovado'){
+    // O reenvio de documentos exige a senha: no login facial ela não está disponível.
+    if(!data.senha_hash){ pm.loginErro='Seu cadastro precisa de ajustes. Entre com a sua senha para reenviar os documentos.'; render(); return; }
     pm.tela='reprovado'; pm.motivoReprovacao=data.motivo_reprovacao||'Não foi indicado um motivo.';
     pm.reenvio = { telefone:data.telefone, senhaHash:data.senha_hash, veiculoTipo:data.veiculo_tipo||'', cnhUrl:data.cnh_url||null, crlvUrl:data.crlv_url||null, fotoVeiculoFrenteUrl:data.foto_veiculo_url||null, fotoVeiculoTrasUrl:data.foto_veiculo_tras_url||null, fotoMotoristaUrl:data.foto_motorista_url||null, documentosReprovados:data.documentos_reprovados||[], enviando:false };
     render(); return;
@@ -9677,7 +9682,7 @@ async function continuarParaDocumentos(){
   if(error || !data){ mostrarToast('Erro ao carregar o cadastro. Tenta entrar de novo.', 'erro'); render(); return; }
   const c = pm.cadastro;
   c.id = data.id; c.nome = data.nome||''; c.cpf = data.cpf||''; c.telefone = data.telefone||''; c.cidade = data.cidade||'';
-  c.senhaHash = data.senha_hash; c.criadoEm = data.criado_em;
+  if(data.senha_hash) c.senhaHash = data.senha_hash; c.criadoEm = data.criado_em;
   c.veiculo = data.veiculo_tipo||'moto'; c.marca = data.veiculo_marca||''; c.placa = data.veiculo_placa||''; c.cor = data.veiculo_cor||'';
   c.fotoMotoristaUrl = data.foto_motorista_url||null; c.fotoVeiculoFrenteUrl = data.foto_veiculo_url||null; c.fotoVeiculoTrasUrl = data.foto_veiculo_tras_url||null;
   c.cnhUrl = data.cnh_url||null; c.crlvUrl = data.crlv_url||null; c.aceitaResponsabilidadeBike = !!data.aceita_responsabilidade_bike;
@@ -10539,7 +10544,7 @@ async function carregarClientesAdmin(){
   // ela pra um placeholder no meio do caminho, senão o scroll da pessoa "pula" pro topo.
   const jaTinhaClientes = estado.admin.clientes.length>0;
   if(!jaTinhaClientes){ estado.admin.carregando=true; render(); }
-  const { data, error } = await sb.from('entrega_clientes').select('*').order('criado_em',{ascending:false});
+  const { data, error } = await sb.from('entrega_clientes').select(COLUNAS_CLIENTE).order('criado_em',{ascending:false});
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar clientes.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_clientes_saldos').select('telefone,saldo');
   estado.admin.carregando=false;
@@ -11452,7 +11457,7 @@ async function carregarMotoristasAdmin(){
   // se ainda não havia nada carregado. Numa atualização pós-edição, mantém a lista visível.
   const jaTinhaMotoristas = estado.admin.motoristas.length>0;
   if(!jaTinhaMotoristas){ estado.admin.carregando=true; render(); }
-  const { data, error } = await sb.from('entrega_motoristas').select('*').neq('status','incompleto').order('criado_em',{ascending:false});
+  const { data, error } = await sb.from('entrega_motoristas').select(COLUNAS_MOTORISTA).neq('status','incompleto').order('criado_em',{ascending:false});
   if(error){ estado.admin.carregando=false; console.error(error); mostrarToast('Erro ao carregar cadastros.', 'erro'); return; }
   const { data: saldos, error: erroSaldos } = await sb.from('entrega_saldos').select('telefone,saldo');
   estado.admin.carregando=false;

@@ -6871,7 +6871,7 @@ async function cadastrarCliente(){
   if(c.senha.length<4){ c.erro='A senha precisa de pelo menos 4 caracteres.'; render(); return; }
   const { data: existente, error: erroConsulta } = await meuPerfilCliente(c.telefone);
   if(erroConsulta){ console.error(erroConsulta); c.erro='Erro ao verificar o telefone. Tenta novamente.'; render(); return; }
-  if(existente && existente.senha_hash){ c.erro='Já existe uma conta com este telefone. Entre na sua conta.'; render(); return; }
+  if(existente){ c.erro='Já existe uma conta com este telefone. Entre na sua conta.'; render(); return; }
   const senhaHash = await hashSenha(c.senha);
   const { error } = await upsertProprioCliente(c.telefone, senhaHash, { nome:c.nome });
   if(error){ console.error(error); c.erro='Erro ao criar a conta. Tenta novamente.'; render(); return; }
@@ -6901,7 +6901,7 @@ async function loginCliente(){
   const { data, error } = await meuPerfilCliente(telefone);
   if(error){ pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; }
   if(!data){ pc.loginErro='Não encontrámos conta com este telefone. Cadastra-te abaixo.'; render(); return; }
-  if(data.senha_hash !== senhaHash){ pc.loginErro='Senha incorreta.'; render(); return; }
+  { const auth = await autenticarCliente(telefone, senhaHash); if(auth.error){ pc.loginErro='Erro ao consultar a conta. Tenta novamente.'; render(); return; } if(!auth.data){ pc.loginErro='Senha incorreta.'; render(); return; } }
   if(data.bloqueado){ pc.loginErro='Esta conta está bloqueada. Fala com o suporte para mais informações.'; render(); return; }
   estado.cliente = { nome:data.nome, telefone:data.telefone, logado:true, carteira:{ saldo:0, carregando:false, adicionando:false, valorInput:'10', pix:{ qrCode:null, copiaCola:null, status:'pendente', gerando:false, erro:'', id:null } } };
   estado.filtroTelefoneCliente = data.telefone;
@@ -6959,7 +6959,7 @@ async function loginMotorista(){
   const { data, error } = await meuPerfilMotorista(telefone);
   if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
   if(!data){ pm.loginErro='Não encontrámos cadastro com este telefone. Cadastra-te abaixo.'; render(); return; }
-  if(data.senha_hash !== senhaHash){ pm.loginErro='Senha incorreta.'; render(); return; }
+  { const auth = await autenticarMotorista(telefone, senhaHash); if(auth.error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; } if(!auth.data){ pm.loginErro='Senha incorreta.'; render(); return; } }
   if(data.status==='incompleto'){ pm.tela='recuperar'; pm.telefoneLiberado=data.telefone; pm.recuperacaoBike=data.veiculo_tipo==='bicicleta'; render(); return; }
   if(data.status==='liberado'){ pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
   // Cadastro básico ainda sem documentação: não joga o motorista num painel bloqueado.
@@ -6994,7 +6994,7 @@ async function continuarParaDocumentos(){
   if(error || !data){ mostrarToast('Erro ao carregar o cadastro. Tenta entrar de novo.', 'erro'); render(); return; }
   const c = pm.cadastro;
   c.id = data.id; c.nome = data.nome||''; c.cpf = data.cpf||''; c.telefone = data.telefone||''; c.cidade = data.cidade||'';
-  c.senhaHash = data.senha_hash; c.criadoEm = data.criado_em;
+  if(data.senha_hash) c.senhaHash = data.senha_hash; c.criadoEm = data.criado_em;
   c.veiculo = data.veiculo_tipo||'moto'; c.marca = data.veiculo_marca||''; c.placa = data.veiculo_placa||''; c.cor = data.veiculo_cor||'';
   c.fotoMotoristaUrl = data.foto_motorista_url||null; c.fotoVeiculoFrenteUrl = data.foto_veiculo_url||null; c.fotoVeiculoTrasUrl = data.foto_veiculo_tras_url||null;
   c.cnhUrl = data.cnh_url||null; c.crlvUrl = data.crlv_url||null; c.aceitaResponsabilidadeBike = !!data.aceita_responsabilidade_bike;
