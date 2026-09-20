@@ -147,18 +147,33 @@
     if (document.getElementById(ID)) return;
     const caixa = document.createElement('div');
     caixa.id = 'ef-caixa-teste-motoristas';
-    caixa.style.cssText = 'position:fixed;right:12px;bottom:12px;z-index:99999;width:min(360px,calc(100vw - 24px));font-family:inherit;display:none';
+    caixa.style.cssText = 'position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:9000;font-family:inherit;display:none;text-align:right';
     caixa.innerHTML = `
-      <button id="${ID}" type="button" style="width:100%;padding:13px 16px;border:1px solid rgba(255,151,16,.55);border-radius:14px;background:#ff9710;color:#111;font-weight:950;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer">🧪 VERIFICAR CHAMADAS NOS ONLINE</button>
-      <div id="${STATUS_ID}" style="display:none;margin-top:7px;padding:10px 12px;border-radius:12px;background:rgba(10,11,13,.96);border:1px solid rgba(255,255,255,.16);font-size:12px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.35)"></div>`;
+      <div id="ef-teste-painel" style="display:none;margin-bottom:8px;width:min(320px,calc(100vw - 24px));text-align:left">
+        <button id="${ID}" type="button" style="width:100%;padding:13px 16px;border:1px solid rgba(255,151,16,.55);border-radius:14px;background:#ff9710;color:#111;font-weight:950;font-size:14px;box-shadow:0 8px 24px rgba(0,0,0,.35);cursor:pointer">🧪 VERIFICAR CHAMADAS NOS ONLINE</button>
+        <div id="${STATUS_ID}" style="display:none;margin-top:7px;padding:10px 12px;border-radius:12px;background:rgba(10,11,13,.96);border:1px solid rgba(255,255,255,.16);font-size:12px;line-height:1.45;box-shadow:0 8px 24px rgba(0,0,0,.35)"></div>
+      </div>
+      <button id="ef-teste-fab" type="button" aria-label="Verificar chamadas dos motoristas online" style="width:48px;height:48px;border-radius:50%;border:1px solid rgba(255,151,16,.55);background:#ff9710;color:#111;font-size:20px;line-height:1;box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer;display:flex;align-items:center;justify-content:center">🧪</button>`;
     document.body.appendChild(caixa);
     document.getElementById(ID)?.addEventListener('click', dispararTeste);
+    document.getElementById('ef-teste-fab')?.addEventListener('click', () => {
+      const painel = document.getElementById('ef-teste-painel');
+      if (!painel) return;
+      painel.style.display = painel.style.display === 'none' ? 'block' : 'none';
+    });
 
     setInterval(() => {
       caixa.style.display = adminAberto() ? 'block' : 'none';
       const btn = document.getElementById(ID);
       if (btn && !executando && adminAberto()) {
         btn.textContent = `🧪 VERIFICAR CHAMADAS NOS ONLINE (${online().length})`;
+      }
+      const fab = document.getElementById('ef-teste-fab');
+      if (fab && adminAberto()) {
+        const n = online().length;
+        fab.textContent = n > 0 ? String(n) : '🧪';
+        fab.style.fontSize = n > 0 ? '17px' : '20px';
+        fab.style.fontWeight = n > 0 ? '900' : '400';
       }
     }, 1500);
   }

@@ -544,8 +544,10 @@ fbq('track', 'PageView');
   .admin-conteudo{padding:18px 20px 40px;overflow-y:auto;flex:1;}
   .admin-conteudo-inner{max-width:1100px;margin:0 auto;}
   .admin-abas-grade{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;overflow-x:visible;}
-  .admin-abas-grade button{flex:1 1 130px;padding:12px 10px;border:1px solid var(--linha);background:var(--painel-alt);color:var(--poeira);font-family:'Karla';font-weight:700;font-size:14.5px;border-radius:14px;cursor:pointer;white-space:nowrap;text-align:center;}
+  .admin-abas-grade button{flex:1 1 130px;padding:12px 10px;border:1px solid var(--linha);background:var(--painel-alt);color:var(--poeira);font-family:'Karla';font-weight:700;font-size:14.5px;border-radius:14px;cursor:pointer;white-space:nowrap;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px;}
   .admin-abas-grade button.ativo{background:var(--mango);color:var(--escuro);border-color:var(--mango);}
+  .admin-aba-contagem{background:var(--mango);color:var(--escuro);font-size:11px;font-weight:900;border-radius:999px;min-width:18px;height:18px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;line-height:1;flex:0 0 auto;}
+  .admin-abas-grade button.ativo .admin-aba-contagem{background:var(--escuro);color:var(--mango);}
   .admin-filtros-grade{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;overflow-x:visible;}
   .admin-filtros-grade button{flex:0 0 auto;padding:8px 14px;border:1px solid var(--linha);background:transparent;color:var(--poeira);font-family:'Karla';font-weight:600;font-size:13px;border-radius:20px;cursor:pointer;white-space:nowrap;}
   .admin-filtros-grade button.ativo{background:rgba(255,201,60,0.15);color:var(--mango);border-color:var(--mango);}
@@ -8197,6 +8199,7 @@ function adminCorpoHTML(){
   const pendentesMotoristas = (a.motoristas||[]).filter(m=>m.status==='pendente'||m.status==='basico');
   const alertasNaoLidos = (a.alertas||[]).filter(x=>!x.lido);
   const feedbacksNaoLidos = (a.feedbacks||[]).filter(x=>!x.lido);
+  const badgeAba = n => n ? `<span class="admin-aba-contagem">${n}</span>` : '';
   const abasCompletas = [
     {id:'resumo', label:'📊 Resumo'},
     {id:'operacoes', label:'🎛️ Operações'},
@@ -8205,15 +8208,15 @@ function adminCorpoHTML(){
     {id:'diagnostico', label:'🩺 Diagnóstico'},
     {id:'config', label:'⚙️ Config'},
     {id:'pedidos', label:'📦 Pedidos'},
-    {id:'motoristas', label:`🛵 Motoristas${pendentesMotoristas.length?` (${pendentesMotoristas.length})`:''}`},
+    {id:'motoristas', label:`🛵 Motoristas${badgeAba(pendentesMotoristas.length)}`},
     {id:'clientes', label:'👤 Clientes'},
-    {id:'saques', label:`💰 Saques${saquesPendentes.length?` (${saquesPendentes.length})`:''}`},
-    {id:'indicacoes', label:`🤝 Indicações${(estado.admin.indicacoes||[]).filter(i=>i.status==='indicado'||i.status==='cadastrado').length?` (${(estado.admin.indicacoes||[]).filter(i=>i.status==='indicado'||i.status==='cadastrado').length})`:''}`},
-    {id:'lideres', label:`🏙️ Líderes${(estado.admin.lideres||[]).filter(l=>l.ativo).length?` (${(estado.admin.lideres||[]).filter(l=>l.ativo).length})`:''}`},
-    {id:'alertas', label:`🔔 Alertas${alertasNaoLidos.length?` (${alertasNaoLidos.length})`:''}`},
-    {id:'suporte', label:`💬 Suporte${suporteAbertos.length?` (${suporteAbertos.length})`:''}`},
+    {id:'saques', label:`💰 Saques${badgeAba(saquesPendentes.length)}`},
+    {id:'indicacoes', label:`🤝 Indicações${badgeAba((estado.admin.indicacoes||[]).filter(i=>i.status==='indicado'||i.status==='cadastrado').length)}`},
+    {id:'lideres', label:`🏙️ Líderes${badgeAba((estado.admin.lideres||[]).filter(l=>l.ativo).length)}`},
+    {id:'alertas', label:`🔔 Alertas${badgeAba(alertasNaoLidos.length)}`},
+    {id:'suporte', label:`💬 Suporte${badgeAba(suporteAbertos.length)}`},
     {id:'avisos', label:'📢 Avisos'},
-    {id:'feedbacks', label:`💡 Feedback${feedbacksNaoLidos.length?` (${feedbacksNaoLidos.length})`:''}`},
+    {id:'feedbacks', label:`💡 Feedback${badgeAba(feedbacksNaoLidos.length)}`},
     {id:'funcionarios', label:'🧑‍💼 Equipe'}
   ];
   // funcionário só vê o que precisa pra atender: motoristas, clientes e suporte —
