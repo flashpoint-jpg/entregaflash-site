@@ -1,6 +1,6 @@
-// build: 20260917-VERSION-LOOP-2
+// build: 20260920-ATUALIZACAO-OBRIGATORIA-1
 // Entrega Flash - Service Worker com atualização forçada + reparo de Push + integração Vendaí
-const EF_VERSION = '20260917-VERSION-LOOP-2';
+const EF_VERSION = '20260920-ATUALIZACAO-OBRIGATORIA-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;
@@ -90,7 +90,13 @@ self.addEventListener('fetch', (event) => {
     }
 
     if (url.pathname === '/' || url.pathname.endsWith('/index.html')) {
-      event.respondWith(fetch(event.request).then(injetarScripts));
+      // Sempre busca a página na rede, ignorando o cache do navegador.
+      // Sem isso, um celular podia continuar abrindo uma versão antiga do app.
+      event.respondWith(
+        fetch(event.request.url, { cache: 'no-store', credentials: 'include', redirect: 'follow' })
+          .then(injetarScripts)
+          .catch(() => fetch(event.request).then(injetarScripts))
+      );
     }
   } catch (e) {}
 });

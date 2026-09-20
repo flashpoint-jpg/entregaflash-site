@@ -2484,7 +2484,7 @@ function removerLocal(chave){ try{ localStorage.removeItem(chave); }catch(e){} }
 const EF_NATIVE_ANDROID_CHAVE='ef_native_android_bg_v1';
 const EF_NATIVE_APP_VERSION_CHAVE='ef_native_app_version_v1';
 const EF_NATIVE_APP_VERSION_NAME_CHAVE='ef_native_app_version_name_v1';
-const EF_APK_ATUAL_VERSION_CODE=2026091601;
+const EF_APK_ATUAL_VERSION_CODE=2026091403; // usado só se /versao.json não responder
 const EF_APK_ATUAL_URL='/EntregaFlash.apk';
 (function detectarApkNativoAndroid(){
   try{
@@ -2513,10 +2513,160 @@ function entregaFlashNativoAndroidAtivo(){
 function versaoCodigoApkNativo(){
   try{ return Number(localStorage.getItem(EF_NATIVE_APP_VERSION_CHAVE)||0)||0; }catch(e){ return 0; }
 }
+// ---------- ATUALIZAÇÃO OBRIGATÓRIA (APK nativo, PWA e navegador) ----------
+// A versão mínima fica em /versao.json, que é lido sempre da rede (nunca do cache).
+// Assim a checagem funciona mesmo num celular que ainda tem a página antiga guardada.
+const EF_WEB_BUILD='20260920-ATUALIZACAO-OBRIGATORIA-1';
+const EF_VERSAO_URL='/versao.json';
+const EF_VEREDITO_CHAVE='ef_atualizacao_veredito_v1';
+let efVersaoMinima=null;
+function efVersaoMinimaApk(){
+  const n=Number(efVersaoMinima&&efVersaoMinima.apk)||0;
+  return n||EF_APK_ATUAL_VERSION_CODE;
+}
+function efUrlApkAtual(){
+  return (efVersaoMinima&&efVersaoMinima.apkUrl)||EF_APK_ATUAL_URL;
+}
 function precisaAtualizarApkNativo(){
   if(!entregaFlashNativoAndroidAtivo()) return false;
   const instalada=versaoCodigoApkNativo();
-  return !instalada || instalada<EF_APK_ATUAL_VERSION_CODE;
+  return !instalada || instalada<efVersaoMinimaApk();
+}
+function efCompararBuild(a,b){
+  return String(a||'').localeCompare(String(b||''),'en',{numeric:true,sensitivity:'base'});
+}
+function efLerVeredito(){
+  try{ return JSON.parse(localStorage.getItem(EF_VEREDITO_CHAVE)||'null'); }catch(e){ return null; }
+}
+function efGravarVeredito(v){
+  try{ localStorage.setItem(EF_VEREDITO_CHAVE, JSON.stringify(v)); }catch(e){}
+}
+async function efBuscarVersaoMinima(){
+  const r=await fetch(EF_VERSAO_URL+'?t='+Date.now(),{cache:'no-store'});
+  if(!r.ok) throw new Error('versao_indisponivel');
+  const j=await r.json();
+  return {
+    apk:Number(j.apk_version_code_minimo||0)||0,
+    web:String(j.web_build_minimo||''),
+    apkUrl:String(j.apk_url||EF_APK_ATUAL_URL)
+  };
+}
+async function efLimparCacheELiberarSW(){
+  try{
+    if('caches' in window){
+      const nomes=await caches.keys();
+      await Promise.all(nomes.map(n=>caches.delete(n)));
+    }
+  }catch(e){}
+  try{
+    if('serviceWorker' in navigator){
+      const regs=await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+  }catch(e){}
+}
+async function efRecarregarVersaoNova(alvo){
+  await efLimparCacheELiberarSW();
+  try{
+    const u=new URL(location.href);
+    u.searchParams.set('ef_v', alvo||String(Date.now()));
+    location.replace(u.href);
+  }catch(e){ location.reload(); }
+}
+function efFecharBloqueioAtualizacao(){
+  const el=document.getElementById('efBloqueioAtualizacao');
+  if(el) el.remove();
+  try{ document.documentElement.style.overflow=''; }catch(e){}
+}
+function efMostrarBloqueioAtualizacao(info){
+  const nativo=info.tipo==='apk';
+  const instalada=nativo
+    ? (info.instalada ? String(info.instalada) : 'não identificada')
+    : String(EF_WEB_BUILD);
+  const minimo=nativo ? String(info.minimo||'') : String(info.minimo||'');
+  let el=document.getElementById('efBloqueioAtualizacao');
+  if(!el){
+    el=document.createElement('div');
+    el.id='efBloqueioAtualizacao';
+    document.body.appendChild(el);
+  }
+  el.setAttribute('style','position:fixed;inset:0;z-index:2147483000;background:#0a0d1f;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;-webkit-tap-highlight-color:transparent');
+  el.innerHTML=`<div style="max-width:420px;width:100%;text-align:center;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif">
+    <div style="font-size:54px;line-height:1;margin-bottom:14px">⬆️</div>
+    <div style="font-size:24px;font-weight:800;margin-bottom:10px">Atualização obrigatória</div>
+    <div style="font-size:15px;line-height:1.6;color:#c3c8ee">${nativo
+      ? 'Você está usando uma versão antiga do aplicativo Entrega Flash. Atualize para continuar usando.'
+      : 'Esta versão do Entrega Flash está desatualizada neste aparelho. Toque no botão para carregar a versão mais recente.'}</div>
+    <button id="efBotaoAtualizarAgora" style="width:100%;margin-top:20px;padding:15px 18px;border:0;border-radius:14px;background:#ff5a3c;color:#fff;font-size:17px;font-weight:800;cursor:pointer">${nativo?'⬆️ BAIXAR ATUALIZAÇÃO':'🔄 ATUALIZAR AGORA'}</button>
+    <div id="efAvisoAtualizacao" style="font-size:13px;color:#c3c8ee;margin-top:14px;line-height:1.5"></div>
+    <div style="font-size:12px;color:#7f86b5;margin-top:16px">Versão instalada: ${instalada}<br>Versão mínima obrigatória: ${minimo}</div>
+  </div>`;
+  try{ document.documentElement.style.overflow='hidden'; }catch(e){}
+  const botao=el.querySelector('#efBotaoAtualizarAgora');
+  const aviso=el.querySelector('#efAvisoAtualizacao');
+  botao.onclick=async()=>{
+    if(nativo){
+      if(aviso) aviso.textContent='Baixando a atualização... Depois de instalar, abra o aplicativo novamente.';
+      const url=efUrlApkAtual()+'?v='+efVersaoMinimaApk()+'&t='+Date.now();
+      try{
+        const a=document.createElement('a');
+        a.href=url; a.download='Entrega-Flash.apk'; a.rel='noopener'; a.style.display='none';
+        document.body.appendChild(a); a.click();
+        setTimeout(()=>{ try{ a.remove(); }catch(e){} },1200);
+      }catch(e){ location.href=url; }
+      return;
+    }
+    botao.disabled=true;
+    if(aviso) aviso.textContent='Carregando a versão mais recente...';
+    await efRecarregarVersaoNova(info.minimo);
+  };
+}
+let efVerificandoAtualizacao=false;
+async function verificarAtualizacaoObrigatoria(){
+  if(efVerificandoAtualizacao) return;
+  efVerificandoAtualizacao=true;
+  try{
+    let minimo;
+    try{
+      minimo=await efBuscarVersaoMinima();
+      efVersaoMinima=minimo;
+    }catch(e){
+      // Sem internet ou arquivo indisponível: mantém o último veredito conhecido.
+      const anterior=efLerVeredito();
+      if(anterior && anterior.bloqueado) efMostrarBloqueioAtualizacao(anterior);
+      return;
+    }
+    const nativo=entregaFlashNativoAndroidAtivo();
+    let info;
+    if(nativo){
+      const instalada=versaoCodigoApkNativo();
+      info={tipo:'apk', instalada, minimo:minimo.apk, bloqueado:(!instalada || instalada<minimo.apk)};
+    }else{
+      info={tipo:'web', instalada:EF_WEB_BUILD, minimo:minimo.web,
+            bloqueado:!!minimo.web && efCompararBuild(EF_WEB_BUILD, minimo.web)<0};
+    }
+    efGravarVeredito(info);
+    if(!info.bloqueado){ efFecharBloqueioAtualizacao(); return; }
+    if(info.tipo==='web'){
+      // Primeiro tenta resolver sozinho: limpa cache, solta o service worker e recarrega.
+      const chave='ef_autocorrecao_'+String(info.minimo);
+      let jaTentou=true;
+      try{ jaTentou=sessionStorage.getItem(chave)==='1'; sessionStorage.setItem(chave,'1'); }catch(e){ jaTentou=true; }
+      if(!jaTentou){ await efRecarregarVersaoNova(info.minimo); return; }
+    }
+    efMostrarBloqueioAtualizacao(info);
+  }finally{
+    efVerificandoAtualizacao=false;
+  }
+}
+function iniciarVigilanciaAtualizacao(){
+  verificarAtualizacaoObrigatoria();
+  window.addEventListener('online',()=>verificarAtualizacaoObrigatoria());
+  document.addEventListener('visibilitychange',()=>{
+    if(document.visibilityState==='visible') verificarAtualizacaoObrigatoria();
+  });
+  window.addEventListener('focus',()=>verificarAtualizacaoObrigatoria());
+  setInterval(()=>{ if(navigator.onLine!==false) verificarAtualizacaoObrigatoria(); }, 600000);
 }
 async function exigirAtualizacaoApkAntesDeFicarOnline(){
   if(!precisaAtualizarApkNativo()) return true;
@@ -2530,7 +2680,7 @@ async function exigirAtualizacaoApkAntesDeFicarOnline(){
     mostrarToast('Baixando a atualização do Entrega Flash...','info');
     try{
       const a=document.createElement('a');
-      a.href=EF_APK_ATUAL_URL+'?v='+EF_APK_ATUAL_VERSION_CODE;
+      a.href=efUrlApkAtual()+'?v='+efVersaoMinimaApk();
       a.download='Entrega-Flash.apk';
       a.rel='noopener';
       a.style.display='none';
@@ -2538,7 +2688,7 @@ async function exigirAtualizacaoApkAntesDeFicarOnline(){
       a.click();
       setTimeout(()=>{ try{ a.remove(); }catch(e){} },1200);
     }catch(e){
-      location.href=EF_APK_ATUAL_URL+'?v='+EF_APK_ATUAL_VERSION_CODE;
+      location.href=efUrlApkAtual()+'?v='+efVersaoMinimaApk();
     }
   }
   return false;
@@ -2550,7 +2700,7 @@ function efAndroidSemAppNativo(){
   return efAndroidDetectado() && !entregaFlashNativoAndroidAtivo();
 }
 function baixarApkMotoristaAtual(){
-  const url=EF_APK_ATUAL_URL+'?v='+EF_APK_ATUAL_VERSION_CODE+'&t='+Date.now();
+  const url=efUrlApkAtual()+'?v='+efVersaoMinimaApk()+'&t='+Date.now();
   mostrarToast('Baixando o Entrega Flash atualizado...','info');
   try{
     const a=document.createElement('a');
@@ -2589,7 +2739,7 @@ function blocoGpsSegundoPlanoMotoristaHTML(){
     <div style="font-family:'Rajdhani';font-weight:900;font-size:21px">${titulo}</div>
     <div style="font-size:14px;color:var(--poeira);line-height:1.5;margin-top:6px">${texto}</div>
     <button class="btn btn-primario" style="width:100%;margin-top:13px" onclick="baixarApkMotoristaAtual()">⬆️ ATUALIZAR / INSTALAR APP</button>
-    <div style="font-size:12px;color:var(--poeira);margin-top:8px">Versão mínima obrigatória: ${EF_APK_ATUAL_VERSION_CODE}</div>
+    <div style="font-size:12px;color:var(--poeira);margin-top:8px">Versão mínima obrigatória: ${efVersaoMinimaApk()}</div>
   </div>`;
 }
 
@@ -11671,6 +11821,7 @@ if(typeof window.supabase==='undefined' || !window.supabase.createClient){
   render();
   carregarConfigGeral().then(render);
   registrarServiceWorker();
+  iniciarVigilanciaAtualizacao();
   registrarEventoPushAtivacao('aberto');
   assinarPedidosRealtime();
   assinarMotoristasOnlineRealtime();
