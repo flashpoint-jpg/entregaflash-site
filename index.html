@@ -3918,11 +3918,13 @@ async function carregarMotoristasOnline(){
   }catch(e){ console.error(e); }
 }
 let canalMotoristasOnlineRealtime = null;
+let timerMotoristasOnline = null;
 function assinarMotoristasOnlineRealtime(){
-  if(canalMotoristasOnlineRealtime) return;
-  canalMotoristasOnlineRealtime = sb.channel('motoristas-online-realtime')
-    .on('postgres_changes', {event:'UPDATE', schema:'public', table:'entrega_motoristas'}, ()=>{ carregarMotoristasOnline(); })
-    .subscribe();
+  // Não assina todos os UPDATEs de entrega_motoristas: o GPS atualiza essa tabela
+  // várias vezes por minuto e isso multiplicava o tráfego para cada app aberto.
+  if(timerMotoristasOnline) return;
+  carregarMotoristasOnline();
+  timerMotoristasOnline = setInterval(()=>{ carregarMotoristasOnline(); }, 60000);
 }
 
 // ---------- avisos gerais do admin (alerta pra todos os motoristas/clientes) ----------
@@ -5105,7 +5107,9 @@ async function processarFotoSemEnderecoSelecionado(inputEl){
   if(campoEhParada(campo)){ mostrarToast('Foto do local só está disponível para recolha e entrega principal por enquanto.'); return; }
   estado.semEndereco.enviandoFoto = true; render();
   const nomeArquivo = `${campo}-ref-${Date.now()}.jpg`;
-  const { error: erroUp } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, file, { upsert:true, contentType:file.type||'image/jpeg' });
+  const preparado = await prepararImagemDocumento(file);
+  if(!preparado){ estado.semEndereco.enviandoFoto=false; mostrarToast('Não consegui otimizar essa foto. Tente outra.', 'erro'); render(); return; }
+  const { error: erroUp } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, preparado, { upsert:true, contentType:'image/jpeg', cacheControl:'31536000' });
   estado.semEndereco.enviandoFoto = false;
   if(erroUp){ mostrarToast('Erro ao enviar a foto. Tenta novamente.', 'erro'); render(); return; }
   const { data: pub } = sb.storage.from('entrega-fotos').getPublicUrl(nomeArquivo);
@@ -6282,7 +6286,9 @@ async function processarFotoSelecionada(input){
   const pendente = fotoPendente; fotoPendente = null;
   mostrarToast('Enviando foto...');
   const nomeArquivo = `${pendente.pedidoId}-${pendente.tipo}-${Date.now()}.jpg`;
-  const { error: erroUpload } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, file, { upsert:true, contentType: file.type || 'image/jpeg' });
+  const preparado = await prepararImagemDocumento(file);
+  if(!preparado){ mostrarToast('Não consegui otimizar essa foto. Tente outra.', 'erro'); return; }
+  const { error: erroUpload } = await sb.storage.from('entrega-fotos').upload(nomeArquivo, preparado, { upsert:true, contentType:'image/jpeg', cacheControl:'31536000' });
   if(erroUpload){ console.error(erroUpload); mostrarToast('Erro ao enviar a foto. Tenta novamente.', 'erro'); return; }
   const { data: pub } = sb.storage.from('entrega-fotos').getPublicUrl(nomeArquivo);
   const campo = pendente.tipo==='antes' ? 'foto_antes_url' : 'foto_depois_url';
