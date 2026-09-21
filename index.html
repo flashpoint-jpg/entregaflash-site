@@ -9860,8 +9860,8 @@ async function salvarEtapaCadastro(campos){
   const linha = Object.assign(base, campos);
   // O pré-cadastro já existe. UPDATE evita que o upsert tente um novo INSERT
   // e seja bloqueado pela proteção do banco justamente na etapa da chave PIX.
-  const { data:confirmado, error } = await sb.from('entrega_motoristas').update(linha).eq('id', c.id).select('id');
-  if(error || !confirmado || !confirmado.length){
+  const { error } = await sb.from('entrega_motoristas').update(linha).eq('id', c.id);
+  if(error){
     console.error('salvar_etapa_motorista', error);
     const detalhe=String(error?.message||'').toLowerCase();
     mostrarToast(
