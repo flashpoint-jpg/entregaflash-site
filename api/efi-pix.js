@@ -176,3 +176,5 @@ module.exports = async function handler(req, res) {
     });
   }
 };
+
+// redeploy Efí runtime 2026-09-21
