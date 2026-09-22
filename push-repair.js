@@ -94,11 +94,23 @@
     try {
       const reg = await navigator.serviceWorker.ready;
       let sub = await reg.pushManager.getSubscription();
+      const vapidAtual = typeof window.obterVapidPublicKey === 'function'
+        ? await window.obterVapidPublicKey()
+        : (typeof VAPID_PUBLIC_KEY !== 'undefined' ? VAPID_PUBLIC_KEY : '');
+      if (!vapidAtual || typeof urlBase64ToUint8Array !== 'function') return;
+      try {
+        if (typeof SUPABASE_URL !== 'undefined' && String(SUPABASE_URL).includes('urtpjcndtcleeorpnpct') && sub) {
+          const marcador = localStorage.getItem('ef_vapid_publica_registrada') || '';
+          if (marcador !== vapidAtual) {
+            try { await sub.unsubscribe(); } catch (_) {}
+            sub = null;
+          }
+        }
+      } catch (_) {}
       if (!sub) {
-        if (typeof VAPID_PUBLIC_KEY === 'undefined' || typeof urlBase64ToUint8Array !== 'function') return;
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+          applicationServerKey: urlBase64ToUint8Array(vapidAtual)
         });
       }
       const j = sub?.toJSON?.();
@@ -113,6 +125,11 @@
       if (!resp.ok || !out?.ok) throw new Error(out?.erro || 'falha_registro_push');
 
       ultimoAlvo = `${alvo.papel}:${alvo.referencia}`;
+      try {
+        if (typeof SUPABASE_URL !== 'undefined' && String(SUPABASE_URL).includes('urtpjcndtcleeorpnpct')) {
+          localStorage.setItem('ef_vapid_publica_registrada', vapidAtual);
+        }
+      } catch (_) {}
       try {
         if (typeof registrarStatusAplicativo === 'function') {
           await registrarStatusAplicativo(alvo.papel, alvo.referencia, true);
