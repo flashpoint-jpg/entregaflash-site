@@ -90,8 +90,14 @@ async function ativarAlertas(){
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
     const j=sub.toJSON();
-    const {error}=await sb.from('push_subscriptions').upsert({papel:'lider_cidade',referencia:norm(dados?.lider?.cidade||''),endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth,criado_em:new Date().toISOString()},{onConflict:'endpoint'});
-    if(error)throw error;
+    const referencia=norm(dados?.lider?.cidade||'');
+    const resp=await fetch(SUPABASE_URL+'/functions/v1/registrar-push-seguro',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify({papel:'lider_cidade',referencia,subscription:j})
+    });
+    const out=await resp.json().catch(()=>({}));
+    if(!resp.ok||!out?.ok)throw new Error(out?.erro||'falha_registro_push');
     atualizarStatusNotificacoes();toast('Notificações do líder ativadas ✓');
   }catch(e){console.warn(e);toast('Não consegui ativar as notificações neste aparelho.')}
 }
