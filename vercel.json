@@ -1,14 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/",
-      "destination": "/manutencao.html"
-    },
-    {
-      "source": "/index.html",
-      "destination": "/manutencao.html"
-    },
-    {
       "source": "/admin",
       "destination": "/admin/admin.html"
     },
