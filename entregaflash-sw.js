@@ -1,6 +1,6 @@
-// build: 20260920-ATUALIZACAO-OBRIGATORIA-1
+// build: 20260922-LOGIN-ONLINE-FIX-1
 // Entrega Flash - Service Worker com atualização forçada + reparo de Push + integração Vendaí
-const EF_VERSION = '20260920-ATUALIZACAO-OBRIGATORIA-1';
+const EF_VERSION = '20260922-LOGIN-ONLINE-FIX-1';
 const EF_HOME = './index.html?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;
