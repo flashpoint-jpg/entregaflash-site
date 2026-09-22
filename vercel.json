@@ -1,6 +1,14 @@
 {
   "rewrites": [
     {
+      "source": "/",
+      "destination": "/manutencao.html"
+    },
+    {
+      "source": "/index.html",
+      "destination": "/manutencao.html"
+    },
+    {
       "source": "/admin",
       "destination": "/admin/admin.html"
     },
@@ -30,6 +38,19 @@
     }
   ],
   "headers": [
+    {
+      "source": "/manutencao.html",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, max-age=0, must-revalidate"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
     {
       "source": "/versao.json",
       "headers": [
