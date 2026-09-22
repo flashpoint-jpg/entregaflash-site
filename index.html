@@ -1694,7 +1694,24 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) atualiza
 
 const FUNCOES_URL = SUPABASE_URL + '/functions/v1';
 const RESET_SENHA_URL = FUNCOES_URL + '/entregaflash-reset-senha';
-const VAPID_PUBLIC_KEY = 'BBBzZ91h6R8yKe4HJSsYcC8IXaTVNtlAXNb_dQPENNGI0f9zKebPq2JKl49pjTFnNHA9Ki4mvMxTQTI3wPv6Dds';
+let VAPID_PUBLIC_KEY = 'BBBzZ91h6R8yKe4HJSsYcC8IXaTVNtlAXNb_dQPENNGI0f9zKebPq2JKl49pjTFnNHA9Ki4mvMxTQTI3wPv6Dds';
+let efVapidNovaCarregada = false;
+async function obterVapidPublicKey(){
+  if(!SUPABASE_URL.includes('urtpjcndtcleeorpnpct')) return VAPID_PUBLIC_KEY;
+  if(efVapidNovaCarregada && VAPID_PUBLIC_KEY) return VAPID_PUBLIC_KEY;
+  try{
+    const resp=await fetch(`${FUNCOES_URL}/vapid-publica`,{
+      headers:{'Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY}
+    });
+    const d=await resp.json().catch(()=>({}));
+    if(resp.ok && d?.publicKey){
+      VAPID_PUBLIC_KEY=String(d.publicKey);
+      efVapidNovaCarregada=true;
+    }
+  }catch(e){ console.warn('VAPID novo indisponível',e); }
+  return VAPID_PUBLIC_KEY;
+}
+window.obterVapidPublicKey=obterVapidPublicKey;
 function esconderSplash(){
   const el = document.getElementById('splash');
   if(!el) return;
@@ -2337,9 +2354,17 @@ async function inscreverPushReal(papelForcado){
       try{ await registrarStatusAplicativo(papel, referencia, false); }catch(_){}
       return true;
     }
+    const vapidAtual = await obterVapidPublicKey();
     let sub = await reg.pushManager.getSubscription();
+    if(SUPABASE_URL.includes('urtpjcndtcleeorpnpct') && sub){
+      const marcador=localStorage.getItem('ef_vapid_publica_registrada')||'';
+      if(marcador!==vapidAtual){
+        try{ await sub.unsubscribe(); }catch(_){}
+        sub=null;
+      }
+    }
     if(!sub){
-      sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY) });
+      sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey: urlBase64ToUint8Array(vapidAtual) });
     }
     const json = sub.toJSON();
     if(!json?.endpoint || !json?.keys?.p256dh || !json?.keys?.auth) throw new Error('assinatura_push_incompleta');
@@ -2350,6 +2375,7 @@ async function inscreverPushReal(papelForcado){
     });
     const out = await resp.json().catch(()=>({}));
     if(!resp.ok || !out?.ok) throw new Error(out?.erro||('HTTP '+resp.status));
+    if(SUPABASE_URL.includes('urtpjcndtcleeorpnpct')) salvarLocal('ef_vapid_publica_registrada',vapidAtual);
     await registrarStatusAplicativo(papel, referencia, true);
     return true;
   }catch(e){
