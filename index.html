@@ -2516,7 +2516,7 @@ function versaoCodigoApkNativo(){
 // ---------- ATUALIZAÇÃO OBRIGATÓRIA (APK nativo, PWA e navegador) ----------
 // A versão mínima fica em /versao.json, que é lido sempre da rede (nunca do cache).
 // Assim a checagem funciona mesmo num celular que ainda tem a página antiga guardada.
-const EF_WEB_BUILD='20260920-ATUALIZACAO-OBRIGATORIA-1';
+const EF_WEB_BUILD='20260922-LOGIN-ONLINE-FIX-1';
 const EF_VERSAO_URL='/versao.json';
 const EF_VEREDITO_CHAVE='ef_atualizacao_veredito_v1';
 let efVersaoMinima=null;
@@ -2714,16 +2714,17 @@ function baixarApkMotoristaAtual(){
   }catch(e){ location.href=url; }
 }
 async function exigirAppNativoGpsSegundoPlano(){
-  // Se o motorista abriu por navegador/PWA ou por um APK muito antigo que não se identifica,
-  // não deixamos mais passar direto para ONLINE no Android. O GPS web pode parar com WhatsApp,
-  // Waze ou tela bloqueada. O APK nativo é o fluxo confiável para segundo plano.
+  // Android no navegador/PWA continua podendo ficar online usando o GPS web.
+  // O APK nativo é recomendado para segundo plano, mas não bloqueia mais o motorista.
   if(!efAndroidSemAppNativo()) return true;
-  const atualizar=await confirmarAcao(
-    '<b style="font-size:19px">Atualização do GPS necessária</b><br><br>Para continuar online mesmo usando WhatsApp, Waze ou com a tela bloqueada, instale/atualize o aplicativo Entrega Flash.<br><br><b>Depois de instalar, abra o aplicativo novo e toque em FICAR ONLINE.</b>',
-    'ATUALIZAR / INSTALAR APP'
-  );
-  if(atualizar) baixarApkMotoristaAtual();
-  return false;
+  try{
+    const chave='ef_aviso_apk_recomendado_v2';
+    if(sessionStorage.getItem(chave)!=='1'){
+      sessionStorage.setItem(chave,'1');
+      mostrarToast('Você pode ficar online agora. Para continuar recebendo com WhatsApp/Waze ou tela bloqueada, instale depois o app Entrega Flash.','info');
+    }
+  }catch(e){}
+  return true;
 }
 function blocoGpsSegundoPlanoMotoristaHTML(){
   if(!estado.motorista?.ativo || estado.motorista.status!=='aprovado') return '';
@@ -3671,6 +3672,12 @@ function paraCamposDB(p){
 // ---------- PIN de entrega + motorista favorito ----------
 const JANELA_FAVORITO_MS = 30000;
 function normalizarTelefoneEF(v){ return String(v||'').replace(/\D/g,''); }
+function normalizarTelefoneContaEF(v){
+  let d=String(v||'').replace(/\D/g,'');
+  // WhatsApp/celular colado como +55 11 99999-9999 precisa bater com a conta salva como 11 dígitos.
+  if((d.length===12 || d.length===13) && d.startsWith('55')) d=d.slice(2);
+  return d;
+}
 function gerarPinEntrega(){
   try{
     const a=new Uint32Array(1); crypto.getRandomValues(a); return String(1000+(a[0]%9000));
@@ -9140,8 +9147,7 @@ async function alternarDisponibilidade(){
     return;
   }
 
-  // Android sem o app nativo atualizado: não deixa mais passar direto para ONLINE.
-  // Primeiro oferece o APK que mantém o GPS funcionando com WhatsApp/Waze/tela bloqueada.
+  // Android/PWA pode ficar online com GPS web; APK nativo fica como recomendação para segundo plano.
   if(novoValor && !(await exigirAppNativoGpsSegundoPlano())) return;
 
   // A atualização obrigatória só aparece no momento certo: quando um motorista
@@ -9752,7 +9758,7 @@ async function entrarNoPainelMotorista(data){
 
 async function loginFacialMotorista(){
   const pm = estado.painelMotorista;
-  const telefone = (document.getElementById('lm-telefone')?.value || '').replace(/\D/g,'');
+  const telefone = normalizarTelefoneContaEF(document.getElementById('lm-telefone')?.value || '');
   if(!telefone){ pm.loginErro='Digite seu telefone para entrar com reconhecimento facial.'; render(); return; }
   pm.loginErro='';
   const { data: dadosPerfil, error } = await sb.rpc('entrega_motorista_meu_perfil', { p_telefone: telefone });
@@ -9785,14 +9791,27 @@ async function loginFacialMotorista(){
 
 async function loginMotorista(){
   const pm = estado.painelMotorista;
-  const telefone = (document.getElementById('lm-telefone')?.value || '').replace(/\D/g,'');
+  const telefone = normalizarTelefoneContaEF(document.getElementById('lm-telefone')?.value || '');
   const senha = document.getElementById('lm-senha')?.value || '';
   if(!telefone||!senha){ pm.loginErro='Preenche telefone e senha.'; render(); return; }
+  pm.loginTelefone=telefone;
+  const campoTelefone=document.getElementById('lm-telefone');
+  if(campoTelefone) campoTelefone.value=telefone;
   pm.loginErro='';
   const senhaHash = await hashSenha(senha);
-  const { data: dadosLogin, error } = await sb.rpc('entrega_motorista_autenticar', { p_telefone: telefone, p_senha_hash: senhaHash });
+  let dadosLogin=null, error=null;
+  for(let tentativa=0; tentativa<2; tentativa++){
+    const resp = await sb.rpc('entrega_motorista_autenticar', { p_telefone: telefone, p_senha_hash: senhaHash });
+    dadosLogin=resp.data; error=resp.error;
+    if(!error) break;
+    if(tentativa===0) await new Promise(r=>setTimeout(r,450));
+  }
   const data = Array.isArray(dadosLogin) ? (dadosLogin[0] || null) : dadosLogin;
-  if(error){ pm.loginErro='Erro ao consultar o cadastro. Tenta novamente.'; render(); return; }
+  if(error){
+    console.error('login_motorista_rpc', error);
+    pm.loginErro='Não consegui validar sua conta agora. Verifique a internet e tente novamente.';
+    render(); return;
+  }
   if(!data){ pm.loginErro='Telefone ou senha incorretos.'; render(); return; }
   if(data.status==='incompleto'){ pm.loginErro='O seu cadastro ficou incompleto. Cadastra-te novamente.'; render(); return; }
   if(data.status==='liberado'){ registrarStatusAplicativo('motorista',data.telefone,estado.notificacoesStatus==='granted'); mostrarLembreteDocumentosDiario(data.telefone,data.status); pm.tela='liberado'; pm.telefoneLiberado=data.telefone; render(); return; }
