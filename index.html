@@ -5755,6 +5755,19 @@ async function salvarEdicaoPedido(){
 }
 
 // ---------- carteira digital do cliente (saldo via Pix) ----------
+const EF_PIX_STATUS_V2_ATIVO = SUPABASE_URL.includes('urtpjcndtcleeorpnpct');
+async function consultarStatusPixV2(payload){
+  if(!EF_PIX_STATUS_V2_ATIVO) return null;
+  try{
+    const resp=await fetch(`${FUNCOES_URL}/consultar-cobranca-pix`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SUPABASE_KEY,'apikey':SUPABASE_KEY},
+      body:JSON.stringify(payload)
+    });
+    if(!resp.ok) return null;
+    return await resp.json().catch(()=>null);
+  }catch(e){ console.warn('Consulta Pix V2 indisponível',e); return null; }
+}
 async function carregarCarteiraCliente(){
   const w = estado.cliente.carteira;
   if(!estado.cliente.telefone) return;
@@ -5808,6 +5821,7 @@ function iniciarPollingCarteira(){
   pixPollTimer = setInterval(async ()=>{
     const w = estado.cliente.carteira;
     if(!w.pix.id || w.pix.status==='pago'){ clearInterval(pixPollTimer); pixPollTimer=null; return; }
+    await consultarStatusPixV2({tipo:'carteira',id:w.pix.id});
     const { data } = await sb.from('entrega_carteira_pix').select('status').eq('id', w.pix.id).maybeSingle();
     if(data && data.status==='pago'){
       w.pix.status='pago'; clearInterval(pixPollTimer); pixPollTimer=null;
@@ -5875,6 +5889,7 @@ function iniciarPollingUpgradeMotorista(){
   planoPixPollTimer=setInterval(async()=>{
     const t=estado.trocaPlanoMotorista;
     if(!t.motoristaId || t.status==='pago'){ clearInterval(planoPixPollTimer); planoPixPollTimer=null; return; }
+    await consultarStatusPixV2({tipo:'motorista',motoristaId:t.motoristaId});
     const { data } = await sb.from('entrega_motoristas').select('taxa_status,plano').eq('id',t.motoristaId).maybeSingle();
     if(data && (data.taxa_status==='pago' || data.plano==='pro')){
       if(data.plano!=='pro'){
@@ -10319,6 +10334,7 @@ function iniciarPollingPix(){
   pixPollTimer = setInterval(async ()=>{
     const c = estado.painelMotorista.cadastro;
     if(!c.id || c.pix.status==='pago'){ clearInterval(pixPollTimer); pixPollTimer=null; return; }
+    await consultarStatusPixV2({tipo:'motorista',motoristaId:c.id});
     const { data } = await sb.from('entrega_motoristas').select('taxa_status').eq('id', c.id).maybeSingle();
     if(data && data.taxa_status==='pago'){
       c.pix.status='pago'; clearInterval(pixPollTimer); pixPollTimer=null;
