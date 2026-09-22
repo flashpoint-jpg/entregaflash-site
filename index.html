@@ -3071,7 +3071,7 @@ async function buscarNominatim(texto, limite){
 
 async function buscarEnderecoServidor(texto, limite){
   try{
-    const url='https://rgcclordmqjmwuzrrfbd.supabase.co/functions/v1/entregaflash-geocode';
+    const url=`${FUNCOES_URL}/entregaflash-geocode`;
     const resp=await fetchComPrazo(url,{
       method:'POST',
       headers:{'Content-Type':'application/json','apikey':SUPABASE_KEY},
@@ -9881,7 +9881,7 @@ async function salvarEtapaCadastro(campos){
   if(c.cpf) base.cpf = c.cpf;
   if(c.telefone) base.telefone = c.telefone;
   if(c.cidade) base.cidade = c.cidade;
-  if(c.senhaHash) base.senha_hash = c.senhaHash;
+  // A senha já foi salva no cadastro básico via RPC segura. Não reenvia senha pelo navegador.
   const linha = Object.assign(base, campos);
   // O pré-cadastro já existe. UPDATE evita que o upsert tente um novo INSERT
   // e seja bloqueado pela proteção do banco justamente na etapa da chave PIX.
