@@ -1,7 +1,7 @@
-// build: 20260922-LOGIN-ONLINE-FIX-1
+// build: 20260922-MANUTENCAO-APP-1
 // Entrega Flash - Service Worker com atualização forçada + reparo de Push + integração Vendaí
-const EF_VERSION = '20260922-LOGIN-ONLINE-FIX-1';
-const EF_HOME = './index.html?v=' + EF_VERSION;
+const EF_VERSION = '20260922-MANUTENCAO-APP-1';
+const EF_HOME = './manutencao.html?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;
 
@@ -22,8 +22,8 @@ self.addEventListener('activate', (event) => {
     for (const cliente of clientes) {
       try {
         const u = new URL(cliente.url);
-        const principal = u.pathname === '/' || u.pathname.endsWith('/index.html') || u.pathname.endsWith('/entregaflash.html');
-        if (u.origin === self.location.origin && !u.pathname.startsWith('/admin/') && principal) {
+        const principal = u.pathname === '/' || u.pathname.endsWith('/index.html') || u.pathname.endsWith('/entregaflash.html') || u.pathname.endsWith('/manutencao.html');
+        if (u.origin === self.location.origin && !u.pathname.startsWith('/admin/') && !u.pathname.startsWith('/lider') && principal) {
           const destino = new URL(EF_HOME, self.registration.scope);
           if (u.searchParams.get('ef_native') === '1') destino.searchParams.set('ef_native','1');
           const vc = u.searchParams.get('ef_app_version');
@@ -84,18 +84,24 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     if (url.origin !== self.location.origin || url.pathname.startsWith('/admin/')) return;
 
-    if (url.pathname.endsWith('/entregaflash.html')) {
-      event.respondWith(Response.redirect(new URL(EF_HOME, self.registration.scope).href, 302));
-      return;
-    }
+    if (url.pathname.startsWith('/admin/') || url.pathname.startsWith('/lider')) return;
 
-    if (url.pathname === '/' || url.pathname.endsWith('/index.html')) {
-      // Sempre busca a página na rede, ignorando o cache do navegador.
-      // Sem isso, um celular podia continuar abrindo uma versão antiga do app.
+    if (
+      url.pathname === '/' ||
+      url.pathname.endsWith('/index.html') ||
+      url.pathname.endsWith('/entregaflash.html') ||
+      url.pathname.endsWith('/manutencao.html')
+    ) {
+      const destino = new URL(EF_HOME, self.registration.scope);
+      if (url.searchParams.get('ef_native') === '1') destino.searchParams.set('ef_native','1');
+      const vc = url.searchParams.get('ef_app_version');
+      const vn = url.searchParams.get('ef_app_version_name');
+      if (vc) destino.searchParams.set('ef_app_version', vc);
+      if (vn) destino.searchParams.set('ef_app_version_name', vn);
+
       event.respondWith(
-        fetch(event.request.url, { cache: 'no-store', credentials: 'include', redirect: 'follow' })
-          .then(injetarScripts)
-          .catch(() => fetch(event.request).then(injetarScripts))
+        fetch(destino.href, { cache:'no-store', credentials:'include', redirect:'follow' })
+          .catch(() => Response.redirect(destino.href, 302))
       );
     }
   } catch (e) {}
