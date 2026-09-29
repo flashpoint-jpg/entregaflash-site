@@ -21,8 +21,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
-      OLD_DATABASE_URL: ${{ secrets.ENTREGA_OLD_DATABASE_URL }}
-      NEW_DATABASE_URL: ${{ secrets.ENTREGA_NEW_DATABASE_URL }}
       OLD_SUPABASE_URL: ${{ secrets.ENTREGA_OLD_SUPABASE_URL }}
       OLD_SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.ENTREGA_OLD_SERVICE_ROLE_KEY }}
       NEW_SUPABASE_URL: ${{ secrets.ENTREGA_NEW_SUPABASE_URL }}
@@ -32,12 +30,11 @@ jobs:
       - name: Baixar repositório
         uses: actions/checkout@v4
 
-      - name: Validar segredos
+      - name: Validar os quatro segredos
         shell: bash
         run: |
           set -euo pipefail
           vars=(
-            OLD_DATABASE_URL NEW_DATABASE_URL
             OLD_SUPABASE_URL OLD_SUPABASE_SERVICE_ROLE_KEY
             NEW_SUPABASE_URL NEW_SUPABASE_SERVICE_ROLE_KEY
           )
@@ -48,49 +45,7 @@ jobs:
             fi
           done
 
-      - name: Bloquear execução se destino já tiver usuários
-        shell: bash
-        run: |
-          set -euo pipefail
-          TARGET_COUNTS="$(docker run --rm postgres:17             psql "$NEW_DATABASE_URL" -v ON_ERROR_STOP=1 -Atc             "select (select count(*) from public.entrega_motoristas)::text || '|' ||
-                    (select count(*) from public.entrega_clientes)::text || '|' ||
-                    (select count(*) from public.entrega_pedidos)::text;")"
-          echo "Destino (motoristas|clientes|pedidos): $TARGET_COUNTS"
-          if [ "$TARGET_COUNTS" != "0|0|0" ]; then
-            echo "::error::O banco novo já contém usuários/pedidos. Migração cancelada para evitar duplicação."
-            exit 1
-          fi
-
-      - name: Exportar somente dados do Entrega Flash
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/entrega-migration"
-          docker run --rm             -v "$RUNNER_TEMP/entrega-migration:/backup"             postgres:17             pg_dump "$OLD_DATABASE_URL"               --format=custom               --data-only               --no-owner               --no-privileges               --table='public.entrega_*'               --table='public.push_subscriptions'               --exclude-table='public.entrega_config_geral'               --exclude-table='public.entrega_migration_*'               --file=/backup/entrega-data.dump
-          test -s "$RUNNER_TEMP/entrega-migration/entrega-data.dump"
-
-      - name: Importar dados no Supabase novo
-        shell: bash
-        run: |
-          set -euo pipefail
-          docker run --rm             -v "$RUNNER_TEMP/entrega-migration:/backup"             postgres:17             pg_restore               --dbname="$NEW_DATABASE_URL"               --data-only               --no-owner               --no-privileges               --disable-triggers               --exit-on-error               /backup/entrega-data.dump
-
-      - name: Conferir contagens principais
-        shell: bash
-        run: |
-          set -euo pipefail
-          QUERY="select
-            (select count(*) from public.entrega_motoristas) as motoristas,
-            (select count(*) from public.entrega_clientes) as clientes,
-            (select count(*) from public.entrega_pedidos) as pedidos,
-            (select count(*) from public.push_subscriptions) as pushes,
-            (select count(*) from public.entrega_alertas_admin) as alertas;"
-          echo "ORIGEM:"
-          docker run --rm postgres:17 psql "$OLD_DATABASE_URL" -v ON_ERROR_STOP=1 -c "$QUERY"
-          echo "DESTINO:"
-          docker run --rm postgres:17 psql "$NEW_DATABASE_URL" -v ON_ERROR_STOP=1 -c "$QUERY"
-
-      - name: Preparar Node para copiar Storage
+      - name: Preparar Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
@@ -101,6 +56,12 @@ jobs:
           set -euo pipefail
           npm install --no-save @supabase/supabase-js@2
 
+      - name: Migrar dados do Entrega Flash
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/migrar-dados-entrega-flash.mjs
+
       - name: Copiar somente Storage do Entrega Flash
         shell: bash
         run: |
@@ -110,5 +71,5 @@ jobs:
       - name: Final
         shell: bash
         run: |
-          echo "Migração de dados concluída."
+          echo "Migração de dados e Storage concluída."
           echo "O workflow NÃO troca o site para o banco novo automaticamente."
