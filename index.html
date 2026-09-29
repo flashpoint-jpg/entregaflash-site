@@ -8,9 +8,9 @@
   <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
-  <title>Entrega Flash — Em manutenção</title>
+  <title>Entrega Flash — Temporariamente indisponível</title>
   <link rel="icon" href="/icon-192-modern.png">
-  <link rel="manifest" href="/entregaflash-manifest.json?v=20260924-RETORNO29-1">
+  <link rel="manifest" href="/entregaflash-manifest.json?v=20260929-AGUARDANDO-1">
   <style>
     :root{--navy:#071a2d;--orange:#ff6b00;--orange2:#ff9b4a;--white:#fff;--muted:#b8c6d3}
     *{box-sizing:border-box}
@@ -29,37 +29,27 @@
       border:1px solid rgba(255,140,54,.35);background:rgba(255,107,0,.10);color:#ffd7bb;font-size:13px;font-weight:800;margin-bottom:24px}
     .dot{width:9px;height:9px;border-radius:50%;background:var(--orange);animation:pulse 1.7s infinite}
     @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,107,0,.65)}70%{box-shadow:0 0 0 11px rgba(255,107,0,0)}100%{box-shadow:0 0 0 0 rgba(255,107,0,0)}}
-    h1{margin:0;font-size:clamp(32px,7vw,58px);line-height:1.04;letter-spacing:-.045em}
+    h1{margin:0;font-size:clamp(32px,7vw,56px);line-height:1.05;letter-spacing:-.04em}
     h1 span{color:var(--orange2)}
     p{margin:22px auto 0;max-width:620px;font-size:clamp(17px,3.6vw,21px);line-height:1.55;color:#dce7f0}
     p strong{color:#fff}
-    .progress{margin:34px auto 0;max-width:520px}
-    .head{display:flex;justify-content:space-between;gap:18px;margin-bottom:10px;font-size:13px;font-weight:800;color:#cbd7e2}
-    .track{height:10px;border-radius:999px;background:rgba(255,255,255,.09);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
-    .bar{height:100%;width:74%;border-radius:inherit;background:linear-gradient(90deg,var(--orange),var(--orange2));position:relative;animation:move 2.4s ease-in-out infinite alternate}
-    .bar:after{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 15%,rgba(255,255,255,.45) 45%,transparent 75%);transform:translateX(-100%);animation:shine 1.9s linear infinite}
-    @keyframes move{from{width:62%}to{width:84%}} @keyframes shine{to{transform:translateX(110%)}}
-    .note{margin:28px auto 0;max-width:580px;padding:16px 18px;border-radius:18px;background:rgba(255,255,255,.055);
-      border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:14px;line-height:1.55}
-    .wait{margin-top:25px;font-weight:900;color:#fff;font-size:17px}
+    .note{margin:30px auto 0;max-width:590px;padding:18px 20px;border-radius:18px;background:rgba(255,255,255,.055);
+      border:1px solid rgba(255,255,255,.08);color:var(--muted);font-size:15px;line-height:1.6}
+    .wait{margin-top:28px;font-weight:900;color:#fff;font-size:17px}
     footer{margin-top:21px;color:#8195a7;font-size:12px}
     @media(max-width:520px){body{padding:16px 12px}.card{padding:28px 18px;border-radius:24px}.logo{margin-bottom:18px}}
-    @media(prefers-reduced-motion:reduce){.dot,.bar,.bar:after{animation:none}.bar{width:74%}}
+    @media(prefers-reduced-motion:reduce){.dot{animation:none}}
   </style>
 </head>
 <body>
   <main>
     <img class="logo" src="/entregaflash-logo-premium.png" alt="Entrega Flash">
     <section class="card">
-      <div class="status"><span class="dot"></span> MANUTENÇÃO E AMPLIAÇÃO EM ANDAMENTO</div>
-      <h1>A campanha foi um <span>sucesso.</span></h1>
-      <p>Devido ao <strong>fluxo de movimentação acima do esperado</strong>, estamos em manutenção para uma grande ampliação do aplicativo Entrega Flash.</p>
-      <div class="progress">
-        <div class="head"><span>Ampliação da plataforma</span><span>Em andamento</span></div>
-        <div class="track"><div class="bar"></div></div>
-      </div>
-      <div class="note">Estamos aumentando a capacidade da estrutura para receber ainda mais clientes e motoristas com estabilidade, velocidade e segurança.</div>
-      <div class="wait">Previsão de retorno: <strong>a partir de 29 de setembro.</strong></div>
+      <div class="status"><span class="dot"></span> TEMPORARIAMENTE INDISPONÍVEL</div>
+      <h1>Pedimos <span>desculpas.</span></h1>
+      <p>O Entrega Flash está temporariamente fora do ar enquanto aguardamos a <strong>liberação da nossa infraestrutura</strong>.</p>
+      <div class="note">Estamos acompanhando a situação e o aplicativo voltará assim que o serviço for normalizado. Seus dados e cadastros permanecem preservados.</div>
+      <div class="wait">Obrigado pela compreensão e por confiar no Entrega Flash.</div>
     </section>
     <footer>Entrega Flash · Sua entrega, mais rápida e mais perto.</footer>
   </main>
@@ -67,7 +57,7 @@
     (async()=>{
       try{
         if('serviceWorker' in navigator){
-          const reg=await navigator.serviceWorker.register('/entregaflash-sw.js?v=20260922-MANUTENCAO-2',{updateViaCache:'none'});
+          const reg=await navigator.serviceWorker.register('/entregaflash-sw.js?v=20260929-AGUARDANDO-1',{updateViaCache:'none'});
           await reg.update();
           const w=reg.waiting||reg.installing;
           if(w) w.postMessage({type:'SKIP_WAITING'});
