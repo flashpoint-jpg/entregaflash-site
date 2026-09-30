@@ -12073,6 +12073,9 @@ iniciarAppReal();
 </script>
 
 <link rel="stylesheet" href="/assets/pedido-visual.css?v=20260915-busca-2">
+<script>
+(async()=>{try{if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.register('/entregaflash-sw.js?v=20260930-ATIVO-1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}}catch(e){}})();
+</script>
 </body>
 </html>
 <style id="ef-ajuste-clarear-compactar-20260901">
