@@ -9097,7 +9097,17 @@ async function atualizarDisponibilidadeDB(telefone, disponivel){
     payload.lng_atual = ultimaPosicaoMotorista.lon;
     payload.lat_atualizado_em = agora;
   }
-  const { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
+  // Após a migração alguns cadastros antigos podem não aceitar no mesmo UPDATE
+  // os campos de presença/GPS. Primeiro tenta o payload completo; se falhar,
+  // faz fallback só do status para não impedir o motorista de ficar online.
+  let { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
+  if(error){
+    console.warn('Falha ao atualizar presença completa; tentando somente disponibilidade', error);
+    const fallback = await sb.from('entrega_motoristas')
+      .update({ disponivel, disponivel_atualizado_em: agora })
+      .eq('telefone', telefone);
+    error = fallback.error;
+  }
   if(!error && disponivel){
     // Avisa o Líder da Cidade quando um motorista aprovado entra online.
     // O push funciona mesmo com o painel do líder fechado, desde que ele tenha ativado os alertas.
