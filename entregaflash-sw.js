@@ -1,7 +1,7 @@
-// build: 20260922-MANUTENCAO-APP-1
+// build: 20260930-ATIVO-1
 // Entrega Flash - Service Worker com atualização forçada + reparo de Push + integração Vendaí
-const EF_VERSION = '20260922-MANUTENCAO-APP-1';
-const EF_HOME = './manutencao.html?v=' + EF_VERSION;
+const EF_VERSION = '20260930-ATIVO-1';
+const EF_HOME = './?v=' + EF_VERSION;
 const EF_PUSH_REPAIR = '/push-repair.js?v=' + EF_VERSION;
 const EF_PUSH_RAIO = '/push-despacho-raio.js?v=' + EF_VERSION;
 
@@ -41,7 +41,7 @@ function normalizarUrl(url) {
   try {
     if (!url) return EF_HOME;
     const texto = String(url);
-    if (texto.includes('entregaflash.html')) return EF_HOME;
+    if (texto.includes('entregaflash.html') || texto.includes('manutencao.html')) return EF_HOME;
     return texto;
   } catch (e) {
     return EF_HOME;
