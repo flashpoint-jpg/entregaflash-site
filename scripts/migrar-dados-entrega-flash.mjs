@@ -54,7 +54,7 @@ const TABLES = [
   ["entrega_cliente_sessoes", ["token"]],
   ["entrega_parceiros", ["id"]],
   ["entrega_app_dispositivos", ["id"]],
-  ["entrega_lembretes_documentos", ["id"]],
+  ["entrega_lembretes_documentos", ["motorista_telefone", "data_lembrete"]],
   ["entrega_push_eventos", ["id"]],
   ["entrega_reset_senha", ["id"]],
   ["entrega_rastreios_compartilhados", ["token_hash"]],
