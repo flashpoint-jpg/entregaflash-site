@@ -9100,12 +9100,19 @@ async function atualizarDisponibilidadeDB(telefone, disponivel){
   // Após a migração alguns cadastros antigos podem não aceitar no mesmo UPDATE
   // os campos de presença/GPS. Primeiro tenta o payload completo; se falhar,
   // faz fallback só do status para não impedir o motorista de ficar online.
-  let { error } = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
+  // Presença passa por RPC dedicada para não depender das permissões de UPDATE
+  // da tabela após migração. Mantém o UPDATE direto apenas como fallback legado.
+  const rpc = await sb.rpc('entrega_motorista_atualizar_presenca', {
+    p_telefone: telefone,
+    p_disponivel: disponivel,
+    p_lat: (disponivel && ultimaPosicaoMotorista) ? ultimaPosicaoMotorista.lat : null,
+    p_lng: (disponivel && ultimaPosicaoMotorista) ? ultimaPosicaoMotorista.lon : null
+  });
+  let error = rpc.error;
+  if(!error && rpc.data !== true) error = new Error('motorista_nao_aprovado_ou_nao_encontrado');
   if(error){
-    console.warn('Falha ao atualizar presença completa; tentando somente disponibilidade', error);
-    const fallback = await sb.from('entrega_motoristas')
-      .update({ disponivel, disponivel_atualizado_em: agora })
-      .eq('telefone', telefone);
+    console.warn('RPC de presença falhou; tentando atualização direta legada', error);
+    const fallback = await sb.from('entrega_motoristas').update(payload).eq('telefone', telefone);
     error = fallback.error;
   }
   if(!error && disponivel){
