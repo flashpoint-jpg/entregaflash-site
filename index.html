@@ -7352,7 +7352,7 @@ function telaCliente(){
   <div class="cartao">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
       <div style="font-size:14px;color:var(--poeira)">Olá, <b style="color:var(--osso);font-size:16px">${estado.cliente.nome}</b></div>
-      <a onclick="sairCliente()" style="font-size:14px;cursor:pointer;color:var(--poeira);text-decoration:underline">Sair</a>
+      <a class="ef-toque-44" onclick="sairCliente()" style="font-size:14px;cursor:pointer;color:var(--poeira);text-decoration:underline">Sair</a>
     </div>
     <div class="link-taxas-topo" onclick="abrirComoFunciona('taxas')"> Ver todas as taxas e regras antes de pedir</div>
     ${!estado.cliente.visitante ? `
@@ -7396,7 +7396,7 @@ function telaCliente(){
     </div>
     <div style="font-size:14px;color:var(--osso);display:flex;align-items:center;gap:6px;margin-top:2px">
       <span style="width:8px;height:8px;border-radius:50%;background:${estado.motoristasOnline>0?'#7fae72':'#a9a89c'};display:inline-block"></span>
-      ${estado.motoristasOnline>0 ? `${estado.motoristasOnline} motorista${estado.motoristasOnline>1?'s':''} online agora` : 'Nenhum motorista online no momento'}
+      ${estado.motoristasOnline>0 ? `${estado.motoristasOnline} motorista${estado.motoristasOnline>1?'s':''} online agora` : 'Avisamos os motoristas da sua região assim que você pedir'}
     </div>
     ${passosPedidoHTML(f.etapaPedido)}
     <div class="etapa-conteudo" style="margin-top:14px">
@@ -12710,4 +12710,15 @@ html,body{background:#12161c!important}
 .favorito-escolha{background:rgba(255,255,255,.035)}.favorito-escolha-topo{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.favorito-escolha-topo>div{min-width:0}.favorito-normal{border:1px solid rgba(255,255,255,.16);background:transparent;color:var(--poeira);border-radius:10px;padding:7px 9px;font-weight:800;font-size:10px;cursor:pointer}.favorito-normal.ativo{background:var(--mango);color:#251600;border-color:var(--mango)}.favorito-lista{display:grid;gap:7px;margin-top:10px}.favorito-card{width:100%;display:flex;align-items:center;gap:9px;text-align:left;border:1px solid rgba(255,255,255,.1);background:var(--painel-alt);color:var(--osso);padding:9px;border-radius:12px;cursor:pointer}.favorito-card.ativo{border-color:var(--mango);box-shadow:0 0 0 1px rgba(255,201,60,.2)}.favorito-card.offline{opacity:.48;cursor:not-allowed}.favorito-card img,.favorito-avatar{width:38px;height:38px;border-radius:50%;object-fit:cover;flex:0 0 38px}.favorito-avatar{display:grid;place-items:center;background:rgba(255,201,60,.15);color:var(--mango);font-weight:900}.favorito-dados{min-width:0;flex:1}.favorito-dados b{font-size:12.5px}.favorito-dados small,.favorito-dados em{display:block;font-size:10.5px;color:var(--poeira);font-style:normal;margin-top:2px}.favorito-dados em{color:#65c98b}.favorito-card.offline .favorito-dados em{color:var(--poeira)}.favorito-card>strong{color:var(--mango);font-size:18px}
 .chamada-favorito-ativa{border-color:rgba(255,201,60,.52);background:linear-gradient(135deg,rgba(255,201,60,.14),rgba(255,171,0,.05))}.pedido-favorito-badge{margin:7px 0 9px;padding:8px 10px;border-radius:10px;background:rgba(255,201,60,.13);border:1px solid rgba(255,201,60,.38);color:var(--mango);font-size:12px;font-weight:900}
 @media(max-width:480px){.favorito-escolha-topo,.favorito-pos-entrega{align-items:stretch;flex-direction:column}.favorito-normal,.favorito-pos-entrega button{width:100%}.pin-motorista-box>div{grid-template-columns:1fr}.pin-cliente-box>strong{font-size:27px}}
+
+/* ===== 02/10/2026 — leitura dos formulários e áreas de toque ===== */
+/* Títulos e textos de ajuda dos cartões claros: o cinza-claro do tema escuro ficava ilegível (contraste 1,6). */
+.campo-motorista label,.campo-motorista .subtitulo,.campo-motorista .texto-ajuda,.campo-motorista .hint,.campo-motorista .ajuda,
+.cartao.ef-form-entrega label,.cartao.ef-form-entrega .subtitulo,.cartao.ef-form-entrega .texto-ajuda,.cartao.ef-form-entrega .hint,.cartao.ef-form-entrega .ajuda{color:#454b56!important}
+/* Quadrados laranja da tela inicial: texto escuro e maior (branco sobre laranja tinha contraste 2,6). */
+.bv-hero-actions .ef-home-action strong,.bv-hero-actions .ef-home-action .ef-action-icon{color:#111!important}
+.bv-hero-actions .ef-home-action small{color:rgba(0,0,0,.8)!important;font-size:11.5px!important;font-weight:700!important}
+/* Links pequenos com área de toque de 44px sem mudar o desenho. */
+.ef-toque-44,.link-alt a,.rodape-discreto span[onclick]{display:inline-block;padding:13px 8px;margin:-13px -8px}
+.rodape-discreto{color:#aeb2b8!important}
 </style>
