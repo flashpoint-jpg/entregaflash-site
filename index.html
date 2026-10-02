@@ -2277,8 +2277,8 @@ function onboardingHTML(){
           ${!ultimo ? `<span class="link-instalar" style="margin:0" onclick="fecharOnboarding()">Pular</span>` : ''}
         </div>
         <div style="font-size:58px;line-height:1;margin-bottom:14px">${s.emoji}</div>
-        <h3 style="margin:0 0 10px;font-size:21px">${s.titulo}</h3>
-        <div class="subtitulo" style="min-height:78px">${s.texto}</div>
+        <h3 style="margin:0 0 10px;font-size:21px;color:#14171c">${s.titulo}</h3>
+        <div class="subtitulo" style="min-height:78px;color:#454b56!important">${s.texto}</div>
         <div style="display:flex;justify-content:center;gap:7px;margin:18px 0 20px">
           ${ONBOARDING_SLIDES.map((_,i)=>`<span onclick="irParaSlideOnboarding(${i})" style="width:${i===estado.onboardingSlide?'20px':'7px'};height:7px;border-radius:4px;background:${i===estado.onboardingSlide?'var(--mango,#ffc93c)':'var(--linha)'};transition:width .2s;cursor:pointer"></span>`).join('')}
         </div>
@@ -12098,7 +12098,7 @@ iniciarAppReal();
 
 <link rel="stylesheet" href="/assets/pedido-visual.css?v=20260915-busca-2">
 <script>
-(async()=>{try{if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.register('/entregaflash-sw.js?v=20261002-CONTRASTE-1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}}catch(e){}})();
+(async()=>{try{if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.register('/entregaflash-sw.js?v=20261002-CENTRALIZADO-1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}}catch(e){}})();
 </script>
 </body>
 </html>
@@ -12737,5 +12737,11 @@ html,body{background:#12161c!important}
 @media(min-width:700px){
   .bv-cta-fixa{left:0!important;right:0!important;width:100%!important;max-width:none!important;margin:0!important;grid-template-columns:repeat(3,minmax(0,220px))!important;justify-content:center!important;gap:12px!important;border-top:1px solid rgba(255,151,16,.28)!important;box-shadow:0 -10px 28px rgba(0,0,0,.45)!important}
   .bv-wrap{padding-bottom:104px!important}
+}
+/* 02/10/2026 (3) — computador: todas as telas centralizadas e com a mesma largura (antes ficavam coladas à esquerda e cada uma com um tamanho). */
+button,input,select,textarea{font-family:inherit}
+@media(min-width:701px){
+  html body #app,html body.ef-empresas #app,html body.ef-acompanhamento #app{width:100%!important;max-width:1180px!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}
+  html body .parceiro-page{width:100%!important;max-width:none!important;margin-left:auto!important;margin-right:auto!important;box-sizing:border-box!important}
 }
 </style>
