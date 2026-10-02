@@ -2625,6 +2625,13 @@ function efMostrarBloqueioAtualizacao(info){
       : 'Esta versão do Entrega Flash está desatualizada neste aparelho. Toque no botão para carregar a versão mais recente.'}</div>
     <button id="efBotaoAtualizarAgora" style="width:100%;margin-top:20px;padding:15px 18px;border:0;border-radius:14px;background:#ff5a3c;color:#fff;font-size:17px;font-weight:800;cursor:pointer">${nativo?'⬆️ BAIXAR ATUALIZAÇÃO':'🔄 ATUALIZAR AGORA'}</button>
     <div id="efAvisoAtualizacao" style="font-size:13px;color:#c3c8ee;margin-top:14px;line-height:1.5"></div>
+    ${nativo?`<div style="text-align:left;font-size:14px;line-height:1.55;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:14px 16px;margin-top:16px">
+      <b>Por que atualizar?</b> A versão antiga não deixa você ficar ONLINE: ela não envia mais a sua localização.<br><br>
+      <b>Como fazer:</b><br>
+      1. Toque em BAIXAR ATUALIZAÇÃO e instale o arquivo.<br>
+      2. Abra o Entrega Flash novo e toque em FICAR ONLINE.<br>
+      3. Se ficarem <b>dois aplicativos Entrega Flash</b> no celular, desinstale o antigo e use só o novo.
+    </div>`:''}
     <div style="font-size:12px;color:#7f86b5;margin-top:16px">Versão instalada: ${instalada}<br>Versão mínima obrigatória: ${minimo}</div>
   </div>`;
   try{ document.documentElement.style.overflow='hidden'; }catch(e){}
@@ -2699,7 +2706,7 @@ async function exigirAtualizacaoApkAntesDeFicarOnline(){
   const instalada=versaoCodigoApkNativo();
   const versaoTexto=instalada ? `<br><small style="opacity:.72">Versão instalada: ${instalada}</small>` : '';
   const atualizar=await confirmarAcao(
-    `<b style="font-size:19px">Atualização obrigatória</b><br><br>Para ficar online e receber entregas, você precisa usar a versão mais recente do Entrega Flash.${versaoTexto}<br><br><b>Atualize o aplicativo e depois toque em FICAR ONLINE novamente.</b>`,
+    `<b style="font-size:19px">Atualização obrigatória</b><br><br>Para ficar online e receber entregas, você precisa usar a versão mais recente do Entrega Flash.${versaoTexto}<br><br><b>Atualize o aplicativo e depois toque em FICAR ONLINE novamente.</b><br><br><small style="opacity:.85">Se ficarem dois aplicativos Entrega Flash no celular, desinstale o antigo e use só o novo.</small>`,
     'ATUALIZAR AGORA'
   );
   if(atualizar){
