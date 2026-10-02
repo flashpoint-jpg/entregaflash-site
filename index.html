@@ -12098,7 +12098,7 @@ iniciarAppReal();
 
 <link rel="stylesheet" href="/assets/pedido-visual.css?v=20260915-busca-2">
 <script>
-(async()=>{try{if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.register('/entregaflash-sw.js?v=20260930-ATIVO-1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}}catch(e){}})();
+(async()=>{try{if('serviceWorker' in navigator){const reg=await navigator.serviceWorker.register('/entregaflash-sw.js?v=20261002-CONTRASTE-1',{updateViaCache:'none'});await reg.update();if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});}}catch(e){}})();
 </script>
 </body>
 </html>
@@ -12728,4 +12728,14 @@ html,body{background:#12161c!important}
 /* Links pequenos com área de toque de 44px sem mudar o desenho. */
 .ef-toque-44,.link-alt a,.rodape-discreto span[onclick]{display:inline-block;padding:13px 8px;margin:-13px -8px}
 .rodape-discreto{color:#aeb2b8!important}
+/* 02/10/2026 (2) — contraste garantido nos quadrados laranja e no botão "Pedir entrega" da barra fixa. */
+.bv-hero-actions .ef-home-action,.bv-hero-actions .ef-home-action strong,.bv-hero-actions .ef-home-action small,.bv-hero-actions .ef-home-action .ef-action-icon{opacity:1!important;text-shadow:none!important;filter:none!important}
+.bv-hero-actions .ef-home-action strong,.bv-hero-actions .ef-home-action .ef-action-icon{color:#111!important;-webkit-text-fill-color:#111!important;font-weight:800!important}
+.bv-hero-actions .ef-home-action small{color:#1c1300!important;-webkit-text-fill-color:#1c1300!important;font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif!important}
+.bv-cta-fixa .btn-primario{color:#111!important;-webkit-text-fill-color:#111!important;opacity:1!important;background:linear-gradient(90deg,#ffad18,#ff7a00)!important}
+/* Telas largas (computador): a barra fixa vira uma faixa de ponta a ponta, em vez de uma caixa solta por cima dos cartões. */
+@media(min-width:700px){
+  .bv-cta-fixa{left:0!important;right:0!important;width:100%!important;max-width:none!important;margin:0!important;grid-template-columns:repeat(3,minmax(0,220px))!important;justify-content:center!important;gap:12px!important;border-top:1px solid rgba(255,151,16,.28)!important;box-shadow:0 -10px 28px rgba(0,0,0,.45)!important}
+  .bv-wrap{padding-bottom:104px!important}
+}
 </style>
