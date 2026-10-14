@@ -24,6 +24,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Karla:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/* Fallback para quando o primeiro CDN falhar na tela de administração. */
+if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+  document.write('<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"><\/script>');
+}
+</script>
 <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <!-- Meta Pixel -->
@@ -888,6 +894,15 @@ body.ef-admin-logado #suporte-admin-mensagens{flex:1;min-height:150px;}
 })();
 </script>
 <div id="app"></div>
+<script>
+/* Nunca deixar o painel permanentemente em branco quando houver falha de bootstrap. */
+setTimeout(function(){
+  var painel = document.getElementById('app');
+  if (painel && !painel.textContent.trim() && painel.children.length === 0) {
+    painel.innerHTML = '<div style="min-height:85vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:28px;color:#f5f6fb;background:#0d0f12;font:16px Arial,sans-serif;text-align:center"><strong style="font-size:21px;margin-bottom:14px">Painel Entrega Flash</strong><div style="line-height:1.5;margin-bottom:18px">Não foi possível concluir o carregamento. Verifique a conexão e tente novamente.</div><button type="button" onclick="location.reload()" style="background:#ff9710;color:#111;border:0;border-radius:12px;padding:13px 24px;font-size:16px;font-weight:bold">Tentar novamente</button></div>';
+  }
+}, 12000);
+</script>
 
 <div id="gate-localizacao" style="display:none">
   <div id="gate-localizacao-corpo" class="gl-corpo"></div>
@@ -899,7 +914,7 @@ body.ef-admin-logado #suporte-admin-mensagens{flex:1;min-height:150px;}
 <script>
 const SUPABASE_URL = 'https://rgcclordmqjmwuzrrfbd.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJnY2Nsb3JkbXFqbXd1enJyZmJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzMzU5NjgsImV4cCI6MjEwMDkxMTk2OH0.08MeNbE_Tr5sf7APOP9gsSr5KwDjDbdacaXXzDOyqXA';
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = (window.supabase && typeof window.supabase.createClient === "function") ? window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY) : null;
 const FUNCOES_URL = SUPABASE_URL + '/functions/v1';
 const RESET_SENHA_URL = FUNCOES_URL + '/entregaflash-reset-senha';
 
