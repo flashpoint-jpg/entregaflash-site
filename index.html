@@ -2869,10 +2869,11 @@ async function restaurarSessao(){
         await continuarParaDocumentos();
       } else if(data && STATUS_ACESSO_PAINEL.includes(data.status)){
         estado.motorista = {
-          nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
+          nome:data.nome, telefone:data.telefone, cidade:data.cidade||'', ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
           veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
           fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
-          notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null, latAtualizadoEm:Number(data.lat_atualizado_em)||null
+          notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null, latAtualizadoEm:Number(data.lat_atualizado_em)||null,
+          latAtual:data.lat_atual==null?null:Number(data.lat_atual), lonAtual:data.lng_atual==null?null:Number(data.lng_atual)
         };
         const intencaoOnlineSalva=obterIntencaoMotoristaOnline();
         const querRetomarOnline=estado.motorista.status==='aprovado' && (estado.motorista.disponivel || intencaoOnlineSalva===true);
@@ -4206,11 +4207,21 @@ function assinarMotoristaLogadoRealtime(telefone){
       if(novo.raio_atendimento_km!=null && novo.raio_atendimento_km!==estado.motorista.raioAtendimentoKm){ estado.motorista.raioAtendimentoKm=novo.raio_atendimento_km; mudou=true; }
       // O APK nativo atualiza o GPS direto no Supabase mesmo com WhatsApp/Waze na frente.
       // Guarda o horário do último FIX do banco para a tela reconhecer o online real.
+      // Coordenadas atualizadas pelo GPS nativo chegam pelo Realtime do Supabase.
+      // Mantemos a posição real separada da cidade cadastrada (que não é GPS).
+      if(novo.lat_atual!=null && novo.lng_atual!=null){
+        const lat=Number(novo.lat_atual), lon=Number(novo.lng_atual);
+        if(Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat)<=90 && Math.abs(lon)<=180 && !(lat===0 && lon===0)){
+          estado.motorista.latAtual=lat;
+          estado.motorista.lonAtual=lon;
+        }
+      }
       if(novo.lat_atualizado_em!=null){
         const antes=Number(estado.motorista.latAtualizadoEm||0);
         const eraFresco=antes>0 && (Date.now()-antes)<=PRESENCA_MOTORISTA_MS;
         const depois=Number(novo.lat_atualizado_em)||0;
         estado.motorista.latAtualizadoEm=depois||null;
+        if(document.getElementById('mapa-motorista-home')) setTimeout(montarMapaMotoristaHome,0);
         const ficouFresco=depois>0 && (Date.now()-depois)<=PRESENCA_MOTORISTA_MS;
         if(eraFresco!==ficouFresco) mudou=true;
         if(ficouFresco && reconexaoMotoristaAtiva && motoristaQuerPermanecerOnline()){
@@ -6379,7 +6390,7 @@ function iniciarRastreioMotorista(){
     return;
   }
   watchId=navigator.geolocation.watchPosition(
-    (pos)=>{ ultimaPosicaoMotorista={lat:pos.coords.latitude,lon:pos.coords.longitude,capturadaEm:Number(pos.timestamp||Date.now())}; enviarPosicaoMotorista(); },
+    (pos)=>{ ultimaPosicaoMotorista={lat:pos.coords.latitude,lon:pos.coords.longitude,capturadaEm:Number(pos.timestamp||Date.now())}; enviarPosicaoMotorista(); if(document.getElementById('mapa-motorista-home')) montarMapaMotoristaHome(); },
     (err)=>{
       console.warn(err);
       if(!avisoLocalizacaoMostrado){
@@ -8292,14 +8303,32 @@ let mapaMotoristaHome=null;
 function montarMapaMotoristaHome(){
   const slot=document.getElementById('mapa-motorista-home');
   if(!slot || typeof L==='undefined') return;
-  const fallback=[-21.3758,-46.5253];
-  const pos=ultimaPosicaoMotorista ? [Number(ultimaPosicaoMotorista.lat),Number(ultimaPosicaoMotorista.lon)] : fallback;
+  const agora=Date.now();
+  // Nunca apresentar coordenadas de Minas, da cidade cadastrada ou um GPS antigo
+  // como se fossem a localização real do motorista.
+  const fontes=[
+    {lat:Number(ultimaPosicaoMotorista?.lat),lon:Number(ultimaPosicaoMotorista?.lon),em:Number(ultimaPosicaoMotorista?.capturadaEm||0)},
+    {lat:Number(estado.motorista?.latAtual),lon:Number(estado.motorista?.lonAtual),em:Number(estado.motorista?.latAtualizadoEm||0)}
+  ].filter(p=>p.em>0 && agora-p.em>=-60000 && agora-p.em<=PRESENCA_MOTORISTA_MS &&
+    Number.isFinite(p.lat) && Number.isFinite(p.lon) && Math.abs(p.lat)<=90 && Math.abs(p.lon)<=180 &&
+    !(p.lat===0 && p.lon===0));
+  fontes.sort((a,b)=>b.em-a.em);
+  const pos=fontes.length ? [fontes[0].lat,fontes[0].lon] : null;
+  if(!pos){
+    if(mapaMotoristaHome){
+      try{ mapaMotoristaHome.map.remove(); }catch(e){}
+      mapaMotoristaHome=null;
+    }
+    slot.innerHTML='<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;height:100%;padding:24px;text-align:center;color:#c9d0da"><b>Aguardando localização real</b><span style="font-size:13px;line-height:1.5">Ative o GPS do celular e permita acesso à localização. O mapa mostrará sua posição assim que o sinal chegar.</span></div>';
+    return;
+  }
   try{
     if(mapaMotoristaHome && mapaMotoristaHome.slot!==slot){ try{mapaMotoristaHome.map.remove()}catch(e){} mapaMotoristaHome=null; }
     if(!mapaMotoristaHome){
+      slot.innerHTML='';
       const map=L.map(slot,{zoomControl:true}).setView(pos,15);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-      const marker=L.marker(pos).addTo(map).bindPopup('Você está aqui');
+      const marker=L.marker(pos).addTo(map).bindPopup('Sua localização GPS atual');
       const circle=L.circle(pos,{radius:650,weight:1,fillOpacity:.07}).addTo(map);
       mapaMotoristaHome={slot,map,marker,circle};
       setTimeout(()=>{ try{map.invalidateSize()}catch(e){} },120);
@@ -9789,10 +9818,11 @@ function cadastroTemDocumentosCompletos(data){
 const STATUS_ACESSO_PAINEL = ['basico','pendente','aprovado'];
 async function entrarNoPainelMotorista(data){
   estado.motorista = {
-    nome:data.nome, telefone:data.telefone, ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
+    nome:data.nome, telefone:data.telefone, cidade:data.cidade||'', ativo:true, status:data.status, plano:data.plano||'free', disponivel:!!data.disponivel,
     veiculo:data.veiculo_tipo||'', marca:data.veiculo_marca||'', placa:data.veiculo_placa||'', cor:data.veiculo_cor||'',
     fotoMotoristaUrl:data.foto_motorista_url||null, fotoVeiculoUrl:data.foto_veiculo_url||null, saldo:0,
-    notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null, latAtualizadoEm:Number(data.lat_atualizado_em)||null
+    notaMedia:data.nota_media!=null?Number(data.nota_media):5, totalAvaliacoes:Number(data.total_avaliacoes)||0, cancelamentosHoje:0, raioAtendimentoKm:data.raio_atendimento_km||null, criadoEm:Number(data.criado_em)||null, latAtualizadoEm:Number(data.lat_atualizado_em)||null,
+          latAtual:data.lat_atual==null?null:Number(data.lat_atual), lonAtual:data.lng_atual==null?null:Number(data.lng_atual)
   };
   estado.ultimoPedidosJSON='';
   salvarLocal('ef_motorista_telefone', data.telefone); salvarLocal('ef_modo','entregador');
