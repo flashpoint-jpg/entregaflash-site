@@ -13,7 +13,7 @@ input{width:100%;max-width:420px}button{background:#1266cb;border:0;color:#fff;f
 .badge{font-size:12px;font-weight:700;background:#fff0d6;color:#7b4f00;padding:5px 9px;border-radius:20px}
 .docs{display:flex;gap:8px;flex-wrap:wrap}.docs a,.missing{font-size:13px;padding:9px 11px;border-radius:8px;border:1px solid #ccdcee}
 .docs a{color:#135bb0;text-decoration:none;background:#f7fbff}.missing{color:#99512b;background:#fff7f2}
-#err{color:#ae3030}small{color:#65788b}button:disabled{opacity:.5}
+#err{color:#ae3030}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.actions .deny{background:#fff;color:#a4332d;border:1px solid #e7b1ab}small{color:#65788b}button:disabled{opacity:.5}
 </style></head><body>
 <header><b>ENTREGA FLASH · Documentos</b><a href="/admin/">Voltar ao painel</a></header>
 <main><h1>Documentação dos motoristas</h1><p>Documentos do banco atual do Entrega Flash, sem modificar os cadastros.</p>
@@ -31,7 +31,40 @@ const secureLink=u=>{try{let x=new URL(u);return x.protocol==='https:'&&/^[a-z0-
 const show=()=>{let txt=$('search').value.toLowerCase().trim(),stat=$('status').value;
 let subset=drivers.filter(m=>(stat==='todos'||(stat==='basico'?['basico','liberado'].includes(m.status):m.status===stat))&&(!txt||[m.nome,m.cidade,m.telefone].some(v=>String(v||'').toLowerCase().includes(txt))));
 $('summary').textContent=drivers.filter(x=>x.status==='pendente').length+' aguardando aprovação · '+drivers.filter(x=>['basico','liberado'].includes(x.status)).length+' com documentação parcial · '+drivers.filter(x=>x.status==='reprovado').length+' reprovado(s).';
-$('people').innerHTML=subset.length?subset.map(m=>{const fields=m.veiculo_tipo==='bicicleta'?docs.filter(d=>!['cnh_url','crlv_url'].includes(d[0])):docs;return '<article class="person"><h2>'+esc(m.nome)+' <span class="badge">'+esc(m.status)+'</span></h2><p>'+esc(m.cidade)+' · '+esc(m.veiculo_tipo)+' · '+esc(m.telefone)+'</p><div class="docs">'+fields.map(d=>{const u=secureLink(m[d[0]]);return u?'<a target="_blank" rel="noopener noreferrer" href="'+esc(u)+'">'+esc(d[1])+' ↗</a>':'<span class="missing">'+esc(d[1])+' ausente</span>'}).join('')+'</div><p><small>Enviado em: '+(m.documentos_enviados_em?new Date(Number(m.documentos_enviados_em)).toLocaleString('pt-BR'):'não informado')+'</small></p></article>'}).join(''):'<div class="box">Nenhum cadastro nesse filtro.</div>';};
+$('people').innerHTML=subset.length?subset.map(m=>{const fields=m.veiculo_tipo==='bicicleta'?docs.filter(d=>!['cnh_url','crlv_url'].includes(d[0])):docs;return '<article class="person"><h2>'+esc(m.nome)+' <span class="badge">'+esc(m.status)+'</span></h2><p>'+esc(m.cidade)+' · '+esc(m.veiculo_tipo)+' · '+esc(m.telefone)+'</p><div class="docs">'+fields.map(d=>{const u=secureLink(m[d[0]]);return u?'<a target="_blank" rel="noopener noreferrer" href="'+esc(u)+'">'+esc(d[1])+' ↗</a>':'<span class="missing">'+esc(d[1])+' ausente</span>'}).join('')+'</div><p><small>Enviado em: '+(m.documentos_enviados_em?new Date(Number(m.documentos_enviados_em)).toLocaleString('pt-BR'):'não informado')+'</small></p>'+ (m.status==='pendente'||m.status==='reprovado' ? '<div class="actions"><button data-action="approve" data-id="'+esc(m.id)+'">Aprovar</button><button class="deny" data-action="reject" data-id="'+esc(m.id)+'">Solicitar correção</button></div>' : '') + '</article>'}).join(':'<div class="box">Nenhum cadastro nesse filtro.</div>';};
+
+let changing=false;
+async function actionDriver(id,action){
+ if(changing || !password) return;
+ const m=drivers.find(x=>String(x.id)===String(id));
+ if(!m || !['pendente','reprovado'].includes(m.status)) return;
+ let situation,reason=null,items=null;
+ if(action==='approve'){
+  const fields=m.veiculo_tipo==='bicicleta'?docs.filter(x=>!['cnh_url','crlv_url'].includes(x[0])):docs;
+  if(fields.some(x=>!secureLink(m[x[0]])) || (m.veiculo_tipo==='bicicleta'&&!m.aceita_responsabilidade_bike)){
+   alert('Existem documentos obrigatórios ou confirmação da bicicleta pendentes.');return;
+  }
+  if(!confirm('Aprovar '+m.nome+'? O motorista poderá receber chamadas conforme as regras do sistema.'))return;
+  situation='aprovado';
+ }else if(action==='reject'){
+  const given=prompt('Informe quais documentos precisam ser corrigidos:',m.motivo_reprovacao||'');
+  if(given===null)return;
+  reason=given.trim();
+  if(reason.length<5){alert('Informe o motivo da correção.');return;}
+  if(!confirm('Reprovar temporariamente a documentação de '+m.nome+'?'))return;
+  situation='reprovado';items=[];
+ }else return;
+ changing=true;
+ try{
+  const r=await db.rpc('entrega_admin_status_motorista',{p_senha:password,p_id:m.id,p_status:situation,p_motivo:reason,p_documentos_reprovados:items});
+  if(r.error)throw r.error;
+  if(r.data!==true)throw Error('Cadastro não atualizado.');
+  await refresh();
+  alert('Situação registrada no banco do Entrega Flash.');
+ }catch(e){alert('Erro ao salvar: '+(e?.message||e));}
+ finally{changing=false;}
+}
+$('people').addEventListener('click',e=>{const button=e.target.closest('button[data-action]');if(button)actionDriver(button.dataset.id,button.dataset.action);});
 async function refresh(){if(!db||!password)return;$('summary').textContent='Carregando...';const r=await db.rpc('entrega_admin_listar_documentos_pendentes',{p_senha:password});if(r.error){$('summary').textContent='Falha na consulta: '+r.error.message;return;}drivers=Array.isArray(r.data)?r.data:[];show();}
 async function login(e){e?.preventDefault();if(!db){$('err').textContent='Biblioteca de conexão indisponível. Atualize a página.';return;}
 const val=$('senha').value||sessionStorage.getItem('ef_admin_senha')||'';if(!val)return;
