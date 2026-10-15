@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta http-equiv="Cache-Control" content="no-store">
+<title>Documentos de motoristas | Entrega Flash</title>
+<style>
+:root{color-scheme:dark;--bg:#080f1c;--panel:#111d31;--line:#293952;--text:#f1f5fb;--muted:#a8b8cf;--blue:#4b9bff;--orange:#ffad32;--good:#65d9aa;--warn:#ffca65}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(140deg,#071020,#101c30 90%);font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;color:var(--text);min-height:100vh}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:not-allowed;opacity:.45}a{color:var(--blue);text-decoration:none}header{padding:20px max(16px,calc((100vw - 1140px)/2));border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center;background:rgba(7,14,27,.75)}header strong{font-size:19px;color:#fff}header small{display:block;color:var(--muted)}header a{white-space:nowrap}main{max-width:1160px;margin:0 auto;padding:24px 16px 80px}h1{font-size:27px;margin:0 0 8px;letter-spacing:-.5px}h2{font-size:17px;margin:0 0 12px}p{color:var(--muted);margin:0 0 16px}.panel{border:1px solid var(--line);background:var(--panel);border-radius:17px;padding:18px;margin:16px 0}.panel.info{border-color:rgba(255,173,50,.4)}.muted{color:var(--muted)}.hidden{display:none!important}input,select{background:#091427;color:#fff;border:1px solid #395071;padding:12px;border-radius:11px;max-width:100%}input:focus,select:focus{outline:2px solid var(--blue)}.btn{border:0;border-radius:11px;background:var(--orange);color:#111827;padding:11px 16px;font-weight:750}.btn.secondary{background:#213855;color:#fff;border:1px solid #3b5474}.btn.danger{background:#613042;color:#fff}.btn.small{font-size:12px;padding:9px 12px}.actionbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin:18px 0}.stat{background:#14243b;border:1px solid var(--line);padding:14px;border-radius:14px}.stat b{display:block;font-size:27px;line-height:1.2}.stat span{font-size:12px;color:var(--muted)}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,330px),1fr));gap:15px}.card{background:#121f33;border:1px solid #2c3e57;border-radius:17px;padding:16px;min-width:0}.topline{display:flex;gap:7px;justify-content:space-between;align-items:flex-start}.person{font-weight:800;font-size:18px;overflow-wrap:anywhere}.pill{padding:4px 8px;border-radius:99px;border:1px solid #52718c;font-size:11px;font-weight:800;white-space:nowrap}.pill.pendente{border-color:#e0b75a;color:#ffd480}.pill.reprovado{border-color:#dc6e75;color:#ff9da7}.meta{color:var(--muted);font-size:12px;margin-top:4px}.photos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}.photo{display:block;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#0b1627;color:var(--text)}.photo img{display:block;width:100%;height:110px;object-fit:cover;background:#0b1627}.photo span{display:block;padding:7px 8px;font-size:11px;color:var(--muted)}.photo.missing{border-style:dashed;padding:13px 9px;color:#daae72;min-height:94px;font-size:12px}.msg{border-radius:12px;padding:12px;margin:12px 0;border:1px solid #425771;background:#162942}.err{color:#ffb2b2;border-color:#8a3b4b}.ok{color:#a2f3d2;border-color:#376e57}.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}.empty{text-align:center;padding:30px;border:1px dashed var(--line);border-radius:12px}.note{font-size:12px;color:var(--muted)}@media(max-width:520px){h1{font-size:23px}header{padding:15px}main{padding:18px 12px 64px}.panel{padding:14px}.photos{gap:6px}.photo img{height:100px}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+</head>
+<body>
+<header><div><strong>ENTREGA <span style="color:var(--orange)">FLASH</span></strong><small>Controle de documentos dos motoristas</small></div><a href="/admin/admin.html">Voltar ao painel</a></header>
+<main>
+<h1>Documentos recebidos</h1>
+<p>Consulta diretamente o banco atual do Entrega Flash. Apenas administradores autorizados podem visualizar ou decidir sobre os cadastros.</p>
+<div class="panel info"><b>Banco atual do aplicativo</b><div class="note">Esta área consulta somente os documentos dos motoristas no Supabase novo. Pedidos, cobranças e demais áreas do painel continuam inalterados.</div></div>
+<div id="feedback" aria-live="polite"></div>
+<section id="login" class="panel" style="max-width:440px">
+<h2>Acesso administrativo</h2>
+<form id="loginForm" class="actionbar"><input id="senha" type="password" aria-label="Senha administrativa" autocomplete="current-password" placeholder="Senha do painel" required><button class="btn" type="submit">Entrar</button></form>
+</section>
+<section id="lista" class="hidden">
+<div class="stats" id="stats"></div>
+<div class="panel actionbar"><label for="filtro">Exibir:</label><select id="filtro"><option value="todos">Todos com documentos</option><option value="pendente" selected>Aguardando análise</option><option value="basico">Incompletos com fotos</option><option value="reprovado">Reprovados</option></select><button type="button" id="atualizar" class="btn secondary">Atualizar lista</button></div>
+<div class="cards" id="cards"></div>
+</section>
+</main>
+<script>
+(function(){
+"use strict";
+var ENDPOINT="https://urtpjcndtcleeorpnpct.supabase.co", PUBLIC_KEY="sb_publishable_bhe5zL6CgvGrXBXeckK-Fg_zupiWu7A";
+var sb=window.supabase&&window.supabase.createClient(ENDPOINT,PUBLIC_KEY);
+var senha="",registros=[],atualizando=false;
+var el=function(id){return document.getElementById(id)};
+var esc=function(v){return String(v==null?"":v).replace(/[&<>"']/g,function(ch){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]})};
+function avisar(msg,tipo){el("feedback").innerHTML='<div class="msg '+(tipo||"")+'">'+esc(msg)+'</div>'}
+function urlDoc(u){if(!u)return "";try{var url=new URL(u);return url.protocol==="https:" && /^[a-z0-9-]+\.supabase\.co$/i.test(url.hostname) && url.pathname.includes("/storage/v1/object/public/motorista-documentos/") ? url.href:""}catch(e){return ""}}
+function feito(m,k){return Boolean(urlDoc(m[k]))}
+function completos(m){var bike=m.veiculo_tipo==="bicicleta";return feito(m,"foto_motorista_url")&&feito(m,"foto_veiculo_url")&&feito(m,"foto_veiculo_tras_url")&&(bike?Boolean(m.aceita_responsabilidade_bike):(feito(m,"cnh_url")&&feito(m,"crlv_url")))}
+function data(ts){var n=Number(ts);return n>0?new Date(n).toLocaleDateString("pt-BR")+" "+new Date(n).toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}):"Sem data informada"}
+function cards(){var filtro=el("filtro").value;var lista=registros.filter(function(m){return filtro==="todos"||(filtro==="basico"?m.status==="basico"||m.status==="liberado":m.status===filtro)});
+el("stats").innerHTML=[
+["Aguardando análise",registros.filter(function(x){return x.status==="pendente"}).length],
+["Incompletos com fotos",registros.filter(function(x){return x.status==="basico"||x.status==="liberado"}).length],
+["Reprovados",registros.filter(function(x){return x.status==="reprovado"}).length],
+["Total nesta área",registros.length]].map(function(x){return '<div class="stat"><b>'+x[1]+'</b><span>'+esc(x[0])+'</span></div>'}).join("");
+el("cards").innerHTML=lista.length?lista.map(function(m){
+var fotos=[["foto_motorista_url","Selfie"],["cnh_url","CNH"],["crlv_url","Documento do veículo"],["foto_veiculo_url","Veículo frente"],["foto_veiculo_tras_url","Veículo traseira"]];
+if(m.veiculo_tipo==="bicicleta")fotos=fotos.filter(function(x){return x[0]!=="cnh_url"&&x[0]!=="crlv_url"});
+var f=fotos.map(function(a){var u=urlDoc(m[a[0]]);return u?'<a class="photo" href="'+esc(u)+'" target="_blank" rel="noopener noreferrer"><img src="'+esc(u)+'" loading="lazy" alt="'+esc(a[1])+'"><span>'+esc(a[1])+' — abrir</span></a>':'<div class="photo missing">'+esc(a[1])+'<br>Não enviado</div>'}).join("");
+var completo=completos(m);var podeDecidir=m.status==="pendente";
+var acoes=podeDecidir?'<div class="btnrow"><button class="btn small" data-acao="aprovar" data-id="'+esc(m.id)+'" '+(completo?'':'disabled')+'>Aprovar motorista</button><button class="btn small danger" data-acao="reprovar" data-id="'+esc(m.id)+'">Reprovar documentação</button></div>':"";
+return '<article class="card"><div class="topline"><div class="person">'+esc(m.nome||"Sem nome")+'</div><span class="pill '+esc(m.status)+'">'+esc(m.status)+'</span></div>'+
+'<div class="meta">'+esc(m.cidade||"Sem cidade")+' · '+esc(m.veiculo_tipo||"Veículo não informado")+'</div><div class="meta">WhatsApp: '+esc(m.telefone||"Não informado")+'</div><div class="meta">Envio: '+esc(data(m.documentos_enviados_em))+'</div>'+
+'<div class="photos">'+f+'</div><div class="note">'+(completo?'Documentação registrada: confira autenticidade e legibilidade antes de aprovar.':'Documentação incompleta. Revise os campos ausentes.')+'</div>'+
+(m.status==="reprovado"?'<div class="msg err">Motivo: '+esc(m.motivo_reprovacao||"Não informado")+'</div>':"")+acoes+'</article>';
+}).join(""):'<div class="empty">Nenhum cadastro neste filtro.</div>'}
+async function carregar(){if(!senha||atualizando)return;atualizando=true;el("atualizar").disabled=true;avisar("Consultando documentos no banco atual...");try{var x=await sb.rpc("entrega_admin_listar_documentos_pendentes",{p_senha:senha});if(x.error)throw x.error;registros=Array.isArray(x.data)?x.data:[];el("login").classList.add("hidden");el("lista").classList.remove("hidden");el("feedback").innerHTML="";cards()}catch(e){avisar("Não foi possível consultar os documentos: "+(e.message||"falha de conexão"),"err");if(e.code==="42501"){senha="";el("login").classList.remove("hidden");el("lista").classList.add("hidden")}}finally{atualizando=false;el("atualizar").disabled=false}}
+async function verificar(p){if(!sb){avisar("Biblioteca de conexão indisponível. Atualize esta página.","err");return}try{var x=await sb.rpc("entrega_verificar_senha_admin",{p_senha:p});if(x.error||x.data!==true){avisar("Senha não autorizada para o banco atual.","err");return}senha=p;await carregar()}catch(e){avisar("Falha de autenticação: "+(e.message||"Verifique a conexão"),"err")}}
+el("loginForm").addEventListener("submit",function(ev){ev.preventDefault();verificar(el("senha").value)});
+el("filtro").addEventListener("change",cards);el("atualizar").addEventListener("click",carregar);
+el("cards").addEventListener("click",async function(ev){
+var b=ev.target.closest("button[data-acao]");if(!b||!senha)return;
+var m=registros.find(function(x){return x.id===b.dataset.id});if(!m||m.status!=="pendente")return;
+var acao=b.dataset.acao, motivo="";
+if(acao==="aprovar"){if(!completos(m)){avisar("Este cadastro ainda tem documentos obrigatórios ausentes.","err");return}if(!confirm("Você conferiu a autenticidade e legibilidade dos documentos de "+m.nome+" e deseja APROVAR este motorista?"))return}
+else if(acao==="reprovar"){motivo=prompt("Informe o motivo da reprovação e quais documentos devem ser reenviados:")||"";if(motivo.trim().length<10){avisar("Informe um motivo com pelo menos 10 caracteres.","err");return}if(!confirm("Confirma a reprovação da documentação de "+m.nome+"?"))return}
+else return;
+b.disabled=true;avisar("Salvando a decisão no banco atual...");
+try{var resp=await sb.rpc("entrega_admin_status_motorista",{p_senha:senha,p_id:m.id,p_status:acao==="aprovar"?"aprovado":"reprovado",p_motivo:motivo||null,p_documentos_reprovados:[]});if(resp.error)throw resp.error;await carregar();avisar("Decisão registrada. A lista foi atualizada.","ok")}
+catch(e){avisar("Não consegui salvar: "+(e.message||"falha"),"err");b.disabled=false}
+});
+var senhaAnterior="";try{senhaAnterior=sessionStorage.getItem("ef_admin_senha")||""}catch(e){}
+if(senhaAnterior)verificar(senhaAnterior);
+})();
+</script>
+</body>
+</html>
