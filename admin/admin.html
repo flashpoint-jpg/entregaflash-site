@@ -8266,7 +8266,7 @@ function adminCorpoHTML(){
         <button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('buscaRapidaAdmin')} onclick="executarComCarregando('buscaRapidaAdmin', ()=>buscarClienteOuMotoristaPorTelefoneAdmin(document.getElementById('busca-rapida-admin').value))">${rotuloCarregando('buscaRapidaAdmin','Abrir cadastro','Buscando...')}</button>
       </div>
     </div>
-    <div class="admin-abas-grade">${abas.map(x=>`<button class="${a.aba===x.id?'ativo':''}" onclick="mudarAbaAdmin('${x.id}')">${x.label}</button>`).join('')}</div>
+    <div class="admin-abas-grade">${abas.map(x=>`<button class="${a.aba===x.id?'ativo':''}" onclick="mudarAbaAdmin('${x.id}')">${x.label}</button>`).join('')}${adminEhDono()?'<a href="/admin/documentos.html" style="display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:10px 14px;border:1px solid rgba(255,173,50,.65);background:#ffad32;color:#111827;border-radius:11px;font-weight:800">Documentos atuais</a>':''}</div>
     <div class="admin-aba-corpo">${corpo}</div>`;
 }
 async function buscarClienteOuMotoristaPorTelefoneAdmin(valorInput){
