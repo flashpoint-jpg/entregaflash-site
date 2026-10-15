@@ -8266,7 +8266,7 @@ function adminCorpoHTML(){
         <button class="btn btn-secundario btn-pequeno" ${atributoDesabilitado('buscaRapidaAdmin')} onclick="executarComCarregando('buscaRapidaAdmin', ()=>buscarClienteOuMotoristaPorTelefoneAdmin(document.getElementById('busca-rapida-admin').value))">${rotuloCarregando('buscaRapidaAdmin','Abrir cadastro','Buscando...')}</button>
       </div>
     </div>
-    <div class="admin-abas-grade">${abas.map(x=>`<button class="${a.aba===x.id?'ativo':''}" onclick="mudarAbaAdmin('${x.id}')">${x.label}</button>`).join('')}</div>
+    <div class="admin-abas-grade">${abas.map(x=>`<button class="${a.aba===x.id?'ativo':''}" onclick="mudarAbaAdmin('${x.id}')">${x.label}</button>`).join('')}<button type="button" onclick="window.location.href='/admin/documentos.html'">📄 Documentos no banco atual</button></div>
     <div class="admin-aba-corpo">${corpo}</div>`;
 }
 async function buscarClienteOuMotoristaPorTelefoneAdmin(valorInput){
